@@ -1,0 +1,5 @@
+rm vg.log
+valgrind ./0 >vg.log 2>&1
+more vg.log
+
+

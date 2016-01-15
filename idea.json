@@ -1,0 +1,51 @@
+
+  PFW({
+  res=match(xin(4,9,8,7,6),tagv("greedy", xln(3,
+    tagv("anyof", xin(2,9,8)),
+    xi0(),
+    tagv("anyof", xin(1,6)))));
+  ASSERT(_equal(res,xin(4,0,1,2,3)),"mq");
+  });
+
+
+	[
+		[4,9,8,7,6],
+		"match",
+		["greedy",
+			["anyof", [2,9,8]],
+			[],
+			["anyof", [1,6]
+		]
+	]
+
+	->
+
+	[
+		[4,9,8,7,6],
+		"@",
+		[
+			"all",
+			["in", [2,9,8]],
+			["?anything?"],
+			["in", [1,6]
+		]
+	]
+
+	// parsing floats 1.23 1.25e+18 1f
+	
+	[
+		"`num",
+		"is",
+		[ "in", "'0123456789'" ],
+		"`pf",
+		"is",
+		  // part before the dot..
+		[ "num",
+			"or", 
+			[ 
+				"'.'",
+			  "in", ["'0123456789'"]
+			 ],
+			[ "'f'" ] ] // specify float literals with 'f' at the end too
+	]
+
