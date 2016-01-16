@@ -310,10 +310,10 @@ VP take(VP x,VP y) {
 	int typerr=-1;
 	size_t st,end; //TODO slice() support more than 32bit indices
 	// PF("take args\n"); DUMP(x); DUMP(y);
-	if(!NUM(y)) R_EXC(Tt(type),"slice arg must be numeric",x,y);	
-	VARY_EL(y,0,{if (_x<0) { st=x->n+_x; end=x->n; } else { st=0; end=_x; }},typerr);
-	if(typerr>-1) R_EXC(Tt(type),"cant use y as slice index into x",x,y);
-	if(end>x->n) { return xalloc(x->t, 0); }
+	IFR(!NUM(y), EXC(Tt(type),"slice arg must be numeric",x,y));	
+	VARY_EL(y, 0, {if (_x<0) { st=x->n+_x; end=x->n; } else { st=0; end=_x; }}, typerr);
+	IFR(typerr>-1, EXC(Tt(type),"cant use y as slice index into x",x,y));  
+	IFR(end>x->n, xalloc(x->t, 0));
 	res=xalloc(x->t,end-st); res=appendbuf(res,ELi(x,st),end-st);
 	// PF("take result\n"); DUMP(res);
 	return res;
@@ -486,7 +486,7 @@ VP plus(VP x,VP y) {
 VP sum(VP x) {
 	PF("sum");DUMP(x);
 	I128 val=0;int i;
-	if(!IS_i(x)) R_EXC(Tt(type),"sum argument should be numeric",x,0);
+	if(!IS_i(x)) return EXC(Tt(type),"sum argument should be numeric",x,0);
 	for(i=0;i<x->n;i++) val+=AS_i(x,i);
 	return xo(val);
 }
@@ -576,7 +576,9 @@ VP apply(VP x,VP y) {
 		} else {
 			res=xalloc(x->t,y->n);
 			VARY_EACH(y,appendbuf(res,ELi(x,_x),1),typerr);
-			if(typerr) R_EXC(Tt(type),"cant use y as index into x",x,y);
+			PF("apply VARY_EACH after\n");
+			DUMP(res);
+			if(typerr>-1) return EXC(Tt(type),"cant use y as index into x",x,y);
 			return res;
 			/*
 			res=xalloc(x->t,y->n);
