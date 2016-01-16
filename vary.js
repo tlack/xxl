@@ -27,7 +27,9 @@ console.log(lib.prelude +
 	"#define VARY_EL(x,i,stmt,failvar) ({ \\");
 var tmpls=[
 	"\tif(x->t=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}};}\\",
-	"\tif(x->t=={{x0}}){/*{{x2}}*/{{x3}} _x=AS_{{x1}}(x,i); stmt;}\\" 
+	"\tif(x->t=={{x0}}){/*{{x2}}*/\\\n"+
+	"\t\t{{x3}} _x=AS_{{x1}}(x,i);\\\n"+
+	"\t\tstmt;}\\" 
 ];
 lib.each(lib.types,function(tx) {
 	if(skip(tx))tmpl=tmpls[0];
