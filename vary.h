@@ -7,12 +7,24 @@
 // VARY_EL varies over one element: x[i]. 
 #define VARY_EL(x,i,stmt,failvar) ({ \
 	if(x->t==0){/*cant vary list*/ failvar=0;}\
-	if(x->t==1){/*tag*/int _x=AS_t(x,i); stmt;}\
-	if(x->t==2){/*byte*/int8_t _x=AS_b(x,i); stmt;}\
-	if(x->t==3){/*int*/int _x=AS_i(x,i); stmt;}\
-	if(x->t==4){/*long*/__int64_t _x=AS_j(x,i); stmt;}\
-	if(x->t==5){/*octo*/__int128_t _x=AS_o(x,i); stmt;}\
-	if(x->t==6){/*char*/char _x=AS_c(x,i); stmt;}\
+	if(x->t==1){/*tag*/\
+		int _x=AS_t(x,i);\
+		stmt;}\
+	if(x->t==2){/*byte*/\
+		int8_t _x=AS_b(x,i);\
+		stmt;}\
+	if(x->t==3){/*int*/\
+		int _x=AS_i(x,i);\
+		stmt;}\
+	if(x->t==4){/*long*/\
+		__int64_t _x=AS_j(x,i);\
+		stmt;}\
+	if(x->t==5){/*octo*/\
+		__int128_t _x=AS_o(x,i);\
+		stmt;}\
+	if(x->t==6){/*char*/\
+		char _x=AS_c(x,i);\
+		stmt;}\
 	if(x->t==7){/*cant vary dict*/ failvar=7;}\
 	if(x->t==8){/*cant vary f1*/ failvar=8;}\
 	if(x->t==9){/*cant vary f2*/ failvar=9;}\
