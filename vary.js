@@ -39,7 +39,7 @@ lib.each(lib.types,function(tx) {
 console.log("})");
 
 console.log("#define VARY_EACH(x,stmt,failvar) ({ \\\n" +
-	"\tint _i=0,_xn=x->n,_xt=x->t;PF(\"VE\");DUMP(x);\\");
+	"\tint _i=0,_xn=x->n,_xt=x->t; /*PF(\"VE\");DUMP(x);*/\\");
 var tmpl="\tif(_xt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
 lib.each(lib.types,function(tx) {
 	if(skip(tx)){
@@ -50,7 +50,7 @@ lib.each(lib.types,function(tx) {
 });
 var tmpl="\tif(_xt=={{x0}}){/*{{x2}}*/ \\\n" +
 	"\t\t{{x3}} _x;\\\n" + 
-	"\t\tPF(\"%d %d\\n\",_i,_xn);while (_i < _xn) { _x=AS_{{x1}}(x,_i); /* printf(\"%d {{5}}\\n\", _i, _x); */ stmt; _i++; }\\\n" + 
+	"\t\twhile (_i < _xn) { _x=AS_{{x1}}(x,_i); /* printf(\"%d {{5}}\\n\", _i, _x); */ stmt; _i++; }\\\n" + 
 	"\t}\\";
 lib.each(lib.types,function(tx) {
 	if(skip(tx))return;

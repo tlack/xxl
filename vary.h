@@ -20,7 +20,7 @@
 	if(x->t==11){/*cant vary ctx*/ failvar=11;}\
 })
 #define VARY_EACH(x,stmt,failvar) ({ \
-	int _i=0,_xn=x->n,_xt=x->t;PF("VE");DUMP(x);\
+	int _i=0,_xn=x->n,_xt=x->t; /*PF("VE");DUMP(x);*/\
 	if(_xt==0){/*cant vary list*/ failvar=0; }\
 	if(_xt==7){/*cant vary dict*/ failvar=7; }\
 	if(_xt==8){/*cant vary f1*/ failvar=8; }\
@@ -29,27 +29,27 @@
 	if(_xt==11){/*cant vary ctx*/ failvar=11; }\
 	if(_xt==1){/*tag*/ \
 		int _x;\
-		PF("%d %d\n",_i,_xn);while (_i < _xn) { _x=AS_t(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
+		while (_i < _xn) { _x=AS_t(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
 	}\
 	if(_xt==2){/*byte*/ \
 		int8_t _x;\
-		PF("%d %d\n",_i,_xn);while (_i < _xn) { _x=AS_b(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
+		while (_i < _xn) { _x=AS_b(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
 	}\
 	if(_xt==3){/*int*/ \
 		int _x;\
-		PF("%d %d\n",_i,_xn);while (_i < _xn) { _x=AS_i(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
+		while (_i < _xn) { _x=AS_i(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
 	}\
 	if(_xt==4){/*long*/ \
 		__int64_t _x;\
-		PF("%d %d\n",_i,_xn);while (_i < _xn) { _x=AS_j(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
+		while (_i < _xn) { _x=AS_j(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
 	}\
 	if(_xt==5){/*octo*/ \
 		__int128_t _x;\
-		PF("%d %d\n",_i,_xn);while (_i < _xn) { _x=AS_o(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
+		while (_i < _xn) { _x=AS_o(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
 	}\
 	if(_xt==6){/*char*/ \
 		char _x;\
-		PF("%d %d\n",_i,_xn);while (_i < _xn) { _x=AS_c(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
+		while (_i < _xn) { _x=AS_c(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
 	}\
 })
 #define VARY_EACHLEFT(x,y,stmt,failvar) ({ \

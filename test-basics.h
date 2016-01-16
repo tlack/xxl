@@ -89,9 +89,13 @@
 		ASSERT(_find(a,xfroms("est"))==-1,"_find 1");
 		ASSERT(_find(a,xfroms("tes"))==-1,"_find 2");
 		xfree(a);
+		PFW({
 		a = xd0();
 		b = apply(a,xfroms("a"));
+		DUMP(a);
+		DUMP(b);
 		ASSERT(b==NULL,"apply 0");
+		});
 		b = xln(2,xi(1),xi(10)); // key:value dict
 		append(a,b);
 		xfree(b);
