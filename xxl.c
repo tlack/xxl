@@ -13,6 +13,7 @@
 #include <pthread.h>
 #endif
 
+/* macros and helpers, function prototypes */
 #include "def.h"
 #include "proto.h"
 
@@ -1171,7 +1172,7 @@ void test_context() {
 	DUMP(b);
 }
 void test_match() {
-	#include"test-match.h";
+	#include"test-match.h"
 }
 void test_eval() {
 	/*
