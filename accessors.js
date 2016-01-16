@@ -1,4 +1,5 @@
 var lib = require('./common.js');
+console.log(lib.prelude);
 lib.each(lib.types, function(t) {
 	var tmpls = [
 		'/* accessors for type #{{0}} or {{1}} ({{2}}) implemented as {{3}} */',

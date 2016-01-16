@@ -7,6 +7,7 @@ var tmpls=[
   "  to=from; \n"+
 	"  appendbuf(res,&to,1); }); }\n"
 ];
+console.log(lib.prelude);
 lib.each(lib.types,function(tx) {
 	console.log(lib.exhaust(lib.projr(lib.repl,tx),tmpls[0]));
 });

@@ -18,7 +18,7 @@ function skip(t) {
 	t=t[1];
 	return (lib.dontcast.indexOf(t)!=-1)?true:false;
 }
-console.log("\n"+
+console.log(lib.prelude + 
 	"// vary on a single element. unpacks x[i] into a C variable \n"+
 	"// called _x, of the correct c native type. then executes \n"+
 	"// your code (stmt). If it's a type that can't be unpacked, \n"+

@@ -1,4 +1,5 @@
 var lib = require('./common.js');
+console.log(lib.prelude);
 console.log('static type_info_t TYPES[] = { ');
 lib.each(lib.types,function(t) {
 	var tmpls=[

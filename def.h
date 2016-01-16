@@ -53,12 +53,12 @@
 #define VALS(v) (ELl(v,1))
 #define Ti(n) (_tagnums(#n))
 #define Tt(n) (xt(_tagnums(#n)))
-#if DEBUG == 1
+#if DEBUG 
 	#define DUMP(x) ({ char* s = reprA(x); PF("%s\n", s); free(s); })
 #else
 	#define DUMP(x) ({})
 #endif
-#ifdef DEBUG == 1
+#if debug
 	#define DUMPRAW(x,sz) ({ printf("%p ",x); FOR(0,sz,printf("%d ",x[_i])); printf("\n"); })
 #else
 	#define DUMPRAW(x,sz) ({})

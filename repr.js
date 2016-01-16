@@ -1,4 +1,5 @@
 var lib = require('./common.js');
+console.log(lib.prelude);
 lib.each(lib.types, function(t) {
 	if(t[6] == true) return;
 	var tmpls = [
