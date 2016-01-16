@@ -4,8 +4,7 @@
 #define DEBUG 0
 #endif
 
-#define APF(sz,fmt,...) snprintf(s+strlen(s),sz-strlen(s),fmt,__VA_ARGS__);
-#define ASSERT(cond,txt) ({ if (!(cond)) { printf("ASSERT: %s\n", txt); raise(SIGABRT); exit(1); } })
+/* Control structures of sorts: */
 #define FOR(st,en,stmt) ({ int _i;for(_i=(st);_i<(en);_i++)stmt; })
 #define IFR(cond,thing) if((cond)) return thing
 #define ITER(thing,n,body) ({ int _i;for(_i=0;_i<sizeof(thing);_i++) { typeof(*thing) _x; _x=thing[_i]; body; } })
@@ -28,31 +27,15 @@
 		} \
 	} \
 })
+/* Debugging: */
+#define APF(sz,fmt,...) snprintf(s+strlen(s),sz-strlen(s),fmt,__VA_ARGS__);
+#define ASSERT(cond,txt) ({ if (!(cond)) { printf("ASSERT: %s\n", txt); raise(SIGABRT); exit(1); } })
 #define P0(fmt,x) ({ typeof(x) xx=x; char* s=malloc(1024);snprintf(fmt,1024,xx); xx; })
 #define PF(...) (DEBUG && PF_LVL && ({ FOR(0,PF_LVL,printf("  ")); printf(__VA_ARGS__);}))
 #define PFIN() (DEBUG && PF_LVL++)
 #define PFOUT() (DEBUG && PF_LVL--)
-#define PFW(stmt) ({ PFIN(); stmt; PFOUT(); })
+#define PFW(stmt) ({ printf("PFW\n"); PFIN(); stmt; PFOUT(); })
 #define MEMPF(...) (DEBUG && MEM_W && PF(__VA_ARGS__))
-
-
-#define BUF(v) ((buf_t)( (v)->alloc ? (v->dyn) : (buf_t)&((v)->st) ))
-#define EL(v,type,n) (((type*)BUF(v))[n])
-#define ELl(v,n) ((EL(v,VP,n)))
-#define ELb(v,n) ELsz(v,1,n)
-#define ELi(v,n) ((BUF(v))+((v->itemsz)*n))
-#define ELsz(v,sz,n) ((BUF(v))+(sz*n))
-#define R_EXC(type,lbl,x,y) return tagv("exception",xln(4,type,lbl,x,y));
-#define SCALAR(v) ((v)->n==1)
-#define NUM(v) (IS_b(v)||IS_i(v)||IS_l(v)||IS_o(v))
-#define LIST(v) ((v)->t==0)
-#define LISTDICT(v) ((v)->t==0||IS_d(v))
-#define DICT(v) (IS_d(v))
-#define ENLISTED(v) (LIST(v)&&(v)->n==1)
-#define KEYS(v) (ELl(v,0))
-#define VALS(v) (ELl(v,1))
-#define Ti(n) (_tagnums(#n))
-#define Tt(n) (xt(_tagnums(#n)))
 #if DEBUG 
 	#define DUMP(x) ({ char* s = reprA(x); PF("%s\n", s); free(s); })
 #else
@@ -64,7 +47,25 @@
 	#define DUMPRAW(x,sz) ({})
 #endif
 
-/* functions ending in A allocate their return value; be sure to free() them */
+/* Element access and type checks*/
+#define BUF(v) ((buf_t)( (v)->alloc ? (v->dyn) : (buf_t)&((v)->st) ))
+#define EL(v,type,n) (((type*)BUF(v))[n])
+#define ELl(v,n) ((EL(v,VP,n)))
+#define ELb(v,n) ELsz(v,1,n)
+#define ELi(v,n) ((BUF(v))+((v->itemsz)*n))
+#define ELsz(v,sz,n) ((BUF(v))+(sz*n))
+#define EXC(type,lbl,x,y) tagv("exception",xln(4,type,xfroms(lbl),x,y));
+#define SCALAR(v) ((v)->n==1)
+#define NUM(v) (IS_b(v)||IS_i(v)||IS_l(v)||IS_o(v))
+#define LIST(v) ((v)->t==0)
+#define LISTDICT(v) ((v)->t==0||IS_d(v))
+#define DICT(v) (IS_d(v))
+#define ENLISTED(v) (LIST(v)&&(v)->n==1)
+#define KEYS(v) (ELl(v,0))
+#define VALS(v) (ELl(v,1))
+#define Ti(n) (_tagnums(#n))
+#define Tt(n) (xt(_tagnums(#n)))
+
 #define TYD(name,type) typedef type name
 TYD(I8,unsigned char); TYD(I32,int); TYD(I64,__int64_t); TYD(I128,__int128_t);
 TYD(type_t,I8); TYD(buf_t,I8*);
