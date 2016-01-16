@@ -42,7 +42,7 @@
 #define ELb(v,n) ELsz(v,1,n)
 #define ELi(v,n) ((BUF(v))+((v->itemsz)*n))
 #define ELsz(v,sz,n) ((BUF(v))+(sz*n))
-#define EXC(type,lbl,x,y) return tagv("exception",xln(4,type,lbl,x,y));
+#define R_EXC(type,lbl,x,y) return tagv("exception",xln(4,type,lbl,x,y));
 #define SCALAR(v) ((v)->n==1)
 #define NUM(v) (IS_b(v)||IS_i(v)||IS_l(v)||IS_o(v))
 #define LIST(v) ((v)->t==0)

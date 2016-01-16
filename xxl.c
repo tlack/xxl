@@ -472,7 +472,7 @@ VP plus(VP x,VP y) {
 VP sum(VP x) {
 	PF("sum");DUMP(x);
 	I128 val=0;int i;
-	if(!IS_i(x)) EXC(Tt(type),"sum argument should be numeric",x,0);
+	if(!IS_i(x)) R_EXC(Tt(type),"sum argument should be numeric",x,0);
 	for(i=0;i<x->n;i++) val+=AS_i(x,i);
 	return xo(val);
 }
@@ -562,7 +562,7 @@ VP apply(VP x,VP y) {
 		} else {
 			res=xalloc(x->t,y->n);
 			VARY_EACH(y,appendbuf(res,ELi(x,_x),1),typerr);
-			if(typerr) EXC(Tt(type),"cant use y as index into x",x,y);
+			if(typerr) R_EXC(Tt(type),"cant use y as index into x",x,y);
 			return res;
 			/*
 			res=xalloc(x->t,y->n);
