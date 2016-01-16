@@ -6,7 +6,7 @@
 
 /* Control structures of sorts: */
 #define FOR(st,en,stmt) ({ int _i;for(_i=(st);_i<(en);_i++)stmt; })
-#define IFR(cond,thing) if((cond)) return thing
+#define IF_RET(cond,thing) if((cond)) return thing
 #define ITER(thing,n,body) ({ int _i;for(_i=0;_i<sizeof(thing);_i++) { typeof(*thing) _x; _x=thing[_i]; body; } })
 #define ITERV(x,body) ({ int _i;for(_i=0;_i<x->n;_i++) { body; } })
 #define ITER2(x,y,body) ({ \

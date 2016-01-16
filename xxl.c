@@ -110,8 +110,8 @@ char* repr_d(VP x,char* s,size_t sz) {
 #include "repr.h"
 #include "types.h"
 
-type_info_t typeinfo(type_t n) { ITER(TYPES,sizeof(TYPES),{ IFR(_x.t==n,_x); }); }
-type_info_t typechar(char c) { ITER(TYPES,sizeof(TYPES),{ IFR(_x.c==c,_x); }); }
+type_info_t typeinfo(type_t n) { ITER(TYPES,sizeof(TYPES),{ IF_RET(_x.t==n,_x); }); }
+type_info_t typechar(char c) { ITER(TYPES,sizeof(TYPES),{ IF_RET(_x.c==c,_x); }); }
 VP xalloc(type_t t,I32 initn) {
 	VP a; int g,i,itemsz,sz; 
 	initn = initn < 4 ? 4 : initn;
@@ -310,10 +310,10 @@ VP take(VP x,VP y) {
 	int typerr=-1;
 	size_t st,end; //TODO slice() support more than 32bit indices
 	// PF("take args\n"); DUMP(x); DUMP(y);
-	IFR(!NUM(y), EXC(Tt(type),"slice arg must be numeric",x,y));	
+	IF_RET(!NUM(y), EXC(Tt(type),"slice arg must be numeric",x,y));	
 	VARY_EL(y, 0, {if (_x<0) { st=x->n+_x; end=x->n; } else { st=0; end=_x; }}, typerr);
-	IFR(typerr>-1, EXC(Tt(type),"cant use y as slice index into x",x,y));  
-	IFR(end>x->n, xalloc(x->t, 0));
+	IF_RET(typerr>-1, EXC(Tt(type),"cant use y as slice index into x",x,y));  
+	IF_RET(end>x->n, xalloc(x->t, 0));
 	res=xalloc(x->t,end-st); res=appendbuf(res,ELi(x,st),end-st);
 	// PF("take result\n"); DUMP(res);
 	return res;
@@ -378,36 +378,37 @@ inline int _equalm(VP x,int xi,VP y,int yi) {
 	else return 0;
 }	
 int _equal(VP x,VP y) {
+	// TODO _equal() needs to handle comparison tolerance and type conversion
 	// TODO _equal should use the new VARY_*() macros, except for general lists
-	//PF("_equal\n"); DUMP(x); DUMP(y);
-	if(LIST(x) && SCALAR(x))  // if the list is a container for one item, we probably want to match the inner one
-		return _equal(ELl(x,0),y);
-	if(x->n != y->n) return 0; // TODO _equal() needs to handle comparison tolerance and type conversion
-	if(LIST(x) && LIST(y)) { ITERV(x,{ IFR(_equal(ELl(x,_i),ELl(y,_i))==0, 0); }); }
-	ITERV(x,{ IFR(memcmp(ELb(x,_i),ELb(y,_i),x->itemsz)!=0,0); });
+	PF("_equal\n"); DUMP(x); DUMP(y);
+	// if the list is a container for one item, we probably want to match the inner one
+	if(LIST(x) && SCALAR(x)) x=ELl(x,0);
+	if(LIST(y) && SCALAR(y)) y=ELl(y,0);
+	IF_RET(x->n != y->n, 0);
+	if(LIST(x) && LIST(y)) { ITERV(x,{ IF_RET(_equal(ELl(x,_i),ELl(y,_i))==0, 0); }); return 1; }
+	ITERV(x,{ IF_RET(memcmp(ELb(x,_i),ELb(y,_i),x->itemsz)!=0,0); });
+	PF("_equal returning 1");
 	return 1;
 }
 int _findbuf(VP x,buf_t y) {
 	if(LISTDICT(x)) { ITERV(x,{ 
-		IFR(_findbuf(ELl(x,_i),y)!=-1,_i);
+		IF_RET(_findbuf(ELl(x,_i),y)!=-1,_i);
 	}); } else {
-		ITERV(x,{ IFR(memcmp(ELi(x,_i),y,x->itemsz)==0,_i); });
+		ITERV(x,{ IF_RET(memcmp(ELi(x,_i),y,x->itemsz)==0,_i); });
 	}
 	return -1;
 }
 int _find(VP x,VP y) {
 	ASSERT(LIST(x) || (x->t==y->t && y->n==1), "_find(): x must be list, or types must match with right scalar");
-	/*
-	 * PF("find %p %p\n",x,y);
-	DUMP(x); DUMP(y);*/
+	// PF("find %p %p\n",x,y); DUMP(x); DUMP(y);
 	if(LISTDICT(x)) { ITERV(x,{ 
 		VP xx;
 		xx=ELl(x,_i);
 		if(xx!=NULL) 
-			IFR(_equal(xx,y)==1,_i);
+			IF_RET(_equal(xx,y)==1,_i);
 	}); }
 	else {
-		ITERV(x,{ IFR(memcmp(ELi(x,_i),ELi(y,0),x->itemsz)==0,_i); });
+		ITERV(x,{ IF_RET(memcmp(ELi(x,_i),ELi(y,0),x->itemsz)==0,_i); });
 	}
 	return -1;
 }
