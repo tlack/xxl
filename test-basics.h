@@ -23,7 +23,7 @@
 		DUMP(apply(a,c));
 		DUMP(b);
 		});
-		ASSERT(_equal(apply(a,c),b)==1,"apply 0");
+		ASSERT(_equal(apply(a,c),b)==1,"apply eq 0");
 		xfree(b); 
 		xfree(c);
 		b=xi(98);
@@ -35,6 +35,7 @@
 		xfree(b);
 		xfree(a);
 		xfree(c);
+		ASSERT(!_equal(xi(-1),xi(1)),"xi neg 0");
 		a=xin(5,1,2,3,4,100);
 		ASSERT(a->n==5,"_xin 0");
 		ASSERT(EL(a,int,4)==100,"_xin 1");
@@ -68,6 +69,15 @@
 		ASSERT(ELl(a,2)->n==6,"append str 2"); // test2\0
 		ASSERT(_contains(a,ELl(a,2))==1,"str contains 0");
 		ASSERT(_contains(a,xfroms("tes"))==0,"str contains 1");
+		ASSERT(_equal(take(xin(3,1,2,3),xi(1)),xi(1)),"take 0");
+		ASSERT(_equal(take(xin(3,1,2,3),xi(2)),xin(2,1,2)),"take 1");
+		PFW({
+		ASSERT(_equal(take(xin(3,1,2,3),xi(-2)),xin(2,2,3)),"take 2");
+		ASSERT(_equal(take(xin(3,1,2,3),xi(-1)),xi(3)),"take 3");
+		ASSERT(_equal(take(xin(3,1,2,3),xi(0)),xi0()),"take 4");
+		ASSERT(_equal(take(xin(3,1,2,3),xi(4)),xi0()),"take 5");
+		ASSERT(_equal(take(xin(3,1,2,3),xi(3)),xin(3,1,2,3)),"take 5");
+		});
 		upsert(a,xfroms("test"));
 		ASSERT(a->n==3,"upsert 1");
 		b = xi(101);

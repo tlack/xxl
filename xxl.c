@@ -305,6 +305,19 @@ VP append(VP x,VP y) { // append all items of y to x. if x is a general list, ap
 VP appendfree(VP x,VP y) {
 	append(x,y); xfree(y); return x;
 }
+VP take(VP x,VP y) {
+	VP res;
+	int typerr=-1;
+	size_t st,end; //TODO slice() support more than 32bit indices
+	// PF("take args\n"); DUMP(x); DUMP(y);
+	if(!NUM(y)) R_EXC(Tt(type),"slice arg must be numeric",x,y);	
+	VARY_EL(y,0,{if (_x<0) { st=x->n+_x; end=x->n; } else { st=0; end=_x; }},typerr);
+	if(typerr>-1) R_EXC(Tt(type),"cant use y as slice index into x",x,y);
+	if(end>x->n) { return xalloc(x->t, 0); }
+	res=xalloc(x->t,end-st); res=appendbuf(res,ELi(x,st),end-st);
+	// PF("take result\n"); DUMP(res);
+	return res;
+}
 VP upsert(VP x,VP y) {
 	if(_find(x,y)==-1) append(x,y); return x;
 }
