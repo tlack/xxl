@@ -452,10 +452,9 @@ char* reprA(VP x) {
 VP cast(VP x,VP y) { 
 	// TODO cast() should short cut matching kind casts 
 	#define BUFSZ 128
-	VP res;int typetag=-1;type_t typenum=-1;
-	I8 buf[BUFSZ]={0};
-	if(y->t==T_t) typetag=AS_t(y,0);
-	else typenum=y->t;
+	VP res; I8 buf[BUFSZ]={0}; int typetag=-1;type_t typenum=-1; 
+	// right arg is tag naming a type, use that.. otherwise use y's type
+	if(y->t==T_t) typetag=AS_t(y,0); else typenum=y->t;
 	#include"cast.h"
 	DUMPRAW(buf,BUFSZ);
 	return res;
@@ -470,15 +469,12 @@ VP itemsz(VP x) {
 	return xin(1,x->itemsz);
 }
 VP til(VP x) {
-	VP acc;int i;
-	PF("TIL!!!!\n");
-	DUMP(x);
-	ASSERT(IS_i(x),"til: arg must be int");
-	acc = xisz(AS_i(x,0));
-	for(i=0;i<AS_i(x,0);i++) {
-		EL(acc,int,i)=i;
-	}
-	acc->n=i;
+	VP acc;int i;int typerr=-1;
+	PF("TIL!!!!\n"); DUMP(x);
+	VARY_EL(x, 0, 
+		{ __typeof__(_x) i; acc=xalloc(x->t,_x); acc->n=_x; for(i=0;i<_x;i++) { EL(acc,__typeof__(i),i)=i; } }, 
+		typerr);
+	IF_RET(typerr>-1, EXC(Tt(type), "til arg must be numeric", x, 0));
 	DUMP(acc);
 	return acc;
 }
@@ -512,7 +508,7 @@ VP mkproj(int type, void* func, VP left, VP right) {
 	return pv;
 }
 VP apply(VP x,VP y) {
-	VP res=NULL;int i,typerr=0;
+	VP res=NULL;int i,typerr=-1;
 	PF("apply\n");DUMP(x);DUMP(y);
 	if(DICT(x)) {
 		VP k=KEYS(x),v=VALS(x);I8 found;

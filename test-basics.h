@@ -135,4 +135,8 @@
 		DUMP(b);
 		ASSERT(_equal(a,b)&&b->n==2&&AS_b(b,0)==9,"cbb");
 		xfree(a);xfree(b);
+
+		PFW({
+		ASSERT(_equal(til(xb(3)),xbn(3,0,1,2)),"til b");
+		});
 	}
