@@ -58,29 +58,65 @@ char* repr_p(VP x,char* s,size_t sz) {
 	return s;
 }
 */
-char* repr_t(VP x,char* s,size_t sz) {
-	int i;int tag;
-	APF(sz,"[ ",0);
-	for(i=0;i<x->n;i++){
-		tag = AS_t(x,i);
-		APF(sz,"%d#%s",tag,sfromx(tagname(tag)));
-		APF(sz,",",0);
-		// repr0(*(EL(x,VP*,i)),s,sz);
+char* repr0(VP x,char* s,size_t sz) {
+	type_info_t t;
+	if(x==NULL) { APF(sz,"/*null*/",0); return s; }
+	t=typeinfo(x->t);
+	if(0&&DEBUG) {
+		APF(sz," /*%p %s tag=%d#%s itemsz=%d n=%d rc=%d*/ ",x,t.name,
+			x->tag,(x->tag!=0 ? sfromx(tagname(x->tag)) : ""),
+			x->itemsz,x->n,x->rc);
 	}
-	APF(sz," ]",0);
+	if(x->tag!=0) 
+		APF(sz, "`%s(", sfromx(tagname(x->tag)));
+	if(t.repr) (*(t.repr)(x,s,sz));
+	if(x->tag!=0)
+		APF(sz, ")", 0);
+	return s;
+}
+char* reprA(VP x) {
+	#define BS 1024
+	char* s = calloc(1,BS);
+	s = repr0(x,s,BS);
+	APF(BS,"\n",0);
 	return s;
 }
 char* repr_l(VP x,char* s,size_t sz) {
-	int i;VP a;
-	APF(sz,"[ ",0);
-	for(i=0;i<x->n;i++){
+	int i=0, n=x->n;VP a;
+	APF(sz,"[",0);
+	for(i=0;i<n;i++){
 		a = ELl(x,i);
-		APF(sz,"%d:",i);
 		repr0(a,s,sz);
-		APF(sz,", ",0);
+		if(i!=n-1)
+			APF(sz,", ",0);
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
-	APF(sz," ]",0);
+	APF(sz,"]",0);
+	return s;
+}
+char* repr_c(VP x,char* s,size_t sz) {
+	int i=0,n=x->n,ch;
+	APF(sz,"\"",0);
+	for(;i<n;i++){
+		ch = AS_c(x,i);
+		if(ch=='"') APF(sz,"\\", 0);
+		APF(sz,"%c",ch);
+		// repr0(*(EL(x,VP*,i)),s,sz);
+	}
+	APF(sz,"\"",0);
+	return s;
+}
+char* repr_t(VP x,char* s,size_t sz) {
+	int i=0,n=x->n,tag;
+	if(n>1) APF(sz,"[",0);
+	for(;i<n-1;i++){
+		tag = AS_t(x,i);
+		APF(sz,"`%s",sfromx(tagname(tag)));
+		if(i!=n-1)
+			APF(sz,",",0);
+		// repr0(*(EL(x,VP*,i)),s,sz);
+	}
+	if(n>1) APF(sz,"]",0);
 	return s;
 }
 char* repr_x(VP x,char* s,size_t sz) {
@@ -429,26 +465,6 @@ inline VP times(VP x,VP y) {
 inline VP each(VP verb,VP noun) {
 
 }
-char* repr0(VP x,char* s,size_t sz) {
-	type_info_t t;
-	if(x==NULL) { APF(sz,"[null]",0); return s; }
-	t=typeinfo(x->t);
-	APF(sz,"[%p %s tag=%d#%s itemsz=%d n=%d rc=%d] ",x,t.name,
-		x->tag,(x->tag!=0 ? sfromx(tagname(x->tag)) : ""),
-		x->itemsz,x->n,x->rc);
-	if(t.repr) (*(t.repr)(x,s,sz));
-	return s;
-}
-char* reprA(VP x) {
-	#define BS 1024
-	char* s = calloc(1,BS);
-	s = repr0(x,s,BS);
-	APF(BS,"\n",0);
-	return s;
-}
-
-// RUNTIME!!
-
 VP cast(VP x,VP y) { 
 	// TODO cast() should short cut matching kind casts 
 	#define BUFSZ 128
