@@ -228,12 +228,12 @@ VP xrealloc(VP x,I32 newn) {
 			// PF("realloc %p %d %d %d\n", x->dyn, x->sz, newn, newsz);
 			newp = realloc(x->dyn, newsz);
 		} else {
-			// PF("calloc %d %d %d\n", x->sz, newn, newsz);
+			// PF("calloc sz=%d, n=%d, newn=%d, newsz=%d\n", x->sz, x->n, newn, newsz);
 			newp = calloc(newsz,1);
 			memmove(newp,BUF(x),x->sz);
 		}
 		if(MEM_W) {
-			MEMPF("realloc %d %p -> %d\n", x->t, x, newsz);
+			// MEMPF("realloc %d %p -> %d\n", x->t, x, newsz);
 			MEM_ALLOC_SZ += newsz;
 			MEM_REALLOCS++;
 		}
@@ -278,13 +278,17 @@ VP xfroms(const char* str) {  // character value from string - strlen helper
 const char* sfromx(VP x) { 
 	if(x==NULL)return "null";
 	return BUF(x); }
+
+// RUNTIME!!
 VP appendbuf(VP x,buf_t buf,size_t nelem) {
 	int newn;buf_t dest;
 	newn = x->n+nelem;
 	x=xrealloc(x,newn);
+	// PF("after realloc"); DUMP(x);
 	dest = ELi(x,x->n);
 	memmove(dest,buf,x->itemsz * nelem);
 	x->n=newn;
+	// PF("appendbuf newn %d\n", newn); DUMPRAW(dest, x->itemsz * newn);
 	return x;
 }
 VP append(VP x,VP y) { // append all items of y to x. if x is a general list, append pointer to y, and increase refcount.
@@ -417,14 +421,14 @@ inline int _equalm(VP x,int xi,VP y,int yi) {
 int _equal(VP x,VP y) {
 	// TODO _equal() needs to handle comparison tolerance and type conversion
 	// TODO _equal should use the new VARY_*() macros, except for general lists
-	PF("_equal\n"); DUMP(x); DUMP(y);
+	// PF("_equal\n"); DUMP(x); DUMP(y);
 	// if the list is a container for one item, we probably want to match the inner one
 	if(LIST(x) && SCALAR(x)) x=ELl(x,0);
 	if(LIST(y) && SCALAR(y)) y=ELl(y,0);
 	IF_RET(x->n != y->n, 0);
 	if(LIST(x) && LIST(y)) { ITERV(x,{ IF_RET(_equal(ELl(x,_i),ELl(y,_i))==0, 0); }); return 1; }
 	ITERV(x,{ IF_RET(memcmp(ELb(x,_i),ELb(y,_i),x->itemsz)!=0,0); });
-	PF("_equal returning 1");
+	//PF("_equal=1!\n");
 	return 1;
 }
 int _findbuf(VP x,buf_t y) {
@@ -526,13 +530,12 @@ VP mkproj(int type, void* func, VP left, VP right) {
 }
 VP apply(VP x,VP y) {
 	VP res=NULL;int i,typerr=-1;
-	PF("apply\n");DUMP(x);DUMP(y);
+	//PF("apply\n");DUMP(x);DUMP(y);
 	if(DICT(x)) {
 		VP k=KEYS(x),v=VALS(x);I8 found;
 		if(k==NULL || v==NULL) return NULL;
 		res=xi0();
 		if(IS_x(y)) {
-			loopy:
 			ITERV(y,{
 				res=match(ELl(y,_i),k);
 				PF("context match\n");DUMP(res);
@@ -586,12 +589,13 @@ VP apply(VP x,VP y) {
 			// if you index with one item, return just that item
 			// generally you would receive a list back
 			// this may potentially become painful later on 
-			i = AS_i(y,0); VP tmp = ELl(x,i); xref(tmp); return tmp;
+			i = AS_i(y,0); 
+			IF_RET(i>=x->n, EXC(Tt(index),"index out of range",x,y));
+			VP tmp = ELl(x,i); xref(tmp); return tmp;
 		} else {
 			res=xalloc(x->t,y->n);
 			VARY_EACH(y,appendbuf(res,ELi(x,_x),1),typerr);
-			PF("apply VARY_EACH after\n");
-			DUMP(res);
+			//PF("apply VARY_EACH after\n"); DUMP(res);
 			if(typerr>-1) return EXC(Tt(type),"cant use y as index into x",x,y);
 			return res;
 			/*
