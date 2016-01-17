@@ -325,9 +325,10 @@ VP append(VP x,VP y) { // append all items of y to x. if x is a general list, ap
 	}
 	if(LIST(x)) { 
 		// PF("append %p to list %p\n", y, x); DUMP(x);
-		x=xrealloc(x,x->n++);
+		x=xrealloc(x,x->n+1);
 		xref(y);
-		EL(x,VP,x->n-1)=y;
+		EL(x,VP,x->n)=y;
+		x->n++;
 		// PF("afterward:\n"); DUMP(x);
 	} else {
 		buf_t dest;
