@@ -677,6 +677,58 @@ int _tagnums(const char* name) {
 	xfree(s);
 	return t;
 }
+
+// MATCHING
+
+VP nest(VP x,VP y) {
+	int i; VP st, cur, newcur; // result stack
+	if(y->n<2)return EXC(Tt(nest),"nest y must be 2 (start/end) or 3 (start/end/escape) values ",x,y);
+	PF("nest\n"); DUMP(x); DUMP(y);
+	st=xl0();
+	cur=xl0();
+	cur->next=(buf_t)st;
+	append(st,cur);
+	for(i=0;i<x->n;i++){
+		PF("nest state for iter %d\n", i);
+		DUMP(st);
+		DUMP(cur);
+		if(_equalm(x,i,y,0)) {
+			PF("got start at %d\n", i);
+			if(cur->n) {
+				newcur=xl0();
+				newcur->next=(buf_t)cur;
+				append(cur, newcur);
+				cur=newcur;
+			}
+			append(cur,apply(x,xi(i))); // TODO need a shortcut like applyi(VP,int) - too slow
+		}
+		else if(y->n==3&&_equalm(x,i,y,2)) // escape char; skip
+			i+=2;
+		else if(_equalm(x,i,y,1)) {
+			if(cur->n==0) 
+				return EXC(Tt(nest),"nest matched end without start",x,y)
+			else {
+				PF("found end, unpacking %d\n", st->n-1);
+				append(cur,apply(x,xi(i))); // TODO need a shortcut like applyi(VP,int) - too slow
+				if(cur->next) {
+					PF("adopting cur\n");
+					cur=(VP)cur->next;
+					DUMP(cur);
+				}
+				PF("ending unpacked:\n");
+				DUMP(cur);
+			}
+		}  else {
+			// TODO need an apply shortcut for C types like applyi(VP,int) - too slow otherwise
+			newcur=apply(x,xi(i));
+			PF("nest appending elem %d\n", i);
+			DUMP(newcur);
+			append(cur,newcur);
+		}
+	}
+	return st;
+}
+
 inline void matchanyof_(const VP obj,const VP pat,const int max_match,int* n_matched,int* matchidx) {
 	int i,j;VP item,rule,tmp;
 	int submatches;
@@ -1279,22 +1331,69 @@ void test_json() {
 	mask=xcsz(256);
 	appendbuf(mask,(buf_t)&cc,256);
 	DUMP(mask);
-	strncpy(str,"[[\"abc\",5,[\"def\"],6,[7,[8,9]]]]",256);
-	jsrc=xfroms(str);
-	DUMP(jsrc);
+	*/
 	PFW({
-	res=apply(mask,cast(jsrc,Tt(byte)));
-	});
+	strncpy(str,"[[\"abc\",5,[\"def\"],6,[7,[8,9]]]]",256);
+	jsrc=split(xfroms(str),xc0());
+	DUMP(jsrc);
+	res=nest(jsrc,xln(2,xfroms("["),xfroms("]")));
+	//res=apply(mask,cast(jsrc,Tt(byte)));
 	DUMP(res);
+	});
+}
+void test_nest() {
+	VP a,b,c;
+	a=xin(3,1,2,3);
+	b=xin(2,1,3);
+	c=nest(a,b);
+	PF("C:\n");
+	DUMP(c);
+	ASSERT(_equal(c, xl(xln(3, xi(1), xi(2), xi(3)))), "nest 0");
+	a=xin(5,9,0,0,0,8);
+	b=xin(2,9,8);
+	c=nest(a,b);
+	DUMP(c);
+	ASSERT(_equal(c,xln(5,xi(9),xi(0),xi(0),xi(0),xi(8))),"nest 1");
+	a=xin(5,9,0,0,0,8);
+	b=xin(2,6,6);
+	c=nest(a,b);
+	PF("nest2:\n");
+	DUMP(c);
+	ASSERT(_equal(c,xln(5,xi(9),xi(0),xi(0),xi(0),xi(8))),"nest 2");
+	a=xin(5,9,1,0,2,8);
+	b=xin(2,1,2);
+	PF("nest3 call:\n");
+	c=nest(a,b);
+	DUMP(c);
+	ASSERT(_equal(c,xln(3,xi(9),xln(3,xi(1),xi(0),xi(2)),xi(8))),"nest 3");
+	a=xin(5,9,1,0,2,8);
+	b=xin(2,2,8);
+	PF("nest4 call:\n");
+	c=nest(a,b);
+	DUMP(c);
+	ASSERT(_equal(c,xln(4,xi(9),xi(1),xi(0),xln(2,xi(2),xi(8)))),"nest 4");
+	a=xin(7,9,1,1,0,2,2,8);
+	b=xin(2,1,2);
+	PF("nest5 call:\n");
+	c=nest(a,b);
+	DUMP(c);
+	ASSERT(_equal(c,xln(3, 
+		xi(9), 
+			xln(3, xi(1), 
+					xln(3, xi(1), xi(0), xi(2)), 
+				xi(2)), 
+		xi(8))),"nest 5");
+	xfree(a);xfree(b);xfree(c);
 }
 void tests() {
 	int i;
 	test_basics();
-	net();
-	exit(1);
-	test_json();
+	test_nest();
 	test_match();
+	test_json();
+	exit(1);
 	test_proj_thr();
+	net();
 	if(MEM_W) {
 		PF("alloced = %llu, freed = %llu\n", MEM_ALLOC_SZ, MEM_FREED_SZ);
 	}
