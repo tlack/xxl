@@ -19,10 +19,8 @@
 		ASSERT(_equal(a,b)==0,"_equal4");
 		ASSERT(_equal(b,a)==0,"_equal5");
 		c=xi(0);
-		PFW({
 		DUMP(apply(a,c));
 		DUMP(b);
-		});
 		ASSERT(_equal(apply(a,c),b)==1,"apply eq 0");
 		xfree(b); 
 		xfree(c);
@@ -71,13 +69,11 @@
 		ASSERT(_contains(a,xfroms("tes"))==0,"str contains 1");
 		ASSERT(_equal(take(xin(3,1,2,3),xi(1)),xi(1)),"take 0");
 		ASSERT(_equal(take(xin(3,1,2,3),xi(2)),xin(2,1,2)),"take 1");
-		PFW({
 		ASSERT(_equal(take(xin(3,1,2,3),xi(-2)),xin(2,2,3)),"take 2");
 		ASSERT(_equal(take(xin(3,1,2,3),xi(-1)),xi(3)),"take 3");
 		ASSERT(_equal(take(xin(3,1,2,3),xi(0)),xi0()),"take 4");
 		ASSERT(_equal(take(xin(3,1,2,3),xi(4)),xi0()),"take 5");
 		ASSERT(_equal(take(xin(3,1,2,3),xi(3)),xin(3,1,2,3)),"take 5");
-		});
 		upsert(a,xfroms("test"));
 		ASSERT(a->n==3,"upsert 1");
 		b = xi(101);
@@ -89,13 +85,11 @@
 		ASSERT(_find(a,xfroms("est"))==-1,"_find 1");
 		ASSERT(_find(a,xfroms("tes"))==-1,"_find 2");
 		xfree(a);
-		PFW({
 		a = xd0();
 		b = apply(a,xfroms("a"));
 		DUMP(a);
 		DUMP(b);
 		ASSERT(b==NULL,"apply 0");
-		});
 		b = xln(2,xi(1),xi(10)); // key:value dict
 		append(a,b);
 		xfree(b);
@@ -136,7 +130,6 @@
 		ASSERT(_equal(a,b)&&b->n==2&&AS_b(b,0)==9,"cbb");
 		xfree(a);xfree(b);
 
-		PFW({
 		ASSERT(_equal(til(xb(3)),xbn(3,0,1,2)),"til b");
-		});
+		ASSERT(_equal(til(xo(3)),xon(3,0,1,2)),"til o");
 	}
