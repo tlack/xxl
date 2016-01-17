@@ -623,10 +623,10 @@ VP apply(VP x,VP y) {
 
 // TAG STUFF:
 
-VP tagwrap(VP tag,VP x) {
+inline VP tagwrap(VP tag,VP x) {
 	return entag(xln(1, x),tag);
 }
-VP tagv(const char* name, VP x) {
+inline VP tagv(const char* name, VP x) {
 	return entags(xln(1,x),name);
 }
 inline VP entag(VP x,VP t) {
@@ -651,7 +651,7 @@ inline VP tagname(const I32 tag) {
 	// DUMP(res);
 	return res;
 }
-const char* tagnames(const I32 tag) {
+inline const char* tagnames(const I32 tag) {
 	return sfromx(tagname(tag));
 }
 inline int _tagnum(const VP s) {
@@ -664,7 +664,7 @@ inline int _tagnum(const VP s) {
 	// DUMP(TAGS);
 	return i;
 }
-int _tagnums(const char* name) {
+inline int _tagnums(const char* name) {
 	int t;VP s;
 	s=xfroms(name);
 	t=_tagnum(s);
