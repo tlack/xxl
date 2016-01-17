@@ -36,16 +36,16 @@
 	res=match(xin(2,5,6),tagv("greedy",xin(1,5)));
 	ASSERT(_equal(res,xin(1,0)),"mh0");
 	res=match(xin(2,5,6),tagv("greedy",xin(1,6)));
-	ASSERT(_equal(res,xin(1,1)),"mh0");
+	ASSERT(_equal(res,xin(1,1)),"mh0a");
+
 	res=match(xin(3,5,5,7),tagv("greedy",xin(1,5)));
-	ASSERT(_equal(res,xin(2,0,1)),"mh0");
+	ASSERT(_equal(res,xin(2,0,1)),"mh0b");
 	res=match(xin(4,3,3,9,9),tagv("greedy",xin(1,9)));
 	ASSERT(_equal(res,xin(2,2,3)),"mh1");
 	res=match(xin(4,2,9,2,2),tagv("greedy",xin(1,9)));
 	ASSERT(_equal(res,xin(1,1)),"mh2");
 
 	res=match(xin(4,2,1,1,1),tagv("greedy",xin(1,1)));
-	DUMP(res);
 	ASSERT(_equal(res,xin(3,1,2,3)),"mh3");
 
 	res=match(xin(3,1,1,2),tagv("start",xin(1,1)));
@@ -69,13 +69,11 @@
 		tagv("anyof", xin(2,3,4))));
 	ASSERT(_equal(res,xin(3,0,1,2)),"mp");
 
-	PFW({
 	res=match(xin(4,9,8,7,6),tagv("greedy", xln(3,
 		tagv("anyof", xin(2,9,8)),
 		xi0(),
 		tagv("anyof", xin(1,6)))));
-	ASSERT(_equal(res,xin(4,0,1,2,3)),"mq");
-	});
+		ASSERT(_equal(res,xin(4,0,1,2,3)),"mq");
 
 	ASSERT(_equal(match(xin(4,1,2,3,4),xin(4,1,2,3,4)),xin(4,0,1,2,3)),"m0");
 	ASSERT(_equal(match(xin(4,1,2,3,4),xin(2,1,2)),    xin(2,0,1)),"m1");
@@ -107,26 +105,25 @@
 		match(
 			xin(5,5,8,7,6,4),
 			tagv("anyof",xin(3,1,1,1))
-		), xi0()), "m7");
+		), xi0()), "m7b");
 	ASSERT(_equal(
 		apply(xin(5,5,8,7,6,4), match(
 			xin(5,5,8,7,6,4),
 			tagv("anyof",xin(4,9,8,7,6))
 		)), xin(3,8,7,6)), "m8");
-
 	ASSERT(_equal(
 		match(xin(5,1,2,3,4,1),
 			tagv("greedy",
-				xln(3, xi(1), tagv("anyof",xin(3,2,3,4)), xi(1))
+				xln(3, xi(1), 
+						tagv("anyof",xin(3,2,3,4)), 
+					xi(1))
 			)), xin(5,0,1,2,3,4)), "m9");
-
 	ASSERT(_equal(
 		match(
 			xln(3,xfroms("\""),xfroms("blah"),xfroms("\"")),
 			tagv("greedy",
 				xln(3,xfroms("\""),xc0(),xfroms("\"")))
 		),xin(3,0,1,2)), "m10");
-
 	ASSERT(_equal(
 		match(
 			xln(4,xi(100),xfroms("\""),xfroms("blah"),xfroms("\"")),
