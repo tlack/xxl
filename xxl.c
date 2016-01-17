@@ -623,15 +623,6 @@ VP apply(VP x,VP y) {
 			//PF("apply VARY_EACH after\n"); DUMP(res);
 			if(typerr>-1) return EXC(Tt(type),"cant use y as index into x",x,y);
 			return res;
-			/*
-			res=xalloc(x->t,y->n);
-			ITERV(cast(y,Tt(int)),{ 
-				i=AS_i(y,_i); if(i < x->n) {
-					appendbuf(res,ELi(x,i),1);
-				} else { PF("out of bounds %d %d\n", i, x->n); }
-			});
-			return res;
-			*/
 		}
 	}
 }
