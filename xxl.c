@@ -346,19 +346,6 @@ VP append(VP x,VP y) { // append all items of y to x. if x is a general list, ap
 VP appendfree(VP x,VP y) {
 	append(x,y); xfree(y); return x;
 }
-VP take(VP x,VP y) {
-	VP res;
-	int typerr=-1;
-	size_t st,end; //TODO slice() support more than 32bit indices
-	// PF("take args\n"); DUMP(x); DUMP(y);
-	IF_RET(!NUM(y), EXC(Tt(type),"slice arg must be numeric",x,y));	
-	VARY_EL(y, 0, {if (_x<0) { st=x->n+_x; end=x->n; } else { st=0; end=_x; }}, typerr);
-	IF_RET(typerr>-1, EXC(Tt(type),"cant use y as slice index into x",x,y));  
-	IF_RET(end>x->n, xalloc(x->t, 0));
-	res=xalloc(x->t,end-st); res=appendbuf(res,ELi(x,st),end-st);
-	// PF("take result\n"); DUMP(res);
-	return res;
-}
 VP upsert(VP x,VP y) {
 	if(_find(x,y)==-1) append(x,y); return x;
 }
@@ -395,6 +382,19 @@ VP take_(VP x,int i) {
 	memcpy(ELi(res,0),ELi(x,i),i*x->itemsz);
 	return res;
 }
+VP take(VP x,VP y) {
+	VP res;
+	int typerr=-1;
+	size_t st,end; //TODO slice() support more than 32bit indices
+	// PF("take args\n"); DUMP(x); DUMP(y);
+	IF_RET(!NUM(y), EXC(Tt(type),"slice arg must be numeric",x,y));	
+	VARY_EL(y, 0, {if (_x<0) { st=x->n+_x; end=x->n; } else { st=0; end=_x; }}, typerr);
+	IF_RET(typerr>-1, EXC(Tt(type),"cant use y as slice index into x",x,y));  
+	IF_RET(end>x->n, xalloc(x->t, 0));
+	res=xalloc(x->t,end-st); res=appendbuf(res,ELi(x,st),end-st);
+	// PF("take result\n"); DUMP(res);
+	return res;
+}
 VP replaceleft(VP x,int n,VP replace) { // replace first i values with just 'replace'
 	int i;
 	ASSERT(LIST(x),"replaceleft arg must be list");
@@ -405,6 +405,31 @@ VP replaceleft(VP x,int n,VP replace) { // replace first i values with just 'rep
 	EL(x,VP,0)=replace;
 	x->n=x->n-i;
 	return x;
+}
+VP split(VP x,VP tok) {
+	PF("split");DUMP(x);DUMP(tok);
+	VP tmp,tmp2;int locs[1024]; int typerr=-1;
+
+	// special case for empty or null tok.. split vector into list
+	if(tok->n==0) {
+		tmp = xl0();
+		VARY_EACH(x,({
+			PF("in split vary_each %c\n",_x);
+			tmp2=xalloc(x->t, 1);
+			tmp2=appendbuf(tmp2,(buf_t)&_x,1);
+			tmp=append(tmp,tmp2);
+			DUMP(tmp2);
+			DUMP(tmp);
+		}),typerr);
+		IF_RET(typerr>-1, EXC(Tt(type),"can't split that type", x, tok));
+		PF("split returning\n");DUMP(tmp);
+		return tmp;
+	}
+	VARY_EACH(x,({
+		// if this next sequence matches tok,
+		//tmp = match(_x, tok);
+		//DUMP(tmp); // nyi
+	}), typerr);
 }
 inline int _equalm(VP x,int xi,VP y,int yi) {
 	// PF("comparing %p to %p\n", ELi(x,xi), ELi(y,yi));
