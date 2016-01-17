@@ -164,8 +164,8 @@ VP xalloc(type_t t,I32 initn) {
 			}
 			*/
 			if(MEM_RECENT[i]!=0 && 
-				 (VP)MEM_RECENT[i]->sz > sz &&
-				 (VP)MEM_RECENT[i]->sz < (sz * 20)) {
+				 ((VP)MEM_RECENT[i])->sz > sz &&
+				 ((VP)MEM_RECENT[i])->sz < (sz * 20)) {
 				a=MEM_RECENT[i];
 				MEM_RECENT[i]=0;
 				MEM_GOBBLES++;
