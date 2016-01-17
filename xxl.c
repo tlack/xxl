@@ -156,37 +156,31 @@ VP xalloc(type_t t,I32 initn) {
 	a=NULL;g=0;
 	if (GOBBLERSZ > 0) {
 		WITHLOCK(mem, {
-		for(i=0;i<GOBBLERSZ;i++) {
-			/*
-			if(DEBUG && MEM_W &&
-				 MEM_RECENT[i]!=0) {
-				printf("%d. %d\n", i, (VP)MEM_RECENT[i]->sz);
-			}
-			*/
-			if(MEM_RECENT[i]!=0 && 
-				 ((VP)MEM_RECENT[i])->sz > sz &&
-				 ((VP)MEM_RECENT[i])->sz < (sz * 20)) {
-				a=MEM_RECENT[i];
-				MEM_RECENT[i]=0;
-				MEM_GOBBLES++;
-				g=i;
-				memset(BUF(a),0,a->sz);
-				break;
-			}
-		}
+			FOR(0,GOBBLERSZ,({
+				if(MEM_RECENT[_i]!=0 && 
+					 ((VP)MEM_RECENT[_i])->sz > sz &&  // TODO xalloc gobbler should bracket sizes
+					 ((VP)MEM_RECENT[_i])->sz < (sz * 20)) {
+					a=MEM_RECENT[_i];
+					MEM_RECENT[_i]=0;
+					MEM_GOBBLES++;
+					g=_i;
+					memset(BUF(a),0,a->sz);
+					break;
+				}
+			}));
 		});
 	} 
 	if(a==NULL)
 		a = calloc(sizeof(struct V)+sz,1);
 	if (MEM_W) {
 		WITHLOCK(mem, {
-		MEMPF("%salloc %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",(g==1?"GOBBLED! ":""),t,a,sizeof(struct V)+sz,initn,itemsz,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
-		MEM_ALLOC_SZ += sizeof(struct V)+sz;
-		MEM_ALLOCS++;
-		for(i=0;i<N_MEM_PTRS;i++) {
-			if (MEM_PTRS[i]==0)
-				MEM_PTRS[i]=a;
-		}
+			MEMPF("%salloc %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",(g==1?"GOBBLED! ":""),t,a,sizeof(struct V)+sz,initn,itemsz,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
+			MEM_ALLOC_SZ += sizeof(struct V)+sz;
+			MEM_ALLOCS++;
+			for(i=0;i<N_MEM_PTRS;i++) {
+				if (MEM_PTRS[i]==0)
+					MEM_PTRS[i]=a;
+			}
 		});
 	}
 	a->t=t;a->tag=0;a->n=0;a->rc=1;a->cap=initn;a->sz=sz;a->itemsz=itemsz;
