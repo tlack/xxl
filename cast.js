@@ -4,8 +4,8 @@ var tmpls=[
 	"if(x->t=={{x0}}&&(typenum=={{y0}}||typetag==tag{{y2}})) { // {{x2}} -> {{y2}} \n" +
 	"  {{x3}} from;{{y3}} to; res=xalloc({{y0}},x->n); \n"+ 
 	"  FOR(0,x->n,{from=AS_{{x1}}(x,_i);\n" +
-  "  to=from; \n"+
-	"  appendbuf(res,&to,1); }); }\n"
+  "    to=from; \n"+
+	"    appendbuf(res,(buf_t)&to,1); }); }\n"
 ];
 console.log(lib.prelude);
 lib.each(lib.types,function(tx) {
