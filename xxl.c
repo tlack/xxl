@@ -920,12 +920,19 @@ inline int match_(const VP obj_,int ostart, const VP pat_, int pstart,
 	if(PF_LVL) { FOR(0,(*n_matched),printf("%d ",matchidx[_i])); printf("\n"); }
 	return gotmatch;
 }
+int matchpass(VP obj,VP pat) { 
+	// degenerate version of match() when we dont care about pass/fail, not results
+	int n_matches=0;
+	int matchidx[1024];
+	match_(obj,0,pat,0,sizeof(matchidx)/sizeof(int),0,&n_matches,&matchidx);
+	return n_matches;
+}
 VP match(VP obj,VP pat) {
 	int n_matches=0;
 	int matchidx[1024];
 	VP acc;
 	match_(obj,0,pat,0,sizeof(matchidx)/sizeof(int),0,&n_matches,&matchidx);
-	acc=xisz(n_matches);
+	acc=xisz(n_matches); // TODO match() limited to 4bil items due to int as idx
 	if(n_matches)
 		appendbuf(acc,(buf_t)&matchidx,n_matches);
 	PF("match() obj, pat, and result:\n");
