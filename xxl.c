@@ -394,7 +394,9 @@ VP take(VP x,VP y) {
 	VARY_EL(y, 0, {if (_x<0) { st=x->n+_x; end=x->n; } else { st=0; end=_x; }}, typerr);
 	IF_RET(typerr>-1, EXC(Tt(type),"cant use y as slice index into x",x,y));  
 	IF_RET(end>x->n, xalloc(x->t, 0));
-	res=xalloc(x->t,end-st); res=appendbuf(res,ELi(x,st),end-st);
+	res=xalloc(x->t,end-st);
+	if(end-st > 0) 
+		res=appendbuf(res,ELi(x,st),end-st);
 	// PF("take result\n"); DUMP(res);
 	return res;
 }
@@ -409,23 +411,65 @@ VP replaceleft(VP x,int n,VP replace) { // replace first i values with just 'rep
 	x->n=x->n-i;
 	return x;
 }
+VP over(VP x,VP y) {
+	PF("over");DUMP(x);DUMP(y);
+	IF_RET(!IS_2(y) && !IS_p(y), EXC(Tt(type),"over y must be func or projection",x,y));
+	IF_RET(x->n==0, xalloc(x->t, 0));
+	VP last,next;
+	last=apply(x,xi(0));
+	FOR(1,x->n,({
+		next=apply(x, xi(_i));
+		last=apply(apply(y,last),next);
+	}));
+	return last;
+}
+VP join(VP x,VP y) {
+	VP res;
+	PF("join");DUMP(x);DUMP(y);
+	int n = x->n + y->n;
+	if(x->t==y->t) {
+		res=xalloc(x->t, n);
+		appendbuf(res, BUF(x), x->n);
+		appendbuf(res, BUF(y), y->n);
+		xfree(x); 
+	} else {
+		if(LIST(x))
+			res=append(x,y);
+		else {
+			res=xlsz(n);
+			res=append(res,x);
+			res=append(res,y);
+			xfree(x);
+		}
+	}
+	xfree(y);
+	PF("join result");DUMP(res);
+	return res;
+}
+VP splice(VP x,VP idx,VP replace) {
+	int first = AS_i(idx,0),last=first+idx->n;
+	VP acc1,acc2;
+	PF("splice %d %d..%d",x->n, first,last);DUMP(x);DUMP(idx);DUMP(replace);
+	return over(
+		xln(3,take_(x,first),replace,drop_(x,last)),
+		x2(&join)
+	);
+}
 VP split(VP x,VP tok) {
-	PF("split");DUMP(x);DUMP(tok);
+	// PF("split");DUMP(x);DUMP(tok);
 	VP tmp,tmp2;int locs[1024]; int typerr=-1;
 
 	// special case for empty or null tok.. split vector into list
 	if(tok->n==0) {
 		tmp = xl0();
 		VARY_EACH(x,({
-			PF("in split vary_each %c\n",_x);
+			// PF("in split vary_each %c\n",_x);
 			tmp2=xalloc(x->t, 1);
 			tmp2=appendbuf(tmp2,(buf_t)&_x,1);
 			tmp=append(tmp,tmp2);
-			DUMP(tmp2);
-			DUMP(tmp);
 		}),typerr);
 		IF_RET(typerr>-1, EXC(Tt(type),"can't split that type", x, tok));
-		PF("split returning\n");DUMP(tmp);
+		// PF("split returning\n");DUMP(tmp);
 		return tmp;
 	}
 	VARY_EACH(x,({
@@ -433,6 +477,7 @@ VP split(VP x,VP tok) {
 		//tmp = match(_x, tok);
 		//DUMP(tmp); // nyi
 	}), typerr);
+	return tmp;
 }
 inline int _equalm(VP x,int xi,VP y,int yi) {
 	// PF("comparing %p to %p\n", ELi(x,xi), ELi(y,yi));
@@ -456,7 +501,7 @@ int _equal(VP x,VP y) {
 	IF_RET(x->n != y->n, 0);
 	if(LIST(x) && LIST(y)) { ITERV(x,{ IF_RET(_equal(ELl(x,_i),ELl(y,_i))==0, 0); }); return 1; }
 	ITERV(x,{ IF_RET(memcmp(ELb(x,_i),ELb(y,_i),x->itemsz)!=0,0); });
-	//PF("_equal=1!\n");
+	// PF("_equal=1!\n");
 	return 1;
 }
 int _findbuf(VP x,buf_t y) {
@@ -495,8 +540,11 @@ inline VP times(VP x,VP y) {
 	ITER2(x,y,{ append(r,xi(_x*_y)); });
 	return r;
 }
-inline VP each(VP verb,VP noun) {
-
+inline VP each(VP obj,VP fun) {
+	VP tmp, acc; int n=obj->n;
+	acc=xalloc(obj->t, obj->n);
+	FOR(0,n,({ tmp=apply(obj, xi(_i)); append(acc, apply(fun, tmp)); }));
+	return acc;
 }
 VP cast(VP x,VP y) { 
 	// TODO cast() should short cut matching kind casts 
@@ -515,7 +563,22 @@ VP capacity(VP x) {
 	return xin(1,x->cap);
 }
 VP itemsz(VP x) {
-	return xin(1,x->itemsz);
+	return xi(x->itemsz);
+}
+VP info(VP x) {
+	VP res;
+	type_info_t t;
+	t=typeinfo(x->t);
+	res=xd0();
+	res=assign(res,Tt(typenum),xi(x->t));
+	res=assign(res,Tt(type),xfroms(t.name));
+	res=assign(res,Tt(len),len(x));
+	res=assign(res,Tt(capacity),capacity(x));
+	res=assign(res,Tt(itemsz),itemsz(x));
+	res=assign(res,Tt(alloced),xi(x->alloc));
+	res=assign(res,Tt(baseptr),xi((int)x));
+	res=assign(res,Tt(memptr),xi((int)BUF(x)));
+	return res;
 }
 VP til(VP x) {
 	VP acc;int i;int typerr=-1;
@@ -599,7 +662,7 @@ VP apply(VP x,VP y) {
 		// if its monadic
 			// if we have one arg already, call x[left], and then apply result with y
 			// i think this is right..
-		Proj* p; p=ELi(x,0);
+		Proj* p; p=(Proj*)ELi(x,0);
 		if(!p->left) p->left=y; else if (!p->right) p->right=y;
 		if(p->type==1 && p->left) return (*p->f1)(p->left);
 		if(p->type==2 && p->left && p->right) return (*p->f2)(p->left,p->right);
@@ -1005,22 +1068,12 @@ VP eval0(VP ctx,VP code,int level) {
 VP mklexer(const char* chars, const char* label) {
 	VP res = xlsz(2);
 	return xln(2,
-		entags(xln(1,
-			entags(xln(1,entags(xfroms(chars),"anyof")),"raw")
+		entags(xln(2,
+			Tt(raw),
+			entags(split(xfroms(chars),xl0()),"anyof")
 		),"greedy"),
 		mkproj(2,&labelitems,xfroms(label),0)
 	);
-}
-VP mkint(VP x) {
-	PF("mkname\n");DUMP(x);
-	return entags(flatten(x),"name");
-}
-VP mkname(VP x) {
-	PF("mkname\n");DUMP(x);
-	return entags(flatten(x),"name");
-}
-VP mkcomment(VP x) {
-	return entags(flatten(x),"comment");
 }
 VP mkstr(VP x) {
 	return entags(flatten(x),"string");
@@ -1028,7 +1081,11 @@ VP mkstr(VP x) {
 
 // CONTEXTS:
 
-VP mkctx() {
+VP mkctx(VP stackframes,VP code) {
+	VP res;
+	res=take(stackframes,xi(stackframes->n));
+	append(res,code);
+	return code;
 }
 VP ctx_resolve(VP ctx) {
 
