@@ -27,7 +27,7 @@ if [ "x$BUILDH" = "xyes" ]; then
 fi
 
 $CC $DEFS $WARN $LIBS $ARCH \
-	xxl.c -o ./xxl 2>&1 \
+	xxl.c net.c -o ./xxl 2>&1 \
 	&& ./xxl
 
 
