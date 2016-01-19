@@ -81,6 +81,10 @@ char* reprA(VP x) {
 	APF(BS,"\n",0);
 	return s;
 }
+VP repr(VP x) {
+	char* s = reprA(x);
+	return xfroms(s);
+}
 char* repr_l(VP x,char* s,size_t sz) {
 	int i=0, n=x->n;VP a;
 	APF(sz,"[",0);
