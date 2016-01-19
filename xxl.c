@@ -93,6 +93,7 @@ char* repr_l(VP x,char* s,size_t sz) {
 		repr0(a,s,sz);
 		if(i!=n-1)
 			APF(sz,", ",0);
+			// APF(sz,", ",0);
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
 	APF(sz,"]",0);
@@ -104,7 +105,8 @@ char* repr_c(VP x,char* s,size_t sz) {
 	for(;i<n;i++){
 		ch = AS_c(x,i);
 		if(ch=='"') APF(sz,"\\", 0);
-		APF(sz,"%c",ch);
+		if(ch=='\n') APF(sz,"\\n", 0);
+		else APF(sz,"%c",ch);
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
 	APF(sz,"\"",0);
@@ -113,7 +115,7 @@ char* repr_c(VP x,char* s,size_t sz) {
 char* repr_t(VP x,char* s,size_t sz) {
 	int i=0,n=x->n,tag;
 	if(n>1) APF(sz,"[",0);
-	for(;i<n-1;i++){
+	for(;i<n;i++){
 		tag = AS_t(x,i);
 		APF(sz,"`%s",sfromx(tagname(tag)));
 		if(i!=n-1)
@@ -137,14 +139,19 @@ char* repr_x(VP x,char* s,size_t sz) {
 	return s;
 }
 char* repr_d(VP x,char* s,size_t sz) {
-	int i;
+	int i, n;
 	VP k=KEYS(x),v=VALS(x);
 	if (!k || !v) { APF(sz,"[null]",0); return s; }
-	APF(sz,"[ keys (%d): ",k->t);
-	repr0(k,s,sz);
-	APF(sz," ],[ values (%d): ",v->t);
-	repr0(v,s,sz);
-	APF(sz," ]",0);
+	APF(sz,"[",0);
+	n=k->n;
+	for(i=0;i<n;i++) {
+		repr0(apply(k,xi(i)), s, sz);
+		APF(sz,":",0);
+		repr0(apply(v,xi(i)), s, sz);
+		if(i!=n-1)
+			APF(sz,",",0);
+	}
+	APF(sz,"]",0);
 	return s;
 }
 #include "repr.h"
