@@ -28,7 +28,7 @@
 	} \
 })
 /* Debugging: */
-#define APF(sz,fmt,...) snprintf(s+strlen(s),sz-strlen(s),fmt,__VA_ARGS__);
+#define APF(sz,fmt,...) ({ snprintf(s+strlen(s),sz-strlen(s),fmt,__VA_ARGS__); s; })
 #define ASSERT(cond,txt) ({ if (!(cond)) { printf("ASSERT: %s\n", txt); raise(SIGABRT); exit(1); } })
 #define P0(fmt,x) ({ typeof(x) xx=x; char* s=malloc(1024);snprintf(fmt,1024,xx); xx; })
 #define PF(...) (DEBUG && PF_LVL && ({ FOR(0,PF_LVL,printf("  ")); printf(__VA_ARGS__);}))
@@ -37,34 +37,35 @@
 #define PFW(stmt) ({ printf("PFW\n"); PFIN(); stmt; PFOUT(); })
 #define MEMPF(...) (DEBUG && MEM_W && PF(__VA_ARGS__))
 #if DEBUG 
-	#define DUMP(x) ({ char* s = reprA(x); PF("%s\n", s); free(s); })
-#else
-	#define DUMP(x) ({})
-#endif
-#if debug
+	#define DUMP(x) ({ char* s = reprA(x); PF("%s", s); free(s); })
 	#define DUMPRAW(x,sz) ({ printf("%p ",x); FOR(0,sz,printf("%d ",x[_i])); printf("\n"); })
 #else
+	#define DUMP(x) ({})
 	#define DUMPRAW(x,sz) ({})
 #endif
 
 /* Element access and type checks*/
-#define BUF(v) ((buf_t)( (v)->alloc ? (v->dyn) : (buf_t)&((v)->st) ))
-#define EL(v,type,n) (((type*)BUF(v))[n])
-#define ELl(v,n) ((EL(v,VP,n)))
-#define ELb(v,n) ELsz(v,1,n)
-#define ELi(v,n) ((BUF(v))+((v->itemsz)*n))
-#define ELsz(v,sz,n) ((BUF(v))+(sz*n))
+#define BUF(v) ((buf_t)( (v)->alloc ? (v->dyn) : (buf_t)&((v)->st) )) // data ptr
+#define EL(v,type,n) (((type*)BUF(v))[n])                             // ..as type, for index n
+#define ELl(v,n) ((EL(v,VP,n)))                                       // ..deref linked list item
+#define ELb(v,n) ELsz(v,1,n)                                          // ..as a byte* for index n
+#define ELi(v,n) ((BUF(v))+((v->itemsz)*n))                           // ..for index n (no type assumed)
+#define ELsz(v,sz,n) ((BUF(v))+(sz*n))                                // ..for index n, when casted to size = sz
+
+// Handy functions for manipulating values and their types
+#define SCALAR(v) ((v)->n==1)                            // is v a single value?
+#define NUM(v) (IS_b(v)||IS_i(v)||IS_l(v)||IS_o(v))      // is v an int type?
+#define LIST(v) ((v)->t==0)                              // is v a general list type?
+#define DICT(v) (IS_d(v))                                // is v a dictionary?
+#define LISTDICT(v) ((v)->t==0||IS_d(v))                 // is v a list or dictionary?
+#define ENLISTED(v) (LIST(v)&&SCALAR(v))                 // is v a single item inside a list?
+#define KEYS(v) (ELl(v,0))                               // keys for dict v
+#define VALS(v) (ELl(v,1))                               // values for dict v
+#define Ti(n) (_tagnums(#n))                             // int value for tag n (literal not string)
+#define Tt(n) (xt(_tagnums(#n)))                         // tag n (literal not string) as a scalar of type tag
+
+// create an exception value
 #define EXC(type,lbl,x,y) tagv("exception",xln(4,type,xfroms(lbl),x,y));
-#define SCALAR(v) ((v)->n==1)
-#define NUM(v) (IS_b(v)||IS_i(v)||IS_l(v)||IS_o(v))
-#define LIST(v) ((v)->t==0)
-#define LISTDICT(v) ((v)->t==0||IS_d(v))
-#define DICT(v) (IS_d(v))
-#define ENLISTED(v) (LIST(v)&&(v)->n==1)
-#define KEYS(v) (ELl(v,0))
-#define VALS(v) (ELl(v,1))
-#define Ti(n) (_tagnums(#n))
-#define Tt(n) (xt(_tagnums(#n)))
 
 #define TYD(name,type) typedef type name
 TYD(I8,unsigned char); TYD(I32,int); TYD(I64,__int64_t); TYD(I128,__int128_t);
