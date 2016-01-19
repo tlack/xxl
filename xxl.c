@@ -1183,93 +1183,119 @@ void test_match() {
 	#include"test-match.h"
 }
 void test_eval() {
-	/*
-	VP code,tmp1,tmp2,tmp3;
-	PF("test_eval\n");
-	code=entags(xl0(),"code");
-	ASSERT(code->tag==_tagnums("code"),"entags 1");
-	tmp1=xln(2,
-		xt(_tagnums("til")),
-		xi(100)
-	);
-	tmp1->tag=_tagnums("value");
-	append(code,tmp1);
-	eval(code);
-	*/
-	evalstr("til 1024");
+	printf("TEST_EVAL\n");
+	PFW({
+	ASSERT(
+		_equal(
+			evalstr("// "),
+			xl(entags(xfroms("// \n"),"comment"))
+		), "tec0");
+	ASSERT(
+		_equal(
+			evalstr("// //"),
+			xln(2,entags(xfroms("// //"),"comment"),xfroms("\n"))
+		), "tec0b");
+	ASSERT(
+		_equal(
+			evalstr("//a////z//"),
+			xln(3,
+				entags(xfroms("//a//"),"comment"),
+				entags(xfroms("//z//"),"comment"),
+				xfroms("\n"))
+		), "tec1b");
+	ASSERT(
+		_equal(
+			evalstr("//x"),
+			xl(entags(xfroms("//x\n"),"comment"))
+		), "tec1");
+	ASSERT(
+		_equal(
+			evalstr("//x//"),
+			xln(2,entags(xfroms("//x//"),"comment"),xfroms("\n"))
+		), "tec1b");
+	ASSERT(
+		_equal(
+			evalstr("//xy"),
+			xl(entags(xfroms("//xy\n"),"comment"))
+		), "tec1c");
+	ASSERT(
+		_equal(
+			evalstr("//x "),
+			xl(entags(xfroms("//x \n"),"comment"))
+		), "tec2");
+	ASSERT(
+		_equal(
+			evalstr("// x"),
+			xl(entags(xfroms("// x\n"),"comment"))
+		), "tec2b");
+	ASSERT(
+		_equal(
+			evalstr("// abc "),
+			xl(entags(xfroms("// abc \n"),"comment"))
+		), "tec3");
+	ASSERT(
+		_equal(
+			evalstr("// a\n//b"),
+			xln(2,
+				entags(xfroms("// a\n"),"comment"),
+				entags(xfroms("//b\n"),"comment"))
+		), "tec4");
+	ASSERT(
+		_equal(
+			evalstr("// abc //"),
+			xln(2,entags(xfroms("// abc //"),"comment"),xfroms("\n"))
+		), "tec5");
+	ASSERT(
+		_equal(
+			evalstr("1"),
+			xln(2,entags(xfroms("1"),"int"),xfroms("\n"))
+		), "tei0");
+	ASSERT(
+		_equal(
+			evalstr("1//blah"),
+			xln(2,
+				entags(xfroms("1"),"int"),
+				entags(xfroms("//blah\n"),"comment"))
+		), "teic0");
+	ASSERT(
+		_equal(
+			evalstr("1//blah\n2"),
+			xln(4,
+				entags(xfroms("1"),"int"),
+				entags(xfroms("//blah\n"),"comment"),
+				entags(xfroms("2"),"int"),
+				xfroms("\n")
+			)
+		), "teic0");
+	//DUMP(evalstr("// test"));
+	//evalstr("// test\nx:\"Hello!\"\ntil 1024");
+	});
 }
 void test_json() {
 	VP mask, jsrc, res; char str[256]={0};
-	I8 cc[256] = {0};
-	#define CC(n,ch_) ({ const char* x=ch_;FOR(0,strlen(x),cc[x[_i]]=n); })
-	CC('a',"abcdefghjijklmnopqrstuvwxyz");
-	CC('n',"0123456789");
-	CC('[',"[");CC(']',"]");CC('{',"{");CC('}',"}");
-	CC('c',",");CC('q',"\"");
-	FOR(0,256,printf("%d,",cc[_i]));
-	mask=xcsz(256);
-	appendbuf(mask,(buf_t)&cc,256);
-	DUMP(mask);
-	*/
-	PFW({
 	strncpy(str,"[[\"abc\",5,[\"def\"],6,[7,[8,9]]]]",256);
 	jsrc=split(xfroms(str),xc0());
 	DUMP(jsrc);
 	res=nest(jsrc,xln(2,xfroms("["),xfroms("]")));
-	//res=apply(mask,cast(jsrc,Tt(byte)));
 	DUMP(res);
-	});
+	DUMP(each(res, x1(&repr)));
 }
 void test_nest() {
 	VP a,b,c;
-	a=xin(3,1,2,3);
-	b=xin(2,1,3);
-	c=nest(a,b);
-	PF("C:\n");
-	DUMP(c);
-	ASSERT(_equal(c, xl(xln(3, xi(1), xi(2), xi(3)))), "nest 0");
-	a=xin(5,9,0,0,0,8);
-	b=xin(2,9,8);
-	c=nest(a,b);
-	DUMP(c);
-	ASSERT(_equal(c,xln(5,xi(9),xi(0),xi(0),xi(0),xi(8))),"nest 1");
-	a=xin(5,9,0,0,0,8);
-	b=xin(2,6,6);
-	c=nest(a,b);
-	PF("nest2:\n");
-	DUMP(c);
-	ASSERT(_equal(c,xln(5,xi(9),xi(0),xi(0),xi(0),xi(8))),"nest 2");
-	a=xin(5,9,1,0,2,8);
-	b=xin(2,1,2);
-	PF("nest3 call:\n");
-	c=nest(a,b);
-	DUMP(c);
-	ASSERT(_equal(c,xln(3,xi(9),xln(3,xi(1),xi(0),xi(2)),xi(8))),"nest 3");
-	a=xin(5,9,1,0,2,8);
-	b=xin(2,2,8);
-	PF("nest4 call:\n");
-	c=nest(a,b);
-	DUMP(c);
-	ASSERT(_equal(c,xln(4,xi(9),xi(1),xi(0),xln(2,xi(2),xi(8)))),"nest 4");
-	a=xin(7,9,1,1,0,2,2,8);
-	b=xin(2,1,2);
-	PF("nest5 call:\n");
-	c=nest(a,b);
-	DUMP(c);
-	ASSERT(_equal(c,xln(3, 
-		xi(9), 
-			xln(3, xi(1), 
-					xln(3, xi(1), xi(0), xi(2)), 
-				xi(2)), 
-		xi(8))),"nest 5");
+	printf("TEST_NEST\n");
+	#include"test-nest.h"
 	xfree(a);xfree(b);xfree(c);
 }
 void tests() {
 	int i;
+	VP a,b,c;
+	// xprofile_start();
 	test_basics();
-	test_nest();
 	test_match();
 	test_json();
+	test_nest();
+	test_eval();
+	// xprofile_end();
 	exit(1);
 	test_proj_thr();
 	net();
