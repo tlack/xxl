@@ -380,9 +380,34 @@ VP flatten(VP x) {
 	}
 	return res;
 }
+VP drop_(VP x,int i) {
+	VP res;
+	int st, end;
+	if(i<0) { st = 0; end=x->n-i; }
+	else { st = i; end=x->n; }
+	PF("drop_(,%d) %d %d",i, st, end);
+	DUMP(x);
+	res = xalloc(x->t,end-st);
+	DUMP(info(res));
+	if(end-st > 0) {
+		appendbuf(res, ELi(x,st), end-st);
+	}
+	PF("drop_ result\n"); DUMP(res);
+	return res;
+}
 VP take_(VP x,int i) {
-	VP res = xalloc(x->t,x->n-i);
-	memcpy(ELi(res,0),ELi(x,i),i*x->itemsz);
+	VP res;
+	int st, end;
+	if(i<0) { st = x->n+i; end=x->n; }
+	else { st = 0; end=i; }
+	PF("take_(,%d) %d %d",i, st, end);
+	DUMP(x);
+	res = xalloc(x->t,end-st);
+	DUMP(info(res));
+	if(end-st > 0) {
+		appendbuf(res, ELi(x,st), end-st);
+	}
+	PF("take_ result\n"); DUMP(res);
 	return res;
 }
 VP take(VP x,VP y) {
