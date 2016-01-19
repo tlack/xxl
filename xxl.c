@@ -278,11 +278,11 @@ VP xfree(VP x) {
 	} return x; }
 VP xref(VP x) { if(MEM_W){MEMPF("ref %p\n",x);} x->rc++; return x; }
 VP xfroms(const char* str) {  // character value from string - strlen helper
-	size_t len = strlen(str)+1; type_info_t t = typechar('c');
+	size_t len = strlen(str); type_info_t t = typechar('c');
 	VP a = xalloc(t.t,len); memcpy(BUF(a),str,len); a->n=len; return a; }
 const char* sfromx(VP x) { 
 	if(x==NULL)return "null";
-	return BUF(x); }
+	return (char*)BUF(x); }
 
 // RUNTIME!!
 VP appendbuf(VP x,buf_t buf,size_t nelem) {
@@ -306,7 +306,7 @@ VP append(VP x,VP y) { // append all items of y to x. if x is a general list, ap
 		y2=ELl(y,1);
 		// tough decisions
 		if(k==NULL) { // create dict
-			if(0 && SCALAR(y1)) {
+			if(SCALAR(y1)) {
 				k=xalloc(y1->t, 4);
 			} else {
 				k=xl0();
@@ -315,13 +315,10 @@ VP append(VP x,VP y) { // append all items of y to x. if x is a general list, ap
 			xref(k);xref(v);
 			EL(x,VP,0)=k;
 			EL(x,VP,1)=v;
-			// PF("dict kv %p %p\n", k, v);
-			DUMP(k);
-			PF("NEW DICT VALUES\n");
-			DUMP(v);
+			// PF("dict kv %p %p\n", k, v); DUMP(k); DUMP(v);
 			i=-1;
 		} else 
-			i=_find(k,y1);
+			i=_find1(k,y1);
 		if(i==-1) {
 			xref(y1);xref(y2);
 			EL(x,VP,0)=append(k,y1);
@@ -352,10 +349,10 @@ VP appendfree(VP x,VP y) {
 	append(x,y); xfree(y); return x;
 }
 VP upsert(VP x,VP y) {
-	if(_find(x,y)==-1) append(x,y); return x;
+	if(_find1(x,y)==-1) append(x,y); return x;
 }
 int _upsertidx(VP x,VP y) {
-	int idx = _find(x,y);
+	int idx = _find1(x,y);
 	if(idx>-1) return idx;
 	append(x,y); return x->n-1;
 }
@@ -363,7 +360,8 @@ inline VP assign(VP x,VP k,VP val) {
 	if(DICT(x)) {
 		return append(x,xln(2,k,val));
 	}
-	ASSERT(1,"assign() bad types");
+	// TODO assign should support numeric indices
+	return EXC(Tt(type),"assign: bad types",x,0);
 }
 inline VP assigns(VP x,const char* key,VP val) {
 	return assign(x,xfroms(key),val);
@@ -469,8 +467,8 @@ int _findbuf(VP x,buf_t y) {
 	}
 	return -1;
 }
-int _find(VP x,VP y) {
-	ASSERT(LIST(x) || (x->t==y->t && y->n==1), "_find(): x must be list, or types must match with right scalar");
+int _find1(VP x,VP y) {
+	ASSERT(LIST(x) || (x->t==y->t && y->n==1), "_find1(): x must be list, or types must match with right scalar");
 	// PF("find %p %p\n",x,y); DUMP(x); DUMP(y);
 	if(LISTDICT(x)) { ITERV(x,{ 
 		VP xx;
@@ -483,11 +481,11 @@ int _find(VP x,VP y) {
 	}
 	return -1;
 }
-VP find(VP x,VP y) {
-	return xi(_find(x,y));
+VP find1(VP x,VP y) {
+	return xi(_find1(x,y));
 }
 int _contains(VP x,VP y) {
-	return _find(x,y)==-1 ? 0 : 1;
+	return _find1(x,y)==-1 ? 0 : 1;
 }
 VP contains(VP x,VP y) {
 	return xi(_contains(x,y));
@@ -507,7 +505,7 @@ VP cast(VP x,VP y) {
 	// right arg is tag naming a type, use that.. otherwise use y's type
 	if(y->t==T_t) typetag=AS_t(y,0); else typenum=y->t;
 	#include"cast.h"
-	DUMPRAW(buf,BUFSZ);
+	// DUMPRAW(buf,BUFSZ);
 	return res;
 }
 VP len(VP x) {
@@ -581,7 +579,7 @@ VP apply(VP x,VP y) {
 			ITERV(y,{ 
 				int idx;
 				PF("searching %d\n",_i);
-				if(LIST(y)) idx = _find(k,ELl(y,_i));
+				if(LIST(y)) idx = _find1(k,ELl(y,_i));
 				else idx = _findbuf(k,ELi(y,_i));
 				if(idx>-1) {
 					found=1;
