@@ -66,6 +66,7 @@
 
 // create an exception value
 #define EXC(type,lbl,x,y) tagv("exception",xln(4,type,xfroms(lbl),x,y));
+#define IF_EXC(cond,type,msg,x,y) if((cond)) return EXC(type,msg,x,y)
 
 #define TYD(name,type) typedef type name
 TYD(I8,unsigned char); TYD(I32,int); TYD(I64,__int64_t); TYD(I128,__int128_t);
