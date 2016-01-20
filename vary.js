@@ -62,9 +62,9 @@ lib.each(lib.types,function(tx) {
 });
 console.log("})");
 
-console.log("#define VARY_EACHLEFT(x,y,stmt,failvar) ({ \\\n" +
+console.log("#define VARY_EACHBOTH(x,y,stmt,failvar) ({ \\\n" +
 	"\tint _i=0,_j=0,_xn=x->n,_yn=y->n,_xt=x->t,_yt=y->t;\\");
-var tmpl="\tif(xt=={{x0}}||yt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
+var tmpl="\tif(_xt=={{x0}}||_yt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
 lib.each(lib.types,function(tx) {
 	if(skip(tx)){
 		var a=[];
@@ -72,7 +72,33 @@ lib.each(lib.types,function(tx) {
 		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
 	}
 });
-var tmpl="\tif(xt=={{x0}}&&yt=={{y0}}){/*{{x2}} x {{y2}}*/ \\\n" +
+var tmpl="\tif(_xt=={{x0}}&&_yt=={{y0}}){/*{{x2}} x {{y2}}*/ \\\n" +
+	"\t\t{{x3}} _x;{{y3}} _y;\\\n" + 
+	"\t\twhile (_i < _xn && _j < _yn) { _x=AS_{{x1}}(x,_i); _y=AS_{{x1}}(y,0); stmt; _i++; _j++; }\\\n" + 
+	"\t}\\";
+lib.each(lib.types,function(tx) {
+	if(skip(tx))return;
+	lib.each(lib.types, function(ty) { 
+		if(skip(ty))return;
+		var a=[];
+		for(var i in tx)a["x"+i]=tx[i];
+		for(var i in ty)a["y"+i]=ty[i];
+		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+	});
+});
+console.log("})");
+
+console.log("#define VARY_EACHLEFT(x,y,stmt,failvar) ({ \\\n" +
+	"\tint _i=0,_j=0,_xn=x->n,_yn=y->n,_xt=x->t,_yt=y->t;\\");
+var tmpl="\tif(_xt=={{x0}}||_yt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
+lib.each(lib.types,function(tx) {
+	if(skip(tx)){
+		var a=[];
+		for(var i in tx)a["x"+i]=tx[i];
+		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+	}
+});
+var tmpl="\tif(_xt=={{x0}}&&_yt=={{y0}}){/*{{x2}} x {{y2}}*/ \\\n" +
 	"\t\t{{x3}} _x;{{y3}} _y; _y=AS_{{x1}}(y,0);\\\n" + 
 	"\t\twhile (_i < _xn) { _x=AS_{{x1}}(x,_i); stmt; _i++; }\\\n" + 
 	"\t}\\";
@@ -90,7 +116,7 @@ console.log("})");
 
 console.log("#define VARY_EACHRIGHT(x,y,stmt,failvar) ({ \\\n" +
 	"\tint _i=0,_j=0,_xn=x->n,_yn=y->n,_xt=x->t,_yt=y->t;\\");
-var tmpl="\tif(xt=={{x0}}||yt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
+var tmpl="\tif(_xt=={{x0}}||_yt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
 lib.each(lib.types,function(tx) {
 	if(skip(tx)){
 		var a=[];
@@ -98,7 +124,7 @@ lib.each(lib.types,function(tx) {
 		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
 	}
 });
-var tmpl="\tif(xt=={{x0}}&&yt=={{y0}}){/*{{x2}} x {{y2}}*/ \\\n" +
+var tmpl="\tif(_xt=={{x0}}&&_yt=={{y0}}){/*{{x2}} x {{y2}}*/ \\\n" +
 	"\t\t{{x3}} _x;{{y3}} _y; _x=AS_{{x1}}(x,0);\\\n" + 
 	"\t\twhile (_j < _yn) { _y=AS_{{y1}}(y,_j); stmt; _j++; }\\\n" + 
 	"\t}\\";
