@@ -200,6 +200,7 @@ VP xalloc(type_t t,I32 initn) {
 }
 VP xprofile_start() {
 	MEM_W=1;
+	return xl0();
 }
 VP xprofile_end() {
 	int i;
@@ -223,6 +224,7 @@ VP xprofile_end() {
 	xxl(
 		(ctx,"sizes",xxl(MEMPTRS,x2(&map),x1(&capacity),x2(&map),x2(&xbar),xi(1000),0))
 	*/
+	return xl0();
 }
 VP xrealloc(VP x,I32 newn) {
 	// PF("xrealloc %p %d\n",x,newn);
