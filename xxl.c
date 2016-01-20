@@ -617,8 +617,8 @@ VP deal(VP x,VP y) {
 	VP acc;
 	VARY_EL(x,0,({ typeof(_x)n=_x; acc=xalloc(x->t,_x); // TODO rethink deal in terms of more types
 		VARY_EL(y,0,({
-			int i; // TODO deal() shouldnt use rand()
-			FOR(0,n,({i=rand()%_x;appendbuf(acc,&i,1);}));
+			FOR(0,n,({ EL(acc,typeof(_x),_i)=rand()%_x; }));
+			acc->n=n;
 		}),typerr);}),typerr);
 	return acc;
 }
@@ -1508,6 +1508,17 @@ void test_eval() {
 	//DUMP(evalstr("// test"));
 	//evalstr("// test\nx:\"Hello!\"\ntil 1024");
 	});
+}
+void test_deal_speed() {
+	int i;
+	VP a,b,c;
+	// xprofile_start();
+	
+	a=xi(1024 * 1024);b=xi(100);
+	PFW({
+	TIME(100, ({ c=deal(a,b); xfree(c); }));
+	});
+	exit(1);
 }
 void test_json() {
 	VP mask, jsrc, res; char str[256]={0};
