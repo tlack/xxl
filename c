@@ -6,6 +6,7 @@ LIBS="-pthread"
 DEBUG=""
 DEBUG="-DDEBUG -g"  # comment out for silence
 DEFS="-DTHREAD $DEBUG"
+# OPT="-O3"
 WARN="-Wall -Wno-format-extra-args -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format"
 
 if [ -x /bin/x86_64-w64-mingw32-gcc-4.9.2.exe ]; then
@@ -26,7 +27,7 @@ if [ "x$BUILDH" = "xyes" ]; then
 	$NODE repr.js > repr.h 
 fi
 
-$CC $DEFS $WARN $LIBS $ARCH \
+$CC $DEFS $WARN $LIBS $ARCH $OPT \
 	xxl.c net.c -o ./xxl 2>&1 \
 	&& ./xxl
 
