@@ -74,7 +74,7 @@ lib.each(lib.types,function(tx) {
 });
 var tmpl="\tif(_xt=={{x0}}&&_yt=={{y0}}){/*{{x2}} x {{y2}}*/ \\\n" +
 	"\t\t{{x3}} _x;{{y3}} _y;\\\n" + 
-	"\t\twhile (_i < _xn && _j < _yn) { _x=AS_{{x1}}(x,_i); _y=AS_{{x1}}(y,0); stmt; _i++; _j++; }\\\n" + 
+	"\t\twhile (_i < _xn && _j < _yn) { _x=AS_{{x1}}(x,_i); _y=AS_{{y1}}(y,_j); stmt; _i++; _j++; }\\\n" + 
 	"\t}\\";
 lib.each(lib.types,function(tx) {
 	if(skip(tx))return;
