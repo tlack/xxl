@@ -605,6 +605,20 @@ VP info(VP x) {
 	res=assign(res,Tt(memptr),xi((int)BUF(x)));
 	return res;
 }
+VP deal(VP x,VP y) {
+	IF_EXC(!NUM(x),Tt(type),"deal: left arg must be numeric", x, y);
+	IF_EXC(SCALAR(y)&&!NUM(y),Tt(type),"deal: single right arg must be numeric", x, y);
+	IF_EXC(!SCALAR(x) || !SCALAR(y), Tt(nyi), "deal: both args must be scalar", x, y);
+
+	int typerr=-1;
+	VP acc;
+	VARY_EL(x,0,({ typeof(_x)n=_x; acc=xalloc(x->t,_x); // TODO rethink deal in terms of more types
+		VARY_EL(y,0,({
+			int i; // TODO deal() shouldnt use rand()
+			FOR(0,n,({i=rand()%_x;appendbuf(acc,&i,1);}));
+		}),typerr);}),typerr);
+	return acc;
+}
 VP til(VP x) {
 	VP acc;int i;int typerr=-1;
 	PF("TIL!!!!\n"); DUMP(x);
@@ -614,6 +628,38 @@ VP til(VP x) {
 	IF_RET(typerr>-1, EXC(Tt(type), "til arg must be numeric", x, 0));
 	DUMP(acc);
 	return acc;
+}
+VP and(VP x,VP y) {
+	int typerr=-1;
+	VP acc;
+	PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
+	IF_EXC(x->n != y->n, Tt(len), "and arguments should be same length", x, y);	
+	if(x->t == y->t) acc=xalloc(x->t, x->n);
+	else acc=xlsz(x->n);
+	VARY_EACHBOTH(x,y,({ if (_x < _y) appendbuf(acc, &_x, 1); else appendbuf(acc, &_y, 1); }), typerr);
+	IF_EXC(typerr != -1, Tt(type), "and arg type not valid", x, y);
+	DUMP(acc);
+	PF("and result\n"); DUMP(acc);
+	return acc;
+}
+VP or(VP x,VP y) {
+	int typerr=-1;
+	VP acc;
+	PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
+	IF_EXC(x->n != y->n, Tt(len), "and arguments should be same length", x, y);	
+	if(x->t == y->t) acc=xalloc(x->t, x->n);
+	else acc=xlsz(x->n);
+	VARY_EACHBOTH(x,y,({ if (_x > _y) appendbuf(acc, &_x, 1); else appendbuf(acc, &_y, 1); }), typerr);
+	IF_EXC(typerr != -1, Tt(type), "and arg type not valid", x, y);
+	DUMP(acc);
+	PF("and result\n"); DUMP(acc);
+	return acc;
+}
+VP min(VP x) { 
+	return over(x, x2(&and));
+}
+VP max(VP x) { 
+	return over(x, x2(&or));
 }
 VP plus(VP x,VP y) {
 }

@@ -132,4 +132,31 @@
 
 		ASSERT(_equal(til(xb(3)),xbn(3,0,1,2)),"til b");
 		ASSERT(_equal(til(xo(3)),xon(3,0,1,2)),"til o");
+
+		c=and(xi(0),xi(1));
+		DUMP(c);
+		ASSERT(c->n==1 && _equal(c, xi(0)), "and 0");
+		c=and(xi(1),xi(0));
+		ASSERT(c->n==1 && _equal(c, xi(0)), "and 1");
+		c=or(xi(0),xi(1));
+		DUMP(c);
+		ASSERT(c->n==1 && _equal(c, xi(1)), "and 0");
+		c=or(xi(1),xi(0));
+		ASSERT(c->n==1 && _equal(c, xi(1)), "and 1");
+
+		c=min(xin(3,1,2,3));
+		DUMP(c);
+		ASSERT(c->n==1 && _equal(c, xi(1)), "min 0");
+		c=min(xin(3,1,2,-3));
+		ASSERT(c->n==1 && _equal(c, xi(-3)), "min 1");
+
+		c=max(xin(3,1,2,3));
+		DUMP(c);
+		ASSERT(c->n==1 && _equal(c, xi(3)), "max 0");
+		c=max(xin(3,1,2,-3));
+		ASSERT(c->n==1 && _equal(c, xi(2)), "max 1");
+
+		c=deal(xi(100),xi(10));
+		DUMP(c);
+		ASSERT(c->n==100 && _equal(min(c),xi(0)), "deal 0");
 	}
