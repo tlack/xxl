@@ -63,8 +63,8 @@
 		append(a,xfroms("test2"));
 		DUMP(a);
 		ASSERT(a->n==3,"append str 1");
-		ASSERT(ELl(a,1)->n==5,"append str 2"); // test\0
-		ASSERT(ELl(a,2)->n==6,"append str 2"); // test2\0
+		ASSERT(ELl(a,1)->n==4,"append str 2"); // test\0
+		ASSERT(ELl(a,2)->n==5,"append str 2"); // test2\0
 		ASSERT(_contains(a,ELl(a,2))==1,"str contains 0");
 		ASSERT(_contains(a,xfroms("tes"))==0,"str contains 1");
 		ASSERT(_equal(take(xin(3,1,2,3),xi(1)),xi(1)),"take 0");
@@ -81,9 +81,9 @@
 		xfree(b);
 		DUMP(a);
 		ASSERT(a->n==4,"upsert 2");
-		ASSERT(_find(a,xfroms("test"))==1,"_find 0");
-		ASSERT(_find(a,xfroms("est"))==-1,"_find 1");
-		ASSERT(_find(a,xfroms("tes"))==-1,"_find 2");
+		ASSERT(_find1(a,xfroms("test"))==1,"_find1 0");
+		ASSERT(_find1(a,xfroms("est"))==-1,"_find1 1");
+		ASSERT(_find1(a,xfroms("tes"))==-1,"_find1 2");
 		xfree(a);
 		a = xd0();
 		b = apply(a,xfroms("a"));

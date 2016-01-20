@@ -63,11 +63,13 @@
 	ASSERT(_equal(res,xin(2,2,3)),"mo");
 
 	// mixed types
-	res=match(xin(4,1,2,3,4),xln(3,
-		tagv("anyof", xin(2,1,2)),
+	PFW({
+	res=match(xin(4,7,8,5,6),xln(3,
+		tagv("anyof", xin(2,7,8)),
 		tagv("greedy", xi0()),
-		tagv("anyof", xin(2,3,4))));
-	ASSERT(_equal(res,xin(3,0,1,2)),"mp");
+		tagv("anyof", xin(2,5,6))));
+	ASSERT(_equal(res,xin(4,0,1,2,3)),"mp");
+	});
 
 	res=match(xin(4,9,8,7,6),tagv("greedy", xln(3,
 		tagv("anyof", xin(2,9,8)),
@@ -130,6 +132,9 @@
 			tagv("greedy",
 				xln(3,xfroms("\""),xc0(),xfroms("\"")))
 		),xin(3,1,2,3)), "m11");
+	ASSERT(_equal(
+		match(xin(5,1,0,1,0,2),xi(1)),
+		xin(2,0,2)), "m multi0");
 	/*
 	a=xin(4, 1, 2, 3, 4);
 	b=xin(4, 1, 2, 3, 4);
