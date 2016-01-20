@@ -78,11 +78,11 @@ inline VP xj(__int64_t x) { VP a; a=xalloc(4,1); EL(a,__int64_t,0)=x; a->n=1; re
 inline VP xj0() { VP a=xalloc(4,1); return a; }
 inline VP xjsz(sz) { VP a=xalloc(4,sz); return a; }
 inline VP xja(VP a, __int64_t x) { a=xrealloc(a,a->n++);EL(a,__int64_t,a->n-1)=x; return a; }
-inline VP xjn(int nargs,...) { VP a; va_list args; int i; __int64_t x; a=xalloc(4,nargs); a->n=nargs; va_start(args,nargs);\
-	for(i=0;i<nargs;i++){ x=va_arg(args,__int64_t); EL(a,__int64_t,i)=x; }\
+inline VP xjn(int nargs,...) { VP a; va_list args; int i; int x; a=xalloc(4,nargs); a->n=nargs; va_start(args,nargs);\
+	for(i=0;i<nargs;i++){ x=va_arg(args,int); EL(a,__int64_t,i)=x; }\
 	return a; }
 inline VP xjan(VP a, int nargs,...) { va_list args; int i; __int64_t x; a=xrealloc(a,a->n+nargs); va_start(args,nargs);\
-	for(i=0;i<nargs;i++){ x=va_arg(args,__int64_t);
+	for(i=0;i<nargs;i++){ x=va_arg(args,int);
 	EL(a,__int64_t,(a->n)+i)=x; }\
 	a->n+=nargs; return a; }
 /* accessors for type #5 or o (octo) implemented as __int128_t */
@@ -95,11 +95,11 @@ inline VP xo(__int128_t x) { VP a; a=xalloc(5,1); EL(a,__int128_t,0)=x; a->n=1; 
 inline VP xo0() { VP a=xalloc(5,1); return a; }
 inline VP xosz(sz) { VP a=xalloc(5,sz); return a; }
 inline VP xoa(VP a, __int128_t x) { a=xrealloc(a,a->n++);EL(a,__int128_t,a->n-1)=x; return a; }
-inline VP xon(int nargs,...) { VP a; va_list args; int i; __int128_t x; a=xalloc(5,nargs); a->n=nargs; va_start(args,nargs);\
-	for(i=0;i<nargs;i++){ x=va_arg(args,__int128_t); EL(a,__int128_t,i)=x; }\
+inline VP xon(int nargs,...) { VP a; va_list args; int i; int x; a=xalloc(5,nargs); a->n=nargs; va_start(args,nargs);\
+	for(i=0;i<nargs;i++){ x=va_arg(args,int); EL(a,__int128_t,i)=x; }\
 	return a; }
 inline VP xoan(VP a, int nargs,...) { va_list args; int i; __int128_t x; a=xrealloc(a,a->n+nargs); va_start(args,nargs);\
-	for(i=0;i<nargs;i++){ x=va_arg(args,__int128_t);
+	for(i=0;i<nargs;i++){ x=va_arg(args,int);
 	EL(a,__int128_t,(a->n)+i)=x; }\
 	a->n+=nargs; return a; }
 /* accessors for type #6 or c (char) implemented as char */
