@@ -772,9 +772,19 @@ inline int _tagnums(const char* name) {
 // MATCHING
 
 VP nest(VP x,VP y) {
-	int i; VP st, cur, newcur; // result stack
+	/* 
+		nest() benchmarking: (based on 20k loops of test_nest())
+		_equalm (single-value delimeter), with debugging: ~12.5s
+		_equalm, without debugging: 3.2s
+	*/
+
+	int i,j; VP this, open, close, escape, entag, st, cur, newcur; // result stack
 	if(y->n<2)return EXC(Tt(nest),"nest y must be 2 (start/end) or 3 (start/end/escape) values ",x,y);
 	PF("nest\n"); DUMP(x); DUMP(y);
+	open=apply(y,xi(0));
+	close=apply(y,xi(1));
+	escape=(y->n==3)?apply(y,xi(2)):NULL;
+	entag=(y->n==4)?apply(y,xi(3)):NULL;
 	st=xl0();
 	cur=xl0();
 	cur->next=(buf_t)st;
@@ -783,7 +793,8 @@ VP nest(VP x,VP y) {
 		PF("nest state for iter %d\n", i);
 		DUMP(st);
 		DUMP(cur);
-		if(_equalm(x,i,y,0)) {
+		this=apply(x,xi(i));
+		if(matchpass(this, open)) {
 			PF("got start at %d\n", i);
 			if(cur->n) {
 				newcur=xl0();
@@ -791,16 +802,26 @@ VP nest(VP x,VP y) {
 				append(cur, newcur);
 				cur=newcur;
 			}
-			append(cur,apply(x,xi(i))); // TODO need a shortcut like applyi(VP,int) - too slow
+			for(j=0; j<open->n; j++) { // too confusing to express with FOR
+				append(cur, apply(x,xi(i++)));
+			}
+			i--;
+			// TODO need a shortcut like applyi(VP,int) - too slow
 		}
-		else if(y->n==3&&_equalm(x,i,y,2)) // escape char; skip
+		else if(escape != NULL && escape->n > 0 && matchpass(this,escape)) // escape char; skip
 			i+=2;
-		else if(_equalm(x,i,y,1)) {
+		else if(matchpass(this,close)) {
 			if(cur->n==0) 
 				return EXC(Tt(nest),"nest matched end without start",x,y)
 			else {
 				PF("found end, unpacking %d\n", st->n-1);
-				append(cur,apply(x,xi(i))); // TODO need a shortcut like applyi(VP,int) - too slow
+				for(j=0; j<close->n; j++) { // too confusing to express with FOR
+					append(cur, apply(x,xi(i++)));
+				}
+				if(entag!=NULL) {
+					cur->tag=AS_t(entag,0);
+				}
+				i--;
 				if(cur->next) {
 					PF("adopting cur\n");
 					cur=(VP)cur->next;
