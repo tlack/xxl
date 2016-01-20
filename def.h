@@ -64,6 +64,10 @@
 #define Ti(n) (_tagnums(#n))                             // int value for tag n (literal not string)
 #define Tt(n) (xt(_tagnums(#n)))                         // tag n (literal not string) as a scalar of type tag
 
+#define TIME(n,expr) ({ int i; clock_t st,en; \
+	st=clock(); for(i=0;i<n;i++) { expr; } \
+	en=clock(); printf("%0.2f", ((double)(en-st)) / CLOCKS_PER_SEC); })
+
 // create an exception value
 #define EXC(type,lbl,x,y) tagv("exception",xln(4,type,xfroms(lbl),x,y));
 #define IF_EXC(cond,type,msg,x,y) if((cond)) return EXC(type,msg,x,y)
