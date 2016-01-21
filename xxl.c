@@ -853,6 +853,80 @@ inline int _tagnums(const char* name) {
 	return t;
 }
 
+// JOINS (so to speak)
+// possibly useless
+
+VP bracketjoin(VP x,VP y) { 
+	// returns x[n] when 'on'
+	//  turned on by y[0][n]=1
+	//  turned off by y[1][n]=1
+	// otherwise 0
+	// useful for matching patterns involving more than one entity
+	int i, on=0, typerr=-1; VP acc, y0, y1;
+	PF("bracketjoin\n");DUMP(x);DUMP(y);
+	IF_EXC(!LIST(y)||y->n!=2,Tt(type),"bracketjoin y must be 2-arg list",x,y);
+	y0=ELl(y,0); y1=ELl(y,1);
+	IF_EXC(y0->t != y1->t,Tt(type),"bracketjoin y items must be same type",x,y);
+	acc = XALLOC_SZ(x,y0->n);
+	VARY_EACHRIGHT(x,y0,({
+		if(_y == 1) on=1;
+		if(_j < y1->n && EL(y1,typeof(_y),_j)==1) on=0;
+		if(on) EL(acc,typeof(_x),_j)=EL(x,typeof(_x),_j % x->n);
+		else EL(acc,typeof(_x),_j)=0;
+	}),typerr);
+	IF_EXC(typerr>-1,Tt(type),"bracketjoin couldnt work with those types",x,y);
+	acc->n=y0->n;
+	PF("bracketjoin return\n");DUMP(acc);
+	return acc;
+}
+VP consecutivejoin(VP x, VP y) {
+	// returns x[n] if y[0][n]==1 && y[1][n+1]==1 && .. else 0
+	int j,n=y->n, typerr=-1, on=0; VP acc,tmp;
+	PF("consecutivejoin\n"); DUMP(x); DUMP(y);
+	IF_EXC(!LIST(y)||y->n<1,Tt(type),"consecutivejoin y must be list of simple types",x,y);
+	VP y0=ELl(y,0);
+	for(j=0; tmp=ELl(y,j), j<n; j++) 
+		IF_EXC(tmp->t!=y0->t,Tt(type),"consecutivejoin y must all be same type or similar numeric",x,y);
+	acc = XALLOC_SZ(x,y0->n);
+	VARY_EACHRIGHT(x,y0,({
+		if(UNLIKELY(_y)==1) {
+			on=1;
+			for(j=0; tmp=ELl(y,j), j<n; j++) {
+				if(_j + j > tmp->n || EL(tmp,typeof(_y),_j+j) == 0){on = 0; break;}
+			} 
+			if(on) EL(acc,typeof(_x),_j)=EL(x,typeof(_x),_j % x->n);
+			else EL(acc,typeof(_x),_j)=0; 
+		}
+	}),typerr);
+	IF_EXC(typerr>-1,Tt(type),"consecutivejoin couldnt work with those types",x,y);
+	acc->n=y0->n;
+	PF("consecutivejoin return\n"); DUMP(acc);
+	return acc;
+}
+VP signaljoin(VP x,VP y) {
+	// could be implemented as +over and more selection but this should be faster
+	int typerr=-1, on=0; VP acc;
+	PF("signaljoin\n");DUMP(x);DUMP(y);
+	acc = XALLOC_SZ(x,y->n);
+	if(SCALAR(x)) { // TODO signaljoin() should use take to duplicate scalar args.. but take be broke
+		VARY_EACHRIGHT(x,y, ({
+			if(_y == 1) on=!on;
+			if(on) EL(acc,typeof(_x),_j)=(typeof(_x))_x;
+			else EL(acc,typeof(_x),_j)=0;
+		}), typerr);
+	} else {
+		VARY_EACHBOTH(x,y,({
+			if(_y == 1) on=!on;
+			if(on) EL(acc,typeof(_x),_i)=(typeof(_x))_x;
+			else EL(acc,typeof(_x),_i)=0;
+		}),typerr);
+	}
+	acc->n=y->n;
+	IF_EXC(typerr>-1,Tt(type),"signaljoin couldnt work with those types",x,y);
+	PF("signaljoin return\n");DUMP(acc);
+	return acc;
+}
+
 // MATCHING
 
 VP nest(VP x,VP y) {
