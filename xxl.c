@@ -936,7 +936,8 @@ VP nest(VP x,VP y) {
 		_equalm, without debugging: 3.2s
 	*/
 
-	int i,j; VP this, open, close, escape, entag, st, cur, newcur; // result stack
+	int i,j,found; 
+	VP tmp, this, open, close, escape, entag, st, cur, newcur; // result stack
 	if(y->n<2)return EXC(Tt(nest),"nest y must be 2 (start/end) or 3 (start/end/escape) values ",x,y);
 	PF("nest\n"); DUMP(x); DUMP(y);
 	open=apply(y,xi(0));
@@ -960,10 +961,16 @@ VP nest(VP x,VP y) {
 				append(cur, newcur);
 				cur=newcur;
 			}
-			for(j=0; j<open->n; j++) { // too confusing to express with FOR
-				append(cur, apply(x,xi(i++)));
+			for(j=0; j< open->n && i+j < x->n; j++) { // too confusing to express with FOR
+				PF("copy %d, i=%d\n", j, i);
+				tmp=apply(x,xi(i++));
+				if(entag!=NULL)
+					tmp->tag=0;
+				append(cur, tmp);
 			}
 			i--;
+			PF("nest start done copying");
+			DUMP(cur);
 			// TODO need a shortcut like applyi(VP,int) - too slow
 		}
 		else if(escape != NULL && escape->n > 0 && matchpass(this,escape)) // escape char; skip
@@ -987,16 +994,26 @@ VP nest(VP x,VP y) {
 				}
 				PF("ending unpacked:\n");
 				DUMP(cur);
+				found++;
 			}
 		}  else {
 			// TODO need an apply shortcut for C types like applyi(VP,int) - too slow otherwise
 			newcur=apply(x,xi(i));
 			PF("nest appending elem %d\n", i);
 			DUMP(newcur);
+			if(entag!=NULL) 
+				newcur->tag=0;
 			append(cur,newcur);
 		}
 	}
-	return st;
+	if (found) {
+		PF("nest returning new value");
+		DUMP(st);
+		return st;
+	} else {
+		PF("returning unchanged");
+		return x;
+	}
 }
 
 inline void matchanyof_(const VP obj,const VP pat,const int max_match,int* n_matched,int* matchidx) {
