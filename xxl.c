@@ -1274,6 +1274,23 @@ VP match(VP obj,VP pat) {
 	DUMP(acc);
 	return acc;
 }
+VP matcheasy(VP obj,VP pat) {
+	IF_EXC(!NUM(obj) && !IS_c(obj),Tt(type),"matcheasy only works with numeric or string types in x",obj,pat);
+	int j,n=obj->n,typerr=-1;VP item, acc;
+	PF("matcheasy\n"); DUMP(obj); DUMP(pat);
+	acc=xbsz(n); // TODO matcheasy() should be smarter about initial buffer size
+	acc->n=n;
+	if(LIST(obj)) {
+		FOR(0,n,({ if(_equal(ELl(obj,_i),pat)) EL(acc,CTYPE_b,_i)=1; }));
+	} else {
+		VARY_EACHLEFT(obj, pat, ({
+			if(_x == _y) EL(acc,CTYPE_b,_i) = 1;
+		}), typerr);
+		IF_EXC(typerr>-1, Tt(type), "matcheasy could not match those types",obj,pat);
+	}
+	PF("matcheasy result\n"); DUMP(acc);
+	return acc;
+}
 VP matchexec(VP obj,const VP pats) {
 	int i,j;VP rule,res,res2,sel;
 	ASSERT(LIST(pats)&&pats->n%2==0,"pats should be a list of [pat1,fn1,pat2,fn2..]");
@@ -1374,6 +1391,26 @@ VP eval(VP code) {
 	tmp=append(tmp,xi0());
 	ctx=append(ctx,xln(2, tmp, x2(&plus) ));
 	return eval0(ctx,code,0);
+}
+VP list2vec(VP obj) {
+	int i, t;
+	VP acc;
+	if(!LIST(obj)) return obj;
+	PF("list2vec"); DUMP(obj);
+	acc=XALLOC_SAME(ELl(obj,0));
+	FOR(0,obj->n,({ if(ELl(obj,_i)->t != acc->t){xfree(acc); return obj; } else append(acc,ELl(obj,_i)); }));
+	PF("list2vec result"); DUMP(info(obj));
+	return acc;
+}
+VP deep(VP obj,VP f) {
+	int i;
+	PF("deep\n");DUMP(obj);DUMP(f);
+	VP acc;
+	acc=xl0();
+	if(!LIST(obj)) return each(obj,f);
+	FOR(0,obj->n,append(acc,apply(f,ELl(obj,_i))));
+	PF("deep returning\n");DUMP(acc);
+	return acc;
 }
 VP evalstr(const char* str) {
 	VP lex,pats,acc,t1;size_t l=strlen(str);int i;
