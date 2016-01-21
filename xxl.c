@@ -230,7 +230,7 @@ VP xrealloc(VP x,I32 newn) {
 	// PF("xrealloc %p %d\n",x,newn);
 	if(newn>x->cap) {
 		buf_t newp; I32 newsz;
-		newn = (newn < 10*1024) ? newn * 4 : newn * 1.25;
+		newn = (newn < 10*1024) ? newn * 4 : newn * 1.25; // TODO there must be research about realloc bins no?
 		newsz = newn * x->itemsz;
 		if(x->alloc) {
 			// PF("realloc %p %d %d %d\n", x->dyn, x->sz, newn, newsz);
@@ -259,7 +259,6 @@ VP xfree(VP x) {
 	int i;
 	if(x==NULL)return x;
 	//PF("xfree(%p)\n",x);
-	//printf("
 	x->rc--; 
 	if(x->rc==0){
 		if(LISTDICT(x))
@@ -417,12 +416,13 @@ VP take(VP x,VP y) {
 	VP res;
 	int typerr=-1;
 	size_t st,end; //TODO slice() support more than 32bit indices
-	// PF("take args\n"); DUMP(x); DUMP(y);
+	PF("take args\n"); DUMP(x); DUMP(y);
 	IF_RET(!NUM(y), EXC(Tt(type),"slice arg must be numeric",x,y));	
 	VARY_EL(y, 0, {if (_x<0) { st=x->n+_x; end=x->n; } else { st=0; end=_x; }}, typerr);
 	IF_RET(typerr>-1, EXC(Tt(type),"cant use y as slice index into x",x,y));  
 	IF_RET(end>x->n, xalloc(x->t, 0));
 	res=xalloc(x->t,end-st);
+	PF("take end %d st %d\n", end, st);
 	if(end-st > 0) 
 		res=appendbuf(res,ELi(x,st),end-st);
 	// PF("take result\n"); DUMP(res);
@@ -639,20 +639,23 @@ VP and(VP x,VP y) {
 	IF_EXC(x->n != y->n, Tt(len), "and arguments should be same length", x, y);	
 	if(x->t == y->t) acc=xalloc(x->t, x->n);
 	else acc=xlsz(x->n);
-	VARY_EACHBOTH(x,y,({ if (_x < _y) appendbuf(acc, &_x, 1); else appendbuf(acc, &_y, 1); }), typerr);
+	VARY_EACHBOTH(x,y,({ 
+		if (_x < _y) appendbuf(acc, (buf_t)&_x, 1); 
+		else appendbuf(acc, (buf_t)&_y, 1); }), typerr);
 	IF_EXC(typerr != -1, Tt(type), "and arg type not valid", x, y);
 	DUMP(acc);
 	PF("and result\n"); DUMP(acc);
 	return acc;
 }
-VP or(VP x,VP y) {
+VP or(VP x,VP y) { // TODO most of these primitive functions have the same pattern - abstract?
 	int typerr=-1;
 	VP acc;
 	PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
 	IF_EXC(x->n != y->n, Tt(len), "and arguments should be same length", x, y);	
 	if(x->t == y->t) acc=xalloc(x->t, x->n);
 	else acc=xlsz(x->n);
-	VARY_EACHBOTH(x,y,({ if (_x > _y) appendbuf(acc, &_x, 1); else appendbuf(acc, &_y, 1); }), typerr);
+	VARY_EACHBOTH(x,y,({ if (_x > _y) appendbuf(acc, (buf_t)&_x, 1); 
+		else appendbuf(acc, (buf_t)&_y, 1); }), typerr);
 	IF_EXC(typerr != -1, Tt(type), "and arg type not valid", x, y);
 	DUMP(acc);
 	PF("and result\n"); DUMP(acc);
@@ -1368,7 +1371,7 @@ void test_proj() {
 	PF("b\n");DUMP(b);
 	c=apply(mkproj(1,&sum,b,0),0);
 	PF("result\n");DUMP(c);
-	printf("%lld\n", AS_o(c,0));
+	//printf("%lld\n", AS_o(c,0));
 	xfree(a);xfree(b);xfree(c);xfree(n);
 	//DUMP(c);
 }
@@ -1539,6 +1542,7 @@ void tests() {
 	int i;
 	VP a,b,c;
 	// xprofile_start();
+	
 	test_basics();
 	test_match();
 	test_json();
