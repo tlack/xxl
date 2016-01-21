@@ -55,6 +55,7 @@
 // Handy functions for manipulating values and their types
 #define SCALAR(v) ((v)->n==1)                            // is v a single value?
 #define NUM(v) (IS_b(v)||IS_i(v)||IS_l(v)||IS_o(v))      // is v an int type?
+#define SIMPLE(v) (IS_b(v)||IS_i(v)||IS_l(v)||IS_o(v)||IS_c(v))
 #define LIST(v) ((v)->t==0)                              // is v a general list type?
 #define DICT(v) (IS_d(v))                                // is v a dictionary?
 #define LISTDICT(v) ((v)->t==0||IS_d(v))                 // is v a list or dictionary?
@@ -63,12 +64,13 @@
 #define VALS(v) (ELl(v,1))                               // values for dict v
 #define Ti(n) (_tagnums(#n))                             // int value for tag n (literal not string)
 #define Tt(n) (xt(_tagnums(#n)))                         // tag n (literal not string) as a scalar of type tag
-#define XALLOC_AS(x) ({ VP new_ = xalloc(x->t,x->n); if(x->tag)new_->tag=x->tag; new_; })
-#define XALLOC_AS_EMPTY(x) ({ VP new_ = xalloc(x->t,1); if(x->tag)new_->tag=x->tag; new_; })
+#define XALLOC_SAME(x) ({ VP new_ = xalloc(x->t,x->n); if(UNLIKELY(x->tag))new_->tag=x->tag; new_; })
+#define XALLOC_SZ(x,sz) ({ VP new_ = xalloc(x->t,sz); if(UNLIKELY(x->tag))new_->tag=x->tag; new_; })
 
 // create an exception value
 #define EXC(type,lbl,x,y) tagv("exception",xln(4,type,xfroms(lbl),x,y));
 #define IF_EXC(cond,type,msg,x,y) if((cond)) return EXC(type,msg,x,y)
+// TODO if_exc doesnt give us a chance to free memory :-/
 
 // misc
 #define LIKELY(x)       __builtin_expect((x),1)
