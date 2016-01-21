@@ -3,6 +3,7 @@ console.log(lib.prelude);
 lib.each(lib.types, function(t) {
 	var tmpls = [
 		'/* accessors for type #{{0}} or {{1}} ({{2}}) implemented as {{3}} */',
+		'#define CTYPE_{{1}} {{3}}',
 		'#define T_{{1}} {{0}}',
 		'#define IS_{{1}}(v) ( (v)->t=={{0}} )',
 		'#define AS_{{1}}(v,n) ({ \\\n\tASSERT(IS_{{1}}(v)==1, "AS_{{1}}: type not {{1}}");\\\n\t{{3}} __x=EL(v,{{3}},n); __x; })',
