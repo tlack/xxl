@@ -12,6 +12,7 @@
 // TODO VARY_*() macros need to handle general list more robustly
 // TODO VARY_*() should be able to cast to best sizes in some circumstances
 // TODO consider switching to ribosome of these kinds of scripts
+// TODO VARY_*() macros should be rewritten in terms of the minimum subset of types they accept
 //
 var lib = require('./common.js');
 function skip(t) {
