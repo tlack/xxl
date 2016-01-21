@@ -63,14 +63,20 @@
 #define VALS(v) (ELl(v,1))                               // values for dict v
 #define Ti(n) (_tagnums(#n))                             // int value for tag n (literal not string)
 #define Tt(n) (xt(_tagnums(#n)))                         // tag n (literal not string) as a scalar of type tag
-
-#define TIME(n,expr) ({ int i; clock_t st,en; \
-	st=clock(); for(i=0;i<n;i++) { expr; } \
-	en=clock(); printf("%0.2f", ((double)(en-st)) / CLOCKS_PER_SEC); })
+#define XALLOC_AS(x) ({ VP new_ = xalloc(x->t,x->n); if(x->tag)new_->tag=x->tag; new_; })
+#define XALLOC_AS_EMPTY(x) ({ VP new_ = xalloc(x->t,1); if(x->tag)new_->tag=x->tag; new_; })
 
 // create an exception value
 #define EXC(type,lbl,x,y) tagv("exception",xln(4,type,xfroms(lbl),x,y));
 #define IF_EXC(cond,type,msg,x,y) if((cond)) return EXC(type,msg,x,y)
+
+// misc
+#define LIKELY(x)       __builtin_expect((x),1)
+#define UNLIKELY(x)     __builtin_expect((x),0)
+#define TIME(n,expr) ({ int i; clock_t st,en; \
+	st=clock(); for(i=0;i<n;i++) { expr; } \
+	en=clock(); printf("%0.2f", ((double)(en-st)) / CLOCKS_PER_SEC); })
+
 
 #define TYD(name,type) typedef type name
 TYD(I8,unsigned char); TYD(I32,int); TYD(I64,__int64_t); TYD(I128,__int128_t);
