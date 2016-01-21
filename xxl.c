@@ -669,6 +669,38 @@ VP max(VP x) {
 }
 VP plus(VP x,VP y) {
 }
+VP pick(VP x,VP y) { // select items of x[0..n] where y[n]=1
+	VP acc;int n=0,typerr=-1;
+	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "pick args should be simple types", x, y); // TODO pick: gen lists
+	PF("pick\n");DUMP(x);DUMP(y);
+	acc=XALLOC_SZ(x,x->n/2);
+	VARY_EACHBOTH(x,y,({
+		if(_y) {
+			acc=appendbuf(acc,(buf_t)&_x,1);
+			n++;
+		}
+	}),typerr);
+	IF_EXC(typerr > -1, Tt(type), "pick arg wrong type", x, y);
+	PF("pick result\n"); DUMP(acc);
+	return acc;
+}
+VP pickapart(VP x,VP y) { // select items of x[0..n] where y[n]=1, and divide non-consecutive regions
+	VP acc, sub=NULL;int n=0,typerr=-1;
+	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "pick args should be simple types", x, y); // TODO pick: gen lists
+	PF("pickapart\n");DUMP(x);DUMP(y);
+	acc=xlsz(4);
+	VARY_EACHBOTH(x,y,({
+		if(_y) {
+			if (!sub) sub=XALLOC_SZ(x,x->n/2);
+			sub=appendbuf(sub,(buf_t)&_x,1);
+		} else {
+			if (sub) { acc=append(acc,sub); xfree(sub); sub=NULL; }
+		}
+	}),typerr);
+	IF_EXC(typerr > -1, Tt(type), "pick arg wrong type", x, y);
+	PF("pickapart result\n"); DUMP(acc);
+	return acc;
+}
 VP sum(VP x) {
 	PF("sum");DUMP(x);
 	I128 val=0;int i;
