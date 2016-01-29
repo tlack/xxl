@@ -85,6 +85,18 @@ major features I anticipate finishing soon-ish.
 - LLVM IR 
 - GUI
 
+## Installation
+
+Pretty rough right now. We use a build script called `./c` instead of a
+Makefile, just to be difficult. You'll need a C compiler and a minimally POSIX
+environment but that's about it. Try something like:
+
+```
+git clone https://github.com/tlack/xxl.git
+cd xxl
+./c
+```
+
 ## Inspiration
 
 K4/Q by Kx Systems, Erlang (process model), and C.
