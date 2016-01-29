@@ -155,7 +155,7 @@ char* repr_d(VP x,char* s,size_t sz) {
 char* repr_p(VP x,char* s,size_t sz) {
 	Proj p = EL(x,Proj,0);
 	ASSERT(1,"repr_p");
-	APF(sz,"`projection[%p,%d,%p,",x,p.type,p.type==1?p.f1:p.f2);
+	APF(sz,"`projection(%p,%d,%p,",x,p.type,p.type==1?p.f1:p.f2);
 	if(p.left!=NULL) 
 		repr0(p.left, s, sz);
 	else
@@ -165,7 +165,7 @@ char* repr_p(VP x,char* s,size_t sz) {
 		repr0(p.right, s, sz);
 	else
 		APF(sz,"()",0);
-	APF(sz,"]",0);
+	APF(sz,")",0);
 	return s;
 }
 #include "repr.h"
@@ -1121,7 +1121,7 @@ int _any(VP x) {
 	return 0;
 }
 VP any(VP x) {
-	PF("_any\n");DUMP(x);
+	//PF("any\n");DUMP(x);
 	IF_EXC(!SIMPLE(x) && !LIST(x), Tt(type), "any arg must be list or simple type", x, 0);
 	if(LIST(x)) return deep(x,x1(&any));
 	return xb(_any(x));
@@ -2568,16 +2568,15 @@ void tests() {
 	VP a,b,c;
 	// xprofile_start();
 	
+	//xprofile_start();
+	printf("TESTS START\n");
 	test_basics();
 	test_match();
 	test_nest();
 	// test_json();
 	test_ctx();
-	//xprofile_start();
 	test_eval();
 	//xprofile_end();
-	repl();
-	// xprofile_end();
 	printf("TESTS PASSED\n");
 	repl();
 
