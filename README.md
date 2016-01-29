@@ -83,6 +83,11 @@ major features I anticipate finishing soon-ish.
 ## Maybe later
 
 - LLVM IR 
+- GUI
+
+## Inspiration
+
+K4/Q by Kx Systems, Erlang (process model), and C.
 
 ## Size
 
@@ -91,6 +96,10 @@ XXL is about 3,000 lines of hand-written C, plus 2000 lines of auto-generated
 
 I dislike large systems and aim to keep XXL small, though I would like to make
 code sharing easy and convenient ala npm (though different in many respects).
+
+## License
+
+BSD-L (3 clause)
 
 ## Credits
 
