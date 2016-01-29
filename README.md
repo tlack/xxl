@@ -83,6 +83,7 @@ See the various tests for more examples.
 XXL is still very much a work in progress and is mostly broken. That said, here are the 
 major features I anticipate finishing soon-ish.
 
+- Currently has severe memory leaks 
 - Floats! 
 - Dictionary literals (dictionaries do work and exist as a primitive type, just
 	can't decide on a literal syntax for them)
@@ -96,8 +97,12 @@ major features I anticipate finishing soon-ish.
 
 ## Open questions
 
-- What syntax for `each`, `eachleft`, `eachright`, `eachboth`, and `eachprior`?
+- What syntax for `each`, `eachleft`, `eachright`, `eachboth`, and `eachpair`?
   Experimenting with `@` at this time, but open to suggestions.
+
+- What's the best way to represent dates/times and time spans? 
+
+- Should our tag/symbol implementation work with ints or char*s?
 
 ## Maybe later
 
