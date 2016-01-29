@@ -4,8 +4,9 @@
 
 ## Status
 
-Gross, crumbly work in progress. Kinda works when it compiles. Definitely 
-*not suitable* for serious work just yet. See also "not yet implemented" below.
+Gross, crumbly work in progress. Kinda works when it compiles, but mostly a
+proof of concept. Definitely *not suitable* for serious work just yet. See also
+"not yet implemented" below.
 
 ## Examples
 
@@ -58,16 +59,21 @@ See the various tests for more examples.
 
 ## Features
 
-- Minimalist syntax. Clean, very easy to understand and parse left-to-right syntax with only three special forms:
-comments, strings, and grouping (i.e., `( )` and `{ }`)
+- Minimalist syntax. Clean, very easy to understand and parse left-to-right
+	syntax with only three special forms: comments, strings, and grouping (i.e.,
+	`( )` and `{ }`)
 - Very fast operations on values, especially large arrays (pretty slow parser, though)
 - Vector-oriented and convenient operation on primitives 
-- Supports `\\` to exit the REPL, as god intended (`quit` and `exit` too)
 - Diverse integer type options, including 128bit octoword (denoted with `o`).
 - Threading support, kinda (requires attention)
+- Values can have `tags` associated with them, allowing you to create an
+	OOP-like concept of structure within data, while all regular operations work
+	seamlessly as if you were using the underlying data type.
 - BSD license
 - Built in web server (half way there at least)
 - Very small
+- No stinkin loops (and no linked lists, either)
+- Supports `\\` to exit the REPL, as god intended (`quit` and `exit` too)
 
 ## Not yet implemented
 
@@ -92,6 +98,7 @@ major features I anticipate finishing soon-ish.
 
 ## Maybe later
 
+- JS/Emscripten
 - LLVM IR 
 - GUI
 
@@ -118,6 +125,9 @@ XXL is about 3,000 lines of hand-written C, plus 2000 lines of auto-generated
 
 I dislike large systems and aim to keep XXL small, though I would like to make
 code sharing easy and convenient ala npm (though different in many respects).
+
+I believe XXL could be reduced to 1,000 lines or less of JavaScript or another
+language that offers a more flexible type system than C's.
 
 ## License
 
