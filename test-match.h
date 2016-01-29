@@ -63,13 +63,11 @@
 	ASSERT(_equal(res,xin(2,2,3)),"mo");
 
 	// mixed types
-	PFW({
 	res=match(xin(4,7,8,5,6),xln(3,
 		tagv("anyof", xin(2,7,8)),
 		tagv("greedy", xi0()),
 		tagv("anyof", xin(2,5,6))));
 	ASSERT(_equal(res,xin(4,0,1,2,3)),"mp");
-	});
 
 	res=match(xin(4,9,8,7,6),tagv("greedy", xln(3,
 		tagv("anyof", xin(2,9,8)),
@@ -135,6 +133,67 @@
 	ASSERT(_equal(
 		match(xin(5,1,0,1,0,2),xi(1)),
 		xin(2,0,2)), "m multi0");
+
+	ASSERT(_equal(
+		matcheasy(
+			xin(5,1,2,1,2,3),
+			xi(1)
+		), xbn(5,1,0,1,0,0)),"matcheasy 0");
+
+	PFW({
+	a=xfroms("hello\"there\"..");
+	ASSERT(_equal(
+		pick(a,
+			signaljoin(xi(1), matcheasy(a,xc('"')))
+		),xfroms("\"there")), "p sj 0");
+	});
+	PFW({
+
+	/*
+	a=xfroms("wha{ts{up}hello}..");
+	ASSERT(_equal(
+		expand(
+			bracketjoin(
+				xi(1), xln(2,
+					matcheasy(a,xc('{')),
+					matcheasy(a,xc('}'))
+				))
+		),xfroms("{up")), "p bj 0");
+
+	a=xfroms("//abc\n//def\n");
+	b=matcheasy(a,xc('/'));
+	ASSERT(_equal(
+		pickapart(a,
+			bracketjoin(
+				xb(1), 
+				xln(2,
+					consecutivejoin(
+						xb(1),xln(2,b,b)
+					),
+					matcheasy(a,xc('\n'))
+				)
+			)), 
+			xln(2,xfroms("//abc"),xfroms("//def"))
+		), "p bj cj 1");
+
+	a=xfroms("x/y\n//abc\n//def\n");
+	b=matcheasy(a,xc('/'));
+	ASSERT(_equal(
+		pickapart(a,
+			bracketjoin(
+				xb(1), 
+				xln(2,
+					consecutivejoin(
+						xb(1),xln(2,b,b)
+					),
+					matcheasy(a,xc('\n'))
+				)
+			)), 
+			xln(2,xfroms("//abc"),xfroms("//def"))
+		), "p bj cj 2");
+	*/
+	});
+
 	/*
 	a=xin(4, 1, 2, 3, 4);
 	b=xin(4, 1, 2, 3, 4);

@@ -19,6 +19,7 @@ function skip(t) {
 	t=t[1];
 	return (lib.dontcast.indexOf(t)!=-1)?true:false;
 }
+
 console.log(lib.prelude + 
 	"// vary on a single element. unpacks x[i] into a C variable \n"+
 	"// called _x, of the correct c native type. then executes \n"+
@@ -52,7 +53,7 @@ lib.each(lib.types,function(tx) {
 	}
 });
 var tmpl="\tif(_xt=={{x0}}){/*{{x2}}*/ \\\n" +
-	"\t\t{{x3}} _x;\\\n" + 
+	"\t\t{{x3}} _x,_xtmp=0;\\\n" + 
 	"\t\twhile (_i < _xn) { _x=AS_{{x1}}(x,_i); /* printf(\"%d {{5}}\\n\", _i, _x); */ stmt; _i++; }\\\n" + 
 	"\t}\\";
 lib.each(lib.types,function(tx) {
@@ -63,22 +64,73 @@ lib.each(lib.types,function(tx) {
 });
 console.log("})");
 
+console.log("#define VARY_EACHLIST(x,stmt,failvar) ({ \\\n" +
+	"\tint _i=0,_xn=x->n,_xt=x->t; /*PF(\"VE\");DUMP(x);*/\\");
+var tmpl="\tif(_xt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
+lib.each(lib.types,function(tx) {
+	if(tx[1] != 'l' && skip(tx)){
+		var a=[];
+		for(var i in tx)a["x"+i]=tx[i];
+		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+	}
+});
+var tmpl="\tif(_xt=={{x0}}){/*{{x2}}*/ \\\n" +
+	"\t\t{{x3}} _x,_xtmp=0;\\\n" + 
+	"\t\twhile (_i < _xn) { _x=AS_{{x1}}(x,_i); /* printf(\"%d {{5}}\\n\", _i, _x); */ stmt; _i++; }\\\n" + 
+	"\t}\\";
+lib.each(lib.types,function(tx) {
+	if(tx[1] != 'l' && skip(tx))return;
+	var a=[];
+	for(var i in tx)a["x"+i]=tx[i];
+	console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+});
+console.log("})");
+
 console.log("#define VARY_EACHBOTH(x,y,stmt,failvar) ({ \\\n" +
 	"\tint _i=0,_j=0,_xn=x->n,_yn=y->n,_xt=x->t,_yt=y->t;\\");
 var tmpl="\tif(_xt=={{x0}}||_yt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
 lib.each(lib.types,function(tx) {
-	if(skip(tx)){
+	if(tx[1] != 'l' && skip(tx)){
 		var a=[];
 		for(var i in tx)a["x"+i]=tx[i];
 		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
 	}
 });
 var tmpl="\tif(_xt=={{x0}}&&_yt=={{y0}}){/*{{x2}} x {{y2}}*/ \\\n" +
-	"\t\t{{x3}} _x;{{y3}} _y;\\\n" + 
-	"\t\twhile (_i < _xn && _j < _yn) { _x=AS_{{x1}}(x,_i); _y=AS_{{y1}}(y,_j); stmt; _i++; _j++; }\\\n" + 
+	"\t\t{{x3}} _x,_xtmp=0; {{y3}} _y,_ytmp;\\\n" + 
+	"\t\twhile (_i<_xn && _j<_yn) { _x=AS_{{x1}}(x,_i%_xn); _y=AS_{{y1}}(y,_j%_yn); stmt; \\\n"+ 
+	"\t\tif(!SCALAR(x)) {_i++;}  _j++; }\\\n" + 
 	"\t}\\";
 lib.each(lib.types,function(tx) {
 	if(skip(tx))return;
+	lib.each(lib.types, function(ty) { 
+		if(skip(ty))return;
+		var a=[];
+		for(var i in tx)a["x"+i]=tx[i];
+		for(var i in ty)a["y"+i]=ty[i];
+		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+	});
+});
+console.log("})");
+
+// identical to VARY_EACHBOTH, but allows x or y to be a list
+console.log("#define VARY_EACHBOTHLIST(x,y,stmt,failvar) ({ \\\n" +
+	"\tint _i=0,_j=0,_xn=x->n,_yn=y->n,_xt=x->t,_yt=y->t;\\");
+var tmpl="\tif(_xt=={{x0}}||_yt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
+lib.each(lib.types,function(tx) {
+	if(tx[1] != 'l' && skip(tx)){
+		var a=[];
+		for(var i in tx)a["x"+i]=tx[i];
+		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+	}
+});
+var tmpl="\tif(_xt=={{x0}}&&_yt=={{y0}}){/*{{x2}} x {{y2}}*/ \\\n" +
+	"\t\t{{x3}} _x,_xtmp=0; {{y3}} _y,_ytmp;\\\n" + 
+	"\t\twhile (_i<_xn && _j<_yn) { _x=AS_{{x1}}(x,_i%_xn); _y=AS_{{y1}}(y,_j%_yn); stmt; \\\n"+ 
+	"\t\tif(!SCALAR(x)) {_i++;}  _j++; }\\\n" + 
+	"\t}\\";
+lib.each(lib.types,function(tx) {
+	if(tx[1] != 'l' && skip(tx))return;
 	lib.each(lib.types, function(ty) { 
 		if(skip(ty))return;
 		var a=[];

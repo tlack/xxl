@@ -5,6 +5,13 @@
 #endif
 
 /* Control structures of sorts: */
+#define MAX(a,b) \
+	({ __typeof__ (a) _a = (a); \
+		 __typeof__ (b) _b = (b); \
+		 _a > _b ? _a : _b; })
+
+#define ABS(a) ( (a)<0 ? -1*(a) : (a) )
+
 #define FOR(st,en,stmt) ({ int _i;for(_i=(st);_i<(en);_i++)stmt; })
 #define IF_RET(cond,thing) if((cond)) return thing
 #define ITER(thing,n,body) ({ int _i;for(_i=0;_i<sizeof(thing);_i++) { typeof(*thing) _x; _x=thing[_i]; body; } })
@@ -37,8 +44,8 @@
 #define PFW(stmt) ({ printf("PFW\n"); PFIN(); stmt; PFOUT(); })
 #define MEMPF(...) (DEBUG && MEM_W && PF(__VA_ARGS__))
 #if DEBUG 
-	#define DUMP(x) ({ char* s = reprA(x); PF("%s", s); free(s); })
-	#define DUMPRAW(x,sz) ({ printf("%p ",x); FOR(0,sz,printf("%d ",x[_i])); printf("\n"); })
+	#define DUMP(x) ({ char* s = reprA(x); PF("%s", s); free(s); x; })
+	#define DUMPRAW(x,sz) ({ printf("%p ",x); FOR(0,sz,printf("%d ",x[_i])); printf("\n"); x; })
 #else
 	#define DUMP(x) ({})
 	#define DUMPRAW(x,sz) ({})
@@ -47,32 +54,47 @@
 /* Element access and type checks*/
 #define BUF(v) ((buf_t)( (v)->alloc ? (v->dyn) : (buf_t)&((v)->st) )) // data ptr
 #define EL(v,type,n) (((type*)BUF(v))[n])                             // ..as type, for index n
+// TODO ELl() and friends should do more checking on arguments, or provide a safe wrapper to do it 
+// for callers - perhaps simply delist(v,n)
 #define ELl(v,n) ((EL(v,VP,n)))                                       // ..deref linked list item
 #define ELb(v,n) ELsz(v,1,n)                                          // ..as a byte* for index n
-#define ELi(v,n) ((BUF(v))+((v->itemsz)*n))                           // ..for index n (no type assumed)
+#define ELi(v,n) ((BUF(v))+((v->itemsz)*(n)))                         // ..for index n (no type assumed)
 #define ELsz(v,sz,n) ((BUF(v))+(sz*n))                                // ..for index n, when casted to size = sz
 
 // Handy functions for manipulating values and their types
 #define SCALAR(v) ((v)->n==1)                            // is v a single value?
-#define NUM(v) (IS_b(v)||IS_i(v)||IS_l(v)||IS_o(v))      // is v an int type?
-#define SIMPLE(v) (IS_b(v)||IS_i(v)||IS_l(v)||IS_o(v)||IS_c(v))
+#define NUM(v) (IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v))      // is v an int type?
+#define SIMPLE(v) (IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v)||IS_c(v))
 #define LIST(v) ((v)->t==0)                              // is v a general list type?
 #define DICT(v) (IS_d(v))                                // is v a dictionary?
-#define LISTDICT(v) ((v)->t==0||IS_d(v))                 // is v a list or dictionary?
+#define LISTDICT(v) (IS_l(v)||IS_d(v))                   // is v a list or dictionary?
+#define CONTAINER(v) (IS_l(v)||IS_d(v)||IS_x(v))         // is v any kind of container? (i.e., non-vec but has children)
+#define CALLABLE(v) (IS_1(v)||IS_2(v)||IS_p(v)||IS_x(v)) // callable types - represent funcs or contexts
 #define ENLISTED(v) (LIST(v)&&SCALAR(v))                 // is v a single item inside a list?
 #define KEYS(v) (ELl(v,0))                               // keys for dict v
 #define VALS(v) (ELl(v,1))                               // values for dict v
 #define Ti(n) (_tagnums(#n))                             // int value for tag n (literal not string)
 #define Tt(n) (xt(_tagnums(#n)))                         // tag n (literal not string) as a scalar of type tag
-#define XALLOC_SAME(x) ({ VP new_ = xalloc(x->t,x->n); if(UNLIKELY(x->tag))new_->tag=x->tag; new_; })
-#define XALLOC_SZ(x,sz) ({ VP new_ = xalloc(x->t,sz); if(UNLIKELY(x->tag))new_->tag=x->tag; new_; })
+#define ALLOC_BEST(x,y) ({ \
+	VP new_ = xalloc(MAX(x->t,y->t),MAX(x->n,y->n)); \
+	if(UNLIKELY(x->tag))new_->tag=x->tag; new_; })
+#define ALLOC_LIKE(x) ({ VP new_ = xalloc(x->t,x->n); if(UNLIKELY(x->tag))new_->tag=x->tag; new_; })
+#define ALLOC_LIKE_SZ(x,sz) ({ VP new_ = xalloc(x->t,sz); if(UNLIKELY(x->tag))new_->tag=x->tag; new_; })
+#define ALLOC_BEST_FIT(val,sz) ({ int t; \
+	if(val<MAX_i)t=T_i else if (val<MAX_j)t=T_j else if (val<MAX_o)t=T_o; \
+	xalloc(t,sz); })
 
 // create an exception value
-#define EXC(type,lbl,x,y) tagv("exception",xln(4,type,xfroms(lbl),x,y));
+#define EXC(type,lbl,x,y) ({ \
+	VP exc; exc = tagv("exception",xln(4,type,xfroms(lbl),x,y));  \
+	printf("exception: %s\n", sfromx(repr(exc))); \
+	exit(1); \
+	exc; }) 
 #define IF_EXC(cond,type,msg,x,y) if((cond)) return EXC(type,msg,x,y)
 // TODO if_exc doesnt give us a chance to free memory :-/
 
 // misc
+#define MAXSTACK 2048
 #define LIKELY(x)       __builtin_expect((x),1)
 #define UNLIKELY(x)     __builtin_expect((x),0)
 #define TIME(n,expr) ({ int i; clock_t st,en; \
@@ -92,6 +114,7 @@ typedef VP (unaryFunc)(VP x);
 typedef VP (binaryFunc)(VP x,VP y);
 typedef char* (reprFunc)(VP x,char*s,size_t sz);
 
+// TODO projection C type should work with VP's of type 1/2 (un/bin func), rather than C-style function pointers
 struct Proj0 { int type; union { unaryFunc* f1; binaryFunc* f2; }; VP left; VP right; };
 typedef struct Proj0 Proj;
 

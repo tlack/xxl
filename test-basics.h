@@ -1,5 +1,7 @@
 	VP a,b,c,d; int i, tc;
 
+	PFW({
+
 	for(tc=0;tc<TESTITERS;tc++) {
 		a=xalloc(T_i,1);
 		EL(a,int,0)=1;
@@ -72,8 +74,17 @@
 		ASSERT(_equal(take(xin(3,1,2,3),xi(-2)),xin(2,2,3)),"take 2");
 		ASSERT(_equal(take(xin(3,1,2,3),xi(-1)),xi(3)),"take 3");
 		ASSERT(_equal(take(xin(3,1,2,3),xi(0)),xi0()),"take 4");
-		ASSERT(_equal(take(xin(3,1,2,3),xi(4)),xi0()),"take 5");
-		ASSERT(_equal(take(xin(3,1,2,3),xi(3)),xin(3,1,2,3)),"take 5");
+		ASSERT(_equal(take(xin(3,1,2,3),xi(4)),xin(4,1,2,3,1)),"take 5");
+		ASSERT(_equal(take(xin(3,1,2,3),xi(3)),xin(3,1,2,3)),"take 6");
+		ASSERT(_equal(take(xi(1),xi(3)),xin(3,1,1,1)),"take 7");
+		ASSERT(_equal(take(xi(1),xi(-3)),xin(3,1,1,1)),"take 8");
+		ASSERT(_equal(take(xi(-1),xi(-3)),xin(3,-1,-1,-1)),"take 9");
+		ASSERT(_equal(take(xin(2,7,9),xi(-3)),xin(3,9,7,9)),"take 10");
+
+		ASSERT(_equal(drop(xin(3,5,6,7),xi(1)),xin(2,6,7)),"drop 1");
+		ASSERT(_equal(drop(xin(3,5,6,7),xi(-1)),xin(2,5,6)),"drop 2");
+		ASSERT(_equal(drop(xin(3,5,6,7),xi(0)),xin(3,5,6,7)),"drop 3");
+
 		upsert(a,xfroms("test"));
 		ASSERT(a->n==3,"upsert 1");
 		b = xi(101);
@@ -97,6 +108,7 @@
 		c = apply(a,d);
 		ASSERT(_equal(c,xi(10))==1,"apply equal 0");
 		xfree(a); xfree(c); xfree(d);
+
 		a = xd0();
 		b = xln(2,xln(1,xfroms("name")),xfroms("tom"));
 		a=append(a,b);
@@ -104,12 +116,71 @@
 		DUMP(c);
 		ASSERT(IS_c(c) && memcmp(BUF(c),"tom",c->n)==0,"apply equal str");
 		xfree(c);
+
+		a = xd0();
+		b = xln(2,xln(1,xfroms("over")),xfroms("tom"));
+		a=append(a,b);
+		xfree(b);
+		b=xln(2,xln(1,xfroms("ver")),xfroms("frank"));
+		a=append(a,b);
+		c=apply(a,xln(1,xfroms("ver")));
+		DUMP(c);
+		ASSERT(IS_c(c) && memcmp(BUF(c),"frank",c->n)==0,"apply equal str 2");
+		xfree(c);
+		xfree(a);
+
+		a=xd0();
+		b=xln(2,xln(1,xfroms("over")),xfroms("tom"));
+		a=append(a,b);
+		xfree(b);
+		b=xln(2,xln(1,xfroms("over")),xfroms("tom"));
+		a=append(a,b);
+		xfree(b);
+		b=xln(2,xln(1,xfroms("ver")),xfroms("frank"));
+		a=append(a,b);
+		c=apply(a,xln(1,xfroms("ver")));
+		DUMP(c);
+		ASSERT(IS_c(c) && memcmp(BUF(c),"frank",c->n)==0,"apply equal str 3");
+		xfree(c);
+		xfree(a);
+
+		a=xd0();
+		b=xln(2,xln(1,xfroms("over")),xfroms("tom"));
+		a=append(a,b);
+		xfree(b);
+		b=xln(2,xln(1,xfroms("over")),xfroms("tom"));
+		a=append(a,b);
+		xfree(b);
+		b=xln(2,xln(1,xfroms("ver")),xfroms("frank"));
+		a=append(a,b);
+		c=apply(a,xln(1,xfroms("over")));
+		DUMP(c);
+		ASSERT(IS_c(c) && memcmp(BUF(c),"tom",c->n)==0,"apply equal str 3");
+		xfree(c);
+		xfree(a);
+
+		a=xd0();
+		b=xln(2,xln(1,xfroms("aa")),xfroms("tom"));
+		a=append(a,b);
+		PF("o0 0");
+		DUMP(a);
+		xfree(b);
+		b=xln(2,xln(1,xfroms("aa")),xfroms("frank"));
+		a=append(a,b);
+		PF("o0 1");DUMP(a);
+		xfree(b);
+		c=apply(a,xfroms("aa"));
+		PF("o0 2");DUMP(c);
+		DUMP(c);
+		ASSERT(IS_c(c) && memcmp(BUF(c),"frank",c->n)==0,"apply dictionary overlap 0");
+		xfree(c);
+
 		c=apply(a,xln(1,xfroms("")));
 		ASSERT(c->n==0,"apply empty search");
 		DUMP(c);
 		xfree(c);
-		xfree(b);
 		xfree(a);
+
 		_tagnums("");
 		a=xin(3,10,9,8);
 		a->tag=_tagnums("test tag");
@@ -156,7 +227,13 @@
 		c=max(xin(3,1,2,-3));
 		ASSERT(c->n==1 && _equal(c, xi(2)), "max 1");
 
-		c=deal(xi(100),xi(10));
+		c=deal(xi(10),xi(100));
 		DUMP(c);
 		ASSERT(c->n==100 && _equal(min(c),xi(0)), "deal 0");
+
+		PFW({
+		ASSERT(_equal(condense(xbn(5,0,1,1,0,1)),xin(3,1,2,4)), "condense 0");
+		});
 	}
+
+	});
