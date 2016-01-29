@@ -4,8 +4,8 @@
 
 ## Status
 
-Kinda works. Usually starts at least. Definitely not suitable for real use. See
-"Missing features" below
+Gross, crumbly work in progress. Kinda works when it compiles. Definitely 
+*not suitable* for serious work just yet. See also "not yet implemented" below.
 
 ## Examples
 
@@ -54,6 +54,8 @@ writing endless horrible loops in other languages.
 zero, that means that the target number can be evenly divided by one of
 the numbers lower than it, and thus, it is not prime. Tada!
 
+See the various tests for more examples. 
+
 ## Features
 
 - Minimalist syntax. Clean, very easy to understand and parse left-to-right syntax with only three special forms:
@@ -72,6 +74,9 @@ comments, strings, and grouping (i.e., `( )` and `{ }`)
 XXL is still very much a work in progress and is mostly broken. That said, here are the 
 major features I anticipate finishing soon-ish.
 
+- Floats! 
+- Dictionary literals (dictionaries do work and exist as a primitive type, just
+	can't decide on a literal syntax for them)
 - FancyRepl(tm)
 - Dates/times
 - In-memory tables
@@ -79,6 +84,11 @@ major features I anticipate finishing soon-ish.
 - Logged updates
 - Streams
 - Mailboxes/processes
+
+## Open questions
+
+- What syntax for `each`, `eachleft`, `eachright`, `eachboth`, and `eachprior`?
+  Experimenting with `@` at this time, but open to suggestions.
 
 ## Maybe later
 
