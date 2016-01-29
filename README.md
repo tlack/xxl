@@ -32,8 +32,14 @@ the result would be `(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16i)`.
 currently stands at `(2,3,4,5,6,7,8,8,9,10,11,12,13,14,15,16i)`.
 
 `% x` invokes the "mod" operator, returning the integer remainder of y divided
-by x. So we're getting the remainder of that whole list, divided by our target
-number, `17`. 
+by x. This part highlights an interesting and important detail of XXL that
+separates it from more popular languages: most simple operators, like the math
+functions `+ - / * % | &` can work with one or more numbers on both sides of
+them. This is a big time saver compared to writing endless horrible loops in
+other languages.
+
+So with `(result) % x` we're getting the remainder of that whole list, divided
+by our target number, `17`. 
 
 This yields the uninteresting `(2,3,4,5,6,7,8,9,10,11,12,13,14,15,16i)`, which
 is what we would expect: nothing *evenly* divides into 17, or else it wouldn't
@@ -46,10 +52,7 @@ If you try it with a different sequence, you'll see why this works:
 (1,0,1,4,3,2,1i)
 ```
 
-This part highlights an interesting and important detail of XXL: most simple
-operators, like the math functions `+ - / * % | &` can work with one or
-more numbers on both sides of them. This is a big time saver compared to
-writing endless horrible loops in other languages.
+As you can say, 3 cleanly divides 9, so the value in that position is zero.
 
 `min` then allows us to find the lowest number in this sequence. If it's 
 zero, that means that the target number can be evenly divided by one of
@@ -84,12 +87,12 @@ major features I anticipate finishing soon-ish.
 - Dictionary literals (dictionaries do work and exist as a primitive type, just
 	can't decide on a literal syntax for them)
 - FancyRepl(tm)
-- Dates/times
+- Dates/times (need to figure out core representation)
 - In-memory tables
 - I/O (sockets, mmap)
-- Logged updates
-- Streams
-- Mailboxes/processes
+- Logged updates (I like [Kdb's approach to this](http://code.kx.com/wiki/Cookbook/Logging))
+- Mailboxes/processes (implemented as a writer-blocks general list)
+- Streams (perhaps a mailbox as well; studying other systems now)
 
 ## Open questions
 
@@ -116,7 +119,9 @@ cd xxl
 
 ## Inspiration
 
-K4/Q by Kx Systems, Erlang (process model), and C.
+K4/Q by [Kx Systems&trade;](http://kx.com), [Klong by Nils Holm](http://t3x.org/klong/), Erlang
+(process model, introspection, parse tree/transforms), Io (self-similarity of
+objects) and C (simplicity, performance, rectangularity of data).
 
 ## Size
 
