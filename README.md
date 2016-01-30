@@ -60,6 +60,21 @@ the numbers lower than it, and thus, it is not prime. Tada!
 
 See the various tests for more examples. 
 
+## Philosophy
+
+- *Terse*. It is much better to express yourself clearly in a few words rather
+  than many. We provide powerful operators that allow you to do more while
+	describing less.
+
+- *Accessible*. XXL avoids niche-y programmer terms like "map" and "reduce" in
+	favor of common English 
+
+- *Minimalistic*, but not spare. Provide tools people commonly need, even if
+	they're a bit duplicative of other, more primitive approaches.
+
+- *Fast*. XXL cares deeply about performance, for the same reason a person should care
+	about the quality of any tool they use for professional work. 
+
 ## Features
 
 - Minimalist syntax. Clean, very easy to understand and parse left-to-right
