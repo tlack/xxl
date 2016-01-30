@@ -480,48 +480,32 @@ VP last(VP x) {
 	res=appendbuf(res,ELi(x,x->n-1),1);
 	return res;
 }
-VP take_(VP x,int i) {
-	VP res;
-	int st, end, xn=x->n;
-	/*
-	if(i<0) { st = x->n+i; end=x->n; }
-	else { st = 0; end=i; }
-	PF("take_(,%d) %d %d",i, st, end);
-	DUMP(x);
-	res = xalloc(x->t,end-st);
-	DUMP(info(res));
-	if(end-st > 0) {
-		appendbuf(res, ELi(x,st), end-st);
+VP replaceleft(VP x,int n,VP replace) { // replace first i values with just 'replace'
+	int i;
+	ASSERT(LIST(x),"replaceleft arg must be list");
+	for(i=0;i<n;i++) xfree(ELl(x,i));
+	if(n>1) {
+		memmove(ELi(x,1),ELi(x,n),x->itemsz*(x->n-n));
 	}
-	PF("take_ result\n"); DUMP(res);
-	*/
-	if (i<0) { st=ABS((xn+i)%xn); end=ABS(i)+st; } else { st=0; end=i; }
-	// PF("take_(,%d) %d %d\n",i, st, end); DUMP(info(x));
-	//IF_RET(end>xn, xalloc(x->t, 0));
-	res=ALLOC_LIKE_SZ(x,end-st);
-	// PF("take end %d st %d\n", end, st);
-	// DUMP(info(res)); DUMP(x);
-	FOR(st,end,({ res=appendbuf(res,ELi(x,_i % xn),1); }));
-	//if(end-st > 0) 
-	//res=appendbuf(res,ELi(x,st),end-st);
-	// PF("take result\n"); DUMP(res);
-	// DUMP(info(res));
-	return res;
+	EL(x,VP,0)=replace;
+	x->n=x->n-i;
+	return x;
 }
-VP take(VP x,VP y) {
-	int typerr=-1;
-	size_t st,end; //TODO slice() support more than 32bit indices
-	PF("take args\n"); DUMP(x); DUMP(y);
-	IF_RET(!NUM(y) ||!SCALAR(y), EXC(Tt(type),"take x arg must be single numeric",x,y));	
-	VARY_EL(y, 0, ({ return take_(x,_x); }), typerr);
-	return (VP)0;
+VP reverse(VP x) {
+	if(!SIMPLE(x)||CONTAINER(x)) return EXC(Tt(type),"reverse arg must be simple or container",x,0);
+	int i,typerr=-1; VP acc=ALLOC_LIKE(x);
+	for(i=x->n-1;i>=0;i--) appendbuf(acc,ELi(x,i),1);
+	PF("reverse result");DUMP(acc);
+	DUMP(info(acc));
+	return acc;
 }
 VP shift_(VP x,int i) {
 	PF("shift_ %d\n",i);DUMP(x);
+	int n=x->n;
 	if(i<0) 
-		return join(take_(x,i),drop_(x,i));
+		return join(take_(x,i%n),drop_(x,i%n));
 	else
-		return join(drop_(x,i),take_(x,i));
+		return join(drop_(x,i%n),take_(x,i%n));
 }
 VP shift(VP x,VP y) {
 	//       1 2 3 4 5 6 7
@@ -535,17 +519,6 @@ VP shift(VP x,VP y) {
 	int typerr=-1;
 	VARY_EL(y,0,({return shift_(x,_x);}),typerr);
 	return (VP)0;
-}
-VP replaceleft(VP x,int n,VP replace) { // replace first i values with just 'replace'
-	int i;
-	ASSERT(LIST(x),"replaceleft arg must be list");
-	for(i=0;i<n;i++) xfree(ELl(x,i));
-	if(n>1) {
-		memmove(ELi(x,1),ELi(x,n),x->itemsz*(x->n-n));
-	}
-	EL(x,VP,0)=replace;
-	x->n=x->n-i;
-	return x;
 }
 VP splice(VP x,VP idx,VP replace) {
 	int i, first = AS_i(idx,0),last=first+idx->n;
@@ -589,10 +562,11 @@ VP splice(VP x,VP idx,VP replace) {
 }
 VP split(VP x,VP tok) {
 	PF("split");DUMP(x);DUMP(tok);
-	VP tmp=xl0(),tmp2; int locs[1024],typerr=-1;
+	VP tmp=0,tmp2=0; int locs[1024],typerr=-1;
 
 	// special case for empty or null tok.. split vector into list
 	if(tok->n==0) {
+		tmp=xl0();
 		if(LIST(x))return x;
 		VARY_EACHLIST(x,({
 			// PF("in split vary_each %c\n",_x);
@@ -604,12 +578,43 @@ VP split(VP x,VP tok) {
 		PF("split returning\n");DUMP(tmp);
 		return tmp;
 	}
-	VARY_EACH(x,({
-		// if this next sequence matches tok,
-		//tmp = match(_x, tok);
-		//DUMP(tmp); // nyi
-	}), typerr);
-	return tmp;
+	return EXC(Tt(nyi),"split with non-null token not yet implemented",x,tok);
+}
+VP take_(VP x,int i) {
+	VP res;
+	int st, end, xn=x->n;
+	/*
+	if(i<0) { st = x->n+i; end=x->n; }
+	else { st = 0; end=i; }
+	PF("take_(,%d) %d %d",i, st, end);
+	DUMP(x);
+	res = xalloc(x->t,end-st);
+	DUMP(info(res));
+	if(end-st > 0) {
+		appendbuf(res, ELi(x,st), end-st);
+	}
+	PF("take_ result\n"); DUMP(res);
+	*/
+	if (i<0) { st=ABS((xn+i)%xn); end=ABS(i)+st; } else { st=0; end=i; }
+	// PF("take_(,%d) %d %d\n",i, st, end); DUMP(info(x));
+	//IF_RET(end>xn, xalloc(x->t, 0));
+	res=ALLOC_LIKE_SZ(x,end-st);
+	// PF("take end %d st %d\n", end, st);
+	// DUMP(info(res)); DUMP(x);
+	FOR(st,end,({ res=appendbuf(res,ELi(x,_i % xn),1); }));
+	//if(end-st > 0) 
+	//res=appendbuf(res,ELi(x,st),end-st);
+	// PF("take result\n"); DUMP(res);
+	// DUMP(info(res));
+	return res;
+}
+VP take(VP x,VP y) {
+	int typerr=-1;
+	size_t st,end; //TODO slice() support more than 32bit indices
+	PF("take args\n"); DUMP(x); DUMP(y);
+	IF_RET(!NUM(y) ||!SCALAR(y), EXC(Tt(type),"take x arg must be single numeric",x,y));	
+	VARY_EL(y, 0, ({ return take_(x,_x); }), typerr);
+	return (VP)0;
 }
 inline int _equalm(VP x,int xi,VP y,int yi) {
 	// PF("comparing %p to %p\n", ELi(x,xi), ELi(y,yi));
@@ -1246,7 +1251,7 @@ VP xor(VP x,VP y) {
 VP get(VP x,VP y) {
 	// TODO get support nesting
 	int i; VP res;
-	PF("get");DUMP(x);DUMP(y);
+	PF("get\n");DUMP(x);DUMP(y);
 	if(IS_x(x)) {
 		if(IS_c(y)) {
 			res=xt(_tagnum(y));
@@ -2102,7 +2107,7 @@ VP mkstr(VP x) {
 VP rootctx() {
 	VP res;
 	res=xd0();
-	// OPERATORS
+	// postfix/unary operators
 	res=assign(res,Tt(condense),x1(&condense));
 	res=assign(res,Tt(info),x1(&info));
 	res=assign(res,Tt(last),x1(&last));
@@ -2111,9 +2116,11 @@ VP rootctx() {
 	res=assign(res,Tt(max),x1(&max));
 	res=assign(res,Tt(parse),x1(&parse));
 	res=assign(res,Tt(repr),x1(&repr));
+	res=assign(res,Tt(rev),x1(&reverse));
 	res=assign(res,Tt(sum),x1(&sum));
 	res=assign(res,Tt(til),x1(&til));
 	res=assign(res,Tt(ver),xi(0));
+	// infix/binary operators
 	res=assign(res,Tt(deal),x2(&deal));
 	res=assign(res,xt(_tagnums(",")),x2(&join)); // gcc gets confused by Tt(,) - thinks its two empty args
 	res=assign(res,Tt(+),x2(&plus));
@@ -2124,9 +2131,10 @@ VP rootctx() {
 	res=assign(res,Tt(|),x2(&or));
 	res=assign(res,Tt(&),x2(&and));
 	res=assign(res,Tt(~),x2(&matcheasy));
-	res=assign(res,Tt(pick),x2(&pick));
-	res=assign(res,Tt(take),x2(&take));
 	res=assign(res,Tt(drop),x2(&drop));
+	res=assign(res,Tt(pick),x2(&pick));
+	res=assign(res,Tt(rot),x2(&shift));
+	res=assign(res,Tt(take),x2(&take));
 	// 
 	// {min x mod 2_til x}
 	// 30 as 'n til drop 2%n
