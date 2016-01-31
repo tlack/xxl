@@ -3,11 +3,14 @@
 // from xxl.c
 int _find(VP x,VP y);
 int _any(VP x);
+VP amend(VP x,VP y);
 VP any(VP x);
 VP apply(VP x,VP y);
 VP append(VP x,VP y);
+VP assign(VP x,VP k,VP val);
 VP cast(VP x,VP y);
 VP capacity(VP x);
+VP condense(VP x);
 VP deep(VP obj,VP f);
 VP each(VP obj,VP fun);
 VP entag(VP x,VP t);
@@ -33,6 +36,7 @@ VP rotate_(VP x,int i);
 VP rotate(VP x,VP y);
 VP set(VP x,VP y);
 const char* sfromx(VP x);
+VP split(VP x,VP tok);
 VP tagname(I32 tag);
 VP tagv(const char* name, VP x);
 VP take_(VP x,int i);

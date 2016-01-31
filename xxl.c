@@ -290,7 +290,7 @@ VP xfree(VP x) {
 					return x;
 				}
 		}
-		PF("xfree(%p) really dropping\n",x);
+		PF("xfree(%p) really dropping type=%d n=%d alloc=%d\n",x,x->t,x->n,x->alloc);
 	} return x; }
 VP xref(VP x) { if(MEM_W){MEMPF("ref %p\n",x);} x->rc++; return x; }
 VP xfroms(const char* str) {  // character value from string - strlen helper
@@ -374,6 +374,27 @@ int _upsertidx(VP x,VP y) {
 	if(idx>-1) return idx;
 	append(x,y); return x->n-1;
 }
+VP amend(VP x,VP y) {
+	PF("amend\n");DUMP(x);DUMP(y);
+	// TODO amend should create a new structure rather than modifying one in-place
+	if(!SIMPLE(x) && !CONTAINER(x))return EXC(Tt(type),"amend x must be a simple or container type",x,y);
+	if(!CONTAINER(y) || y->n!=2)return EXC(Tt(type),"amend y should be [indices,replacements]",x,y);
+	VP idx=ELl(y,0), val=ELl(y,1), acc=ALLOC_LIKE_SZ(x, idx->n), idxi, idxv, tmp=0; int i,fail=-1;
+	if(CALLABLE(idx)) idx=condense(matcheasy(x,idx));
+	for(i=0;i<idx->n;i++) { 
+		idxi=xi(i); idxv=apply(idx,idxi); // TODO really need a fast 0 alloc version of apply(simple,int)!
+		if(UNLIKELY(CALLABLE(val))) tmp=apply(val,apply(x,idxv));
+		else {
+			if (SCALAR(val)) tmp=xref(val); 
+			else tmp=apply(val,idxv);
+		}
+		if(UNLIKELY(tmp->t!=x->t))return EXC(Tt(value),"amend value type does not match x",x,tmp);
+		assign(x,idxv,tmp);
+		xfree(idxi); xfree(idxv); xfree(tmp);
+	}
+	PF("amend returning\n");DUMP(x);
+	return x;
+}
 inline VP assign(VP x,VP k,VP val) {
 	PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
 	if(DICT(x)) {
@@ -441,6 +462,9 @@ VP drop(VP x,VP y) {
 	VARY_EL(y, 0, ({ return drop_(x,_x); }), typerr);
 	return res;
 }
+VP identity(VP x) {
+	return x;
+}
 VP join(VP x,VP y) {
 	VP res=0;
 	PF("join\n");DUMP(x);DUMP(y);
@@ -480,6 +504,15 @@ VP last(VP x) {
 	res=appendbuf(res,ELi(x,x->n-1),1);
 	return res;
 }
+VP list(VP x) { // convert x to general list
+	return split(x,xi0());
+}
+VP list2(VP x,VP y) { // helper for [ - convert y to general list, drop x
+	return xl(y);
+}
+VP nullfun(VP x) {
+	return xl0();
+}
 VP replaceleft(VP x,int n,VP replace) { // replace first i values with just 'replace'
 	int i;
 	ASSERT(LIST(x),"replaceleft arg must be list");
@@ -495,8 +528,6 @@ VP reverse(VP x) {
 	if(!SIMPLE(x)||CONTAINER(x)) return EXC(Tt(type),"reverse arg must be simple or container",x,0);
 	int i,typerr=-1; VP acc=ALLOC_LIKE(x);
 	for(i=x->n-1;i>=0;i--) appendbuf(acc,ELi(x,i),1);
-	PF("reverse result");DUMP(acc);
-	DUMP(info(acc));
 	return acc;
 }
 VP shift_(VP x,int i) {
@@ -741,12 +772,13 @@ VP deal(VP range,VP amt) {
 // APPLICATION, ITERATION AND ADVERBS
 
 inline VP applyexpr(VP parent,VP code,VP arg) {
-	char ch; int i, tcom, tlam, traw, tstr, tws, argconsumed=0; VP left,item;
+	char ch; int i, tcom, texc, tlam, traw, tstr, tws, argconsumed=0; VP left,item;
 	clock_t st=0;
 	PF("applyexpr\n");DUMP(code);DUMP(arg);
 	if(!LIST(code))return EXC(Tt(code),"expr code not list",code,arg);
 	left=arg;
-	tcom=Ti(comment); tlam=Ti(lambda); traw=Ti(raw); tstr=Ti(string); tws=Ti(ws);
+	tcom=Ti(comment); texc=Ti(exception); tlam=Ti(lambda); 
+	traw=Ti(raw); tstr=Ti(string); tws=Ti(ws);
 	for(i=0;i<code->n;i++) {
 		PF("applyexpr #%d/%d, consumed=%d\n",i,code->n-1,argconsumed);
 		DUMP(left);
@@ -834,6 +866,7 @@ inline VP applyexpr(VP parent,VP code,VP arg) {
 			argconsumed=1;
 			PF("111\n");
 			left=apply(item,left);
+			if(left->tag==texc) return left;
 			PF("applyexpr apply returned\n");DUMP(left);
 		}
 	}
@@ -893,6 +926,7 @@ VP apply(VP x,VP y) {
 	// this function is everything.
 	VP res=NULL;int i,typerr=-1;
 	// PF("apply\n");DUMP(x);DUMP(y);
+	if(x->tag==_tagnums("exception"))return x;
 	if(DICT(x)) {
 		VP k=KEYS(x),v=VALS(x);I8 found;
 		if(k==NULL || v==NULL) return NULL;
@@ -2108,6 +2142,7 @@ VP rootctx() {
 	VP res;
 	res=xd0();
 	// postfix/unary operators
+	res=assign(res,xt(_tagnums("]")),x1(&identity));
 	res=assign(res,Tt(condense),x1(&condense));
 	res=assign(res,Tt(info),x1(&info));
 	res=assign(res,Tt(last),x1(&last));
@@ -2130,8 +2165,13 @@ VP rootctx() {
 	res=assign(res,Tt(%),x2(&mod));
 	res=assign(res,Tt(|),x2(&or));
 	res=assign(res,Tt(&),x2(&and));
+	res=assign(res,xt(_tagnums("[")),x2(&list2));
 	res=assign(res,Tt(~),x2(&matcheasy));
+	res=assign(res,Tt(!),x2(&amend));
+	res=assign(res,Tt(bracketj),x2(&bracketjoin));
+	res=assign(res,Tt(consecj),x2(&consecutivejoin));
 	res=assign(res,Tt(drop),x2(&drop));
+	res=assign(res,Tt(in),x2(&matchany));
 	res=assign(res,Tt(pick),x2(&pick));
 	res=assign(res,Tt(rot),x2(&shift));
 	res=assign(res,Tt(take),x2(&take));
@@ -2556,7 +2596,8 @@ void repl() {
 	t1=xfroms("wkspc");
 
 	for(;;) {
-		printf("xxl@%s> ", sfromx(get(ws,t1)));
+		// printf("xxl@%s> ", sfromx(get(ws,t1)));
+		printf("xxl>");
 		fgets(line, sizeof(line), stdin);
 		if(strncmp(line,"\\\\\n",1024)==0 ||
 			 strncmp(line,"exit\n",1024)==0 ||
