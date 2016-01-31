@@ -1,3 +1,21 @@
+#include <fcntl.h>
+#include <limits.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/tcp.h>
+
+#ifdef THREAD
+#include <pthread.h>
+#endif
+
 #define TESTITERS 1
 
 #ifndef DEBUG
@@ -101,6 +119,8 @@
 	en=clock(); printf("%0.2f", ((double)(en-st)) / CLOCKS_PER_SEC); })
 
 
+// TYPES:
+
 #define TYD(name,type) typedef type name
 TYD(I8,unsigned char); TYD(I32,int); TYD(I64,__int64_t); TYD(I128,__int128_t);
 TYD(type_t,I8); TYD(buf_t,I8*);
@@ -119,3 +139,9 @@ typedef struct Proj0 Proj;
 
 struct type_info { type_t t; char c; int sz; char name[32]; reprFunc* repr; };
 typedef struct type_info type_info_t;
+
+
+// GLOBALS FROM xxl.c
+extern I8 PF_ON;
+extern I8 PF_LVL;
+extern VP TAGS;
