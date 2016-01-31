@@ -239,6 +239,27 @@
 	ASSERT(_equal(tmp1,xln(3,xi(1),xi(2),xi(3))),"test parsestr list literal 23");
 	xfree(ctx);xfree(tmp1);
 
+	ctx=mkworkspace();
+	append(ctx,parsestr("['a:1]"));
+	tmp1=apply(ctx,xi(0));
+	DUMP(tmp1);
+	ASSERT(_equal(apply(tmp1,Tt(a)),xi(1)),"test parsestr dict literal 24");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr("['a:1,'b:2]"));
+	tmp1=apply(ctx,xi(0));
+	DUMP(tmp1);
+	ASSERT(_equal(repr(tmp1),xfroms("'dict['a:1i, 'b:2i]\n")),"test parsestr dict literal 25");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr("['a:(1,2),'b:\"barf\"]"));
+	tmp1=apply(ctx,xi(0));
+	DUMP(tmp1);
+	ASSERT(_equal(repr(tmp1),xfroms("'dict['a:(1,2i), 'b:'string(\"barf\")]\n")),"test parsestr dict literal 25");
+	xfree(ctx);xfree(tmp1);
+
 	/* currently fails: 
 	 *
 	ctx=mkworkspace();

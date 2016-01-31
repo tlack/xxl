@@ -65,7 +65,7 @@ char* repr0(VP x,char* s,size_t sz) {
 			x->itemsz,x->n,x->rc);
 	}
 	if(x->tag!=0) 
-		APF(sz, "`%s(", sfromx(tagname(x->tag)));
+		APF(sz, "'%s(", sfromx(tagname(x->tag)));
 	if(t.repr) (*(t.repr)(x,s,sz));
 	if(x->tag!=0)
 		APF(sz, ")", 0);
@@ -115,7 +115,7 @@ char* repr_t(VP x,char* s,size_t sz) {
 	if(n>1) APF(sz,"(",0);
 	for(;i<n;i++){
 		tag = AS_t(x,i);
-		APF(sz,"`%s",sfromx(tagname(tag)));
+		APF(sz,"'%s",sfromx(tagname(tag)));
 		if(i!=n-1)
 			APF(sz,",",0);
 		// repr0(*(EL(x,VP*,i)),s,sz);
@@ -125,7 +125,7 @@ char* repr_t(VP x,char* s,size_t sz) {
 }
 char* repr_x(VP x,char* s,size_t sz) {
 	int i;VP a;
-	APF(sz,"`ctx[",0);
+	APF(sz,"'ctx[",0);
 	for(i=0;i<x->n;i++){
 		a = ELl(x,i);
 		repr0(a,s,sz);
@@ -140,14 +140,14 @@ char* repr_d(VP x,char* s,size_t sz) {
 	int i, n;
 	VP k=KEYS(x),v=VALS(x);
 	if (!k || !v) { APF(sz,"[null]",0); return s; }
-	APF(sz,"`dict[",0);
+	APF(sz,"'dict[",0);
 	n=k->n;
 	for(i=0;i<n;i++) {
 		repr0(apply(k,xi(i)), s, sz);
 		APF(sz,":",0);
 		repr0(apply(v,xi(i)), s, sz);
 		if(i!=n-1)
-			APF(sz,",",0);
+			APF(sz,", ",0);
 	}
 	APF(sz,"]",0);
 	return s;
@@ -155,7 +155,7 @@ char* repr_d(VP x,char* s,size_t sz) {
 char* repr_p(VP x,char* s,size_t sz) {
 	Proj p = EL(x,Proj,0);
 	ASSERT(1,"repr_p");
-	APF(sz,"`projection(%p,%d,%p,",x,p.type,p.type==1?p.f1:p.f2);
+	APF(sz,"'projection(%p,%d,%p,",x,p.type,p.type==1?p.f1:p.f2);
 	if(p.left!=NULL) 
 		repr0(p.left, s, sz);
 	else
@@ -290,7 +290,7 @@ VP xfree(VP x) {
 					return x;
 				}
 		}
-		PF("xfree(%p) really dropping type=%d n=%d alloc=%d\n",x,x->t,x->n,x->alloc);
+		//PF("xfree(%p) really dropping type=%d n=%d alloc=%d\n",x,x->t,x->n,x->alloc);
 	} return x; }
 VP xref(VP x) { if(MEM_W){MEMPF("ref %p\n",x);} x->rc++; return x; }
 VP xfroms(const char* str) {  // character value from string - strlen helper
@@ -317,7 +317,7 @@ VP append(VP x,VP y) { // append all items of y to x. if x is a general list, ap
 	// PF("append %p %p\n",x,y); DUMP(x); DUMP(y);
 	IF_EXC(!CONTAINER(x) && !(x->t==y->t), Tt(Type), "append x must be container or types must match", x, y);
 	if(IS_d(x)) {
-		ASSERT(y->n % 2 == 0, "append to a dict with [`key;`value]");
+		ASSERT(y->n % 2 == 0, "append to a dict with ['key;value]");
 		VP k=KEYS(x),v=VALS(x),y1,y2; int i;
 		y1=ELl(y,0);
 		y2=ELl(y,1);
@@ -439,6 +439,40 @@ VP flatten(VP x) {
 	}
 	return res;
 }
+VP dict(VP x,VP y) {
+	PF("dict\n");DUMP(x);DUMP(y);
+	if(DICT(x)) {
+		if(DICT(y)) return EXC(Tt(nyi),"dict join dict not yet implemented",x,y);
+		if(KEYS(x)->n > VALS(x)->n) { // dangling dictionary detection
+			append(VALS(x),y);
+		} else {
+			if(LIST(y) && y->n==2) {
+				append(KEYS(x),first(y));
+				append(VALS(x),last(y));
+			} else {
+				append(KEYS(x),y);
+			}
+		}
+		PF("dict already dict returning\n");DUMP(x);
+		return x;
+	} else {
+		if(x->n > 1 && x->n != y->n) return EXC(Tt(value),"can't create dict from unlike vectors",x,y);
+		VP d=xd0();
+		if(LIKELY(SCALAR(x))) {
+			if(LIST(x))  // handle ['a:1] which becomes [['a]:1]
+				d=assign(d,ELl(x,0),y);
+			else
+				d=assign(d,x,y);
+		} else {
+			int i;VP ii;
+			for(i=0;i<x->n;i++) {
+				ii=xi(i); d=assign(d,apply(x,ii),apply(y,ii));
+			}
+		}
+		PF("dict new returning\n");DUMP(d);
+		return d;
+	}
+}
 VP drop_(VP x,int i) {
 	VP res;
 	int st, end;
@@ -462,6 +496,11 @@ VP drop(VP x,VP y) {
 	VARY_EL(y, 0, ({ return drop_(x,_x); }), typerr);
 	return res;
 }
+VP first(VP x) {
+	VP i,r;
+	if(CONTAINER(x)) return xref(ELl(x,0));
+	else { i=xi(0); r=apply(x,i); xfree(i); return r; }
+}
 VP identity(VP x) {
 	return x;
 }
@@ -476,7 +515,9 @@ VP join(VP x,VP y) {
 		appendbuf(res, BUF(y), y->n);
 	} else {
 		PF("join3\n");
-		if(LIST(x)) {
+		if(DICT(x))
+			return dict(x,y);
+		else if(LIST(x)) {
 			int has_structure=0;
 			if(y->tag != 0 || x->tag != 0 || (x->n > 0 && ELl(x,x->n-1)->tag != 0)) {
 				// avoid joining structured lists - feels hackish
@@ -2133,7 +2174,8 @@ VP mklexer(const char* chars, const char* label) {
 	*/
 }
 VP mkstr(VP x) {
-	return entags(flatten(x),"string");
+	// return entags(flatten(x),"string");
+	return flatten(x);
 }
 
 // CONTEXTS:
@@ -2158,6 +2200,7 @@ VP rootctx() {
 	// infix/binary operators
 	res=assign(res,Tt(deal),x2(&deal));
 	res=assign(res,xt(_tagnums(",")),x2(&join)); // gcc gets confused by Tt(,) - thinks its two empty args
+	res=assign(res,Tt(:),x2(&dict)); // gcc gets confused by Tt(,) - thinks its two empty args
 	res=assign(res,Tt(+),x2(&plus));
 	res=assign(res,Tt(-),x2(&plus));
 	res=assign(res,Tt(*),x2(&times));
@@ -2617,23 +2660,25 @@ void tests() {
 	VP a,b,c;
 	// xprofile_start();
 	
-	//xprofile_start();
-	printf("TESTS START\n");
-	test_basics();
-	test_match();
-	test_nest();
-	// test_json();
-	test_ctx();
-	test_eval();
-	//xprofile_end();
-	printf("TESTS PASSED\n");
+	if (DEBUG) {
+		xprofile_start();
+		printf("TESTS START\n");
+		test_basics();
+		test_match();
+		test_nest();
+		// test_json();
+		test_ctx();
+		test_eval();
+		printf("TESTS PASSED\n");
+		// test_proj_thr();
+		xprofile_end();
+		if(MEM_W) {
+			PF("alloced = %llu, freed = %llu\n", MEM_ALLOC_SZ, MEM_FREED_SZ);
+		}
+	}
+	// net();
 	repl();
 
-	// test_proj_thr();
-	// net();
-	if(MEM_W) {
-		PF("alloced = %llu, freed = %llu\n", MEM_ALLOC_SZ, MEM_FREED_SZ);
-	}
 	exit(1);
 }
 int main(void) {
