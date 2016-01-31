@@ -232,6 +232,13 @@
 	ASSERT(_equal(tmp1,entags(xc('b'),"string")),"test parsestr 22");
 	xfree(ctx);xfree(tmp1);
 
+	ctx=mkworkspace();
+	append(ctx,parsestr("[1,2,3]"));
+	tmp1=apply(ctx,xi(0));
+	DUMP(tmp1);
+	ASSERT(_equal(tmp1,xln(3,xi(1),xi(2),xi(3))),"test parsestr list literal 23");
+	xfree(ctx);xfree(tmp1);
+
 	/* currently fails: 
 	 *
 	ctx=mkworkspace();

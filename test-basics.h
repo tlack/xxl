@@ -236,3 +236,4 @@
 	ASSERT(_equal(reverse(xi(1)),xi(1)),"rev0");
 	ASSERT(_equal(reverse(xin(3,9,7,6)),xin(3,6,7,9)),"rev1");
 
+	ASSERT(_equal(amend(xin(4,6,0,0,6),xln(2,xin(2,1,2),xi(7))),xin(4,6,7,7,6)),"amend0");
