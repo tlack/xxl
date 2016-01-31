@@ -75,6 +75,20 @@ See the various tests for more examples.
 - *Fast*. XXL cares deeply about performance, for the same reason a person should care
 	about the quality of any tool they use for professional work. 
 
+## Inspiration
+
+K4/Q by [Kx Systems&trade;](http://kx.com), 
+[Klong by Nils Holm](http://t3x.org/klong/), Erlang
+(process model, introspection, parse tree/transforms), 
+[Kerf's approachablity](http://kerfsoftware.com), 
+Io (self-similarity of
+objects) and C (simplicity, performance, rectangularity of data).
+
+## Motivation
+
+I need a swiss army knife for data manipulation with predictable performance and concise
+syntax.
+
 ## Features
 
 - Minimalist syntax. Clean, very easy to understand and parse left-to-right
@@ -102,6 +116,7 @@ major features I anticipate finishing soon-ish.
 - Floats! 
 - Dictionary literals (dictionaries do work and exist as a primitive type, just
 	can't decide on a literal syntax for them)
+- JSON
 - FancyRepl(tm)
 - Dates/times (need to figure out core representation)
 - In-memory tables
@@ -121,9 +136,13 @@ major features I anticipate finishing soon-ish.
 
 ## Maybe later
 
-- JS/Emscripten
+- JS/Emscripten (both in terms of Node.js interop and use of XXL in the browser)
 - LLVM IR 
 - GUI
+
+## Probably not
+
+- proper unicode
 
 ## Installation
 
@@ -151,12 +170,6 @@ spit at you while you use it. Commented out the "DEBUG=" line in `./c` to make t
 system more silent and friendly - but perhaps less predictable when things go
 wrong (which they will.. often).
 
-## Inspiration
-
-K4/Q by [Kx Systems&trade;](http://kx.com), [Klong by Nils Holm](http://t3x.org/klong/), Erlang
-(process model, introspection, parse tree/transforms), Io (self-similarity of
-objects) and C (simplicity, performance, rectangularity of data).
-
 ## Size
 
 XXL is about 3,000 lines of hand-written C, plus 2000 lines of auto-generated
@@ -166,7 +179,16 @@ I dislike large systems and aim to keep XXL small, though I would like to make
 code sharing easy and convenient ala npm (though different in many respects).
 
 I believe XXL could be reduced to 1,000 lines or less of JavaScript or another
-language that offers a more flexible type system than C's.
+language that offers a more flexible type system than C's. I also wrote different
+versions of similar code a lot for speed; implementing everything in terms
+of each() (and other forms of iteration) would probably require much less code.
+
+## Disclaimer
+
+No warranty. Trademarks right of their respective owners. 
+
+This project is not related in any way to the interesting [XL project by
+Dinechin et al](http://xlr.sourceforge.net/).
 
 ## License
 
