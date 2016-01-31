@@ -237,3 +237,14 @@
 	ASSERT(_equal(reverse(xin(3,9,7,6)),xin(3,6,7,9)),"rev1");
 
 	ASSERT(_equal(amend(xin(4,6,0,0,6),xln(2,xin(2,1,2),xi(7))),xin(4,6,7,7,6)),"amend0");
+
+	ASSERT(_equal(greater(xi(2),xi(1)),xb(1)),"greater0");
+	ASSERT(_equal(greater(xi(1),xi(2)),xb(0)),"greater1");
+	ASSERT(_equal(greater(xi(-2),xi(1)),xb(0)),"greater2");
+	ASSERT(_equal(greater(xi(1),xi(-2)),xb(1)),"greater3");
+	ASSERT(_equal(greater(xin(3,1,2,3),xi(2)),xbn(3,0,0,1)),"greater4");
+	ASSERT(_equal(lesser(xi(2),xi(1)),xb(0)),"lesser0");
+	ASSERT(_equal(lesser(xi(1),xi(2)),xb(1)),"lesser1");
+	ASSERT(_equal(lesser(xi(-2),xi(1)),xb(1)),"lesser2");
+	ASSERT(_equal(lesser(xi(1),xi(-2)),xb(0)),"lesser3");
+	ASSERT(_equal(lesser(xin(3,1,2,3),xi(2)),xbn(3,1,0,0)),"lesser4");

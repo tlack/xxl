@@ -1167,7 +1167,7 @@ VP scan(VP x,VP y) { // always returns a list
 VP and(VP x,VP y) {
 	int typerr=-1;
 	VP acc;
-	PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
+	// PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "and arguments should be same length", x, y);	
 	if(x->t == y->t) acc=xalloc(x->t, x->n);
 	else acc=xlsz(x->n);
@@ -1175,7 +1175,7 @@ VP and(VP x,VP y) {
 		if (_x < _y) appendbuf(acc, (buf_t)&_x, 1); 
 		else appendbuf(acc, (buf_t)&_y, 1); }), typerr);
 	IF_EXC(typerr != -1, Tt(type), "and arg type not valid", x, y);
-	PF("and result\n"); DUMP(acc);
+	// PF("and result\n"); DUMP(acc);
 	return acc;
 }
 int _any(VP x) {
@@ -1196,6 +1196,40 @@ VP any(VP x) {
 	IF_EXC(!SIMPLE(x) && !LIST(x), Tt(type), "any arg must be list or simple type", x, 0);
 	if(LIST(x)) return deep(x,x1(&any));
 	return xb(_any(x));
+}
+VP greater(VP x,VP y) {
+	int typerr=-1;
+	VP acc,v0=xb(0),v1=xb(1);
+	PF("greater\n"); DUMP(x); DUMP(y); 
+	if(!SIMPLE(x) || !SIMPLE(y)) return EXC(Tt(type), "> args should be simple types", x, y);
+	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "> arguments should be same length", x, y);	
+	acc=xbsz(MAX(x->n,y->n));
+	VARY_EACHBOTH(x,y,({ 
+		if (_x <= _y) append(acc, v0); 
+		else append(acc, v1); 
+		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
+	}), typerr);
+	IF_EXC(typerr != -1, Tt(type), "> arg type not valid", x, y);
+	PF("> result\n"); DUMP(acc);
+	xfree(v0);xfree(v1);
+	return acc;
+}
+VP lesser(VP x,VP y) {
+	int typerr=-1;
+	VP acc,v0=xb(0),v1=xb(1);
+	PF("lesser\n"); DUMP(x); DUMP(y); 
+	if(!SIMPLE(x) || !SIMPLE(y)) return EXC(Tt(type), "< args should be simple types", x, y);
+	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "< arguments should be same length", x, y);	
+	acc=xbsz(MAX(x->n,y->n));
+	VARY_EACHBOTH(x,y,({ 
+		if (_x >= _y) append(acc, v0); 
+		else append(acc, v1); 
+		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
+	}), typerr);
+	IF_EXC(typerr != -1, Tt(type), "< arg type not valid", x, y);
+	PF("< result\n"); DUMP(acc);
+	xfree(v0);xfree(v1);
+	return acc;
 }
 VP or(VP x,VP y) { // TODO most of these primitive functions have the same pattern - abstract?
 	int typerr=-1;
@@ -2209,6 +2243,8 @@ VP rootctx() {
 	res=assign(res,Tt(%),x2(&mod));
 	res=assign(res,Tt(|),x2(&or));
 	res=assign(res,Tt(&),x2(&and));
+	res=assign(res,xt(_tagnums("<")),x2(&lesser));
+	res=assign(res,xt(_tagnums(">")),x2(&greater));
 	res=assign(res,xt(_tagnums("[")),x2(&list2));
 	res=assign(res,Tt(~),x2(&matcheasy));
 	res=assign(res,Tt(!),x2(&amend));
@@ -2662,7 +2698,7 @@ void tests() {
 	// xprofile_start();
 	
 	if (DEBUG) {
-		xprofile_start();
+		// xprofile_start();
 		printf("TESTS START\n");
 		test_basics();
 		test_match();
@@ -2672,7 +2708,7 @@ void tests() {
 		test_eval();
 		printf("TESTS PASSED\n");
 		// test_proj_thr();
-		xprofile_end();
+		// xprofile_end();
 		if(MEM_W) {
 			PF("alloced = %llu, freed = %llu\n", MEM_ALLOC_SZ, MEM_FREED_SZ);
 		}
