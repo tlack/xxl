@@ -1102,6 +1102,7 @@ inline VP each(VP obj,VP fun) {
 		if (!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
 		else if (!LIST(acc) && res->t != acc->t) 
 			acc = xl(acc);
+		xfree(tmp);
 		append(acc,res); }));
 	// PF("each returning\n");DUMP(acc);
 	return acc;
@@ -1163,16 +1164,6 @@ VP scan(VP x,VP y) { // always returns a list
 
 // MATHY STUFF:
 
-VP til(VP x) {
-	VP acc=0;int i;int typerr=-1;
-	PF("til\n"); DUMP(x);
-	VARY_EL(x, 0, 
-		{ __typeof__(_x) i; acc=xalloc(x->t,MAX(_x,1)); acc->n=_x; for(i=0;i<_x;i++) { EL(acc,__typeof__(i),i)=i; } }, 
-		typerr);
-	IF_RET(typerr>-1, EXC(Tt(type), "til arg must be numeric", x, 0));
-	DUMP(acc);
-	return acc;
-}
 VP and(VP x,VP y) {
 	int typerr=-1;
 	VP acc;
@@ -1292,6 +1283,16 @@ VP sums(VP x) {
 	VARY_EACH(x,({ _xtmp += _x; appendbuf(acc,(buf_t)&_xtmp,1); }),typerr);
 	IF_EXC(typerr > -1, Tt(type), "sums arg wrong type", x, 0);
 	PF("sums result\n"); DUMP(acc);
+	return acc;
+}
+VP til(VP x) {
+	VP acc=0;int i;int typerr=-1;
+	PF("til\n"); DUMP(x);
+	VARY_EL(x, 0, 
+		{ __typeof__(_x) i; acc=xalloc(x->t,MAX(_x,1)); acc->n=_x; for(i=0;i<_x;i++) { EL(acc,__typeof__(i),i)=i; } }, 
+		typerr);
+	IF_RET(typerr>-1, EXC(Tt(type), "til arg must be numeric", x, 0));
+	DUMP(acc);
 	return acc;
 }
 inline VP times(VP x,VP y) {
