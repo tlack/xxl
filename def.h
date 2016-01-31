@@ -64,7 +64,7 @@
 // Handy functions for manipulating values and their types
 #define SCALAR(v) ((v)->n==1)                            // is v a single value?
 #define NUM(v) (IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v))      // is v an int type?
-#define SIMPLE(v) (IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v)||IS_c(v))
+#define SIMPLE(v) (IS_t(v)||IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v)||IS_c(v))
 #define LIST(v) ((v)->t==0)                              // is v a general list type?
 #define DICT(v) (IS_d(v))                                // is v a dictionary?
 #define LISTDICT(v) (IS_l(v)||IS_d(v))                   // is v a list or dictionary?
