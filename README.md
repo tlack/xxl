@@ -114,8 +114,10 @@ major features I anticipate finishing soon-ish.
 
 - Currently has severe memory leaks 
 - Floats! 
-- Dictionary literals (dictionaries do work and exist as a primitive type, just
-	can't decide on a literal syntax for them)
+- ~~Dictionary literals (dictionaries do work and exist as a primitive type, just
+	can't decide on a literal syntax for them)~~
+	Settled on and implemented `['a:1,'b:2]` by creating `:` as the make-dict operator
+	and making `,` smart about dicts.
 - JSON
 - FancyRepl(tm)
 - Dates/times (need to figure out core representation)
