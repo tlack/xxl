@@ -185,6 +185,34 @@
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
+	append(ctx,parsestr("5 {x*y} x"));
+	tmp1=apply(ctx,xi(2));
+	DUMP(tmp1);
+	ASSERT(_equal(tmp1,xi(10)),"test parsestr 16b");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr("5 {x*z} as 'f;3 f")); 
+	tmp1=apply(ctx,xi(2));
+	DUMP(tmp1);
+	ASSERT(_equal(tmp1,xi(15)),"test parsestr 16c");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr("5 {x*z} as 'f;f 3")); // note - technically invalid but still works! nice
+	tmp1=apply(ctx,xi(2));
+	DUMP(tmp1);
+	ASSERT(_equal(tmp1,xi(15)),"test parsestr 16d");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr(";* as 'f;4 f 6"));  // leading ; disables auto-left-projection of invisible x
+	tmp1=apply(ctx,xi(2));
+	DUMP(tmp1);
+	ASSERT(_equal(tmp1,xi(24)),"test parsestr 16e");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
 	append(ctx,parsestr("{til}"));
 	tmp1=apply(ctx,xi(3));
 	DUMP(tmp1);
@@ -219,10 +247,10 @@
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
-	append(ctx,parsestr("\"a\""));
+	append(ctx,parsestr("\"z\""));
 	tmp1=apply(ctx,xi(0));
 	DUMP(tmp1);
-	ASSERT(_equal(tmp1,entags(xc('a'),"string")),"test parsestr 21");
+	ASSERT(_equal(tmp1,entags(xc('z'),"string")),"test parsestr 21");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
@@ -232,6 +260,7 @@
 	ASSERT(_equal(tmp1,entags(xc('b'),"string")),"test parsestr 22");
 	xfree(ctx);xfree(tmp1);
 
+	PFW({
 	ctx=mkworkspace();
 	append(ctx,parsestr("[1,2,3]"));
 	tmp1=apply(ctx,xi(0));
@@ -254,10 +283,39 @@
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
+	ctx=append(ctx,parsestr("[\"aaa\"]"));
+	tmp2=apply(ctx,xi(0));
+	ctx=append(ctx,parsestr("(\"aaa\")"));
+	tmp1=apply(ctx,xi(0));
+	DUMP(tmp2);
+	DUMP(tmp1);
+	// ASSERT(_equal(tmp1,tmp2),"test parsestr string equivalence 0");
+	xfree(tmp1);xfree(tmp2);
+
+	ctx=mkworkspace();
+	ctx=append(ctx,parsestr("[1,\"aaa\"]"));
+	tmp2=apply(ctx,xi(0));
+	ctx=append(ctx,parsestr("(1,\"aaa\")"));
+	tmp1=apply(ctx,xi(0));
+	DUMP(tmp2);
+	DUMP(tmp1);
+	// ASSERT(_equal(tmp1,tmp2),"test parsestr string equivalence 1");
+	xfree(tmp1);xfree(tmp2);
+	});
+
+	ctx=mkworkspace();
 	append(ctx,parsestr("['a:(1,2),'b:\"barf\"]"));
 	tmp1=apply(ctx,xi(0));
 	DUMP(tmp1);
 	ASSERT(_equal(repr(tmp1),xfroms("'dict['a:(1,2i), 'b:'string(\"barf\")]\n")),"test parsestr dict literal 25");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr("('a,'b):((1,2),\"barf\")"));
+	tmp1=apply(ctx,xi(0));
+	DUMP(tmp1);
+	ASSERT(_equal(repr(tmp1),xfroms("'dict['a:(1,2i), 'b:'string(\"\\\"barf\\\"\")]\n")),"test parsestr dict literal 25");
+	// ^ note this is an example of a bug that still exists - see quotes inside string
 	xfree(ctx);xfree(tmp1);
 
 	/* currently fails: 

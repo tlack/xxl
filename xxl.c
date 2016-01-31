@@ -545,7 +545,8 @@ VP last(VP x) {
 	res=appendbuf(res,ELi(x,x->n-1),1);
 	return res;
 }
-VP list(VP x) { // convert x to general list
+inline VP list(VP x) { // convert x to general list
+	if(LIST(x))return x;
 	return split(x,xi0());
 }
 VP list2(VP x,VP y) { // helper for [ - convert y to general list, drop x
@@ -812,16 +813,18 @@ VP deal(VP range,VP amt) {
 
 // APPLICATION, ITERATION AND ADVERBS
 
-inline VP applyexpr(VP parent,VP code,VP arg) {
-	char ch; int i, tcom, texc, tlam, traw, tstr, tws, argconsumed=0; VP left,item;
+inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
+	char ch; int i, tcom, texc, tlam, traw, tstr, tws, xused=0, yused=0; 
+	VP left,item;
 	clock_t st=0;
-	PF("applyexpr\n");DUMP(code);DUMP(arg);
-	if(!LIST(code))return EXC(Tt(code),"expr code not list",code,arg);
-	left=arg;
+	PF("applyexpr (code, xarg, yarg):\n");DUMP(code);DUMP(xarg);DUMP(yarg);
+	if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
+	left=xarg; if(!yarg) yused=1;
 	tcom=Ti(comment); texc=Ti(exception); tlam=Ti(lambda); 
 	traw=Ti(raw); tstr=Ti(string); tws=Ti(ws);
+	if(!LIST(code)) code=list(code);
 	for(i=0;i<code->n;i++) {
-		PF("applyexpr #%d/%d, consumed=%d\n",i,code->n-1,argconsumed);
+		PF("applyexpr #%d/%d, consumed=%d/%d\n",i,code->n-1,xused,yused);
 		DUMP(left);
 		item = ELl(code,i);
 		DUMP(item);
@@ -854,8 +857,13 @@ inline VP applyexpr(VP parent,VP code,VP arg) {
 				// skip ws
 				continue;
 			else if(item->tag != tstr) {
+				PF("much ado about\n");DUMP(item);
 				if(item->n==1 && ch=='x')
-					item=arg;
+					item=xarg;
+				else if(item->n==1 && ch=='y' && yarg!=0) {
+					PF("picking up y arg\n");DUMP(yarg);
+					item=yarg;
+				}
 				else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
 					left=mkproj(2,&set,xln(2,parent,left),0);
 					xfree(left);
@@ -869,6 +877,9 @@ inline VP applyexpr(VP parent,VP code,VP arg) {
 				} else
 					item=get(parent,item);
 				PF("decoded string identifier\n");DUMP(item);
+				if(item->tag==texc)
+					return CALLABLE(left)?left:item;
+
 			}
 		}
 		
@@ -877,6 +888,7 @@ inline VP applyexpr(VP parent,VP code,VP arg) {
 		if(item->tag==tlam) { // create a context for lambdas
 			VP newctx,this; int j;
 			newctx=xx0();
+			item=list(item);
 			for(j=0;j<parent->n;j++) {
 				this=ELl(parent,j);
 				if(j!=parent->n-1 || !LIST(this))
@@ -884,27 +896,38 @@ inline VP applyexpr(VP parent,VP code,VP arg) {
 			}
 			append(newctx,entags(ELl(item,0),"")); // second item of lambda is arity; ignore for now
 			item=newctx;
-			PF("created new lambda context\n");DUMP(item);
+			PF("created new lambda context item=\n");DUMP(item);
 		} else if(LIST(item)) {
 			PF("applying subexpression\n");
-			item=applyexpr(parent,item,left);
+			item=applyexpr(parent,item,left,!yused?yarg:0);
+			PF("subexpression came back with");DUMP(item);
 		}
 
-		if(argconsumed && left!=0 && CALLABLE(left)) 
+		if(xused && left!=0 && CALLABLE(left)) {
 			// they seem to be trying to call a unary function, though it's on the
 			// left - NB. possibly shady
 			//
-			// if you pass a projection as the argument, we should NOT immediately pass
-			// the next value to it, even though it appears as "left". argconsumed acts
+			// if you pass a projection as the xargument, we should NOT immediately pass
+			// the next value to it, even though it appears as "left". xused acts
 			// as a gate for that "are we still possibly needing the passed-in (left) value?"
 			// logic to not allow this behavior in first position inside expression
+			Proj p;
 			left=apply(left,item);
-		else if(SIMPLE(item)) {
-			argconsumed=1;
+			if(IS_p(left)) {
+				p=AS_p(left,0);
+				if(!yused && p.type==2 && (!p.left || !p.right)) {
+					PF("applyexpr consuming y:\n");DUMP(yarg);
+					left=apply(left,yarg);
+					yused=1;
+				}
+			}
+		} else if(SIMPLE(item) || LIST(item)) {
+			PF("applyexpr adopting left =\n");DUMP(item);
+			xused=1;
 			left=item;
 		} else {
 			PF("applyexpr calling apply\n");DUMP(item);DUMP(left);
-			argconsumed=1;
+			xused=1;
 			PF("111\n");
 			left=apply(item,left);
 			if(left->tag==texc) return left;
@@ -934,8 +957,10 @@ VP applyctx(VP x,VP y) {
 		this=ELl(x,i);
 		PF("applyctx #%d\n", i);
 		DUMP(this);
-		if(this->t==0)
-			res=applyexpr(x,this,y);
+		if(LIST(this)) { // code bodies are lists - maybe use 'code tag instead? 
+			PF("CTX CODE BODY\n");DUMP(this);
+			res=applyexpr(x,this,y,0);
+		}
 		// NB. if the function body returns an empty list, we try the scopes (dictionaries).
 		// this may not be what we want in the long run.
 		if(res==NULL || (LIST(res) && res->n == 0))
@@ -982,8 +1007,8 @@ VP apply(VP x,VP y) {
 		} else {
 			ITERV(y,{ 
 				int idx;
-				PF("searching %d\n",_i);
-				DUMP(y); DUMP(k);
+				// PF("searching %d\n",_i);
+				// DUMP(y); DUMP(k);
 				if(LIST(y)) idx = _find1(k,ELl(y,_i));
 				else idx = _findbuf(k,ELi(y,_i));
 				if(idx>-1) {
@@ -1017,15 +1042,19 @@ VP apply(VP x,VP y) {
 				return (*p->f1)(y);
 		}
 		if(p->type==2) {
-			PF("proj2\n"); PFIN();
-			if(p->left)
-				y=(*p->f2)(p->left, y);
-			else if (p->right)
-				y=(*p->f2)(y,p->right);
-			else
-				y=mkproj(2,p->f2,y,0);
-			PFOUT(); PF("proj2 done\n"); DUMP(y);
-			return y;
+			PF("proj2\n"); 
+			if(!y) return x;
+			else {
+				PFIN();
+				if(p->left)
+					y=(*p->f2)(p->left, y);
+				else if (p->right)
+					y=(*p->f2)(y,p->right);
+				else
+					y=mkproj(2,p->f2,y,0);
+				PFOUT(); PF("proj2 done\n"); DUMP(y);
+				return y;
+			}
 		}
 		return xp(*p);
 	}
@@ -1039,7 +1068,7 @@ VP apply(VP x,VP y) {
 		return res;
 	}
 	if(IS_x(x)) {
-		PF("apply ctx\n");DUMP(x);DUMP(y);
+		// PF("apply ctx\n");DUMP(x);DUMP(y);
 		return applyctx(x,y);
 	}
 	if(NUM(y)) {
@@ -1361,7 +1390,7 @@ VP xor(VP x,VP y) {
 VP get(VP x,VP y) {
 	// TODO get support nesting
 	int i; VP res;
-	PF("get\n");DUMP(x);DUMP(y);
+	PF("get\n");DUMP(x);//DUMP(y);
 	if(IS_x(x)) {
 		if(IS_c(y)) {
 			res=xt(_tagnum(y));
@@ -2209,8 +2238,8 @@ VP mklexer(const char* chars, const char* label) {
 	*/
 }
 VP mkstr(VP x) {
-	// return entags(flatten(x),"string");
-	return flatten(x);
+	return entags(flatten(x),"string");
+	// return flatten(x);
 }
 
 // CONTEXTS:
@@ -2304,23 +2333,36 @@ VP list2vec(VP obj) {
 }
 VP parseexpr(VP x) {
 	PF("parseexpr\n");DUMP(x);
-	return drop_(drop_(x,-1),1);
+	if(LIST(x) && IS_c(ELl(x,0)) && AS_c(ELl(x,0),0)=='(')
+		return drop_(drop_(x,-1),1);
+	else
+		return x;
 }
 VP parselambda(VP x) {
 	int i,arity=1,typerr=-1,traw=Ti(raw); VP this;
 	PF("parselambda\n");DUMP(x);
+	x=list(x);
 	for(i=0;i<x->n;i++) {
 		this=ELl(x,i);
 		if(IS_c(this) && this->tag==traw && AS_c(this,0)=="y") { 
 			arity=2;break;
 		}
 	};
-	return entags(xln(2,drop_(drop_(x,-1),1),xi(arity)),"lambda");
+	if(LIST(x) && IS_c(ELl(x,0)) && AS_c(ELl(x,0),0)=='{')
+		return entags(xln(2,drop_(drop_(x,-1),1),xi(arity)),"lambda");
+	else return x;
 }
 VP parsestrlit(VP x) {
 	int i,arity=1,typerr=-1,traw=Ti(raw); VP this;
 	PF("parsestrlit\n");DUMP(x);
-	return drop_(drop_(x,-1),1);
+	// sleep(2);
+	if(IS_c(x) && AS_c(x,0)=='"') 
+		return drop_(drop_(x,-1),1);
+	else {
+		PF("parsestrlit not interested in\n");
+		DUMP(x);
+		return x;
+	}
 }
 VP parsestr(const char* str) {
 	VP ctx,lex,pats,acc,t1,t2;size_t l=strlen(str);int i;
@@ -2439,13 +2481,14 @@ VP parsestr(const char* str) {
 	PF("*!*!*!*!*!*!*! matchexec form nesting\n"); DUMP(t2);
 
 	pats=xl0();
+	append(pats,Tt(string));
+	append(pats,x1(&parsestrlit));
 	append(pats,Tt(expr));
 	append(pats,x1(&parseexpr));
 	append(pats,Tt(lambda));
 	append(pats,x1(&parselambda));
-	append(pats,Tt(string));
-	append(pats,x1(&parsestrlit));
 	t2=matchexec(t2,pats);
+	//t2=exhaust(t2,mkproj(2,&matchexec,0,pats));
 	return t2;
 }
 
