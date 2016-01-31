@@ -34,6 +34,7 @@ int matchpass(VP obj,VP pat);
 VP mkproj(int type, void* func, VP left, VP right);
 VP over(VP x,VP y);
 VP parse(VP x);
+VP repr(VP x);
 char* repr0(VP x,char* s,size_t len);
 char* reprA(VP x);
 VP reverse(VP x);

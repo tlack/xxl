@@ -1,26 +1,12 @@
-#include <limits.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/tcp.h>
-
-#ifdef THREAD
-#include <pthread.h>
-#endif
-
 /* macros and helpers, function prototypes */
 #include "def.h"
 #include "proto.h"
 
 /* global variables :( */
-static I8 PF_ON=0;
-static I8 PF_LVL=0;
+I8 PF_ON=0;
+I8 PF_LVL=0;
+VP TAGS=NULL;
+
 #define GOBBLERSZ 50
 static VP MEM_RECENT[GOBBLERSZ] = {0};
 static I8 MEM_W=0; //watching memory?
@@ -28,7 +14,6 @@ static I8 MEM_W=0; //watching memory?
 static VP MEM_PTRS[N_MEM_PTRS]={0};
 static I32 MEM_ALLOC_SZ=0,MEM_FREED_SZ=0;
 static I32 MEM_ALLOCS=0, MEM_REALLOCS=0, MEM_FREES=0, MEM_GOBBLES=0;
-static VP TAGS=NULL;
 
 #ifdef THREAD
 static pthread_mutex_t mutmem=PTHREAD_MUTEX_INITIALIZER;
@@ -322,7 +307,7 @@ VP append(VP x,VP y) { // append all items of y to x. if x is a general list, ap
 		y1=ELl(y,0);
 		y2=ELl(y,1);
 		// tough decisions
-		PF("append dict\n");DUMP(x);DUMP(k);DUMP(v);
+		// PF("append dict\n");DUMP(x);DUMP(k);DUMP(v);
 		if(k==NULL) { // create dict
 			if(0 && SCALAR(y1)) {
 				k=ALLOC_LIKE_SZ(y1, 4);
@@ -2366,7 +2351,7 @@ VP parsestrlit(VP x) {
 }
 VP parsestr(const char* str) {
 	VP ctx,lex,pats,acc,t1,t2;size_t l=strlen(str);int i;
-	PF("parsestr\n");
+	PF("parsestr '%s'\n",str);
 	acc=xlsz(l);
 	for(i=0;i<l;i++)
 		append(acc,entags(xc(str[i]),"raw"));
@@ -2711,29 +2696,26 @@ void test_nest() {
 	#include"test-nest.h"
 	xfree(a);xfree(b);xfree(c);
 }
-void repl() {
-	VP t1,t2,t3,ws=mkworkspace();
-	char line[1024];
-	int i;
-	PFW({
-	t1=xfroms("wkspc");
+VP evalstr(VP ctx,VP str) {
+}
+void evalfile(VP ctx,const char* fn) {
+	#define EFBLK 65535
+	int fd,r;char buf[EFBLK];VP acc=xcsz(1024),res;
+	fd=open(fn,O_RDONLY);
+	if(fd<0)return perror("evalfile open");
+	do {
+		r=read(fd,buf,EFBLK);
+		if(r<0)perror("evalfile read");
+		else appendbuf(acc,(buf_t)buf,r);
+	} while (r==EFBLK);
 
-	for(;;) {
-		// printf("xxl@%s> ", sfromx(get(ws,t1)));
-		printf("xxl>");
-		fgets(line, sizeof(line), stdin);
-		if(strncmp(line,"\\\\\n",1024)==0 ||
-			 strncmp(line,"exit\n",1024)==0 ||
-			 strncmp(line,"quit\n",1024)==0)
-			exit(1);
-		t2=parsestr(line);
-		// DUMP(t2);
-		append(ws,t2);
-		t3=applyctx(ws,xi0());
-		printf("%s\n", line);
-		printf("%s\n", sfromx(repr(t3)));
-	}
+	PFW({
+	PF("evalfile executing\n"); DUMP(acc);
+	append(ctx,parsestr(sfromx(acc)));
+	res=apply(ctx,xl0()); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
+	PF("evalfile done"); DUMP(res);
 	});
+	exit(1);
 }
 void tests() {
 	int i;
@@ -2756,14 +2738,14 @@ void tests() {
 			PF("alloced = %llu, freed = %llu\n", MEM_ALLOC_SZ, MEM_FREED_SZ);
 		}
 	}
-	// net();
-	repl();
-
-	exit(1);
 }
-int main(void) {
-	VP code;
-	tests();
+int main(int argc, char* argv[]) {
+	VP ctx=mkworkspace();
+	// net();
+	if(argc == 2) evalfile(ctx,argv[1]);
+	else tests(ctx);
+	repl();
+	exit(1);
 }
 /*
 	
