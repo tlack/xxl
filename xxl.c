@@ -1196,7 +1196,7 @@ int _any(VP x) {
 	int typerr=-1;
 	VP acc;
 	// PF("_any\n"); DUMP(x);
-	if(LIST(x)) return deep(x,x1(&any));
+	// if(LIST(x)) return deep(x,x1(&any));
 	VARY_EACH(x,({ 
 		if(_x==1) return 1;
 	}),typerr);
@@ -1842,12 +1842,11 @@ VP nest(VP x,VP y) {
 }
 
 inline void matchanyof_(const VP obj,const VP pat,const int max_match,int* n_matched,int* matchidx) {
-	int i,j;VP item,rule,tmp;
+	int i=0,j=0;VP item,rule,tmp=xi(0);
 	int submatches;
 	int submatchidx[1024];
-	tmp=xi(0);
-	for(j=0;i<obj->n;j++) {
-		for(i=0;i<pat->n;i++) {
+	for(i<obj->n;j++) {
+		for(i<pat->n;i++) {
 			EL(tmp,int,0)=i;
 			item=apply(obj,tmp);
 			rule=apply(obj,tmp);
@@ -2495,6 +2494,7 @@ void* thr_run0(void *fun(void*)) {
 	return;
 	#endif
 	(*fun)(NULL); pthread_exit(NULL);
+	return NULL;
 }
 void thr_run(void *fun(void*)) {
 	#ifndef THREAD
@@ -2543,7 +2543,7 @@ void test_proj_thr0(void* _) {
 		printf("%lld\n", AS_o(c,0));
 		xfree(a);xfree(b);xfree(c);xfree(n);
 	}
-	return NULL;
+	return;
 }
 void test_proj_thr() {
 	int n = 2, i; void* status;
@@ -2743,7 +2743,7 @@ int main(int argc, char* argv[]) {
 	VP ctx=mkworkspace();
 	// net();
 	if(argc == 2) evalfile(ctx,argv[1]);
-	else tests(ctx);
+	else tests();
 	repl();
 	exit(1);
 }
