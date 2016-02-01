@@ -1272,11 +1272,13 @@ VP mod(VP x,VP y) {
 	VP acc=ALLOC_BEST(x,y);
 	if(LIKELY(x->t > y->t)) {
 		VARY_EACHBOTH(x,y,({ 
-			_x=_y%_x; appendbuf(acc,(buf_t)&_x,1); if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
+			if(_x==0)_x=0; else _x=_x%_y;
+			appendbuf(acc,(buf_t)&_x,1); if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 		}),typerr);
 	} else {
 		VARY_EACHBOTH(x,y,({ 
-			_y=_y%_x; appendbuf(acc,(buf_t)&_y,1); if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
+			if(_x==0)_y=0; else _y=_x%_y;
+			appendbuf(acc,(buf_t)&_y,1); if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 		}),typerr);
 	}
 	IF_EXC(typerr > -1, Tt(type), "mod arg wrong type", x, y);
