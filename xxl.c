@@ -1196,13 +1196,12 @@ int _any(VP x) {
 	int typerr=-1;
 	VP acc;
 	// PF("_any\n"); DUMP(x);
-	if(LIST(x)) x=deep(x,x1(&any));
+	if(LIST(x)) x=list2vec(deep(x,x1(&any)));
 	VARY_EACH(x,({ 
 		if(_x==1) return 1;
 	}),typerr);
 	// since this routine returns an int we can't return an exception!
-	if(typerr>-1)return EXC(Tt(type),"_arg noniterable x",x,0);
-	ASSERT(typerr==-1,"_any() non-iterable type");
+	ASSERT(typerr==-1, "_any noniterable arg");
 	PF("_any returning 0\n");
 	return 0;
 }
