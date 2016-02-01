@@ -14,6 +14,7 @@ void repl() {
 		// printf("xxl@%s> ", sfromx(get(ws,t1)));
 		printf("xxl>");
 		fgets(line, sizeof(line), stdin);
+		if(strncmp(line,"\n",1024)==0) continue;
 		if(strncmp(line,"\\\\\n",1024)==0 ||
 			 strncmp(line,"exit\n",1024)==0 ||
 			 strncmp(line,"quit\n",1024)==0)
