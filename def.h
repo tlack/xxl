@@ -59,7 +59,7 @@
 #define PF(...) (DEBUG && PF_LVL && ({ FOR(0,PF_LVL,printf("  ")); printf(__VA_ARGS__);}))
 #define PFIN() (DEBUG && PF_LVL++)
 #define PFOUT() (DEBUG && PF_LVL--)
-#define PFW(stmt) ({ printf("PFW\n"); PFIN(); stmt; PFOUT(); })
+#define PFW(stmt) ({ PFIN(); stmt; PFOUT(); })
 #define MEMPF(...) (DEBUG && MEM_W && PF(__VA_ARGS__))
 #if DEBUG 
 	#define DUMP(x) ({ char* s = reprA(x); PF("%s", s); free(s); x; })

@@ -1,4 +1,3 @@
-	PFW({
 
 	ctx=mkworkspace();
 	tmp1=xl(mkproj(2,&plus,xi(2),0));
@@ -246,12 +245,14 @@
 	ASSERT(_equal(tmp1,xi(4)),"test parsestr 20");
 	xfree(ctx);xfree(tmp1);
 
+	PFW({
 	ctx=mkworkspace();
 	append(ctx,parsestr("\"z\""));
 	tmp1=apply(ctx,xi(0));
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,entags(xc('z'),"string")),"test parsestr 21");
 	xfree(ctx);xfree(tmp1);
+	});
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("\"a\" as 's;s+1"));
@@ -260,7 +261,6 @@
 	ASSERT(_equal(tmp1,entags(xc('b'),"string")),"test parsestr 22");
 	xfree(ctx);xfree(tmp1);
 
-	PFW({
 	ctx=mkworkspace();
 	append(ctx,parsestr("[1,2,3]"));
 	tmp1=apply(ctx,xi(0));
@@ -301,7 +301,6 @@
 	DUMP(tmp1);
 	// ASSERT(_equal(tmp1,tmp2),"test parsestr string equivalence 1");
 	xfree(tmp1);xfree(tmp2);
-	});
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("['a:(1,2),'b:\"barf\"]"));
@@ -328,5 +327,4 @@
 	xfree(ctx);xfree(tmp1);
 	*/
 
-	});
 

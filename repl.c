@@ -1,5 +1,7 @@
 #include "def.h"
 #include "proto.h"
+#include "accessors.h"
+#include "vary.h"
 
 void repl() {
 	VP t1,t2,t3,ws=mkworkspace();

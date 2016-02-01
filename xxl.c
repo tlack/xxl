@@ -156,8 +156,8 @@ char* repr_p(VP x,char* s,size_t sz) {
 #include "repr.h"
 #include "types.h"
 
-inline type_info_t typeinfo(type_t n) { ITER(TYPES,sizeof(TYPES),{ IF_RET(_x.t==n,_x); }); }
-inline type_info_t typechar(char c) { ITER(TYPES,sizeof(TYPES),{ IF_RET(_x.c==c,_x); }); }
+static inline type_info_t typeinfo(type_t n) { ITER(TYPES,sizeof(TYPES),{ IF_RET(_x.t==n,_x); }); }
+static inline type_info_t typechar(char c) { ITER(TYPES,sizeof(TYPES),{ IF_RET(_x.c==c,_x); }); }
 
 VP xalloc(type_t t,I32 initn) {
 	VP a; int g,i,itemsz,sz; 
@@ -380,8 +380,8 @@ VP amend(VP x,VP y) {
 	PF("amend returning\n");DUMP(x);
 	return x;
 }
-inline VP assign(VP x,VP k,VP val) {
-	PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
+static inline VP assign(VP x,VP k,VP val) {
+	// PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
 	if(DICT(x)) {
 		xref(k); xref(val);
 		return append(x,xln(2,k,val));
@@ -399,7 +399,7 @@ inline VP assign(VP x,VP k,VP val) {
 	}
 	return EXC(Tt(type),"assign: bad types",x,0);
 }
-inline VP assigns(VP x,const char* key,VP val) {
+static inline VP assigns(VP x,const char* key,VP val) {
 	return assign(x,xfroms(key),val);
 }
 int _flat(VP x) { // returns 1 if vector, or a list composed of vectors (and not other lists)
@@ -530,7 +530,7 @@ VP last(VP x) {
 	res=appendbuf(res,ELi(x,x->n-1),1);
 	return res;
 }
-inline VP list(VP x) { // convert x to general list
+static inline VP list(VP x) { // convert x to general list
 	if(LIST(x))return x;
 	return split(x,xi0());
 }
@@ -674,7 +674,7 @@ VP take(VP x,VP y) {
 	VARY_EL(y, 0, ({ return take_(x,_x); }), typerr);
 	return (VP)0;
 }
-inline int _equalm(VP x,int xi,VP y,int yi) {
+static inline int _equalm(VP x,int xi,VP y,int yi) {
 	// PF("comparing %p to %p\n", ELi(x,xi), ELi(y,yi));
 	// PF("_equalm\n"); DUMP(x); DUMP(y);
 	if(ENLISTED(x)) { PF("equalm descend x");
@@ -798,7 +798,7 @@ VP deal(VP range,VP amt) {
 
 // APPLICATION, ITERATION AND ADVERBS
 
-inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
+static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	char ch; int i, tcom, texc, tlam, traw, tstr, tws, xused=0, yused=0; 
 	VP left,item;
 	clock_t st=0;
@@ -1104,7 +1104,7 @@ VP deep(VP obj,VP f) {
 	// PF("deep returning\n");DUMP(acc);
 	return acc;
 }
-inline VP each(VP obj,VP fun) { 
+static inline VP each(VP obj,VP fun) { 
 	// each returns a list if the first returned value is the same as obj's type
 	// and has one item
 	VP tmp, res, acc=NULL; int n=obj->n;
@@ -1121,7 +1121,7 @@ inline VP each(VP obj,VP fun) {
 	// PF("each returning\n");DUMP(acc);
 	return acc;
 }
-inline VP eachprior(VP obj,VP fun) {
+static inline VP eachprior(VP obj,VP fun) {
 	ASSERT(1,"eachprior nyi");
 	return (VP)0;
 }
@@ -1196,13 +1196,14 @@ int _any(VP x) {
 	int typerr=-1;
 	VP acc;
 	// PF("_any\n"); DUMP(x);
-	// if(LIST(x)) return deep(x,x1(&any));
+	if(LIST(x)) x=deep(x,x1(&any));
 	VARY_EACH(x,({ 
 		if(_x==1) return 1;
 	}),typerr);
 	// since this routine returns an int we can't return an exception!
+	if(typerr>-1)return EXC(Tt(type),"_arg noniterable x",x,0);
 	ASSERT(typerr==-1,"_any() non-iterable type");
-	// PF("_any returning 0\n");
+	PF("_any returning 0\n");
 	return 0;
 }
 VP any(VP x) {
@@ -1343,7 +1344,7 @@ VP til(VP x) {
 	DUMP(acc);
 	return acc;
 }
-inline VP times(VP x,VP y) {
+static inline VP times(VP x,VP y) {
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
 	PF("times");DUMP(x);DUMP(y);DUMP(info(acc));
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"times argument should be simple types",x,0);
@@ -1375,7 +1376,7 @@ VP xor(VP x,VP y) {
 VP get(VP x,VP y) {
 	// TODO get support nesting
 	int i; VP res;
-	PF("get\n");DUMP(x);//DUMP(y);
+	PF("get\n");DUMP(y);
 	if(IS_x(x)) {
 		if(IS_c(y)) {
 			res=xt(_tagnum(y));
@@ -1519,24 +1520,24 @@ VP name2sym(VP x) {
 
 // TAG STUFF:
 
-inline VP tagwrap(VP tag,VP x) {
+static inline VP tagwrap(VP tag,VP x) {
 	return entag(xln(1, x),tag);
 }
-inline VP tagv(const char* name, VP x) {
+static inline VP tagv(const char* name, VP x) {
 	return entags(xln(1,x),name);
 }
-inline VP entag(VP x,VP t) {
+static inline VP entag(VP x,VP t) {
 	if(IS_c(t))
 		x->tag=_tagnum(t);
 	else if (IS_i(t))
 		x->tag=AS_i(t,0);
 	return x;
 }
-inline VP entags(VP x,const char* name) {
+static inline VP entags(VP x,const char* name) {
 	x->tag=_tagnums(name);
 	return x;
 }
-inline VP tagname(const I32 tag) {
+static inline VP tagname(const I32 tag) {
 	VP res;
 	// PF("tagname(%d)\n", tag);
 	// DUMP(TAGS);
@@ -1547,10 +1548,10 @@ inline VP tagname(const I32 tag) {
 	// DUMP(res);
 	return res;
 }
-inline const char* tagnames(const I32 tag) {
+static inline const char* tagnames(const I32 tag) {
 	return sfromx(tagname(tag));
 }
-inline int _tagnum(const VP s) {
+static inline int _tagnum(const VP s) {
 	int i; VP ss=0;
 	WITHLOCK(tag, {
 		ss=s;ss->tag=0;
@@ -1561,7 +1562,7 @@ inline int _tagnum(const VP s) {
 	// DUMP(TAGS);
 	return i;
 }
-inline int _tagnums(const char* name) {
+static inline int _tagnums(const char* name) {
 	int t;VP s;
 	//printf("_tagnums %s\n",name);
 	//printf("tagnums free\n");
@@ -1841,12 +1842,12 @@ VP nest(VP x,VP y) {
 	*/
 }
 
-inline void matchanyof_(const VP obj,const VP pat,const int max_match,int* n_matched,int* matchidx) {
+static inline void matchanyof_(const VP obj,const VP pat,const int max_match,int* n_matched,int* matchidx) {
 	int i=0,j=0;VP item,rule,tmp=xi(0);
 	int submatches;
 	int submatchidx[1024];
-	for(i<obj->n;j++) {
-		for(i<pat->n;i++) {
+	for(;i<obj->n;j++) {
+		for(;i<pat->n;i++) {
 			EL(tmp,int,0)=i;
 			item=apply(obj,tmp);
 			rule=apply(obj,tmp);
@@ -1855,7 +1856,7 @@ inline void matchanyof_(const VP obj,const VP pat,const int max_match,int* n_mat
 	}
 }
 
-inline int match_(const VP obj_,int ostart, const VP pat_, int pstart, 
+static inline int match_(const VP obj_,int ostart, const VP pat_, int pstart, 
 		const int max_match,const int max_fails, 
 		int* n_matched,int* matchidx) {
 	// abandon all hope, ye who enter here
@@ -2485,30 +2486,33 @@ VP parse(VP x) {
 void thr_start() {
 	// TODO threading on Windows
 	#ifndef THREAD
-	return;
-	#endif
+	#else
 	NTHR=0;
+	#endif
+	return;
 }
 void* thr_run0(void *fun(void*)) {
 	#ifndef THREAD
-	return;
-	#endif
+	#else
 	(*fun)(NULL); pthread_exit(NULL);
+	#endif
 	return NULL;
 }
 void thr_run(void *fun(void*)) {
 	#ifndef THREAD
-	return;
-	#endif
+	#else
 	pthread_attr_t a; pthread_attr_init(&a); pthread_attr_setdetachstate(&a, PTHREAD_CREATE_JOINABLE);
 	// nthr=sysconf(_SC_NPROCESSORS_ONLN);if(nthr<2)nthr=2;
 	WITHLOCK(thr,pthread_create(&THR[NTHR++], &a, &thr_run0, fun));
+	#endif
+	return;
 }
 void thr_wait() {
 	#ifndef THREAD
+	#else
+	void* _; int i; for(i=0;i<NTHR;i++) pthread_join(THR[i],&_);
 	return;
 	#endif
-	void* _; int i; for(i=0;i<NTHR;i++) pthread_join(THR[i],&_);
 }
 
 void test_basics() {

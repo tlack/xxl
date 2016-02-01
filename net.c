@@ -1,10 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/tcp.h>
 #include "def.h"
+#include "proto.h"
 
 // NETWORK
 void net(void) {
