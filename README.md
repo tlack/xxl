@@ -8,6 +8,9 @@ Gross, crumbly work in progress. Kinda works when it compiles, but mostly a
 proof of concept. Definitely *not suitable* for serious work just yet. See also
 "not yet implemented" below.
 
+Tested so far on Linux (x86/GCC), OS X (Clang), Windows (Cygwin64). Soliciting
+Android runtime on NDK (contact me if interested).
+
 ## Examples
 
 Let's dive in with a simple prime number tester (returns 0 if not prime, >0
