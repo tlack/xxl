@@ -1449,7 +1449,6 @@ VP set(VP x,VP y) {
 		if(!IS_t(y)) return EXC(Tt(type),"set y must be symbol",x,y);
 		ctx=AS_l(x,0);val=AS_l(x,1); i=ctx->n-1;
 		for(;i>=0;i--) {
-			printf("set %d\n", i);
 			VP dest = AS_x(ctx,i);
 			DUMP(dest);
 			if(LIST(dest) || CALLABLE(dest)) // skip code bodies
@@ -2017,9 +2016,9 @@ static inline int match_(const VP obj_,int ostart, const VP pat_, int pstart,
 			if (!found)matchidx[*n_matched]=io;
 			found=1;
 			if(PF_LVL) {
-				PF("so far: ");
-				FOR(0,(*n_matched)+1,printf("%d ",matchidx[_i]));
-				printf("\n");
+				// PF("so far: ");
+				// FOR(0,(*n_matched)+1,printf("%d ",matchidx[_i]));
+				// printf("\n");
 			}
 			*n_matched=*n_matched+1;
 			if(matchopt==anyof) {
@@ -2051,8 +2050,8 @@ static inline int match_(const VP obj_,int ostart, const VP pat_, int pstart,
 					PFOUT();
 					PF(">> greedy advancing to %d/%d, nm=%d, sm=%d, ", io, obj->n, *n_matched, submatches);
 					PF("so far: ");
-					FOR(0,(*n_matched),printf("%d ",matchidx[_i]));
-					printf("\n");
+					// FOR(0,(*n_matched),printf("%d ",matchidx[_i]));
+					// printf("\n");
 					PFIN();
 				}
 				if(gotmatch==0) {

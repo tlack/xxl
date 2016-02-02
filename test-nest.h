@@ -44,9 +44,7 @@
 	PF("nest4 call:\n");
 	c=nest(a,b);
 	DUMP(c);
-	printf("%s\n",reprA(c));
 	ASSERT(_equal(c,xln(4,xi(9),xi(1),xi(0),xin(2,2,8))),"nest 4");
-
 
 	a=xin(7,9,1,1,0,2,2,8);
 	b=xin(2,1,2);

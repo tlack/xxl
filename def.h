@@ -105,7 +105,7 @@
 // create an exception value
 #define EXC(type,lbl,x,y) ({ \
 	VP exc; exc = tagv("exception",xln(4,type,xfroms(lbl),x,y));  \
-	printf("exception: %s\n", sfromx(repr(exc))); \
+	if(0) printf("exception: %s\n", sfromx(repr(exc))); \
 	exc; }) 
 #define IF_EXC(cond,type,msg,x,y) if((cond)) return EXC(type,msg,x,y)
 // TODO if_exc doesnt give us a chance to free memory :-/
