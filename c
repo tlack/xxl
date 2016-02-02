@@ -10,6 +10,9 @@ OPT=""
 DEFS="-DTHREAD $DEBUG $OPT"
 WARN="-Wall -Wno-format-extra-args -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format"
 
+# command to use to run it - put testing args to binary for execution here
+RUN="./xxl"
+
 if [ -x /usr/bin/clang ]; then
 	echo using clang
 	CC="/usr/bin/clang"
@@ -27,6 +30,11 @@ if [ -x /bin/x86_64-pc-cygwin-gcc.exe ]; then
 	CC="/bin/x86_64-pc-cygwin-gcc.exe"
 fi
 
+if [ -x /usr/bin/rlwrap ]; then
+	echo using rlwrap
+	RUN="rlwrap $RUN"
+fi
+
 if [ "x$BUILDH" = "xyes" ]; then
 	$NODE accessors.js > accessors.h && \
 	$NODE vary.js > vary.h && \
@@ -37,6 +45,7 @@ fi
 
 $CC $DEFS $WARN $LIBS $ARCH \
 	xxl.c net.c repl.c -o ./xxl 2>&1 \
-	&& ./xxl
+	&& $RUN
+
 
 
