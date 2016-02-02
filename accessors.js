@@ -1,3 +1,4 @@
+// TODO rename accessor functions to something pretty
 var lib = require('./common.js');
 console.log(lib.prelude);
 lib.each(lib.types, function(t) {
