@@ -938,7 +938,7 @@ VP applyctx(VP x,VP y) {
 	if(!IS_x(x)) return EXC(Tt(type),"context not a context",x,y);
 	int i;VP this,res=NULL;
 	PF("applyctx\n");DUMP(x);DUMP(y);
-	for(i=x->n-1;i>0;i--) {
+	for(i=x->n-1;i>=0;i--) {
 		this=ELl(x,i);
 		PF("applyctx #%d\n", i);
 		DUMP(this);
@@ -1081,7 +1081,7 @@ VP deep(VP obj,VP f) {
 	int i;
 	// PF("deep\n");DUMP(obj);DUMP(f);
 	VP acc,subobj;
-	if(!LIST(obj)) return each(obj,f);
+	if(!CONTAINER(obj)) return each(obj,f);
 	if(_flat(obj)) {
 		PF("deep flat\n");
 		acc=apply(f,obj);
@@ -2281,6 +2281,10 @@ VP rootctx() {
 	DUMP(res);
 	return res;
 }
+VP mkbarectx() {
+	char name[8];
+	return xx0();
+}
 VP mkworkspace() {
 	char name[8];
 	VP root,res,locals;
@@ -2365,7 +2369,7 @@ VP parsestr(const char* str) {
 	acc=nest(acc,xln(4, xfroms("//"), xfroms("//"), xfroms(""), Tt(comment)));
 	acc=nest(acc,xln(4, xfroms("//"), xfroms("\n"), xfroms(""), Tt(comment)));
 	*/
-	ctx=mkworkspace();
+	ctx=mkbarectx();
 	pats=xln(3,
 		mkproj(2,&nest,0,xln(4, xfroms("//"), xfroms("\n"), xfroms(""), Tt(comment))),
 		mkproj(2,&nest,0,xln(4, xfroms("/*"), xfroms("*/"), xfroms(""), Tt(comment))),
@@ -2457,7 +2461,7 @@ VP parsestr(const char* str) {
 	//xfree(ctx);
 	PF("matchexec results\n");DUMP(t1);
 
-	ctx=mkworkspace();
+	ctx=mkbarectx();
 	pats=xln(2,
 		mkproj(2,&nest,0,xln(4, xfroms("("), xfroms(")"), xfroms(""), Tt(expr))),
 		mkproj(2,&nest,0,xln(4, xfroms("{"), xfroms("}"), xfroms(""), Tt(lambda)))
