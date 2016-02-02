@@ -140,14 +140,11 @@
 			xi(1)
 		), xbn(5,1,0,1,0,0)),"matcheasy 0");
 
-	PFW({
 	a=xfroms("hello\"there\"..");
 	ASSERT(_equal(
 		pick(a,
 			signaljoin(xi(1), matcheasy(a,xc('"')))
 		),xfroms("\"there")), "p sj 0");
-	});
-	PFW({
 
 	/*
 	a=xfroms("wha{ts{up}hello}..");
@@ -192,7 +189,6 @@
 			xln(2,xfroms("//abc"),xfroms("//def"))
 		), "p bj cj 2");
 	*/
-	});
 
 	/*
 	a=xin(4, 1, 2, 3, 4);

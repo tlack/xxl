@@ -9,7 +9,6 @@
 	// these tests. it still does wrap non-list results in a list, because
 	// nest is supposed to "create" lists out of items (like and unlike) 
 	// @tlack 1/25
-	PFW({
 	a=xin(3,1,2,3);
 	b=xin(2,1,3);
 	c=nest(a,b);
@@ -70,5 +69,3 @@
 	DUMP(each(c,x1(&info)));
 	ASSERT(_equal(c, xl( xin(5,7,7,0,8,8) )), "nest multi 0");
 
-
-	});
