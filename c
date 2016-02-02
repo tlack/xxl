@@ -8,7 +8,8 @@ DEBUG="-DDEBUG -g"  # comment out for silence
 OPT=""
 # OPT="-O3"
 DEFS="-DTHREAD $DEBUG $OPT"
-WARN="-Wall -Wno-format-extra-args -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format"
+WARN="-Wall -Wno-format-extra-args -Wno-unused-function -Wno-unused-value "
+WARN="$WARN -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format"
 
 # command to use to run it - put testing args to binary for execution here
 RUN="./xxl"
