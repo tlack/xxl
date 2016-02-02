@@ -743,7 +743,7 @@ VP condense(VP x) {
 	int typerr=-1; int j; VP acc=xi0();
 	// PF("condense\n");DUMP(x);
 	VARY_EACH(x,({ if(_x) { j=_i; FOR(0,_x,appendbuf(acc,(buf_t)&j,1)); } }),typerr);
-	PF("condense returning\n");DUMP(acc);
+	// PF("condense returning\n");DUMP(acc);
 	return acc;
 }
 VP cast(VP x,VP y) { 
@@ -1202,7 +1202,7 @@ int _any(VP x) {
 	}),typerr);
 	// since this routine returns an int we can't return an exception!
 	ASSERT(typerr==-1, "_any noniterable arg");
-	PF("_any returning 0\n");
+	// PF("_any returning 0\n");
 	return 0;
 }
 VP any(VP x) {
@@ -1431,7 +1431,7 @@ VP set(VP x,VP y) {
 VP partgroups(VP x) { 
 	// separate 1 3 4 5 7 8 -> [1, 3 4 5, 7 8]; always returns a list, even with one item
 	VP acc,tmp;int n=0,typerr=-1;
-	PF("partgroups\n");DUMP(x);
+	// PF("partgroups\n");DUMP(x);
 	acc=xlsz(x->n/2);
 	tmp=xalloc(x->t,4);
 	VARY_EACHLIST(x,({
@@ -1450,7 +1450,7 @@ VP partgroups(VP x) {
 	}),typerr);
 	IF_EXC(typerr>-1, Tt(type), "partgroups args should be simple types", x, 0); 
 	if(tmp->n) append(acc,tmp);
-	PF("partgroups returning\n");DUMP(acc);
+	// PF("partgroups returning\n");DUMP(acc);
 	xfree(tmp);
 	return acc;
 }
@@ -2714,12 +2714,10 @@ void evalfile(VP ctx,const char* fn) {
 		else appendbuf(acc,(buf_t)buf,r);
 	} while (r==EFBLK);
 
-	PFW({
 	PF("evalfile executing\n"); DUMP(acc);
 	append(ctx,parsestr(sfromx(acc)));
 	res=apply(ctx,xl0()); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
 	PF("evalfile done"); DUMP(res);
-	});
 	exit(1);
 }
 void tests() {
