@@ -7,7 +7,6 @@
 	ASSERT(_equal(tmp2,xi(5)),"test ctx 0");
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
-	PF("aa\n");
 	ctx=mkworkspace();
 	tmp1=xl(mkproj(2,&plus,0,xi(3)));
 	append(ctx,tmp1);
@@ -32,7 +31,6 @@
 	ASSERT(_equal(tmp2,xi(7)),"test ctx 3");
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
-	PF("a\n");
 	ctx=mkworkspace(); // simple unary function application
 	tmp1=xl(mkproj(1,&til,0,0));
 	append(ctx,tmp1);
@@ -56,6 +54,11 @@
 	DUMP(tmp2);
 	ASSERT(_equal(tmp2,xin(6,0,1,2,3,4,5)),"test ctx 6");
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr("(\"abc\",(\"def\"))"));
+	tmp1=apply(ctx,xl0());
+	DUMP(tmp1);
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("1+1"));
@@ -255,9 +258,11 @@
 	ctx=mkworkspace();
 	append(ctx,parsestr("['a:1,'b:2]"));
 	tmp1=apply(ctx,xi(0));
-	DUMP(tmp1);
-	ASSERT(_equal(repr(tmp1),xfroms("'dict['a:1i, 'b:2i]\n")),"test parsestr dict literal 25");
-	xfree(ctx);xfree(tmp1);
+	DUMP(repr(tmp1));
+	tmp2=xfroms("'dict['a:1i, 'b:2i]");
+	DUMP(tmp1);DUMP(tmp2);
+	ASSERT(_equal(repr(tmp1),tmp2),"test parsestr dict literal 25");
+	xfree(ctx);xfree(tmp1);xfree(tmp2);
 
 	ctx=mkworkspace();
 	ctx=append(ctx,parsestr("[\"aaa\"]"));
@@ -283,14 +288,15 @@
 	append(ctx,parsestr("['a:(1,2),'b:\"barf\"]"));
 	tmp1=apply(ctx,xi(0));
 	DUMP(tmp1);
-	ASSERT(_equal(repr(tmp1),xfroms("'dict['a:(1,2i), 'b:'string(\"barf\")]\n")),"test parsestr dict literal 25");
+	DUMP(repr(tmp1));
+	ASSERT(_equal(repr(tmp1),xfroms("'dict['a:(1,2i), 'b:'string(\"barf\")]")),"test parsestr dict literal 26");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("('a,'b):((1,2),\"barf\")"));
 	tmp1=apply(ctx,xi(0));
 	DUMP(tmp1);
-	ASSERT(_equal(repr(tmp1),xfroms("'dict['a:(1,2i), 'b:'string(\"\\\"barf\\\"\")]\n")),"test parsestr dict literal 25");
+	ASSERT(_equal(repr(tmp1),xfroms("'dict['a:(1,2i), 'b:'string(\"barf\")]")),"test parsestr dict literal 27");
 	// ^ note this is an example of a bug that still exists - see quotes inside string
 
 	ctx=mkworkspace();
