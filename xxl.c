@@ -719,7 +719,7 @@ int _equal(VP x,VP y) {
 	if(LIST(x) && SCALAR(x)) x=ELl(x,0);
 	if(LIST(y) && SCALAR(y)) y=ELl(y,0);
 	IF_RET(x->n != y->n, 0);
-	if(LIST(x) && LIST(y)) { ITERV(x,{ IF_RET(_equal(ELl(x,_i),ELl(y,_i))==0, 0); }); return 1; }
+	if(CONTAINER(x) && CONTAINER(y)) { ITERV(x,{ IF_RET(_equal(ELl(x,_i),ELl(y,_i))==0, 0); }); return 1; }
 	ITERV(x,{ IF_RET(memcmp(ELb(x,_i),ELb(y,_i),x->itemsz)!=0,0); });
 	// PF("_equal=1!\n");
 	return 1;
