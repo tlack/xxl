@@ -340,3 +340,14 @@
 	ASSERT(_equal(tmp1,xi(21)),"test func as dyadic y");
 	xfree(ctx);xfree(tmp1);
 
+	ctx=mkworkspace();
+	append(ctx,parsestr("{x*y}as 'mul;7mul"));
+	tmp1=apply(ctx,xi(3));
+	ASSERT(_equal(tmp1,xi(21)),"test func as dyadic y");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr("[3,4,5]@{+2}"));
+	tmp1=apply(ctx,xi(3));
+	ASSERT(_equal(tmp1,xin(3,5,6,7)),"test apply simple lambda");
+	xfree(ctx);xfree(tmp1);
