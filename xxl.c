@@ -1777,6 +1777,11 @@ VP nest(VP x,VP y) {
 	if(where->n) {
 		//out=splice(x,out,split(apply(x,out),xi0()));
 		rep=apply(x,where);
+		if(y->n >= 5) {
+			// PF("nest applying callback\n");
+			// sleep(1);
+			rep=apply(ELl(y,4),rep);
+		}
 		if(y->n >= 4)
 			rep->tag=AS_t(ELl(y,3),0);
 		rep=list2vec(rep);
@@ -2327,7 +2332,7 @@ VP parselambda(VP x) {
 	x=list(x);
 	for(i=0;i<x->n;i++) {
 		this=ELl(x,i);
-		if(IS_c(this) && this->tag==traw && AS_c(this,0)=="y") { 
+		if(IS_c(this) && this->tag==traw && AS_c(this,0)=='y') { 
 			arity=2;break;
 		}
 	};
@@ -2336,12 +2341,16 @@ VP parselambda(VP x) {
 	else return x;
 }
 VP parsestrlit(VP x) {
-	int i,arity=1,typerr=-1,traw=Ti(raw); VP this;
+	int i,arity=1,typerr=-1,traw=Ti(raw);
 	PF("parsestrlit\n");DUMP(x);
+	if(LIST(x) && IS_c(AS_l(x,0)) && AS_c(AS_l(x,0),0)=='"') {
+		VP res;
+		res=drop_(drop_(x,-1),1);
+		DUMP(res);
+		// if(PF_LVL) sleep(5);
 	// sleep(2);
-	if(IS_c(x) && AS_c(x,0)=='"') 
-		return drop_(drop_(x,-1),1);
-	else {
+		return res;
+	} else {
 		PF("parsestrlit not interested in\n");
 		DUMP(x);
 		return x;
@@ -2366,7 +2375,7 @@ VP parsestr(const char* str) {
 	pats=xln(3,
 		mkproj(2,&nest,0,xln(4, xfroms("//"), xfroms("\n"), xfroms(""), Tt(comment))),
 		mkproj(2,&nest,0,xln(4, xfroms("/*"), xfroms("*/"), xfroms(""), Tt(comment))),
-		mkproj(2,&nest,0,xln(4, xfroms("\""), xfroms("\""), xfroms(""), Tt(string)))
+		mkproj(2,&nest,0,xln(5, xfroms("\""), xfroms("\""), xfroms(""), Tt(string), x1(&parsestrlit)))
 	);
 	ctx=append(ctx,pats);
 	acc=exhaust(acc,ctx);
@@ -2455,8 +2464,9 @@ VP parsestr(const char* str) {
 	PF("matchexec results\n");DUMP(t1);
 
 	ctx=mkbarectx();
-	pats=xln(2,
+	pats=xln(3,
 		mkproj(2,&nest,0,xln(4, xfroms("("), xfroms(")"), xfroms(""), Tt(expr))),
+		mkproj(2,&nest,0,xln(4, xfroms("["), xfroms("]"), xfroms(""), Tt(expr))),
 		mkproj(2,&nest,0,xln(4, xfroms("{"), xfroms("}"), xfroms(""), Tt(lambda)))
 	);
 	ctx=append(ctx,pats);
