@@ -351,3 +351,11 @@
 	tmp1=apply(ctx,xi(3));
 	ASSERT(_equal(tmp1,xin(3,5,6,7)),"test apply simple lambda");
 	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr("['q:1,'w:2] as 'd;d"));
+	tmp1=apply(ctx,xi(3));
+	tmp2=evalstrin("['q:1, 'w:2]", ctx);
+	ASSERT(_equal(tmp1,tmp2),"test evalstrin and complex variables");
+	xfree(ctx);xfree(tmp1);xfree(tmp2);
+
