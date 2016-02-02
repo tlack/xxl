@@ -62,7 +62,7 @@
 #define PFW(stmt) ({ PF_LVL=1; PFIN(); stmt; PFOUT(); })
 #define MEMPF(...) (DEBUG && MEM_W && PF(__VA_ARGS__))
 #if DEBUG 
-	#define DUMP(x) ({ char* s = reprA(x); PF("%s", s); free(s); x; })
+	#define DUMP(x) ({ char* s = reprA(x); PF("%s\n", s); free(s); x; })
 	#define DUMPRAW(x,sz) ({ printf("%p ",x); FOR(0,sz,printf("%d ",x[_i])); printf("\n"); x; })
 #else
 	#define DUMP(x) ({})

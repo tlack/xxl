@@ -59,8 +59,8 @@ char* repr0(VP x,char* s,size_t sz) {
 char* reprA(VP x) {
 	#define BS 1024
 	char* s = calloc(1,BS);
-	s = repr0(x,s,BS-1);
-	APF(BS,"\n",0);
+	s = repr0(x,s,BS);
+	//APF(BS,"\n",0);
 	return s;
 }
 VP repr(VP x) {
