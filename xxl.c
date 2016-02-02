@@ -667,7 +667,7 @@ VP split(VP x,VP tok) {
 	}
 	return EXC(Tt(nyi),"split with non-null token not yet implemented",x,tok);
 }
-VP take_(VP x,int i) {
+VP take_(const VP x,const int i) {
 	VP res;
 	int st, end, xn=x->n;
 	/*
@@ -695,7 +695,7 @@ VP take_(VP x,int i) {
 	// DUMP(info(res));
 	return res;
 }
-VP take(VP x,VP y) {
+VP take(const VP x,const VP y) {
 	int typerr=-1;
 	size_t st,end; //TODO slice() support more than 32bit indices
 	PF("take args\n"); DUMP(x); DUMP(y);
@@ -703,7 +703,7 @@ VP take(VP x,VP y) {
 	VARY_EL(y, 0, ({ return take_(x,_x); }), typerr);
 	return (VP)0;
 }
-static inline int _equalm(VP x,int xi,VP y,int yi) {
+static inline int _equalm(const VP x,const int xi,const VP y,const int yi) {
 	// PF("comparing %p to %p\n", ELi(x,xi), ELi(y,yi));
 	// PF("_equalm\n"); DUMP(x); DUMP(y);
 	if(ENLISTED(x)) { PF("equalm descend x");
@@ -715,20 +715,21 @@ static inline int _equalm(VP x,int xi,VP y,int yi) {
 	if(memcmp(ELi(x,xi),ELi(y,yi),x->itemsz)==0) return 1;
 	else return 0;
 }	
-int _equal(VP x,VP y) {
+int _equal(const VP x,const VP y) {
 	// TODO _equal() needs to handle comparison tolerance and type conversion
 	// TODO _equal should use the new VARY_*() macros, except for general lists
 	// PF("_equal\n"); DUMP(x); DUMP(y);
 	// if the list is a container for one item, we probably want to match the inner one
-	if(LIST(x) && SCALAR(x)) x=ELl(x,0);
-	if(LIST(y) && SCALAR(y)) y=ELl(y,0);
-	IF_RET(x->n != y->n, 0);
-	if(CONTAINER(x) && CONTAINER(y)) { ITERV(x,{ IF_RET(_equal(ELl(x,_i),ELl(y,_i))==0, 0); }); return 1; }
-	ITERV(x,{ IF_RET(memcmp(ELb(x,_i),ELb(y,_i),x->itemsz)!=0,0); });
+	VP a=x,b=y;
+	if(LIST(a) && SCALAR(a)) a=ELl(a,0);
+	if(LIST(b) && SCALAR(b)) b=ELl(b,0);
+	IF_RET(a->n != b->n, 0);
+	if(CONTAINER(a) && CONTAINER(b)) { ITERV(a,{ IF_RET(_equal(ELl(a,_i),ELl(b,_i))==0, 0); }); return 1; }
+	ITERV(a,{ IF_RET(memcmp(ELb(a,_i),ELb(b,_i),a->itemsz)!=0,0); });
 	// PF("_equal=1!\n");
 	return 1;
 }
-int _findbuf(VP x,buf_t y) {   // returns index or -1 on not found
+int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
 	// PF("findbuf\n");DUMP(x);
 	if(LISTDICT(x)) { ITERV(x,{ 
 		// PF("findbuf trying list\n"); DUMP(ELl(x,_i));
