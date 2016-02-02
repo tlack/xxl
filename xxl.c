@@ -2523,9 +2523,51 @@ void thr_wait() {
 	#endif
 }
 
+// TESTS
+
 void test_basics() {
 	printf("TEST_BASICS\n");
 	#include "test-basics.h"
+}
+void test_ctx() {
+	VP ctx,tmp1,tmp2;
+	
+	printf("TEST_CTX\n");
+	#include "test-ctx.h"	
+}
+void test_deal_speed() {
+	int i;
+	VP a,b,c;
+	// xprofile_start();
+	
+	a=xi(1024 * 1024);b=xi(100);
+	TIME(100, ({ c=deal(a,b); xfree(c); }));
+}
+void test_eval() {
+	#include"test-eval.h"
+}
+void test_match() {
+	#include"test-match.h"
+}
+void test_json() {
+	VP mask, jsrc, res; char str[256]={0};
+	strncpy(str,"[[\"abc\",5,[\"def\"],6,[7,[8,9]]]]",256);
+	jsrc=split(xfroms(str),xc0());
+	DUMP(jsrc);
+	res=nest(jsrc,xln(2,xfroms("["),xfroms("]")));
+	DUMP(res);
+	DUMP(each(res, x1(&repr)));
+	exit(1);
+}
+void test_logic() {
+	VP a,b,c;
+	#include"test-logic.h"
+}
+void test_nest() {
+	VP a,b,c;
+	printf("TEST_NEST\n");
+	#include"test-nest.h"
+	xfree(a);xfree(b);xfree(c);
 }
 void test_proj() {
 	VP a,b,c,n;
@@ -2575,139 +2617,6 @@ void test_proj_thr() {
 	for(i=0;i<n;i++) thr_run(test_proj_thr0);
 	thr_wait();
 }
-void test_context() {
-	VP a,b,c;
-	printf("TEST_CONTEXT\n");
-	a=xd0();
-	assigns(a,"til",x1(&til));
-	assign(a,tagv("greedy",xln(3,xfroms("\""),xc0(),xfroms("\""))),x1(&mkstr));
-	b=xxn(7,xfroms("\""),xfroms("a"),xfroms("b"),xfroms("c"),xfroms("\""),xfroms("til"),xfroms("1024"));
-	c=apply(a,b);
-	DUMP(a);
-	DUMP(b);
-}
-void test_match() {
-	#include"test-match.h"
-}
-void test_eval() {
-	VP a;
-	printf("TEST_EVAL\n");
-	ASSERT(
-		_equal(
-			parsestr("// "),
-			entags(xfroms("// \n"),"comment")
-		), "tec0");
-	ASSERT(
-		_equal(
-			parsestr("/* */"),
-			xln(2,entags(xfroms("/* */"),"comment"),xfroms("\n"))
-		), "tec0b");
-	ASSERT(
-		_equal(
-			parsestr("/*a*/ /*z*/"),
-			xln(4,
-				entags(xfroms("/*a*/"),"comment"),
-				xfroms(" "),
-				entags(xfroms("/*z*/"),"comment"),
-				xfroms("\n"))
-		), "tec1bbbb");
-	ASSERT(
-		_equal(
-			parsestr("//x"),
-			xl(entags(xfroms("//x\n"),"comment"))
-		), "tec1");
-	ASSERT(
-		_equal(
-			parsestr("/*x*/"),
-			xln(2,entags(xfroms("/*x*/"),"comment"),xfroms("\n"))
-		), "tec1b");
-	ASSERT(
-		_equal(
-			parsestr("//xy"),
-			xl(entags(xfroms("//xy\n"),"comment"))
-		), "tec1c");
-	ASSERT(
-		_equal(
-			parsestr("//x "),
-			xl(entags(xfroms("//x \n"),"comment"))
-		), "tec2");
-	ASSERT(
-		_equal(
-			parsestr("// x"),
-			xl(entags(xfroms("// x\n"),"comment"))
-		), "tec2b");
-	ASSERT(
-		_equal(
-			parsestr("// abc "),
-			xl(entags(xfroms("// abc \n"),"comment"))
-		), "tec3");
-	ASSERT(
-		_equal(
-			parsestr("// a\n//b"),
-			xln(2,
-				entags(xfroms("// a\n"),"comment"),
-				entags(xfroms("//b\n"),"comment"))
-		), "tec4");
-	ASSERT(
-		_equal(
-			parsestr("/* abc */"),
-			xln(2,entags(xfroms("/* abc */"),"comment"),xfroms("\n"))
-		), "tec5");
-	ASSERT(
-		_equal(
-			parsestr("1"),
-			xln(2,xi(1),xfroms("\n"))
-		), "tei0");
-	ASSERT(
-		_equal(
-			parsestr("1//blah"),
-			xln(2,
-				xi(1),
-				entags(xfroms("//blah\n"),"comment"))
-		), "teic0");
-	ASSERT(
-		_equal(
-			parsestr("1//blah\n2"),
-			xln(4,
-				xi(1),
-				entags(xfroms("//blah\n"),"comment"),
-				xi(2),
-				xfroms("\n")
-			)
-		), "teic1");
-	//DUMP(parsestr("// test"));
-	//parsestr("// test\nx:\"Hello!\"\ntil 1024");
-}
-void test_ctx() {
-	VP ctx,tmp1,tmp2;
-	
-	printf("TEST_CTX\n");
-	#include "test-ctx.h"	
-}
-void test_deal_speed() {
-	int i;
-	VP a,b,c;
-	// xprofile_start();
-	
-	a=xi(1024 * 1024);b=xi(100);
-	TIME(100, ({ c=deal(a,b); xfree(c); }));
-}
-void test_json() {
-	VP mask, jsrc, res; char str[256]={0};
-	strncpy(str,"[[\"abc\",5,[\"def\"],6,[7,[8,9]]]]",256);
-	jsrc=split(xfroms(str),xc0());
-	DUMP(jsrc);
-	res=nest(jsrc,xln(2,xfroms("["),xfroms("]")));
-	DUMP(res);
-	DUMP(each(res, x1(&repr)));
-	exit(1);
-}
-void test_nest() {
-	VP a,b,c;
-	printf("TEST_NEST\n");
-	#include"test-nest.h"
-	xfree(a);xfree(b);xfree(c);
-}
 VP evalstrin(const char* str, VP ctx) {
 	VP r;
 	PF("evalstrin\n\"%s\"\n",str);
@@ -2751,6 +2660,7 @@ void tests() {
 		// test_json();
 		test_ctx();
 		test_eval();
+		test_logic();
 		printf("TESTS PASSED\n");
 		// test_proj_thr();
 		// xprofile_end();
