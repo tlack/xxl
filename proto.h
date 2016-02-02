@@ -8,6 +8,7 @@ VP any(VP x);
 VP apply(VP x,VP y);
 VP applyctx(VP x,VP y);
 VP append(VP x,VP y);
+VP appendbuf(VP x,buf_t buf,size_t nelem);
 static VP assign(VP x,VP k,VP val);
 VP cast(VP x,VP y);
 VP capacity(VP x);
