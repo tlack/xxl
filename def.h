@@ -57,9 +57,9 @@
 #define ASSERT(cond,txt) ({ if (!(cond)) { printf("ASSERT: %s\n", txt); raise(SIGABRT); exit(1); } })
 #define P0(fmt,x) ({ typeof(x) xx=x; char* s=malloc(1024);snprintf(fmt,1024,xx); xx; })
 #define PF(...) (DEBUG && PF_LVL && ({ FOR(0,PF_LVL,printf("  ")); printf(__VA_ARGS__);}))
-#define PFIN() (DEBUG && PF_LVL++)
-#define PFOUT() (DEBUG && PF_LVL--)
-#define PFW(stmt) ({ PFIN(); stmt; PFOUT(); })
+#define PFIN() (DEBUG && PF_LVL > 0 && PF_LVL++)
+#define PFOUT() (DEBUG && PF_LVL > 0 && PF_LVL--)
+#define PFW(stmt) ({ PF_LVL=1; PFIN(); stmt; PFOUT(); })
 #define MEMPF(...) (DEBUG && MEM_W && PF(__VA_ARGS__))
 #if DEBUG 
 	#define DUMP(x) ({ char* s = reprA(x); PF("%s", s); free(s); x; })
