@@ -1331,7 +1331,7 @@ VP mod(VP x,VP y) {
 }
 VP plus(VP x,VP y) {
 	int typerr=-1;
-	PF("plus\n");DUMP(x);DUMP(y);
+	// PF("plus\n");DUMP(x);DUMP(y);
 	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "plus args should be simple types", x, y); 
 	VP acc=ALLOC_BEST(x,y);
 	VARY_EACHBOTH(x,y,({
@@ -1340,7 +1340,7 @@ VP plus(VP x,VP y) {
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}),typerr);
 	IF_EXC(typerr > -1, Tt(type), "plus arg wrong type", x, y);
-	PF("plus result\n"); DUMP(acc);
+	// PF("plus result\n"); DUMP(acc);
 	return acc;
 }
 VP str2int(VP x) {
