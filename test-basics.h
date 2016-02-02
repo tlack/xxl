@@ -238,6 +238,19 @@
 
 	ASSERT(_equal(amend(xin(4,6,0,0,6),xln(2,xin(2,1,2),xi(7))),xin(4,6,7,7,6)),"amend0");
 
+	a=xin(3,2,2,7); // my favorite show
+	b=clone(a);
+	a=amend(a,xln(2,xi(0),xi(1)));
+	ASSERT(_equal(a,a)&&!_equal(a,b),"clone0");
+	xfree(a);xfree(b);
+
+	c=xi(100);
+	a=xln(3,xi(0),c,xi(0)); // my favorite show
+	b=clone(a);
+	c=amend(c,xln(2,xi(0),xi(5)));
+	ASSERT(_equal(a,a)&&!_equal(a,b)&&_equal(ELl(b,1),xi(100)),"clone1");
+	xfree(a);xfree(b);xfree(c);
+
 	ASSERT(_equal(greater(xi(2),xi(1)),xb(1)),"greater0");
 	ASSERT(_equal(greater(xi(1),xi(2)),xb(0)),"greater1");
 	ASSERT(_equal(greater(xi(-2),xi(1)),xb(0)),"greater2");
@@ -248,3 +261,4 @@
 	ASSERT(_equal(lesser(xi(-2),xi(1)),xb(1)),"lesser2");
 	ASSERT(_equal(lesser(xi(1),xi(-2)),xb(0)),"lesser3");
 	ASSERT(_equal(lesser(xin(3,1,2,3),xi(2)),xbn(3,1,0,0)),"lesser4");
+

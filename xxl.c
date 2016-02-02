@@ -285,6 +285,18 @@ const char* sfromx(VP x) {
 	if(x==NULL)return "null";
 	return (char*)BUF(x); }
 
+VP clone(VP obj) {
+	PF("clone\n");DUMP(obj);
+	if(CONTAINER(obj)) return deep(obj,x1(&clone));
+	int i;VP res=ALLOC_LIKE(obj);
+	for(i=0;i<obj->n;i++) {
+		PF("cloning %d\n", i);
+		res=appendbuf(res,ELi(obj,i),1);
+	}
+	PF("clone returning\n");DUMP(res);
+	return res;
+}
+
 // RUNTIME!!
 VP appendbuf(VP x,buf_t buf,size_t nelem) {
 	int newn;buf_t dest;
@@ -318,6 +330,7 @@ VP append(VP x,VP y) { // append all items of y to x. if x is a general list, ap
 			xref(k);xref(v);
 			EL(x,VP,0)=k;
 			EL(x,VP,1)=v;
+			x->n=2;
 			// PF("dict kv %p %p\n", k, v); DUMP(k); DUMP(v);
 			i=-1;
 		} else 
@@ -404,11 +417,14 @@ static inline VP assigns(VP x,const char* key,VP val) {
 }
 int _flat(VP x) { // returns 1 if vector, or a list composed of vectors (and not other lists)
 	// PF("flat\n");DUMP(x);
-	if(!LIST(x)) return 1;
+	if(!CONTAINER(x)) return 1;
+	else return 0; // lists are never flat
+	/*
 	int typerr=-1;VP tmp;
 	FOR(0,x->n,({ tmp=ELl(x,_i); if(tmp->n>1 || !SIMPLE(tmp)) return 0; }));
 	// PF("_flat=1");
 	return 1;
+	*/
 }
 VP flatten(VP x) {
 	int i,t=-1;VP res=0;
@@ -454,6 +470,7 @@ VP dict(VP x,VP y) {
 				ii=xi(i); d=assign(d,apply(x,ii),apply(y,ii));
 			}
 		}
+		d->n=2;
 		PF("dict new returning\n");DUMP(d);
 		return d;
 	}
@@ -833,7 +850,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			else if(item->tag == traw && ch==')')
 				continue;
 			else if(item->tag == traw && ch==';') { // end of expr indicator
-				left=0;
+				left=0; xused=1;
 				continue;
 			}
 			else if(item->tag == tcom) 
@@ -877,7 +894,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			for(j=0;j<parent->n;j++) {
 				this=ELl(parent,j);
 				if(j!=parent->n-1 || !LIST(this))
-					append(newctx,ELl(parent,j));
+					append(newctx,clone(ELl(parent,j)));
 			}
 			append(newctx,entags(ELl(item,0),"")); // second item of lambda is arity; ignore for now
 			item=newctx;
@@ -887,6 +904,10 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			item=applyexpr(parent,item,left,!yused?yarg:0);
 			PF("subexpression came back with");DUMP(item);
 		}
+
+		PF("before grand switch, xused=%d:\n", xused);
+		DUMP(left);
+		DUMP(item);
 
 		if(xused && left!=0 && CALLABLE(left)) {
 			// they seem to be trying to call a unary function, though it's on the
@@ -911,12 +932,17 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			xused=1;
 			left=item;
 		} else {
-			PF("applyexpr calling apply\n");DUMP(item);DUMP(left);
-			xused=1;
-			PF("111\n");
-			left=apply(item,left);
-			if(left->tag==texc) return left;
-			PF("applyexpr apply returned\n");DUMP(left);
+			if(left) {
+				PF("applyexpr calling apply\n");DUMP(item);DUMP(left);
+				xused=1;
+				PF("111\n");
+				left=apply(item,left);
+				if(left->tag==texc) return left;
+				PF("applyexpr apply returned\n");DUMP(left);
+			} else {
+				PF("no left, so continuing with item..\n");
+				left=item;
+			}
 		}
 	}
 	PF("applyexpr returning\n");
@@ -1064,7 +1090,10 @@ VP apply(VP x,VP y) {
 			// generally you would receive a list back
 			// this may potentially become painful later on 
 			i = AS_i(y,0); 
-			IF_RET(i>=x->n, EXC(Tt(index),"index out of range",x,y));
+			IF_RET(i>=x->n, ({
+				EXC(Tt(index),"index out of range",x,y);	
+			}));
+
 			VP tmp = ELl(x,i); xref(tmp); return tmp;
 		} else {
 			res=xalloc(x->t,y->n);
@@ -1079,7 +1108,7 @@ VP apply(VP x,VP y) {
 VP deep(VP obj,VP f) {
 	// TODO perhaps deep() should throw an error with non-list args - calls each() now
 	int i;
-	// PF("deep\n");DUMP(obj);DUMP(f);
+	PF("deep\n");DUMP(info(obj));DUMP(obj);DUMP(f);
 	VP acc,subobj;
 	if(!CONTAINER(obj)) return each(obj,f);
 	if(_flat(obj)) {
@@ -1088,8 +1117,7 @@ VP deep(VP obj,VP f) {
 		if(obj->tag) acc->tag=obj->tag;
 		return acc;
 	}
-	acc=xl0();
-	if(obj->tag) acc->tag=obj->tag;
+	acc=ALLOC_LIKE(obj);
 	PFIN();
 	FOR(0,obj->n,({
 		// PF("deep %d\n", _i);
@@ -1098,10 +1126,12 @@ VP deep(VP obj,VP f) {
 			subobj=deep(subobj,f);
 		else
 			subobj=apply(f,subobj);
-		append(acc,subobj);
+		// append(acc,subobj);
+		EL(acc,VP,_i) = subobj; // this may not be safe, but append() is overriden for dicts, so we cant simply append the list
 	}));
+	acc->n=obj->n;
 	PFOUT();
-	// PF("deep returning\n");DUMP(acc);
+	PF("deep returning\n");DUMP(acc);
 	return acc;
 }
 static inline VP each(VP obj,VP fun) { 
@@ -1411,15 +1441,15 @@ VP set(VP x,VP y) {
 		ctx=AS_l(x,0);val=AS_l(x,1); i=ctx->n-1;
 		for(;i>=0;i--) {
 			printf("set %d\n", i);
-			VP this = AS_x(ctx,i);
-			DUMP(this);
-			if(LIST(this) || CALLABLE(this)) // skip code bodies
+			VP dest = AS_x(ctx,i);
+			DUMP(dest);
+			if(LIST(dest) || CALLABLE(dest)) // skip code bodies
 				continue;
-			if(DICT(this)) {
+			if(DICT(dest)) {
 				PF("set assigning..\n");
-				this=assign(this,y,val);
-				PF("set in %p\n", this);
-				DUMP(this);
+				dest=assign(dest,y,val);
+				PF("set in %p\n",dest);
+				DUMP(dest);
 				return val;
 			}
 		}
@@ -1682,13 +1712,6 @@ VP nest(VP x,VP y) {
 	*/
 	VP p1,p2,open,close,opens,closes,where,rep,out;
 	PF("NEST\n");DUMP(x);DUMP(y);
-	/*
-	if(LIST(x)) {
-		PFW({
-		x=deep(x,mkproj(2,&nest,0,y));
-		});
-	}
-	*/
 	p1=mkproj(2,&matcheasy,x,0);
 	p2=mkproj(2,&matcheasy,x,0);
 	open=apply(y,xi(0)); close=apply(y,xi(1));

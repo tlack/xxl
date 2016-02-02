@@ -191,27 +191,6 @@
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
-	append(ctx,parsestr("5 {x*z} as 'f;3 f")); 
-	tmp1=apply(ctx,xi(2));
-	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xi(15)),"test parsestr 16c");
-	xfree(ctx);xfree(tmp1);
-
-	ctx=mkworkspace();
-	append(ctx,parsestr("5 {x*z} as 'f;f 3")); // note - technically invalid but still works! nice
-	tmp1=apply(ctx,xi(2));
-	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xi(15)),"test parsestr 16d");
-	xfree(ctx);xfree(tmp1);
-
-	ctx=mkworkspace();
-	append(ctx,parsestr(";* as 'f;4 f 6"));  // leading ; disables auto-left-projection of invisible x
-	tmp1=apply(ctx,xi(2));
-	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xi(24)),"test parsestr 16e");
-	xfree(ctx);xfree(tmp1);
-
-	ctx=mkworkspace();
 	append(ctx,parsestr("{til}"));
 	tmp1=apply(ctx,xi(3));
 	DUMP(tmp1);
@@ -242,23 +221,21 @@
 	append(ctx,parsestr("x as 'n * 2 as 'doublen"));
 	tmp1=apply(ctx,xi(2));
 	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xi(4)),"test parsestr 20");
+	ASSERT(_equal(tmp1,xi(4)),"test as 0");
 	xfree(ctx);xfree(tmp1);
 
-	PFW({
 	ctx=mkworkspace();
 	append(ctx,parsestr("\"z\""));
 	tmp1=apply(ctx,xi(0));
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,entags(xc('z'),"string")),"test parsestr 21");
 	xfree(ctx);xfree(tmp1);
-	});
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("\"a\" as 's;s+1"));
 	tmp1=apply(ctx,xi(0));
 	DUMP(tmp1);
-	ASSERT(_equal(tmp1,entags(xc('b'),"string")),"test parsestr 22");
+	ASSERT(_equal(tmp1,entags(xc('b'),"string")),"test as 1");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
@@ -315,16 +292,51 @@
 	DUMP(tmp1);
 	ASSERT(_equal(repr(tmp1),xfroms("'dict['a:(1,2i), 'b:'string(\"\\\"barf\\\"\")]\n")),"test parsestr dict literal 25");
 	// ^ note this is an example of a bug that still exists - see quotes inside string
-	xfree(ctx);xfree(tmp1);
 
-	/* currently fails: 
-	 *
 	ctx=mkworkspace();
-	append(ctx,parsestr("{x*2} as 'double;7 double"));
-	tmp1=apply(ctx,xi(0));
+	append(ctx,parsestr("5 {x*z} as 'f;3 f")); 
+	tmp1=apply(ctx,xi(2));
 	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xi(14)),"test parsestr 23");
+	ASSERT(_equal(tmp1,xi(15)),"test func as var 1");
 	xfree(ctx);xfree(tmp1);
-	*/
 
+	ctx=mkworkspace();
+	append(ctx,parsestr("5 {x*z} as 'f;f 3")); // note - technically invalid but still works! nice
+	tmp1=apply(ctx,xi(2));
+	DUMP(tmp1);
+	ASSERT(_equal(tmp1,xi(15)),"test func as var 2");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr(";* as 'f;4 f 6"));  // leading ; disables auto-left-projection of invisible x
+	tmp1=apply(ctx,xi(2));
+	DUMP(tmp1);
+	ASSERT(_equal(tmp1,xi(24)),"test func as var 3");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr(";* as 'xyzzyxyzzy;4 xyzzyxyzzy 6"));  // leading ; disables auto-left-projection of invisible x
+	tmp1=apply(ctx,xi(2));
+	DUMP(tmp1);
+	ASSERT(_equal(tmp1,xi(24)),"test func as var 4 long name");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr(";{x*2}as 'doub;7doub"));
+	tmp1=apply(ctx,xi(3));
+	DUMP(tmp1);
+	ASSERT(_equal(tmp1,xi(14)),"test func as var 4");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr(";{x*y}as 'mul;7mul as 'ms;10ms"));
+	tmp1=apply(ctx,xi(3));
+	ASSERT(_equal(tmp1,xi(70)),"test func as dyadic var");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr("{x*y}as 'mul;7mul"));
+	tmp1=apply(ctx,xi(3));
+	ASSERT(_equal(tmp1,xi(21)),"test func as dyadic y");
+	xfree(ctx);xfree(tmp1);
 

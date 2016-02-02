@@ -12,6 +12,7 @@ VP appendbuf(VP x,buf_t buf,size_t nelem);
 static VP assign(VP x,VP k,VP val);
 VP cast(VP x,VP y);
 VP capacity(VP x);
+VP clone(VP obj);
 VP condense(VP x);
 VP deep(VP obj,VP f);
 VP dict(VP x,VP y);
