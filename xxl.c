@@ -156,8 +156,12 @@ char* repr_p(VP x,char* s,size_t sz) {
 #include "repr.h"
 #include "types.h"
 
-static inline type_info_t typeinfo(type_t n) { ITER(TYPES,sizeof(TYPES),{ IF_RET(_x.t==n,_x); }); }
-static inline type_info_t typechar(char c) { ITER(TYPES,sizeof(TYPES),{ IF_RET(_x.c==c,_x); }); }
+static inline type_info_t typeinfo(type_t n) { 
+	ITER(TYPES,sizeof(TYPES),{ IF_RET(_x.t==n,_x); }); 
+	return (type_info_t){0}; }
+static inline type_info_t typechar(char c) { 
+	ITER(TYPES,sizeof(TYPES),{ IF_RET(_x.c==c,_x); }); 
+	return (type_info_t){0}; }
 
 VP xalloc(type_t t,I32 initn) {
 	VP a; int g,i,itemsz,sz; 
