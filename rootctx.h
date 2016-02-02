@@ -30,15 +30,16 @@
 	res=assign(res,xt(_tagnums("[")),x2(&list2));
 	res=assign(res,Tt(~),x2(&matcheasy));
 	res=assign(res,Tt(!),x2(&amend));
+	res=assign(res,Tt(@),x2(&each));
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));
 	res=assign(res,Tt(deal),x2(&deal));
 	res=assign(res,Tt(drop),x2(&drop));
+	res=assign(res,Tt(each),x2(&each));
 	res=assign(res,Tt(evalin),x2(&evalin));
 	res=assign(res,Tt(in),x2(&matchany));
 	res=assign(res,Tt(nest),x2(&nest));
 	res=assign(res,Tt(pick),x2(&pick));
 	res=assign(res,Tt(rot),x2(&shift));
 	res=assign(res,Tt(take),x2(&take));
-	res=assign(res,Tt(@),x2(&each));
 	res=assign(res,Tt(over),x2(&over));
