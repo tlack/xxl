@@ -10,16 +10,21 @@ VP applyctx(VP x,VP y);
 VP append(VP x,VP y);
 VP appendbuf(VP x,buf_t buf,size_t nelem);
 static VP assign(VP x,VP k,VP val);
+VP behead(VP x); // everything except the first element
 VP cast(VP x,VP y);
 VP capacity(VP x);
 VP clone(VP obj);
 VP condense(VP x);
+VP curtail(VP x); // everything except the last element
 VP deep(VP obj,VP f);
 VP dict(VP x,VP y);
+VP drop_(VP x,int i);
+VP drop(VP x,VP y);
 static inline VP each(VP obj,VP fun);
 static inline VP entag(VP x,VP t);
 static inline VP entags(VP x,const char* name);
-VP evalstr(VP ctx,VP str);
+VP evalstrin(const char* str,VP ctx);
+VP evalin(VP str,VP ctx);
 int _find1(VP x,VP y);
 VP first(VP x);
 VP get(VP x,VP y);

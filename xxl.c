@@ -415,6 +415,10 @@ static inline VP assign(VP x,VP k,VP val) {
 static inline VP assigns(VP x,const char* key,VP val) {
 	return assign(x,xfroms(key),val);
 }
+VP behead(VP x) {
+	PF("behead\n");DUMP(x);
+	return drop_(x,1);
+}
 int _flat(VP x) { // returns 1 if vector, or a list composed of vectors (and not other lists)
 	// PF("flat\n");DUMP(x);
 	if(!CONTAINER(x)) return 1;
@@ -439,6 +443,10 @@ VP flatten(VP x) {
 		}
 	}
 	return res;
+}
+VP curtail(VP x) {
+	PF("curtail\n");DUMP(x);
+	return drop_(x,-1);
 }
 VP dict(VP x,VP y) {
 	PF("dict\n");DUMP(x);DUMP(y);
@@ -481,7 +489,7 @@ VP drop_(VP x,int i) {
 	if(i<0) { st = 0; end=x->n+i; }
 	else { st = i; end=x->n; }
 	PF("drop_(,%d) %d %d %d\n", i, x->n, st, end);
-	// DUMP(x);
+	DUMP(x);
 	res=ALLOC_LIKE_SZ(x,end-st);
 	// DUMP(info(res));
 	if(end-st > 0) {
@@ -494,7 +502,7 @@ VP drop(VP x,VP y) {
 	VP res=0;
 	int typerr=-1;
 	PF("drop args\n"); DUMP(x); DUMP(y);
-	IF_RET(!NUM(y) ||!SCALAR(y), EXC(Tt(type),"drop x arg must be single numeric",x,y));	
+	IF_RET(!NUM(y) || !SCALAR(y), EXC(Tt(type),"drop y arg must be single numeric",x,y));	
 	VARY_EL(y, 0, ({ return drop_(x,_x); }), typerr);
 	return res;
 }
@@ -927,7 +935,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 					yused=1;
 				}
 			}
-		} else if(SIMPLE(item) || LIST(item)) {
+		} else if(!CALLABLE(item)) {
 			PF("applyexpr adopting left =\n");DUMP(item);
 			xused=1;
 			left=item;
@@ -976,6 +984,7 @@ VP applyctx(VP x,VP y) {
 		// this may not be what we want in the long run.
 		if(res==NULL || (LIST(res) && res->n == 0))
 			res=apply(this,y);
+		PF("applyctx apply result was\n");DUMP(res);
 		if(!LIST(res) || res->n > 0) {
 			PF("applyctx returning\n"); DUMP(res); 
 			return res;
@@ -1018,8 +1027,8 @@ VP apply(VP x,VP y) {
 		} else {
 			ITERV(y,{ 
 				int idx;
-				// PF("searching %d\n",_i);
-				// DUMP(y); DUMP(k);
+				PF("searching %d\n",_i);
+				DUMP(y); DUMP(k);
 				if(LIST(y)) idx = _find1(k,ELl(y,_i));
 				else idx = _findbuf(k,ELi(y,_i));
 				if(idx>-1) {
@@ -2256,50 +2265,7 @@ VP mkstr(VP x) {
 VP rootctx() {
 	VP res;
 	res=xd0();
-	// postfix/unary operators
-	res=assign(res,xt(_tagnums("]")),x1(&identity));
-	res=assign(res,Tt(condense),x1(&condense));
-	res=assign(res,Tt(info),x1(&info));
-	res=assign(res,Tt(last),x1(&last));
-	res=assign(res,Tt(len),x1(&len));
-	res=assign(res,Tt(min),x1(&min));
-	res=assign(res,Tt(max),x1(&max));
-	res=assign(res,Tt(parse),x1(&parse));
-	res=assign(res,Tt(repr),x1(&repr));
-	res=assign(res,Tt(rev),x1(&reverse));
-	res=assign(res,Tt(sum),x1(&sum));
-	res=assign(res,Tt(til),x1(&til));
-	res=assign(res,Tt(ver),xi(0));
-	// infix/binary operators
-	res=assign(res,Tt(deal),x2(&deal));
-	res=assign(res,xt(_tagnums(",")),x2(&join)); // gcc gets confused by Tt(,) - thinks its two empty args
-	res=assign(res,Tt(:),x2(&dict)); // gcc gets confused by Tt(,) - thinks its two empty args
-	res=assign(res,Tt(+),x2(&plus));
-	res=assign(res,Tt(-),x2(&plus));
-	res=assign(res,Tt(*),x2(&times));
-	res=assign(res,Tt(/),x2(&times));
-	res=assign(res,Tt(%),x2(&mod));
-	res=assign(res,Tt(|),x2(&or));
-	res=assign(res,Tt(&),x2(&and));
-	res=assign(res,xt(_tagnums("<")),x2(&lesser));
-	res=assign(res,xt(_tagnums(">")),x2(&greater));
-	res=assign(res,xt(_tagnums("[")),x2(&list2));
-	res=assign(res,Tt(~),x2(&matcheasy));
-	res=assign(res,Tt(!),x2(&amend));
-	res=assign(res,Tt(bracketj),x2(&bracketjoin));
-	res=assign(res,Tt(consecj),x2(&consecutivejoin));
-	res=assign(res,Tt(drop),x2(&drop));
-	res=assign(res,Tt(in),x2(&matchany));
-	res=assign(res,Tt(pick),x2(&pick));
-	res=assign(res,Tt(rot),x2(&shift));
-	res=assign(res,Tt(take),x2(&take));
-	// 
-	// {min x mod 2_til x}
-	// 30 as 'n til drop 2%n
-	// {til drop 2%x min} as 'isprime; isprime 30
-	//
-	res=assign(res,Tt(@),x2(&each));
-	res=assign(res,Tt(over),x2(&over));
+	#include"rootctx.h"
 	PF("rootctx returning\n");
 	DUMP(res);
 	return res;
@@ -2454,7 +2420,7 @@ VP parsestr(const char* str) {
 	append(pats,ELl(lex,0));
 	append(pats,ELl(lex,1));
 	xfree(lex);
-	lex=mklexer("'abcdefghijlmnopqrstuvwxyz.?","name");
+	lex=mklexer("'abcdefghijklmnopqrstuvwxyz.?","name");
 	append(pats,ELl(lex,0));
 	append(pats,ELl(lex,1));
 	xfree(lex);
@@ -2728,7 +2694,17 @@ void test_nest() {
 	#include"test-nest.h"
 	xfree(a);xfree(b);xfree(c);
 }
-VP evalstr(VP ctx,VP str) {
+VP evalstrin(const char* str, VP ctx) {
+	VP r;
+	PF("evalstrin\n\"%s\"\n",str);
+	DUMP(ctx);
+	append(ctx,parsestr(str));
+	r=apply(ctx,xl0());
+	PF("evalstrin returning\n");DUMP(r);
+	return r;
+}
+VP evalin(VP str,VP ctx) {
+	return evalstrin(sfromx(str),ctx);
 }
 void evalfile(VP ctx,const char* fn) {
 	#define EFBLK 65535
