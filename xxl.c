@@ -218,17 +218,6 @@ VP xprofile_end() {
 			xfree(MEM_PTRS[i]);
 			MEM_PTRS[i]=0;
 		}
-	
-	// 0..999:        4953
-	// 1000..1999:    24
-	// 2000..2999:    293
-	// 3000..3999:    100
-	//
-	// count each group 1000 xbar capacity each MEM_PTRS
-	/*
-	xxl(
-		(ctx,"sizes",xxl(MEMPTRS,x2(&map),x1(&capacity),x2(&map),x2(&xbar),xi(1000),0))
-	*/
 	return xl0();
 }
 VP xrealloc(VP x,I32 newn) {
@@ -317,7 +306,8 @@ VP appendbuf(VP x,buf_t buf,size_t nelem) {
 	// PF("appendbuf newn %d\n", newn); DUMPRAW(dest, x->itemsz * newn);
 	return x;
 }
-VP append(VP x,VP y) { // append all items of y to x. if x is a general list, append pointer to y, and increase refcount.
+VP append(VP x,VP y) { 
+	// append all items of y to x. if x is a general list, append pointer to y, and increase refcount.
 	// PF("append %p %p\n",x,y); DUMP(x); DUMP(y);
 	IF_EXC(!CONTAINER(x) && !(x->t==y->t), Tt(Type), "append x must be container or types must match", x, y);
 	if(IS_d(x)) {
@@ -333,19 +323,14 @@ VP append(VP x,VP y) { // append all items of y to x. if x is a general list, ap
 			} else {
 				k=xl0();
 			}
-			v=xl0();
-			xref(k);xref(v);
-			EL(x,VP,0)=k;
-			EL(x,VP,1)=v;
+			v=xl0(); xref(k);xref(v); EL(x,VP,0)=k; EL(x,VP,1)=v;
 			x->n=2;
 			// PF("dict kv %p %p\n", k, v); DUMP(k); DUMP(v);
 			i=-1;
 		} else 
 			i=_find1(k,y1);
 		if(i==-1) {
-			xref(y1);xref(y2);
-			EL(x,VP,0)=append(k,y1);
-			EL(x,VP,1)=append(v,y2);
+			xref(y1); xref(y2); EL(x,VP,0)=append(k,y1); EL(x,VP,1)=append(v,y2);
 		} else {
 			xref(y2);
 			ELl(v,i)=y2;
@@ -430,12 +415,6 @@ int _flat(VP x) { // returns 1 if vector, or a list composed of vectors (and not
 	// PF("flat\n");DUMP(x);
 	if(!CONTAINER(x)) return 1;
 	else return 0; // lists are never flat
-	/*
-	int typerr=-1;VP tmp;
-	FOR(0,x->n,({ tmp=ELl(x,_i); if(tmp->n>1 || !SIMPLE(tmp)) return 0; }));
-	// PF("_flat=1");
-	return 1;
-	*/
 }
 VP flatten(VP x) {
 	int i,t=-1;VP res=0;
@@ -598,11 +577,6 @@ VP shift_(VP x,int i) {
 		return join(drop_(x,i%n),take_(x,i%n));
 }
 VP shift(VP x,VP y) {
-	//       1 2 3 4 5 6 7
-	// sh 1  2 3 4 5 6 7 1 = drop 1 , take -1
-	// sh 2  3 4 5 6 7 1 2
-	// sh -1 7 1 2 3 4 5 6
-	// sh -2 6 7 1 2 3 4 5
 	PF("shift\n");DUMP(x);DUMP(y);
 	if(!SIMPLE(x)) return EXC(Tt(type),"shr x must be a simple type",x,y);
 	if(!NUM(y)) return EXC(Tt(type),"shr y must be numeric",x,y);
@@ -633,22 +607,6 @@ VP splice(VP x,VP idx,VP replace) {
 	}
 	PF("splice returning\n"); DUMP(acc);
 	return acc;
-
-	/*
-	if(first > 0) 
-		acc=append(acc, take_(x, first));
-	acc=append(acc, replace);
-	if (last < x->n)
-		acc=append(acc, drop_(x, last));
-	PF("splice calling over\n");DUMP(acc);
-	return over(acc, x2(&join));
-	*/
-	/*
-	return over(
-		xln(3,take_(x,first),replace,drop_(x,last)),
-		x2(&join)
-	);
-	*/
 }
 VP split(VP x,VP tok) {
 	PF("split");DUMP(x);DUMP(tok);
@@ -673,29 +631,9 @@ VP split(VP x,VP tok) {
 VP take_(const VP x,const int i) {
 	VP res;
 	int st, end, xn=x->n;
-	/*
-	if(i<0) { st = x->n+i; end=x->n; }
-	else { st = 0; end=i; }
-	PF("take_(,%d) %d %d",i, st, end);
-	DUMP(x);
-	res = xalloc(x->t,end-st);
-	DUMP(info(res));
-	if(end-st > 0) {
-		appendbuf(res, ELi(x,st), end-st);
-	}
-	PF("take_ result\n"); DUMP(res);
-	*/
 	if (i<0) { st=ABS((xn+i)%xn); end=ABS(i)+st; } else { st=0; end=i; }
-	// PF("take_(,%d) %d %d\n",i, st, end); DUMP(info(x));
-	//IF_RET(end>xn, xalloc(x->t, 0));
 	res=ALLOC_LIKE_SZ(x,end-st);
-	// PF("take end %d st %d\n", end, st);
-	// DUMP(info(res)); DUMP(x);
 	FOR(st,end,({ res=appendbuf(res,ELi(x,_i % xn),1); }));
-	//if(end-st > 0) 
-	//res=appendbuf(res,ELi(x,st),end-st);
-	// PF("take result\n"); DUMP(res);
-	// DUMP(info(res));
 	return res;
 }
 VP take(const VP x,const VP y) {
@@ -737,7 +675,6 @@ int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
 	if(LISTDICT(x)) { ITERV(x,{ 
 		// PF("findbuf trying list\n"); DUMP(ELl(x,_i));
 		IF_RET(_findbuf(ELl(x,_i),y)!=-1,_i);
-		// IF_RET(_equal(ELl(x,_i),y)==1,_i);
 		// PF("findbuf no list match\n");
 	}); } else {
 		// PF("findbuf trying vector\n");
@@ -882,8 +819,6 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				return CALLABLE(left)?left:item;
 		}
 		
-		//if(LIST(item))
-		//	left=applyexpr(parent,item,left);
 		if(tag==tlam) { // create a context for lambdas
 			VP newctx,this; int j;
 			newctx=xx0();
@@ -894,13 +829,11 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 					append(newctx,clone(ELl(parent,j)));
 			}
 			append(newctx,entags(ELl(item,0),"")); // second item of lambda is arity; ignore for now
-			//newctx->tag=Ti(lambda);
 			item=newctx;
 			PF("created new lambda context item=\n");DUMP(item);
 		} else if (tag==Ti(listexpr) || tag==Ti(expr)) {
 			PF("applying subexpression\n");
 			PFIN();
-			//item=applyexpr(parent,item,left,!yused?yarg:0);
 			item=applyexpr(parent,item,0,0);
 			PFOUT();
 			RETURN_IF_EXC(item);
@@ -988,22 +921,6 @@ VP applyctx(VP x,VP y) {
 		}
 	}
 	return EXC(Tt(undef),"undefined in applyctx",x,y);
-	/*
-	first=ELl(x,0);
-	if(!IS_d(first) || x->n < 2) return EXC(Tt(noctx),"context without locals",x,y);
-	left=y;
-	if(first->t==0) {
-		left=applyexpr(ELl(x,1),first,left);
-	} else {
-		for(i=0;i<x->n;i++) {
-			left=apply(ELl(x,i),y);
-			if(!LIST(left) || left->n > 0)
-				break;
-		}
-	}
-	PF("applyctx returning\n");DUMP(left);
-	return left;
-	*/
 }
 VP apply(VP x,VP y) {
 	// this function is everything.
@@ -1490,7 +1407,6 @@ VP set(VP x,VP y) {
 VP partgroups(VP x) { 
 	// separate 1 3 4 5 7 8 -> [1, 3 4 5, 7 8]; always returns a list, even with one item
 	VP acc,tmp;int n=0,typerr=-1;
-	// PF("partgroups\n");DUMP(x);
 	acc=xlsz(x->n/2);
 	tmp=xalloc(x->t,4);
 	VARY_EACHLIST(x,({
@@ -1599,13 +1515,9 @@ static inline VP entags(VP x,const char* name) {
 }
 static inline VP tagname(const I32 tag) {
 	VP res;
-	// PF("tagname(%d)\n", tag);
-	// DUMP(TAGS);
 	if(TAGS==NULL) { TAGS=xl0();TAGS->rc=INT_MAX; }
 	if(tag>=TAGS->n) return xfroms("unknown");
 	res = ELl(TAGS,tag);
-	// PF("tagname res\n");
-	// DUMP(res);
 	return res;
 }
 static inline const char* tagnames(const I32 tag) {
@@ -1618,8 +1530,6 @@ static inline int _tagnum(const VP s) {
 		if(TAGS==NULL) { TAGS=xl0();TAGS->rc=INT_MAX;upsert(TAGS,xfroms("")); PF("new tags\n"); DUMP(TAGS); }
 		i=_upsertidx(TAGS,s);
 	});
-	// PF("tagnum %s -> %d\n",name,i);
-	// DUMP(TAGS);
 	return i;
 }
 static inline int _tagnums(const char* name) {
@@ -1734,11 +1644,6 @@ VP signaljoin(VP x,VP y) {
 // MATCHING
 
 VP nest(VP x,VP y) {
-	/* 
-		nest() benchmarking: (based on 20k loops of test_nest())
-		_equalm (single-value delimeter), with debugging: ~12.5s
-		_equalm, without debugging: 3.2s
-	*/
 	VP p1,p2,open,close,opens,closes,where,rep,out;
 	PF("NEST\n");DUMP(x);DUMP(y);
 	p1=mkproj(2,&matcheasy,x,0);
@@ -1747,11 +1652,6 @@ VP nest(VP x,VP y) {
 	if(_equal(open,close)) {
 		opens=each(open,p1);
 		PF("+ matching opens\n");DUMP(opens);
-		/*
-		 * out=scan(AS_l(opens,0),x2(&xor));
-		DUMP(out);
-		out=scan(AS_l(opens,0),x2(&xor));
-		*/
 		if(_any(opens)) {
 			opens=signaljoin(xb(1),AS_l(opens,0));
 			PF("after signaljoin\n");DUMP(opens);
@@ -1789,13 +1689,9 @@ VP nest(VP x,VP y) {
 		where=condense(out);
 	}
 	PF("nest where\n");DUMP(where);
-	//out=splice(x,out,xl(apply(x,out)));
 	if(where->n) {
-		//out=splice(x,out,split(apply(x,out),xi0()));
 		rep=apply(x,where);
 		if(y->n >= 5) {
-			// PF("nest applying callback\n");
-			// sleep(1);
 			rep=apply(ELl(y,4),rep);
 		}
 		if(y->n >= 4)
@@ -1806,98 +1702,13 @@ VP nest(VP x,VP y) {
 		// like-typed vector. but that's not what we want here, because the
 		// thing we're inserting is a "child" of this position, so we want to
 		// ensure we always splice in a list
-		
-		//if(!LIST(rep)) rep=xl(rep);     up for debate
-
 		PF("nest x");
 		out=splice(split(x,xi0()),where,rep);
 		PF("nest out\n");DUMP(out);
 		if(!LIST(out)) out=xl(out);
 	} else { out = x; }
-	//if(ENLISTED(out))out=ELl(out,0);
 	PF("nest returning\n"); DUMP(out);
 	return out;
-
-	/*
-	int i,j,found; 
-	VP tmp, this, open, close, escape, entag, st, cur, newcur; // result stack
-	if(y->n<2)return EXC(Tt(nest),"nest y must be 2 (start/end) or 3 (start/end/escape) values ",x,y);
-	PF("nest\n"); DUMP(x); DUMP(y);
-	open=apply(y,xi(0));
-	close=apply(y,xi(1));
-	escape=(y->n==3)?apply(y,xi(2)):NULL;
-	entag=(y->n==4)?apply(y,xi(3)):NULL;
-	st=xl0();
-	cur=xl0();
-	cur->next=(buf_t)st;
-	append(st,cur);
-	for(i=0;i<x->n;i++){
-		PF("nest state for iter %d\n", i);
-		DUMP(st);
-		DUMP(cur);
-		this=apply(x,xi(i));
-		if(matchpass(this, open)) {
-			PF("got start at %d\n", i);
-			if(cur->n) {
-				newcur=xl0();
-				newcur->next=(buf_t)cur;
-				append(cur, newcur);
-				cur=newcur;
-			}
-			for(j=0; j< open->n && i+j < x->n; j++) { // too confusing to express with FOR
-				PF("copy %d, i=%d\n", j, i);
-				tmp=apply(x,xi(i++));
-				if(entag!=NULL)
-					tmp->tag=0;
-				append(cur, tmp);
-			}
-			i--;
-			PF("nest start done copying");
-			DUMP(cur);
-			// TODO need a shortcut like applyi(VP,int) - too slow
-		}
-		else if(escape != NULL && escape->n > 0 && matchpass(this,escape)) // escape char; skip
-			i+=2;
-		else if(matchpass(this,close)) {
-			if(cur->n==0) 
-				return EXC(Tt(nest),"nest matched end without start",x,y)
-			else {
-				PF("found end, unpacking %d\n", st->n-1);
-				for(j=0; j<close->n; j++) { // too confusing to express with FOR
-					append(cur, apply(x,xi(i++)));
-				}
-				if(entag!=NULL) {
-					cur->tag=AS_t(entag,0);
-				}
-				i--;
-				if(cur->next) {
-					PF("adopting cur\n");
-					cur=(VP)cur->next;
-					DUMP(cur);
-				}
-				PF("ending unpacked:\n");
-				DUMP(cur);
-				found++;
-			}
-		}  else {
-			// TODO need an apply shortcut for C types like applyi(VP,int) - too slow otherwise
-			newcur=apply(x,xi(i));
-			PF("nest appending elem %d\n", i);
-			DUMP(newcur);
-			if(entag!=NULL) 
-				newcur->tag=0;
-			append(cur,newcur);
-		}
-	}
-	if (found) {
-		PF("nest returning new value");
-		DUMP(st);
-		return st;
-	} else {
-		PF("returning unchanged");
-		return x;
-	}
-	*/
 }
 
 static inline void matchanyof_(const VP obj,const VP pat,const int max_match,int* n_matched,int* matchidx) {
@@ -2031,9 +1842,7 @@ static inline int match_(const VP obj_,int ostart, const VP pat_, int pstart,
 		if(found) {
 			gotmatch++;
 			PF("+++ FOUND! result #%d, io=%d, ip=%d..\n", *n_matched, io, ip);
-			// DUMP(info(item));
 			DUMP(item);
-			// DUMP(info(rule));
 			DUMP(rule);
 			found=0;
 			for(i=0;i<*n_matched;i++) {
@@ -2041,11 +1850,6 @@ static inline int match_(const VP obj_,int ostart, const VP pat_, int pstart,
 			}
 			if (!found)matchidx[*n_matched]=io;
 			found=1;
-			if(PF_LVL) {
-				// PF("so far: ");
-				// FOR(0,(*n_matched)+1,printf("%d ",matchidx[_i]));
-				// printf("\n");
-			}
 			*n_matched=*n_matched+1;
 			if(matchopt==anyof) {
 				io++;
@@ -2076,8 +1880,6 @@ static inline int match_(const VP obj_,int ostart, const VP pat_, int pstart,
 					PFOUT();
 					PF(">> greedy advancing to %d/%d, nm=%d, sm=%d, ", io, obj->n, *n_matched, submatches);
 					PF("so far: ");
-					// FOR(0,(*n_matched),printf("%d ",matchidx[_i]));
-					// printf("\n");
 					PFIN();
 				}
 				if(gotmatch==0) {
@@ -2118,16 +1920,10 @@ static inline int match_(const VP obj_,int ostart, const VP pat_, int pstart,
 				io++;
 			}
 		}
-
 		if(ip>=pat->n||io>=obj->n) done=1;
 		PF("done=%d\n",done);
 		PF("))) Match loop end.. done=%d, type=%s, found=%d, obj=%d/%d, pat=%d/%d\n", 
 			done, tagnames(matchopt), found, io, obj->n, ip, pat->n);
-
-		/*
-		if (io == obj->n || ip == pat->n)
-			done=1;
-		*/
 	}
 
 	fin:
@@ -2269,20 +2065,9 @@ VP mklexer(const char* chars, const char* label) {
 		entags(xfroms(chars),"raw"),
 		mkproj(2,&labelitems,xfroms(label),0)
 	);
-	/*
-	VP res = xlsz(2);
-	return xln(2,
-		entags(xln(2,
-			Tt(raw),
-			entags(split(xfroms(chars),xl0()),"anyof")
-		),"greedy"),
-		mkproj(2,&labelitems,xfroms(label),0)
-	);
-	*/
 }
 VP mkstr(VP x) {
 	return entags(flatten(x),"string");
-	// return flatten(x);
 }
 
 // CONTEXTS:
@@ -2382,13 +2167,6 @@ VP parsestr(const char* str) {
 		append(acc,entags(xc(str[i]),"raw"));
 	if(AS_c(ELl(acc,acc->n - 1),0)!='\n')
 		append(acc,entags(xc('\n'),"raw"));
-	// DUMP(acc);
-	
-	// consider using nest instead .. more direct
-	/*
-	acc=nest(acc,xln(4, xfroms("//"), xfroms("//"), xfroms(""), Tt(comment)));
-	acc=nest(acc,xln(4, xfroms("//"), xfroms("\n"), xfroms(""), Tt(comment)));
-	*/
 	ctx=mkbarectx();
 	pats=xln(3,
 		mkproj(2,&nest,0,xln(4, xfroms("//"), xfroms("\n"), xfroms(""), Tt(comment))),
@@ -2397,56 +2175,10 @@ VP parsestr(const char* str) {
 	);
 	ctx=append(ctx,pats);
 	acc=exhaust(acc,ctx);
-	/*
-		acc=nest(acc,xln(4, xfroms("\""), xfroms("\""), xfroms(""), Tt(string)));
-	*/
-	// acc=deep(acc,x1(&list2vec));
 	PF("parsestr after nest\n");
 	xfree(pats);
 
 	pats=xl0();
-	/*
-	lex = xln(2,
-		xln(6,
-			Tt(raw),
-			xfroms("/"),
-			xfroms("/"),
-			xl(entags(xl(entags(xl(xc('/')),"not")), "greedy")),
-			xfroms("/"),
-			xfroms("/")
-		),
-		mkproj(2,&labelitems,xfroms("comment"),0)
-	);
-	append(pats,ELl(lex,0));
-	append(pats,ELl(lex,1));
-	xfree(lex);
-	lex = xln(2,
-		xln(5,
-			Tt(raw),
-			xfroms("/"),
-			xfroms("/"),
-			xl(entags(xl(entags(xl(xc('\n')),"not")), "greedy")),
-			//xl(entags(xl(xc0()), "greedy")),
-			xfroms("\n")
-		),
-		mkproj(2,&labelitems,xfroms("comment"),0)
-	);
-	append(pats,ELl(lex,0));
-	append(pats,ELl(lex,1));
-	xfree(lex);
-	lex = xln(2,
-		entags(xln(2,
-			Tt(raw),
-			xfroms("\""),
-			xc0(),
-			xfroms("\"")
-		),"greedy"),
-		mkproj(2,&labelitems,xfroms("string"),0)
-	);
-	append(pats,ELl(lex,0));
-	append(pats,ELl(lex,1));
-	xfree(lex);
-	*/
 	lex=mklexer("0123456789","int");
 	append(pats,ELl(lex,0));
 	append(pats,ELl(lex,1));
@@ -2455,7 +2187,6 @@ VP parsestr(const char* str) {
 	append(pats,ELl(lex,0));
 	append(pats,ELl(lex,1));
 	xfree(lex);
-	//lex=mklexer(" \n\t\r","ws");
 	lex=mklexer(" \n\t","ws");
 	append(pats,ELl(lex,0));
 	append(pats,ELl(lex,1));
@@ -2464,16 +2195,10 @@ VP parsestr(const char* str) {
 	append(pats,ELl(lex,0));
 	append(pats,ELl(lex,1));
 	xfree(lex);
-
 	append(pats,Tt(int));
 	append(pats,x1(&str2int));
-
 	append(pats,Tt(name));
 	append(pats,x1(&name2sym));
-
-	// append(pats,Tt(expr));
-	// append(pats,x1(&parseexpr));
-
 	t1=matchexec(acc,pats);
 
 	xfree(pats);
@@ -2495,22 +2220,6 @@ VP parsestr(const char* str) {
 		PF("parsestr exhausting %d\n", i);
 		t2=exhaust(t2,ELl(pats,i));
 	}
-	/*ctx=append(ctx,pats);
-	// t2=exhaust(t1,ctx);
-	t2=over(pats,mkproj(2,&exhaust,t1,0));
-	*/
-	/*
-	PF("*!*!*!*!*!*!*! matchexec form nesting\n"); DUMP(t2);
-	pats=xl0();
-	append(pats,Tt(string));
-	append(pats,x1(&parsestrlit));
-	append(pats,Tt(expr));
-	append(pats,x1(&parseexpr));
-	append(pats,Tt(lambda));
-	append(pats,x1(&parselambda));
-	t2=matchexec(t2,pats);
-	//t2=exhaust(t2,mkproj(2,&matchexec,0,pats));
-	*/
 	return t2;
 }
 
@@ -2668,11 +2377,13 @@ void evalfile(VP ctx,const char* fn) {
 		if(r<0)perror("evalfile read");
 		else appendbuf(acc,(buf_t)buf,r);
 	} while (r==EFBLK);
-
+	PFW({
 	PF("evalfile executing\n"); DUMP(acc);
 	append(ctx,parsestr(sfromx(acc)));
 	res=apply(ctx,xl0()); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
 	PF("evalfile done"); DUMP(res);
+	});
+	printf("%s\n",repr(res));
 	exit(1);
 }
 void tests() {
