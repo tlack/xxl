@@ -42,6 +42,24 @@ lib.each(lib.types,function(tx) {
 });
 console.log("})");
 
+console.log(lib.prelude + 
+	"// same as above, but doesnt allow floats (think bitwise operations)\n" +
+	"#define VARY_EL_NOFLOAT(x,i,stmt,failvar) ({ \\");
+var tmpls=[
+	"\tif(x->t=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}};}\\",
+	"\tif(x->t=={{x0}}){/*{{x2}}*/\\\n"+
+	"\t\t{{x3}} _x=AS_{{x1}}(x,i);\\\n"+
+	"\t\tstmt;}\\" 
+];
+lib.each(lib.types,function(tx) {
+	if(tx[1]=='f' || skip(tx))tmpl=tmpls[0];
+	else tmpl=tmpls[1];
+	var a=[];
+	for(var i in tx)a["x"+i]=tx[i];
+	console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+});
+console.log("})");
+
 console.log("#define VARY_EACH(x,stmt,failvar) ({ \\\n" +
 	"\tint _i=0,_xn=x->n,_xt=x->t; /*PF(\"VE\");DUMP(x);*/\\");
 var tmpl="\tif(_xt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
@@ -58,6 +76,28 @@ var tmpl="\tif(_xt=={{x0}}){/*{{x2}}*/ \\\n" +
 	"\t}\\";
 lib.each(lib.types,function(tx) {
 	if(skip(tx))return;
+	var a=[];
+	for(var i in tx)a["x"+i]=tx[i];
+	console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+});
+console.log("})");
+
+console.log("#define VARY_EACH_NOFLOAT(x,stmt,failvar) ({ \\\n" +
+	"\tint _i=0,_xn=x->n,_xt=x->t; /*PF(\"VE\");DUMP(x);*/\\");
+var tmpl="\tif(_xt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
+lib.each(lib.types,function(tx) {
+	if(skip(tx) || tx[1]=="f"){
+		var a=[];
+		for(var i in tx)a["x"+i]=tx[i];
+		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+	}
+});
+var tmpl="\tif(_xt=={{x0}}){/*{{x2}}*/ \\\n" +
+	"\t\t{{x3}} _x,_xtmp=0;\\\n" + 
+	"\t\twhile (_i < _xn) { _x=AS_{{x1}}(x,_i); /* printf(\"%d {{5}}\\n\", _i, _x); */ stmt; _i++; }\\\n" + 
+	"\t}\\";
+lib.each(lib.types,function(tx) {
+	if(skip(tx) || tx[1]=="f")return;
 	var a=[];
 	for(var i in tx)a["x"+i]=tx[i];
 	console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
@@ -105,6 +145,34 @@ lib.each(lib.types,function(tx) {
 	if(skip(tx))return;
 	lib.each(lib.types, function(ty) { 
 		if(skip(ty))return;
+		var a=[];
+		for(var i in tx)a["x"+i]=tx[i];
+		for(var i in ty)a["y"+i]=ty[i];
+		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+	});
+});
+console.log("})");
+
+// identical to VARY_EACHBOTH, but doesnt allow floats
+console.log("#define VARY_EACHBOTH_NOFLOAT(x,y,stmt,failvar) ({ \\\n" +
+	"\tint _i=0,_j=0,_xn=x->n,_yn=y->n,_xt=x->t,_yt=y->t;\\");
+var tmpl="\tif(_xt=={{x0}}||_yt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
+lib.each(lib.types,function(tx) {
+	if(tx[1] != 'l' && skip(tx)){
+		var a=[];
+		for(var i in tx)a["x"+i]=tx[i];
+		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+	}
+});
+var tmpl="\tif(_xt=={{x0}}&&_yt=={{y0}}){/*{{x2}} x {{y2}}*/ \\\n" +
+	"\t\t{{x3}} _x,_xtmp=0; {{y3}} _y,_ytmp;\\\n" + 
+	"\t\twhile (_i<_xn && _j<_yn) { _x=AS_{{x1}}(x,_i%_xn); _y=AS_{{y1}}(y,_j%_yn); stmt; \\\n"+ 
+	"\t\tif(!SCALAR(x)) {_i++;}  _j++; }\\\n" + 
+	"\t}\\";
+lib.each(lib.types,function(tx) {
+	if(tx[1]=="f" || skip(tx))return;
+	lib.each(lib.types, function(ty) { 
+		if(ty[1]=="f" || skip(ty))return;
 		var a=[];
 		for(var i in tx)a["x"+i]=tx[i];
 		for(var i in ty)a["y"+i]=ty[i];
@@ -185,6 +253,32 @@ lib.each(lib.types,function(tx) {
 	if(skip(tx))return;
 	lib.each(lib.types, function(ty) { 
 		if(skip(ty))return;
+		var a=[];
+		for(var i in tx)a["x"+i]=tx[i];
+		for(var i in ty)a["y"+i]=ty[i];
+		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+	});
+});
+console.log("})");
+
+console.log("#define VARY_EACHRIGHT_NOFLOAT(x,y,stmt,failvar) ({ \\\n" +
+	"\tint _i=0,_j=0,_xn=x->n,_yn=y->n,_xt=x->t,_yt=y->t;\\");
+var tmpl="\tif(_xt=={{x0}}||_yt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
+lib.each(lib.types,function(tx) {
+	if(skip(tx)||tx[1]=="f"){
+		var a=[];
+		for(var i in tx)a["x"+i]=tx[i];
+		console.log(lib.exhaust(lib.projr(lib.repl,a),tmpl));
+	}
+});
+var tmpl="\tif(_xt=={{x0}}&&_yt=={{y0}}){/*{{x2}} x {{y2}}*/ \\\n" +
+	"\t\t{{x3}} _x;{{y3}} _y; _x=AS_{{x1}}(x,0);\\\n" + 
+	"\t\twhile (_j < _yn) { _y=AS_{{y1}}(y,_j); stmt; _j++; }\\\n" + 
+	"\t}\\";
+lib.each(lib.types,function(tx) {
+	if(skip(tx)||tx[1]=="f")return;
+	lib.each(lib.types, function(ty) { 
+		if(skip(ty)||ty[1]=="f")return;
 		var a=[];
 		for(var i in tx)a["x"+i]=tx[i];
 		for(var i in ty)a["y"+i]=ty[i];

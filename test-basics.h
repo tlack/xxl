@@ -262,3 +262,10 @@
 	ASSERT(_equal(lesser(xi(1),xi(-2)),xb(0)),"lesser3");
 	ASSERT(_equal(lesser(xin(3,1,2,3),xi(2)),xbn(3,1,0,0)),"lesser4");
 
+	ASSERT(_equal(xf(3.0), plus(xf(1.5),xf(1.5))), "float 0");
+	xfree(a);xfree(b);
+
+	ASSERT(_equal(a, plus(xf(1.5),xf(1.5))), "float int compare 0");
+	xfree(a);xfree(b);
+
+

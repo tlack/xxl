@@ -82,7 +82,7 @@
 // Handy functions for manipulating values and their types
 #define SCALAR(v) ((v)->n==1)                            // is v a single value?
 #define NUM(v) (IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v))      // is v an int type?
-#define SIMPLE(v) (IS_t(v)||IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v)||IS_c(v))
+#define SIMPLE(v) (IS_t(v)||IS_c(v)||IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v)||IS_f(v))
 #define LIST(v) ((v)->t==0)                              // is v a general list type?
 #define DICT(v) (IS_d(v))                                // is v a dictionary?
 #define LISTDICT(v) (IS_l(v)||IS_d(v))                   // is v a list or dictionary?
@@ -102,7 +102,12 @@
 	if(val<MAX_i)t=T_i else if (val<MAX_j)t=T_j else if (val<MAX_o)t=T_o; \
 	xalloc(t,sz); })
 
-// create an exception value
+#ifdef DEBUG
+	#define TRACELBL(x,lbl) ( (x)->tag=lbl, x )
+#else
+	#define TRACELBL(x,lbl) (x) 
+#endif
+
 #define EXC(type,lbl,x,y) ({ \
 	VP exc; exc = tagv("exception",xln(4,type,xfroms(lbl),x,y));  \
 	if(0) printf("exception: %s\n", sfromx(repr(exc))); \

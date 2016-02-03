@@ -396,7 +396,7 @@ static inline VP assign(VP x,VP k,VP val) {
 		// PF("assign");DUMP(x);DUMP(k);DUMP(val);
 		if(x->t != val->t) return EXC(Tt(type),"assign value and target types don't match",x,val);
 		int typerr=-1;
-		VARY_EACHRIGHT(x,k,({
+		VARY_EACHRIGHT_NOFLOAT(x,k,({
 			EL(x,typeof(_x),_y) = EL(val,typeof(_x),_y%val->n); // TODO assign should create new return value
 		}),typerr);
 		// PF("assign num returning");DUMP(x);
@@ -666,7 +666,12 @@ int _equal(const VP x,const VP y) {
 	if(LIST(b) && SCALAR(b)) b=ELl(b,0);
 	IF_RET(a->n != b->n, 0);
 	if(CONTAINER(a) && CONTAINER(b)) { ITERV(a,{ IF_RET(_equal(ELl(a,_i),ELl(b,_i))==0, 0); }); return 1; }
-	ITERV(a,{ IF_RET(memcmp(ELb(a,_i),ELb(b,_i),a->itemsz)!=0,0); });
+	if(IS_f(a) || IS_f(b)) {
+		int typerr=-1;
+		VARY_EACHBOTH(a,b,({ if(_x != _y) return 0; }),typerr);
+	} else {
+		ITERV(a,{ IF_RET(memcmp(ELb(a,_i),ELb(b,_i),a->itemsz)!=0,0); });
+	}
 	// PF("_equal=1!\n");
 	return 1;
 }
@@ -759,7 +764,7 @@ VP deal(VP range,VP amt) {
 	int typerr=-1;
 	VP acc=0;
 	VARY_EL(amt,0,({ typeof(_x)amt=_x; acc=ALLOC_LIKE_SZ(range,_x); // TODO rethink deal in terms of more types
-		VARY_EL(range,0,({
+		VARY_EL_NOFLOAT(range,0,({
 			FOR(0,amt,({ EL(acc,typeof(_x),_i)=rand()%_x; }));
 			acc->n=amt;
 		}),typerr);}),typerr);
@@ -1021,7 +1026,7 @@ VP apply(VP x,VP y) {
 			VP tmp = ELl(x,i); xref(tmp); return tmp;
 		} else {
 			res=xalloc(x->t,y->n);
-			VARY_EACH(y,appendbuf(res,ELi(x,_x),1),typerr);
+			VARY_EACH_NOFLOAT(y,appendbuf(res,ELi(x,_x),1),typerr);
 			//PF("apply VARY_EACH after\n"); DUMP(res);
 			if(typerr>-1) return EXC(Tt(type),"cant use y as index into x",x,y);
 			return res;
@@ -1264,12 +1269,12 @@ VP mod(VP x,VP y) {
 	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "mod args should be simple types", x, y); 
 	VP acc=ALLOC_BEST(x,y);
 	if(LIKELY(x->t > y->t)) {
-		VARY_EACHBOTH(x,y,({ 
+		VARY_EACHBOTH_NOFLOAT(x,y,({ 
 			if(_x==0)_x=0; else _x=_x%_y;
 			appendbuf(acc,(buf_t)&_x,1); if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 		}),typerr);
 	} else {
-		VARY_EACHBOTH(x,y,({ 
+		VARY_EACHBOTH_NOFLOAT(x,y,({ 
 			if(_x==0)_y=0; else _y=_x%_y;
 			appendbuf(acc,(buf_t)&_y,1); if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 		}),typerr);
@@ -1292,12 +1297,12 @@ VP plus(VP x,VP y) {
 	// PF("plus result\n"); DUMP(acc);
 	return acc;
 }
-VP str2int(VP x) {
-	I128 buf=0;
-	PF("str2int %s",sfromx(x));DUMP(x);
+inline VP str2num(VP x) {
+	// TODO optimize str2int
+	double d; I128 buf=0;char* s=sfromx(flatten(x));
+	PF("str2num %s\n",s);DUMP(x);
 	IF_EXC(!IS_c(x),Tt(type),"str2int arg should be char vector",x,0);
-	if (sscanf(sfromx(x),"%lld",&buf)==1) {
-		PF("inner %lld\n",buf);
+	if (sscanf(s,"%lld",&buf)==1) { // should probably use atoi or strtol
 		/* assume int by default 
 		if(buf<MAX_b)
 			return xb((CTYPE_b)buf);
@@ -1306,10 +1311,14 @@ VP str2int(VP x) {
 			return xi((CTYPE_i)buf);
 		if(buf<MAX_j)
 			return xj((CTYPE_j)buf);
-		if(buf<MAX_o)
-			return xo((CTYPE_o)buf);
-	}
-	return EXC(Tt(value),"str2int value could not be converted",x,0);
+		return xo((CTYPE_o)buf);
+	} else if ((d=strtod(s,NULL))!=0) 
+		return xf(d);
+	else if(strncmp(s,"0.0",3)==0)
+		return xf(0.0);
+	else 
+		return x;
+	// return EXC(Tt(value),"str2int value could not be converted",x,0);
 }
 VP sum(VP x) {
 	PF("sum");DUMP(x);
@@ -1331,7 +1340,7 @@ VP sums(VP x) {
 VP til(VP x) {
 	VP acc=0;int i;int typerr=-1;
 	PF("til\n"); DUMP(x);
-	VARY_EL(x, 0, 
+	VARY_EL_NOFLOAT(x, 0, 
 		{ __typeof__(_x) i; acc=xalloc(x->t,MAX(_x,1)); acc->n=_x; for(i=0;i<_x;i++) { EL(acc,__typeof__(i),i)=i; } }, 
 		typerr);
 	IF_RET(typerr>-1, EXC(Tt(type), "til arg must be numeric", x, 0));
@@ -1359,7 +1368,7 @@ VP xor(VP x,VP y) {
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "xor arguments should be same length", x, y);	
 	if(x->t == y->t) acc=xalloc(x->t, x->n);
 	else acc=xlsz(x->n);
-	VARY_EACHBOTH(x,y,({ _x = _x ^ _y; appendbuf(acc, (buf_t)&_x, 1); }), typerr);
+	VARY_EACHBOTH_NOFLOAT(x,y,({ _x = _x ^ _y; appendbuf(acc, (buf_t)&_x, 1); }), typerr);
 	IF_EXC(typerr != -1, Tt(type), "xor arg type not valid", x, y);
 	// PF("or result\n"); DUMP(acc);
 	return acc;
@@ -2153,6 +2162,13 @@ VP parsename(VP x) {
 	}
 	return res;
 }
+VP parsenum(VP x) {
+	PF("parsenum\n");DUMP(x);
+	VP res=flatten(x);
+	if(IS_c(res)) {
+		return str2num(res);
+	} else return res;
+}
 VP parselambda(VP x) {
 	int i,arity=1,typerr=-1,traw=Ti(raw); VP this;
 	PF("parselambda\n");DUMP(x);
@@ -2203,9 +2219,9 @@ VP parsestr(const char* str) {
 	xfree(pats);
 
 	pats=xl0();
-	lex=mklexer("0123456789","int");
+	lex=mklexer("0123456789.","num");
 	append(pats,ELl(lex,0));
-	append(pats,ELl(lex,1));
+	append(pats,x1(&parsenum));
 	xfree(lex);
 	lex=mklexer("'abcdefghijklmnopqrstuvwxyz.?","name");
 	append(pats,ELl(lex,0));
@@ -2215,14 +2231,6 @@ VP parsestr(const char* str) {
 	append(pats,ELl(lex,0));
 	append(pats,ELl(lex,1));
 	xfree(lex);
-	lex=mklexer("\n","ws");
-	append(pats,ELl(lex,0));
-	append(pats,ELl(lex,1));
-	xfree(lex);
-	append(pats,Tt(int));
-	append(pats,x1(&str2int));
-	append(pats,Tt(name));
-	append(pats,x1(&name2sym));
 	t1=matchexec(acc,pats);
 
 	xfree(pats);

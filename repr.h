@@ -40,6 +40,16 @@ char* repr_o(VP x,char* s,size_t sz) { int i;
 if(!SIMPLE(x) || x->n>1) APF(sz,")",0);
 return s; }
 
+char* repr_f(VP x,char* s,size_t sz) { int i; 
+	IF_RET(x->n==0,APF(sz,"xf0()",0));
+	if(!SIMPLE(x)) APF(sz,"'f(",0);
+	else if(x->n>1) APF(sz,"(",0);
+	for(i=0;i<x->n-1;i++) snprintf(s+strlen(s),sz-strlen(s)-1,"%0.5f,",AS_f(x,i)); 
+	if(SIMPLE(x)) snprintf(s+strlen(s),sz-strlen(s)-1,"%0.5ff",AS_f(x,i)); 
+		else snprintf(s+strlen(s),sz-strlen(s)-1,"...",AS_f(x,i)); 
+if(!SIMPLE(x) || x->n>1) APF(sz,")",0);
+return s; }
+
 char* repr_1(VP x,char* s,size_t sz) { int i; 
 	IF_RET(x->n==0,APF(sz,"x10()",0));
 	if(!SIMPLE(x)) APF(sz,"'1(",0);
