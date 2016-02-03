@@ -366,3 +366,10 @@
 	ASSERT(_equal(tmp1,tmp2),"test evalstrin and complex variables");
 	xfree(ctx);xfree(tmp1);xfree(tmp2);
 
+	ctx=mkworkspace();
+	append(ctx,parsestr("['q:1,'w:2] as 'd;d ! ('w,5)"));
+	tmp1=apply(ctx,xi(3));
+	tmp2=evalstrin("['q:1, 'w:5]", ctx);
+	ASSERT(_equal(tmp1,tmp2),"test amend dict val");
+	xfree(ctx);xfree(tmp1);xfree(tmp2);
+
