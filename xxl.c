@@ -1235,12 +1235,27 @@ VP or(VP x,VP y) { // TODO most of these primitive functions have the same patte
 	return acc;
 }
 VP min(VP x) { 
-	// TODO implement min() as loop instead of over - used in parsing
-	return over(x, x2(&and));
+	if (!SIMPLE(x)) return over(x, x2(&and));
+	if(x->n==1)return x;
+	VP res=ALLOC_LIKE_SZ(x,1); int typerr=-1;
+	VARY_EACH(x,({
+		if(UNLIKELY(_i==0) || _x < _xtmp) 
+			EL(res,typeof(_x),0)=_xtmp=_x;
+	}),typerr); // no need to check typerr due to SIMPLE check above
+	res->n=1;
+	return res;
 }
 VP max(VP x) { 
 	// TODO implement max() as loop instead of over - used in parsing
-	return over(x, x2(&or));
+	if (!SIMPLE(x)) return over(x, x2(&or));
+	if(x->n==1)return x;
+	VP res=ALLOC_LIKE_SZ(x,1); int typerr=-1;
+	VARY_EACH(x,({
+		if(UNLIKELY(_i==0) || _x > _xtmp) 
+			EL(res,typeof(_x),0)=_xtmp=_x;
+	}),typerr); // no need to check typerr due to SIMPLE check above
+	res->n=1;
+	return res;
 }
 VP mod(VP x,VP y) {
 	// TODO mod probably *doesnt* need type promotion
