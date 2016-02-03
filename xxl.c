@@ -378,7 +378,7 @@ VP amend(VP x,VP y) {
 			if (SCALAR(val)) tmp=xref(val); 
 			else tmp=apply(val,idxv);
 		}
-		if(UNLIKELY(tmp->t!=x->t))return EXC(Tt(value),"amend value type does not match x",x,tmp);
+		if(UNLIKELY(!CONTAINER(x) && tmp->t!=x->t))return EXC(Tt(value),"amend value type does not match x",x,tmp);
 		assign(x,idxv,tmp);
 		xfree(idxi); xfree(idxv); xfree(tmp);
 	}
@@ -770,7 +770,8 @@ VP deal(VP range,VP amt) {
 
 static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	PF("applyexpr (code, xarg, yarg):\n");DUMP(code);DUMP(xarg);DUMP(yarg);
-	if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
+	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
+	if(!LIST(code))return code;
 	char ch; int i, tag, tcom, texc, tlam, traw, tname, tstr, tws, xused=0, yused=0; 
 	VP left,item;
 	clock_t st=0;
@@ -1466,13 +1467,6 @@ VP pickapart(VP x,VP y) { // select items of x[0..n] where y[n]=1, and divide no
 	if(acc->n==0) return ELl(acc,0);
 	else return acc;
 }
-VP labelitems(VP label,VP items) {
-	VP res;
-	PF("labelitems\n");DUMP(label);DUMP(items);
-	res=flatten(items);res->tag=_tagnums(sfromx(label));
-	DUMP(res);
-	return res;
-}
 VP mkproj(int type, void* func, VP left, VP right) {
 	Proj p;
 	VP pv=xpsz(1);
@@ -2060,15 +2054,6 @@ VP matchtag(VP obj,VP pat) {
 	PF("matchtag result\n"); DUMP(acc);
 	return acc;
 }
-VP mklexer(const char* chars, const char* label) {
-	return xln(2,
-		entags(xfroms(chars),"raw"),
-		mkproj(2,&labelitems,xfroms(label),0)
-	);
-}
-VP mkstr(VP x) {
-	return entags(flatten(x),"string");
-}
 
 // CONTEXTS:
 
@@ -2120,6 +2105,19 @@ VP list2vec(VP obj) {
 	PF("list2vec result\n"); DUMP(acc); DUMP(info(acc));
 	return acc;
 }
+VP labelitems(VP label,VP items) {
+	VP res;
+	//PF("labelitems\n");DUMP(label);DUMP(items);
+	res=flatten(items);res->tag=_tagnums(sfromx(label));
+	//DUMP(res);
+	return res;
+}
+VP mklexer(const char* chars, const char* label) {
+	return xln(2,
+		entags(xfroms(chars),"raw"),
+		mkproj(2,&labelitems,xfroms(label),0)
+	);
+}
 VP parseexpr(VP x) {
 	PF("parseexpr\n");DUMP(x);
 	if(LIST(x) && IS_c(ELl(x,0)) && (
@@ -2128,6 +2126,17 @@ VP parseexpr(VP x) {
 		return drop_(drop_(x,-1),1);
 	else
 		return x;
+}
+VP parsename(VP x) {
+	PF("parsename\n");DUMP(x);
+	VP res=flatten(x);
+	if(IS_c(res)) {
+		if(AS_c(res,0)=='\'') {
+			return xt(_tagnum(behead(res)));
+		}
+		res->tag=Ti(name);
+	}
+	return res;
 }
 VP parselambda(VP x) {
 	int i,arity=1,typerr=-1,traw=Ti(raw); VP this;
@@ -2185,7 +2194,7 @@ VP parsestr(const char* str) {
 	xfree(lex);
 	lex=mklexer("'abcdefghijklmnopqrstuvwxyz.?","name");
 	append(pats,ELl(lex,0));
-	append(pats,ELl(lex,1));
+	append(pats,x1(&parsename));
 	xfree(lex);
 	lex=mklexer(" \n\t","ws");
 	append(pats,ELl(lex,0));
