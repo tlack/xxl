@@ -31,6 +31,8 @@ VP get(VP x,VP y);
 VP greater(VP x,VP y); 
 VP info(VP x);
 VP join(VP x,VP y);
+VP iftrue(VP x,VP y);
+VP ifelse(VP x,VP y);
 VP itemsz(VP x);
 VP last(VP x);
 VP len(VP x); 

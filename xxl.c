@@ -1256,6 +1256,18 @@ VP any(VP x) {
 	if(LIST(x)) return deep(x,x1(&any));
 	return xb(_any(x));
 }
+VP ifelse(VP x,VP y) {
+	PF("ifelse\n");DUMP(x);DUMP(y);
+	if(y->n!=2) return EXC(Tt(len),"ifelse y argument must be (truecond,falsecond)",x,y);
+	if(x->n == 0) return apply(y,XI1);
+	else if(NUM(x) && !_any(x)) return apply(y,XI1);
+	else return apply(y,XI0);
+}
+VP iftrue(VP x,VP y) {
+	if(x->n == 0) return x;
+	else if(NUM(x) && !_any(x)) return x;
+	else return y;
+}
 VP greater(VP x,VP y) {
 	int typerr=-1;
 	VP acc,v0=xb(0),v1=xb(1);
@@ -1294,6 +1306,8 @@ VP or(VP x,VP y) { // TODO most of these primitive functions have the same patte
 	int typerr=-1;
 	VP acc;
 	// PF("or\n"); DUMP(x); DUMP(y); // TODO or() and friends should handle type conversion better
+	if(x->n==0) return y;
+	if(y->n==0) return x;
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "or arguments should be same length", x, y);	
 	if(x->t == y->t) acc=xalloc(x->t, x->n);
 	else acc=xlsz(x->n);

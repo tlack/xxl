@@ -37,6 +37,8 @@
 	res=assign(res,Tt(drop),x2(&drop));
 	res=assign(res,Tt(each),x2(&each));
 	res=assign(res,Tt(evalin),x2(&evalin));
+	res=assign(res,Tt(iftrue),x2(&iftrue));
+	res=assign(res,Tt(ifelse),entags(x2(&ifelse),"ifelse"));
 	res=assign(res,Tt(in),x2(&matchany));
 	res=assign(res,Tt(nest),x2(&nest));
 	res=assign(res,Tt(pick),x2(&pick));
