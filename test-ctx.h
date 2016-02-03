@@ -201,7 +201,7 @@
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
-	append(ctx,parsestr("til+2@{til}"));
+	append(ctx,parsestr("til+2 each {til}"));
 	tmp1=apply(ctx,xi(3));
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,xln(3,xin(2,0,1),xin(3,0,1,2),xin(4,0,1,2,3))),"test parsestr 18");
@@ -353,7 +353,7 @@
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
-	append(ctx,parsestr("[3,4,5]@{+2}"));
+	append(ctx,parsestr("[3,4,5]each{+2}"));
 	tmp1=apply(ctx,xi(3));
 	ASSERT(_equal(tmp1,xin(3,5,6,7)),"test apply simple lambda");
 	xfree(ctx);xfree(tmp1);

@@ -30,7 +30,7 @@
 	res=assign(res,xt(_tagnums("[")),x2(&list2));
 	res=assign(res,Tt(~),x2(&matcheasy));
 	res=assign(res,Tt(!),x2(&amend));
-	res=assign(res,Tt(@),x2(&each));
+	res=assign(res,Tt(@),x2(&apply));
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));
 	res=assign(res,Tt(deal),x2(&deal));
