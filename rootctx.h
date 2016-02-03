@@ -21,7 +21,7 @@
 	res=assign(res,Tt(+),x2(&plus));
 	res=assign(res,Tt(-),x2(&plus));
 	res=assign(res,Tt(*),x2(&times));
-	res=assign(res,Tt(/),x2(&times));
+	res=assign(res,Tt(/),x2(&divv));
 	res=assign(res,Tt(%),x2(&mod));
 	res=assign(res,Tt(|),x2(&or));
 	res=assign(res,Tt(&),x2(&and));

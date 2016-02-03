@@ -265,7 +265,6 @@
 	ASSERT(_equal(xf(3.0), plus(xf(1.5),xf(1.5))), "float 0");
 	xfree(a);xfree(b);
 
+	a=xi(3);
 	ASSERT(_equal(a, plus(xf(1.5),xf(1.5))), "float int compare 0");
 	xfree(a);xfree(b);
-
-

@@ -1170,6 +1170,19 @@ VP any(VP x) {
 	if(LIST(x)) return deep(x,x1(&any));
 	return xb(_any(x));
 }
+static inline VP divv(VP x,VP y) {
+	int typerr=-1; VP acc=ALLOC_BEST(x,y);
+	PF("div");DUMP(x);DUMP(y);DUMP(info(acc));
+	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"div argument should be simple types",x,0);
+	VARY_EACHBOTH(x,y,({
+		if(LIKELY(x->t > y->t)) { _x=_x/_y; appendbuf(acc,(buf_t)&_x,1); }
+		else { _y=_y/_x; appendbuf(acc,(buf_t)&_y,1); }
+		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
+	}),typerr);
+	IF_EXC(typerr > -1, Tt(type), "div arg wrong type", x, y);
+	PF("div result\n"); DUMP(acc);
+	return acc;
+}
 VP ifelse(VP x,VP y) {
 	PF("ifelse\n");DUMP(x);DUMP(y);
 	if(y->n!=2) return EXC(Tt(len),"ifelse y argument must be (truecond,falsecond)",x,y);
@@ -1302,7 +1315,9 @@ inline VP str2num(VP x) {
 	double d; I128 buf=0;char* s=sfromx(flatten(x));
 	PF("str2num %s\n",s);DUMP(x);
 	IF_EXC(!IS_c(x),Tt(type),"str2int arg should be char vector",x,0);
-	if (sscanf(s,"%lld",&buf)==1) { // should probably use atoi or strtol
+	if(strchr(s,'.')!=0 && (d=strtod(s,NULL))!=0) {
+		return xf(d);
+	} else if (sscanf(s,"%lld",&buf)==1) { // should probably use atoi or strtol
 		/* assume int by default 
 		if(buf<MAX_b)
 			return xb((CTYPE_b)buf);
@@ -1312,8 +1327,7 @@ inline VP str2num(VP x) {
 		if(buf<MAX_j)
 			return xj((CTYPE_j)buf);
 		return xo((CTYPE_o)buf);
-	} else if ((d=strtod(s,NULL))!=0) 
-		return xf(d);
+	} 
 	else if(strncmp(s,"0.0",3)==0)
 		return xf(0.0);
 	else 

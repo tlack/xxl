@@ -18,6 +18,7 @@ VP condense(VP x);
 VP curtail(VP x); // everything except the last element
 VP deep(VP obj,VP f);
 VP dict(VP x,VP y);
+static inline VP divv(VP x,VP y);
 VP drop_(VP x,int i);
 VP drop(VP x,VP y);
 static inline VP each(VP obj,VP fun);
