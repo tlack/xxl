@@ -109,6 +109,7 @@
 	exc; }) 
 #define IF_EXC(cond,type,msg,x,y) if((cond)) return EXC(type,msg,x,y)
 // TODO if_exc doesnt give us a chance to free memory :-/
+#define RETURN_IF_EXC(x) if((x)->tag==Ti(exception)) return x;
 
 // misc
 #define MAXSTACK 2048
