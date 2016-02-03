@@ -59,6 +59,7 @@ VP rotate(VP x,VP y);
 VP set(VP x,VP y);
 const char* sfromx(VP x);
 VP split(VP x,VP tok);
+static inline VP str2num(VP x);
 static inline VP tagname(I32 tag);
 static inline VP tagv(const char* name, VP x);
 VP take_(VP x,int i);

@@ -1310,7 +1310,7 @@ VP plus(VP x,VP y) {
 	// PF("plus result\n"); DUMP(acc);
 	return acc;
 }
-inline VP str2num(VP x) {
+static inline VP str2num(VP x) {
 	// TODO optimize str2int
 	double d; I128 buf=0;char* s=sfromx(flatten(x));
 	PF("str2num %s\n",s);DUMP(x);
