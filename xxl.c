@@ -1259,14 +1259,22 @@ VP any(VP x) {
 VP ifelse(VP x,VP y) {
 	PF("ifelse\n");DUMP(x);DUMP(y);
 	if(y->n!=2) return EXC(Tt(len),"ifelse y argument must be (truecond,falsecond)",x,y);
-	if(x->n == 0) return apply(y,XI1);
-	else if(NUM(x) && !_any(x)) return apply(y,XI1);
-	else return apply(y,XI0);
+	VP tcond=apply(y,XI0),fcond=apply(y,XI1),res=0;
+	if(x->n == 0) res=fcond;
+	else if(NUM(x) && !_any(x)) res=fcond;
+	else res=tcond;
+	if(CALLABLE(res))
+		return apply(res,x);
+	else
+		return res;
 }
 VP iftrue(VP x,VP y) {
 	if(x->n == 0) return x;
 	else if(NUM(x) && !_any(x)) return x;
-	else return y;
+	else {
+		if(CALLABLE(y)) return apply(y,x);
+		else return y;
+	}
 }
 VP greater(VP x,VP y) {
 	int typerr=-1;
