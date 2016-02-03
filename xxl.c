@@ -58,7 +58,7 @@ char* repr0(VP x,char* s,size_t sz) {
 	return s;
 }
 char* reprA(VP x) {
-	#define BS 1024
+	#define BS 1024*10
 	char* s = calloc(1,BS);
 	s = repr0(x,s,BS);
 	//APF(BS,"\n",0);
@@ -290,15 +290,17 @@ const char* sfromx(VP x) {
 	if(x==NULL)return "null";
 	return (char*)BUF(x); }
 
-VP clone(VP obj) {
-	PF("clone\n");DUMP(obj);
+VP clone(VP obj) { 
+	// TODO keep a counter of clone events for performance reasons - these represent a concrete
+	// loss over mutable systems
+	// PF("clone\n");DUMP(obj);
 	if(CONTAINER(obj)) return deep(obj,x1(&clone));
 	int i;VP res=ALLOC_LIKE(obj);
 	for(i=0;i<obj->n;i++) {
-		PF("cloning %d\n", i);
+		// PF("cloning %d\n", i);
 		res=appendbuf(res,ELi(obj,i),1);
 	}
-	PF("clone returning\n");DUMP(res);
+	// PF("clone returning\n");DUMP(res);
 	return res;
 }
 
@@ -523,7 +525,7 @@ VP join(VP x,VP y) {
 	VP res=0;
 	PF("join\n");DUMP(x);DUMP(y);
 	int n = x->n + y->n;
-	if(!LIST(x) && x->tag==0 && x->t==y->t) {
+	if(!CONTAINER(x) && x->tag==0 && x->t==y->t) {
 		PF("join2\n");
 		res=ALLOC_LIKE_SZ(x, n);
 		appendbuf(res, BUF(x), x->n);
@@ -545,7 +547,7 @@ VP join(VP x,VP y) {
 				res=append(x,y);
 		} else {
 			PF("join4\n");
-			res=xlsz(n);
+			res=xlsz(2);
 			res=append(res,x);
 			res=append(res,y);
 		}
@@ -830,78 +832,59 @@ VP deal(VP range,VP amt) {
 // APPLICATION, ITERATION AND ADVERBS
 
 static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
-	char ch; int i, tcom, texc, tlam, traw, tstr, tws, xused=0, yused=0; 
-	VP left,item;
-	clock_t st=0;
 	PF("applyexpr (code, xarg, yarg):\n");DUMP(code);DUMP(xarg);DUMP(yarg);
 	if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
+	char ch; int i, tag, tcom, texc, tlam, traw, tname, tstr, tws, xused=0, yused=0; 
+	VP left,item;
+	clock_t st=0;
 	left=xarg; if(!yarg) yused=1;
 	tcom=Ti(comment); texc=Ti(exception); tlam=Ti(lambda); 
-	traw=Ti(raw); tstr=Ti(string); tws=Ti(ws);
+	traw=Ti(raw); tname=Ti(name); tstr=Ti(string); tws=Ti(ws);
 	if(!LIST(code)) code=list(code);
+	PFIN();
 	for(i=0;i<code->n;i++) {
 		PF("applyexpr #%d/%d, consumed=%d/%d\n",i,code->n-1,xused,yused);
 		DUMP(left);
 		item = ELl(code,i);
+		tag=item->tag;
 		DUMP(item);
 		// consider storing these skip conditions in an array
-		if(LIKELY(IS_c(item))) {
+		if(tag==tws) continue;
+		if(tag==tcom) continue;
+
+		if(LIKELY(IS_c(item)) && tag != tstr) {
 			ch = AS_c(item,0);
-			if(item->tag == traw && ch=='{')
-				// big debate in my head if we should catch and silently ignore some of
-				// these markers characters here inside applyexpr(). obviously it would
-				// be faster and cleaner to remove these from the input parse tree as we
-				// parse it (see 'parseexpr' below in the parse() area) but considering
-				// the need to go 'deep' on them im not sure, as for deep parse trees
-				// this could be very slow. perhaps nest() itself should have an option
-				// to drop the brackets? seems hacky, but only nest() knows the grouping
-				// boundaries without further calc
-				continue;
-			else if(item->tag == traw && ch=='}')
-				continue;
-			else if(item->tag == traw && ch=='(')
-				continue;
-			else if(item->tag == traw && ch==')')
-				continue;
-			else if(item->tag == traw && ch==';') { // end of expr indicator
+			if(ch==';') { // end of expr; remove left/x
 				left=0; xused=1;
 				continue;
+			} 
+			PF("much ado about\n");DUMP(item);
+			if(item->n==1 && ch=='x')
+				item=xarg;
+			else if(item->n==1 && ch=='y' && yarg!=0) {
+				PF("picking up y arg\n");DUMP(yarg);
+				item=yarg;
 			}
-			else if(item->tag == tcom) 
+			else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
+				left=TRACELBL(mkproj(2,&set,xln(2,parent,left),0),Ti(setproj));
+				xfree(left);
+				PF("created set projection\n");
+				DUMP(left);
 				continue;
-			else if(item->tag == tws)
-				// skip ws
+			} else if(item->n==2 && ch=='.' && AS_c(item,1)=='t') {
+				printf("timer on\n");
+				st=clock();
 				continue;
-			else if(item->tag != tstr) {
-				PF("much ado about\n");DUMP(item);
-				if(item->n==1 && ch=='x')
-					item=xarg;
-				else if(item->n==1 && ch=='y' && yarg!=0) {
-					PF("picking up y arg\n");DUMP(yarg);
-					item=yarg;
-				}
-				else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
-					left=mkproj(2,&set,xln(2,parent,left),0);
-					xfree(left);
-					PF("created set projection\n");
-					DUMP(left);
-					continue;
-				} else if(item->n==2 && ch=='.' && AS_c(item,1)=='t') {
-					printf("timer on\n");
-					st=clock();
-					continue;
-				} else
-					item=get(parent,item);
-				PF("decoded string identifier\n");DUMP(item);
-				if(item->tag==texc)
-					return CALLABLE(left)?left:item;
-
-			}
+			} else
+				item=get(parent,item);
+			PF("decoded string identifier\n");DUMP(item);
+			if(item->tag==texc)
+				return CALLABLE(left)?left:item;
 		}
 		
 		//if(LIST(item))
 		//	left=applyexpr(parent,item,left);
-		if(item->tag==tlam) { // create a context for lambdas
+		if(tag==tlam) { // create a context for lambdas
 			VP newctx,this; int j;
 			newctx=xx0();
 			item=list(item);
@@ -911,11 +894,17 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 					append(newctx,clone(ELl(parent,j)));
 			}
 			append(newctx,entags(ELl(item,0),"")); // second item of lambda is arity; ignore for now
+			//newctx->tag=Ti(lambda);
 			item=newctx;
 			PF("created new lambda context item=\n");DUMP(item);
-		} else if(LIST(item)) {
+		} else if (tag==Ti(listexpr) || tag==Ti(expr)) {
 			PF("applying subexpression\n");
-			item=applyexpr(parent,item,left,!yused?yarg:0);
+			PFIN();
+			//item=applyexpr(parent,item,left,!yused?yarg:0);
+			item=applyexpr(parent,item,0,0);
+			PFOUT();
+			RETURN_IF_EXC(item);
+			if(tag==Ti(listexpr)&&!CONTAINER(item)) item=list(item);
 			PF("subexpression came back with");DUMP(item);
 		}
 
@@ -949,8 +938,9 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			if(left) {
 				PF("applyexpr calling apply\n");DUMP(item);DUMP(left);
 				xused=1;
-				PF("111\n");
+				PFIN();
 				left=apply(item,left);
+				PFOUT();
 				if(left->tag==texc) return left;
 				PF("applyexpr apply returned\n");DUMP(left);
 			} else {
@@ -959,6 +949,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			}
 		}
 	}
+	PFOUT();
 	PF("applyexpr returning\n");
 	DUMP(left);
 	if(st!=0) {
@@ -1326,9 +1317,11 @@ VP or(VP x,VP y) { // TODO most of these primitive functions have the same patte
 	return acc;
 }
 VP min(VP x) { 
+	// TODO implement min() as loop instead of over - used in parsing
 	return over(x, x2(&and));
 }
 VP max(VP x) { 
+	// TODO implement max() as loop instead of over - used in parsing
 	return over(x, x2(&or));
 }
 VP mod(VP x,VP y) {
@@ -2344,7 +2337,9 @@ VP list2vec(VP obj) {
 }
 VP parseexpr(VP x) {
 	PF("parseexpr\n");DUMP(x);
-	if(LIST(x) && IS_c(ELl(x,0)) && AS_c(ELl(x,0),0)=='(')
+	if(LIST(x) && IS_c(ELl(x,0)) && (
+			AS_c(ELl(x,0),0)=='(') ||
+			AS_c(ELl(x,0),0)=='[')
 		return drop_(drop_(x,-1),1);
 	else
 		return x;
@@ -2486,16 +2481,26 @@ VP parsestr(const char* str) {
 	//xfree(ctx);
 	PF("matchexec results\n");DUMP(t1);
 
+	// we only form expression trees after basic parsing - this saves us from
+	// having to do a bunch of deep manipulations earlier in this routine (i.e.,
+	// its faster to scan a flat list)
 	ctx=mkbarectx();
 	pats=xln(3,
-		mkproj(2,&nest,0,xln(4, xfroms("("), xfroms(")"), xfroms(""), Tt(expr))),
-		mkproj(2,&nest,0,xln(4, xfroms("["), xfroms("]"), xfroms(""), Tt(expr))),
-		mkproj(2,&nest,0,xln(4, xfroms("{"), xfroms("}"), xfroms(""), Tt(lambda)))
+		mkproj(2,&nest,0,xln(5, xfroms("{"), xfroms("}"), xfroms(""), Tt(lambda), x1(&parselambda))),
+		mkproj(2,&nest,0,xln(5, xfroms("("), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr))),
+		mkproj(2,&nest,0,xln(5, xfroms("["), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)))
 	);
-	ctx=append(ctx,pats);
-	t2=exhaust(t1,ctx);
+	t2=t1;
+	for(i=0;i<pats->n;i++) {
+		PF("parsestr exhausting %d\n", i);
+		t2=exhaust(t2,ELl(pats,i));
+	}
+	/*ctx=append(ctx,pats);
+	// t2=exhaust(t1,ctx);
+	t2=over(pats,mkproj(2,&exhaust,t1,0));
+	*/
+	/*
 	PF("*!*!*!*!*!*!*! matchexec form nesting\n"); DUMP(t2);
-
 	pats=xl0();
 	append(pats,Tt(string));
 	append(pats,x1(&parsestrlit));
@@ -2505,6 +2510,7 @@ VP parsestr(const char* str) {
 	append(pats,x1(&parselambda));
 	t2=matchexec(t2,pats);
 	//t2=exhaust(t2,mkproj(2,&matchexec,0,pats));
+	*/
 	return t2;
 }
 
