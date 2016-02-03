@@ -142,6 +142,4 @@ typedef struct type_info type_info_t;
 
 
 // GLOBALS FROM xxl.c
-extern I8 PF_ON;
-extern I8 PF_LVL;
-extern VP TAGS;
+extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; extern VP TAGS;

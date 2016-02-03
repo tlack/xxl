@@ -2,7 +2,8 @@
 #include "def.h"
 #include "proto.h"
 
-/* global variables :( */
+// globals
+VP XI0=0; VP XI1=0; // set in init() 
 I8 PF_ON=0;
 I8 PF_LVL=0;
 VP TAGS=NULL;
@@ -2669,7 +2670,11 @@ void tests() {
 		}
 	}
 }
+void init(){
+	XI0=xi(0); XI1=xi(1);
+}
 int main(int argc, char* argv[]) {
+	init();
 	VP ctx=mkworkspace();
 	// net();
 	if(argc == 2) evalfile(ctx,argv[1]);
