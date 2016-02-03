@@ -1,6 +1,3 @@
-
-PFW({
-
 c=mkworkspace();
 b=evalstrin("(1,2,3,4)@2",c);
 ASSERT(_equal(b,xi(3)),"test apply num 0");
@@ -34,4 +31,3 @@ c=mkworkspace();
 b=evalstrin("1 ifelse ({x*2},{x*3})",c);
 //ASSERT(_equal(b,xi(2)),"test if 3");
 xfree(c);xfree(b);
-});
