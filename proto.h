@@ -59,6 +59,7 @@ VP rotate_(VP x,int i);
 VP rotate(VP x,VP y);
 VP set(VP x,VP y);
 const char* sfromx(VP x);
+VP show(VP x);
 VP split(VP x,VP tok);
 static inline VP str2num(VP x);
 static inline VP str2tag(VP str); // turns string, or list of strings, into tag vector

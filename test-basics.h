@@ -187,11 +187,11 @@
 
 	a=xin(3,1,2,3); b=cast(a,xt(Ti(byte)));
 	DUMP(b);
-	ASSERT(!_equal(a,b)&&b->n==3&&AS_b(b,2)==3,"cib");
+	ASSERT(_equal(a,b)&&b->n==3&&AS_b(b,2)==3,"cib");
 	xfree(a);xfree(b);
 	a=xin(3,1,2,3); b=cast(a,xt(Ti(octo)));
 	DUMP(b);
-	ASSERT(!_equal(a,b)&&b->n==3&&AS_o(b,2)==3,"cio");
+	ASSERT(_equal(a,b)&&b->n==3&&AS_o(b,2)==3,"cio");
 	xfree(a);
 	xfree(b);
 	a=xbn(2,9,8); b=cast(a,xt(Ti(byte)));

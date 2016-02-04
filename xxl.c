@@ -293,7 +293,8 @@ VP clone(VP obj) {
 	return res;
 }
 
-// RUNTIME!!
+// RUNTIME 
+
 VP appendbuf(VP x,buf_t buf,size_t nelem) {
 	int newn;buf_t dest;
 	//PF("appendbuf %d\n", nelem);DUMP(x);
@@ -590,6 +591,12 @@ VP shift(VP x,VP y) {
 	VARY_EL(y,0,({return shift_(x,_x);}),typerr);
 	return (VP)0;
 }
+VP show(VP x) {
+	char* p = reprA(x);
+	printf("%s\n",p);
+	free(p);
+	return x;
+}
 VP splice(VP x,VP idx,VP replace) {
 	int i, first = AS_i(idx,0),last=first+idx->n;
 	VP acc;
@@ -681,21 +688,22 @@ static inline int _equalm(const VP x,const int xi,const VP y,const int yi) {
 int _equal(const VP x,const VP y) {
 	// TODO _equal() needs to handle comparison tolerance and type conversion
 	// TODO _equal should use the new VARY_*() macros, except for general lists
-	// PF("_equal\n"); DUMP(x); DUMP(y);
+	//PF("_equal\n"); DUMP(x); DUMP(y);
 	// if the list is a container for one item, we probably want to match the inner one
 	VP a=x,b=y;
 	if(LIST(a) && SCALAR(a)) a=ELl(a,0);
 	if(LIST(b) && SCALAR(b)) b=ELl(b,0);
 	IF_RET(a->n != b->n, 0);
 	if(CONTAINER(a) && CONTAINER(b)) { ITERV(a,{ IF_RET(_equal(ELl(a,_i),ELl(b,_i))==0, 0); }); return 1; }
-	if(IS_f(a) || IS_f(b)) {
+	if(a->t == b->t) {
+		return memcmp(BUF(a),BUF(b),a->itemsz*a->n)==0;
+	} else if (COMPARABLE(a)&&COMPARABLE(b)) {
 		int typerr=-1;
-		VARY_EACHBOTH(a,b,({ if(_x != _y) return 0; }),typerr);
-	} else {
-		ITERV(a,{ IF_RET(memcmp(ELb(a,_i),ELb(b,_i),a->itemsz)!=0,0); });
-	}
-	// PF("_equal=1!\n");
-	return 1;
+		VARY_EACHBOTH(a,b,({ if (_x != _y) return 0; }),typerr);
+		if(typerr>-1) return 0;
+		else return 1;
+	} else
+		return 0;
 }
 int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
 	// PF("findbuf\n");DUMP(x);
@@ -2203,7 +2211,7 @@ VP list2vec(VP obj) {
 	// single vector [1,2,3i] = (1,2,3i) Will NOT collapse [1,(2,3),4] - use
 	// flatten for this. (See note below for non-flat first items) The original
 	// list will be returned when rejected for massaging.
-	int i, t;
+	int i, t=0;
 	VP acc,this;
 	PF("list2vec\n"); DUMP(obj);
 	if(!LIST(obj)) return obj;
@@ -2214,8 +2222,11 @@ VP list2vec(VP obj) {
 		// note: we allow the first item to be nonscalar to handle the list2vec
 		// [(0,1)] case - this is technically not a scalar first item, but clearly
 		// it should return (0,1)
-		if((_i > 0 && !SCALAR(this)) || this->t != acc->t){xfree(acc); return obj; } 
-		else append(acc,this); }));
+		if((t != 0 && this->tag != t) 
+			 || (_i > 0 && !SCALAR(this)) || this->t != acc->t){xfree(acc); return obj; } 
+		else append(acc,this); 
+		if(this->tag) t=this->tag;
+	}));
 	PF("list2vec result\n"); DUMP(acc); DUMP(info(acc));
 	return acc;
 }

@@ -11,6 +11,7 @@
 	res=assign(res,Tt(parse),x1(&parse));
 	res=assign(res,Tt(repr),x1(&repr));
 	res=assign(res,Tt(rev),x1(&reverse));
+	res=assign(res,Tt(show),x1(&show));
 	res=assign(res,Tt(sum),x1(&sum));
 	res=assign(res,Tt(til),x1(&til));
 	res=assign(res,Tt(ver),xi(0));
