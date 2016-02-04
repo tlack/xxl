@@ -2476,17 +2476,21 @@ void test_proj_thr() {
 	for(i=0;i<n;i++) thr_run(test_proj_thr0);
 	thr_wait();
 }
+VP evalin(VP tree,VP ctx) {
+	if(IS_c(tree)) return evalstrin(sfromx(tree),ctx);
+	if(!IS_x(ctx))
+		ctx=xxn(2,ctx,tree);
+	else
+		append(ctx,tree);
+	return applyctx(ctx,0); 
+}
 VP evalstrin(const char* str, VP ctx) {
 	VP r;
 	PF("evalstrin\n\"%s\"\n",str);
-	DUMP(ctx);
-	append(ctx,parsestr(str));
-	r=apply(ctx,0);
+	VP p=parsestr(str);
+	r=evalin(p,ctx);
 	PF("evalstrin returning\n");DUMP(r);
 	return r;
-}
-VP evalin(VP str,VP ctx) {
-	return evalstrin(sfromx(str),ctx);
 }
 void evalfile(VP ctx,const char* fn) {
 	#define EFBLK 65535

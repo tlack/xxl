@@ -34,7 +34,7 @@ if [ -x /bin/x86_64-pc-cygwin-gcc.exe ]; then
 	CC="/bin/x86_64-pc-cygwin-gcc.exe"
 fi
 
-if [ -x /usr/bin/rlwrap ]; then
+if which rlwrap >/dev/null; then
 	echo using rlwrap
 	RUN="rlwrap $RUN"
 fi
