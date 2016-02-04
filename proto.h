@@ -44,7 +44,7 @@ VP match(VP obj,VP pat);
 VP matcheasy(VP obj,VP pat);
 VP matchtag(VP obj,VP pat);
 int matchpass(VP obj,VP pat);
-VP mkproj(int type, void* func, VP left, VP right);
+VP proj(int type, void* func, VP left, VP right);
 VP mkworkspace();
 VP over(VP x,VP y);
 VP parse(VP x);

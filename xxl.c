@@ -844,7 +844,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				item=yarg;
 			}
 			else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
-				left=TRACELBL(mkproj(2,&set,xln(2,parent,left),0),Ti(setproj));
+				left=TRACELBL(proj(2,&set,xln(2,parent,left),0),Ti(setproj));
 				xfree(left);
 				PF("created set projection\n");
 				DUMP(left);
@@ -978,7 +978,7 @@ VP apply(VP x,VP y) {
 				else if (p->right)
 					y=(*p->f2)(y,p->right);
 				else
-					y=mkproj(2,p->f2,y,0);
+					y=proj(2,p->f2,y,0);
 				PFOUT(); PF("proj2 done\n"); DUMP(y);
 				return y;
 			}
@@ -990,7 +990,7 @@ VP apply(VP x,VP y) {
 		unaryFunc* f; f=AS_1(x,0); return (*f)(y);
 	}
 	if(IS_2(x)) {
-		res=mkproj(2,AS_2(x,0),y,0);
+		res=proj(2,AS_2(x,0),y,0);
 		PF("apply f2 returning\n");DUMP(res);
 		return res;
 	}
@@ -1542,7 +1542,7 @@ VP pickapart(VP x,VP y) { // select items of x[0..n] where y[n]=1, and divide no
 	if(acc->n==0) return ELl(acc,0);
 	else return acc;
 }
-VP mkproj(int type, void* func, VP left, VP right) {
+VP proj(int type, void* func, VP left, VP right) {
 	Proj p;
 	VP pv=xpsz(1);
 	p.type=type;
@@ -1555,6 +1555,7 @@ VP mkproj(int type, void* func, VP left, VP right) {
 	pv->n=1;
 	return pv;
 }
+
 
 // TAG STUFF:
 
@@ -1722,8 +1723,8 @@ VP signaljoin(VP x,VP y) {
 VP nest(VP x,VP y) {
 	VP p1,p2,open,close,opens,closes,where,rep,out;
 	PF("NEST\n");DUMP(x);DUMP(y);
-	p1=mkproj(2,&matcheasy,x,0);
-	p2=mkproj(2,&matcheasy,x,0);
+	p1=proj(2,&matcheasy,x,0);
+	p2=proj(2,&matcheasy,x,0);
 	open=apply(y,xi(0)); close=apply(y,xi(1));
 	if(_equal(open,close)) {
 		opens=each(open,p1);
@@ -2197,7 +2198,7 @@ VP labelitems(VP label,VP items) {
 VP mklexer(const char* chars, const char* label) {
 	return xln(2,
 		entags(xfroms(chars),"raw"),
-		mkproj(2,&labelitems,xfroms(label),0)
+		proj(2,&labelitems,xfroms(label),0)
 	);
 }
 VP parseexpr(VP x) {
@@ -2270,9 +2271,9 @@ VP parsestr(const char* str) {
 		append(acc,entags(xc('\n'),"raw"));
 	ctx=mkbarectx();
 	pats=xln(3,
-		mkproj(2,&nest,0,xln(4, xfroms("//"), xfroms("\n"), xfroms(""), Tt(comment))),
-		mkproj(2,&nest,0,xln(4, xfroms("/*"), xfroms("*/"), xfroms(""), Tt(comment))),
-		mkproj(2,&nest,0,xln(5, xfroms("\""), xfroms("\""), xfroms(""), Tt(string), x1(&parsestrlit)))
+		proj(2,&nest,0,xln(4, xfroms("//"), xfroms("\n"), xfroms(""), Tt(comment))),
+		proj(2,&nest,0,xln(4, xfroms("/*"), xfroms("*/"), xfroms(""), Tt(comment))),
+		proj(2,&nest,0,xln(5, xfroms("\""), xfroms("\""), xfroms(""), Tt(string), x1(&parsestrlit)))
 	);
 	ctx=append(ctx,pats);
 	acc=exhaust(acc,ctx);
@@ -2304,9 +2305,9 @@ VP parsestr(const char* str) {
 	// its faster to scan a flat list)
 	ctx=mkbarectx();
 	pats=xln(3,
-		mkproj(2,&nest,0,xln(5, xfroms("{"), xfroms("}"), xfroms(""), Tt(lambda), x1(&parselambda))),
-		mkproj(2,&nest,0,xln(5, xfroms("("), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr))),
-		mkproj(2,&nest,0,xln(5, xfroms("["), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)))
+		proj(2,&nest,0,xln(5, xfroms("{"), xfroms("}"), xfroms(""), Tt(lambda), x1(&parselambda))),
+		proj(2,&nest,0,xln(5, xfroms("("), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr))),
+		proj(2,&nest,0,xln(5, xfroms("["), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)))
 	);
 	t2=t1;
 	for(i=0;i<pats->n;i++) {
@@ -2431,11 +2432,11 @@ void test_proj() {
 	VP a,b,c,n;
 	printf("TEST_PROJ\n");
 	n=xi(1024*1024);
-	//a=mkproj(1,&til,n,0);
+	//a=proj(1,&til,n,0);
 	a=x1(&til);
 	b=apply(a,n);
 	PF("b\n");DUMP(b);
-	c=apply(mkproj(1,&sum,b,0),0);
+	c=apply(proj(1,&sum,b,0),0);
 	PF("result\n");DUMP(c);
 	//printf("%lld\n", AS_o(c,0));
 	xfree(a);xfree(b);xfree(c);xfree(n);
@@ -2446,11 +2447,11 @@ void test_proj_thr0(void* _) {
 	for (i=0;i<1024;i++) {
 		printf("TEST_PROJ %d\n", pthread_self());
 		n=xi(1024*1024);
-		//a=mkproj(1,&til,n,0);
+		//a=proj(1,&til,n,0);
 		a=x1(&til);
 		b=apply(a,n);
 		PF("b\n");DUMP(b);
-		c=apply(mkproj(1,&sum,b,0),0);
+		c=apply(proj(1,&sum,b,0),0);
 		PF("result\n");DUMP(c);
 		printf("%lld\n", AS_o(c,0));
 		xfree(a);xfree(b);xfree(c);xfree(n);

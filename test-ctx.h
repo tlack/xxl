@@ -1,5 +1,5 @@
 	ctx=mkworkspace();
-	tmp1=xl(mkproj(2,&plus,xi(2),0));
+	tmp1=xl(proj(2,&plus,xi(2),0));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(3));
 	DUMP(tmp2);
@@ -7,7 +7,7 @@
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
 	ctx=mkworkspace();
-	tmp1=xl(mkproj(2,&plus,0,xi(3)));
+	tmp1=xl(proj(2,&plus,0,xi(3)));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(3));
 	DUMP(tmp2);
@@ -15,7 +15,7 @@
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
 	ctx=mkworkspace();
-	tmp1=xln(2,mkproj(2,&plus,0,xi(2)),mkproj(2,&plus,0,xi(5)));
+	tmp1=xln(2,proj(2,&plus,0,xi(2)),proj(2,&plus,0,xi(5)));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(3));
 	DUMP(tmp2);
@@ -23,7 +23,7 @@
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
 	ctx=mkworkspace();
-	tmp1=xln(2,xi(2),mkproj(2,&plus,xi(5),0));
+	tmp1=xln(2,xi(2),proj(2,&plus,xi(5),0));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(3));
 	DUMP(tmp2);
@@ -31,7 +31,7 @@
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
 	ctx=mkworkspace(); // simple unary function application
-	tmp1=xl(mkproj(1,&til,0,0));
+	tmp1=xl(proj(1,&til,0,0));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(4));
 	DUMP(tmp2);
@@ -39,7 +39,7 @@
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
 	ctx=mkworkspace(); // try applying an index to a function result
-	tmp1=xln(2,mkproj(1,&til,0,0),xi(2));
+	tmp1=xln(2,proj(1,&til,0,0),xi(2));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(5));
 	DUMP(tmp2);
@@ -47,7 +47,7 @@
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
 	ctx=mkworkspace(); // subexpression
-	tmp1=xln(2,mkproj(2,&plus,xi(2),0),mkproj(1,&til,0,0));
+	tmp1=xln(2,proj(2,&plus,xi(2),0),proj(1,&til,0,0));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(4));
 	DUMP(tmp2);

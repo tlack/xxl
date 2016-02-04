@@ -49,7 +49,7 @@
 	a=xin(7,9,1,1,0,2,2,8);
 	b=xin(2,1,2);
 	PF("nest5 call:\n");
-	c=exhaust(a,mkproj(2,&nest,0,b));
+	c=exhaust(a,proj(2,&nest,0,b));
 	//c=nest(a,b);
 	DUMP(c);
 	ASSERT(_equal(c,xln(3, 
