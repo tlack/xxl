@@ -395,3 +395,10 @@
 	ASSERT(_equal(tmp1,xcn(7,'a','"','b','"','c',13,10)),"parse quoted string");
 	xfree(ctx);xfree(tmp1);
 
+	PFW({
+	ctx=mkworkspace();
+	append(ctx,parsestr("\"\""));
+	tmp1=apply(ctx,0);
+	ASSERT(_equal(tmp1,xc0()),"parse empty quoted string");
+	});
+

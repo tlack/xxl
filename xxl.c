@@ -440,8 +440,8 @@ VP flatten(VP x) {
 			} else
 				append(res,ELl(x,i));
 		}
-	}
-	return res;
+		return res;
+	} else return xl0();
 }
 VP curtail(VP x) {
 	PF("curtail\n");DUMP(x);
@@ -2262,6 +2262,7 @@ VP list2vec(VP obj) {
 	VP acc,this;
 	PF("list2vec\n"); DUMP(obj);
 	if(!LIST(obj)) return obj;
+	if(!obj->n) return obj;
 	acc=ALLOC_LIKE(ELl(obj,0));
 	if(obj->tag!=0) acc->tag=obj->tag;
 	FOR(0,obj->n,({ this=ELl(obj,_i);
@@ -2346,21 +2347,25 @@ VP parsestrlit(VP x) {
 		VP res=xlsz(x->n), el, next; int ch,nextch,last;
 		last=x->n-1;
 		for(i=0;i<x->n;i++) {
-			PF("parsestrlit #%d\n",i);
+			PF("parsestrlit #%d/%d\n",i,last);
 			el=AS_l(x,i);
 			DUMP(el);
 			if(IS_c(el)) {
 				ch=AS_c(el,0);
+				PF("parselit ch=%c\n",ch);
 				if ((i==0 || i==last) && ch=='"')
 					continue; // skip start/end quotes
 				if (i<last &&
 				    (ch=AS_c(el,0))=='\\') {
+					PF("investigating %d\n",i+1);
 					next=AS_l(x,i+1);
-					nextch=AS_c(next,0);
-					if(nextch=='n') {
-						res=append(res,xc(10)); i++;
-					} else if(nextch=='r') {
-						res=append(res,xc(13)); i++;
+					if(IS_c(next) && next->n) {
+						nextch=AS_c(next,0);
+						if(nextch=='n') {
+							res=append(res,xc(10)); i++;
+						} else if(nextch=='r') {
+							res=append(res,xc(13)); i++;
+						}
 					}
 				} else  
 					res=append(res,el);
@@ -2368,6 +2373,9 @@ VP parsestrlit(VP x) {
 				res=append(res,el);
 			}
 		}
+		// due to the looping logic, we would wind up with an empty list - we want an empty list with an empty string! :)
+		if(res->n==0) res=append(res,xc0()); 
+		PF("flattenin\n");DUMP(res);
 		res=flatten(res);
 		DUMP(res);
 		// if(PF_LVL) sleep(5);
