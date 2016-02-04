@@ -1,0 +1,1 @@
+0 as '.ctr; (8080,"localhost").net.bind{.ctr + 1 as '.ctr; "HTTP/1.0 200 OK\r\nConnection: close\r\nServer: xxl v0.0\r\n\r\nHello ",(.ctr repr) flat}
