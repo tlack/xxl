@@ -116,7 +116,7 @@ XXL is still very much a work in progress and is mostly broken. That said, here 
 major features I anticipate finishing soon-ish.
 
 - Currently has severe memory leaks 
-- Floats! 
+- ~~Floats!~~ We got floats now - no comparison tolerance yet tho.
 - ~~Dictionary literals (dictionaries do work and exist as a primitive type, just
 	can't decide on a literal syntax for them)~~
 	Settled on and implemented `['a:1,'b:2]` by creating `:` as the make-dict operator
@@ -125,7 +125,7 @@ major features I anticipate finishing soon-ish.
 - FancyRepl(tm)
 - Dates/times (need to figure out core representation)
 - In-memory tables
-- I/O (sockets, mmap)
+- I/O (~~sockets~~, mmap) (try `(8080,"localhost").net.bind{"hello world!"}`)
 - Logged updates (I like [Kdb's approach to this](http://code.kx.com/wiki/Cookbook/Logging))
 - Mailboxes/processes (implemented as a writer-blocks general list)
 - Streams (perhaps a mailbox as well; studying other systems now)
