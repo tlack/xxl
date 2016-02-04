@@ -44,23 +44,23 @@ b=evalstrin("['a:(1,2,3),'b:(4,5,6)]@['b,2]",c);
 ASSERT(_equal(b,xi(6)),"test apply at depth in dict");
 xfree(c);xfree(b);
 
+PFW(({
+
 c=mkworkspace();
 b=evalstrin("777 as 'last;last",c);
-DUMP(b);
 d=evalstrin("777 as 'last;.last",c);
+DUMP(b);
 DUMP(d);
 ASSERT(!_equal(b,d) && _equal(b,xi(777)) && _equal(d,x1(&last)), "names derived from root");
 xfree(b);xfree(d);xfree(c);
 
-#ifdef STDLIBFILE
+}));
 
-PFW({
+#ifdef STDLIBFILE
 c=mkworkspace();
 b=evalstrin(".file.get",c);
 DUMP(b);
 ASSERT(_equal(b,x1(&fileget)),"stdlib file reference");
 xfree(c);xfree(b);
-});
-
 #endif
 

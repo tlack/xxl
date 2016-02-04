@@ -856,7 +856,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			} else
 				item=get(parent,item);
 			PF("decoded string identifier\n");DUMP(item);
-			if(IS_EXC(item)) return CALLABLE(left)?left:item;
+			if(IS_EXC(item)) return left!=0 && CALLABLE(left)?left:item;
 		} else if(tag==tname) {
 			PF("non-string name encountered");
 			item=get(parent,item);
@@ -867,7 +867,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 		DUMP(left);
 		DUMP(item);
 
-		if(xused && left!=0 && CALLABLE(left)) {
+		if(left!=0 && CALLABLE(left)) {
 			// they seem to be trying to call a unary function, though it's on the
 			// left - NB. possibly shady
 			//
@@ -886,7 +886,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 					yused=1;
 				}
 			}
-		} else if(!CALLABLE(item)) {
+		} else if(!CALLABLE(item) && (left!=0 && !CALLABLE(left))) {
 			PF("applyexpr adopting left =\n");DUMP(item);
 			xused=1;
 			left=item;

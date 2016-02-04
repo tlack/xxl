@@ -370,3 +370,10 @@
 	tmp2=evalstrin("['q:1, 'w:5]", ctx);
 	ASSERT(_equal(tmp1,tmp2),"test amend dict val");
 	xfree(ctx);xfree(tmp1);xfree(tmp2);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr(";{x*y}as 'z;z 7 6")); // without the semicolon the system tries to use xl0 as x.. helpfully
+	tmp1=apply(ctx,xl0());
+	ASSERT(_equal(tmp1,xi(42)),"test y projection");
+	xfree(ctx);xfree(tmp1);
+
