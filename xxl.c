@@ -2633,7 +2633,7 @@ void evalfile(VP ctx,const char* fn) {
 	PF("evalfile done"); DUMP(res);
 	});
 	printf("%s\n",repr(res));
-	exit(1);
+	// exit(1); fall through to repl
 }
 void tests() {
 	int i;
