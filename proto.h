@@ -81,3 +81,8 @@ void net(void);
 size_t netr(int sock,void* b,size_t maxl);
 void netw(int sock,void* b,size_t l);
 void netloop(int sock);
+
+// stdlib
+VP fileget(VP fn);
+VP fileset(VP str,VP fn);
+

@@ -27,11 +27,11 @@
 	res=assign(res,Tt(&),x2(&and));
 	res=assign(res,xt(_tagnums("<")),x2(&lesser));
 	res=assign(res,xt(_tagnums(">")),x2(&greater));
-	// res=assign(res,xt(_tagnums("[")),x2(&list2));
 	res=assign(res,Tt(~),x2(&matcheasy));
 	res=assign(res,Tt(!),x2(&amend));
 	res=assign(res,Tt(@),x2(&apply));
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
+	res=assign(res,Tt(cast),x2(&cast));
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));
 	res=assign(res,Tt(deal),x2(&deal));
 	res=assign(res,Tt(drop),x2(&drop));
@@ -45,3 +45,14 @@
 	res=assign(res,Tt(rot),x2(&shift));
 	res=assign(res,Tt(take),x2(&take));
 	res=assign(res,Tt(over),x2(&over));
+
+	//stdlib
+	#ifdef STDLIBFILE
+	VP d;
+	d=xd0();
+	d=assign(d,Tt(get),x1(&fileget));
+	d=assign(d,Tt(set),x2(&fileset));
+	res=assign(res,Tt(file),d);
+	xfree(d);
+	#endif
+

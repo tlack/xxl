@@ -737,7 +737,7 @@ VP cast(VP x,VP y) {
 	#define BUFSZ 128
 	VP res=0; I8 buf[BUFSZ]={0}; int typetag=-1;type_t typenum=-1; 
 	// right arg is tag naming a type, use that.. otherwise use y's type
-	if(y->t==T_t) typetag=AS_t(y,0); else typenum=y->t;
+	if(IS_t(y)) typetag=AS_t(y,0); else typenum=y->t;
 	#include"cast.h"
 	// DUMPRAW(buf,BUFSZ);
 	return res;
@@ -794,6 +794,8 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	left=xarg; if(!yarg) yused=1;
 	tcom=Ti(comment); texc=Ti(exception); tlam=Ti(lambda); 
 	traw=Ti(raw); tname=Ti(name); tstr=Ti(string); tws=Ti(ws);
+
+	if(SIMPLE(code)) return code;
 	if(!LIST(code)) code=list(code);
 	PFIN();
 	for(i=0;i<code->n;i++) {
@@ -805,6 +807,28 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 		// consider storing these skip conditions in an array
 		if(tag==tws) continue;
 		if(tag==tcom) continue;
+
+		if(tag==tlam) { // create a context for lambdas
+			VP newctx,this; int j;
+			newctx=xx0();
+			item=list(item);
+			for(j=0;j<parent->n;j++) {
+				this=ELl(parent,j);
+				if(j!=parent->n-1 || !LIST(this))
+					append(newctx,clone(ELl(parent,j)));
+			}
+			append(newctx,entags(ELl(item,0),"")); // second item of lambda is arity; ignore for now
+			item=newctx;
+			PF("created new lambda context item=\n");DUMP(item);
+		} else if (tag==Ti(listexpr) || tag==Ti(expr)) {
+			PF("applying subexpression\n");
+			PFIN();
+			item=applyexpr(parent,item,0,0);
+			PFOUT();
+			RETURN_IF_EXC(item);
+			if(tag==Ti(listexpr)&&!CONTAINER(item)) item=list(item);
+			PF("subexpression came back with");DUMP(item);
+		}
 
 		if(LIKELY(IS_c(item)) && tag != tstr) {
 			ch = AS_c(item,0);
@@ -832,35 +856,13 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			} else
 				item=get(parent,item);
 			PF("decoded string identifier\n");DUMP(item);
-			if(item->tag==texc)
-				return CALLABLE(left)?left:item;
+			if(IS_EXC(item)) return CALLABLE(left)?left:item;
 		} else if(tag==tname) {
 			PF("non-string name encountered");
 			item=get(parent,item);
+			RETURN_IF_EXC(item);
 		}
 		
-		if(tag==tlam) { // create a context for lambdas
-			VP newctx,this; int j;
-			newctx=xx0();
-			item=list(item);
-			for(j=0;j<parent->n;j++) {
-				this=ELl(parent,j);
-				if(j!=parent->n-1 || !LIST(this))
-					append(newctx,clone(ELl(parent,j)));
-			}
-			append(newctx,entags(ELl(item,0),"")); // second item of lambda is arity; ignore for now
-			item=newctx;
-			PF("created new lambda context item=\n");DUMP(item);
-		} else if (tag==Ti(listexpr) || tag==Ti(expr)) {
-			PF("applying subexpression\n");
-			PFIN();
-			item=applyexpr(parent,item,0,0);
-			PFOUT();
-			RETURN_IF_EXC(item);
-			if(tag==Ti(listexpr)&&!CONTAINER(item)) item=list(item);
-			PF("subexpression came back with");DUMP(item);
-		}
-
 		PF("before grand switch, xused=%d:\n", xused);
 		DUMP(left);
 		DUMP(item);
@@ -875,6 +877,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			// logic to not allow this behavior in first position inside expression
 			Proj p;
 			left=apply(left,item);
+			RETURN_IF_EXC(left);
 			if(IS_p(left)) {
 				p=AS_p(left,0);
 				if(!yused && p.type==2 && (!p.left || !p.right)) {
@@ -893,6 +896,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				xused=1;
 				PFIN();
 				left=apply(item,left);
+				RETURN_IF_EXC(left);
 				PFOUT();
 				if(left->tag==texc) return left;
 				PF("applyexpr apply returned\n");DUMP(left);
@@ -2316,8 +2320,34 @@ VP parse(VP x) {
 	return parsestr(sfromx(x));
 }
 
-// THREADING
+// STANDARD LIBRARY
 
+VP fileget(VP fn) {
+	#define READFILEBLK 1024 * 64
+	char buf[READFILEBLK]; int r=0,fd=0;
+	if(!IS_c(fn)) return EXC(Tt(type),"readfile filename must be string",fn,0);
+	fd=open(sfromx(fn),O_RDONLY);
+	if(fd<0) return EXC(Tt(open),"could not open file for reading",fn,0);
+	VP acc=xcsz(2048);
+	do {
+		r=read(fd,buf,READFILEBLK);
+		if(r<0) { xfree(acc); close(fd); return EXC(Tt(read),"could not read from file",fn,0); }
+		else appendbuf(acc,(buf_t)buf,r);
+	} while (r==READFILEBLK);
+	close(fd);
+	return acc;
+}
+VP fileset(VP str,VP fn) {
+	if(!IS_c(str)) return EXC(Tt(type),"writefile only deals writes strings right now",str,fn);
+	if(!IS_c(fn)) return EXC(Tt(type),"writefile filename must be string",str,fn);
+	int fd=open(sfromx(fn),O_WRONLY);
+	if(fd<0) return EXC(Tt(open),"could not open file for writing",str,fn);
+	if(write(fd,ELb(str,0),str->n)<str->n) return EXC(Tt(write),"could not write file contents",str,fn);
+	close(fd);
+	return str;
+}
+
+// Threading
 void thr_start() {
 	// TODO threading on Windows
 	#ifndef THREAD
@@ -2450,7 +2480,7 @@ VP evalstrin(const char* str, VP ctx) {
 	PF("evalstrin\n\"%s\"\n",str);
 	DUMP(ctx);
 	append(ctx,parsestr(str));
-	r=apply(ctx,xl0());
+	r=apply(ctx,0);
 	PF("evalstrin returning\n");DUMP(r);
 	return r;
 }

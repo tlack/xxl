@@ -11,6 +11,9 @@ DEFS="-DTHREAD $DEBUG $OPT"
 WARN="-Wall -Wno-format-extra-args -Wno-unused-function -Wno-unused-value "
 WARN="$WARN -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format"
 
+# decide what goes into stdlib
+STDLIB="-DSTDLIBFILE"
+
 # command to use to run it - put testing args to binary for execution here
 RUN="./xxl"
 
@@ -44,7 +47,7 @@ if [ "x$BUILDH" = "xyes" ]; then
 	$NODE repr.js > repr.h 
 fi
 
-$CC $DEFS $WARN $LIBS $ARCH \
+$CC $DEFS $WARN $LIBS $ARCH $STDLIB \
 	xxl.c net.c repl.c -o ./xxl 2>&1 \
 	&& $RUN
 
