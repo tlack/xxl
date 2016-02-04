@@ -8,6 +8,7 @@
 	res=assign(res,Tt(len),x1(&len));
 	res=assign(res,Tt(min),x1(&min));
 	res=assign(res,Tt(max),x1(&max));
+	res=assign(res,Tt(not),x1(&not));
 	res=assign(res,Tt(parse),x1(&parse));
 	res=assign(res,Tt(repr),x1(&repr));
 	res=assign(res,Tt(rev),x1(&reverse));

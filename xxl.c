@@ -90,6 +90,7 @@ char* repr_c(VP x,char* s,size_t sz) {
 		ch = AS_c(x,i);
 		if(ch=='"') APF(sz,"\\", 0);
 		if(ch=='\n') APF(sz,"\\n", 0);
+		if(ch=='\r') APF(sz,"\\r", 0);
 		else APF(sz,"%c",ch);
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
@@ -1187,6 +1188,25 @@ VP scan(VP x,VP y) { // always returns a list
 	PF("scan result\n");DUMP(acc);
 	return acc;
 }
+VP wide(VP obj,VP f) {
+	// TODO perhaps deep() should throw an error with non-list args - calls each() now
+	int i; VP acc;
+	PF("wide\n");DUMP(info(obj));DUMP(obj);DUMP(f);
+
+	if(!CONTAINER(obj)) return apply(f, obj);
+
+	PF("wide top level\n");DUMP(obj);
+	acc=apply(f,obj);
+	if(CONTAINER(acc)) {
+		for(i=0;i<acc->n;i++) {
+			PF("wide #%d\n",i);
+			PFIN();
+			EL(acc,VP,i)=wide(AS_l(acc,i),f);
+			PFOUT();
+		}
+	}
+	return acc;
+}
 
 // MATHY STUFF:
 
@@ -1290,21 +1310,6 @@ VP lesser(VP x,VP y) {
 	xfree(v0);xfree(v1);
 	return acc;
 }
-VP or(VP x,VP y) { // TODO most of these primitive functions have the same pattern - abstract?
-	int typerr=-1;
-	VP acc;
-	// PF("or\n"); DUMP(x); DUMP(y); // TODO or() and friends should handle type conversion better
-	if(x->n==0) return y;
-	if(y->n==0) return x;
-	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "or arguments should be same length", x, y);	
-	if(x->t == y->t) acc=xalloc(x->t, x->n);
-	else acc=xlsz(x->n);
-	VARY_EACHBOTH(x,y,({ if (_x > _y) appendbuf(acc, (buf_t)&_x, 1); 
-		else appendbuf(acc, (buf_t)&_y, 1); }), typerr);
-	IF_EXC(typerr != -1, Tt(type), "or arg type not valid", x, y);
-	// PF("or result\n"); DUMP(acc);
-	return acc;
-}
 VP min(VP x) { 
 	if (!SIMPLE(x)) return over(x, x2(&and));
 	if(x->n==1)return x;
@@ -1347,6 +1352,33 @@ VP mod(VP x,VP y) {
 	}
 	IF_EXC(typerr > -1, Tt(type), "mod arg wrong type", x, y);
 	PF("mod result\n"); DUMP(acc);
+	return acc;
+}
+VP not(VP x) {
+	int typerr=-1;
+	VP acc;
+	// PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
+	acc=ALLOC_LIKE(x);
+	VARY_EACH(x,({ 
+		_x=!_x; appendbuf(acc,(buf_t)&_x,1);
+	}),typerr);
+	IF_EXC(typerr != -1, Tt(type), "not arg type not valid", x, 0);
+	// PF("and result\n"); DUMP(acc);
+	return acc;
+}
+VP or(VP x,VP y) { // TODO most of these primitive functions have the same pattern - abstract?
+	int typerr=-1;
+	VP acc;
+	// PF("or\n"); DUMP(x); DUMP(y); // TODO or() and friends should handle type conversion better
+	if(x->n==0) return y;
+	if(y->n==0) return x;
+	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "or arguments should be same length", x, y);	
+	if(x->t == y->t) acc=xalloc(x->t, x->n);
+	else acc=xlsz(x->n);
+	VARY_EACHBOTH(x,y,({ if (_x > _y) appendbuf(acc, (buf_t)&_x, 1); 
+		else appendbuf(acc, (buf_t)&_y, 1); }), typerr);
+	IF_EXC(typerr != -1, Tt(type), "or arg type not valid", x, y);
+	// PF("or result\n"); DUMP(acc);
 	return acc;
 }
 VP plus(VP x,VP y) {
@@ -1766,13 +1798,24 @@ VP signaljoin(VP x,VP y) {
 VP nest(VP x,VP y) {
 	VP p1,p2,open,close,opens,closes,where,rep,out;
 	PF("NEST\n");DUMP(x);DUMP(y);
+	//if(!LIST(x) || x->n < 2) return x;
+	if(x->n<2)return x;
 	p1=proj(2,&matcheasy,x,0);
 	p2=proj(2,&matcheasy,x,0);
 	open=apply(y,xi(0)); close=apply(y,xi(1));
+	if(!LIST(x) && x->t != open->t) return x;
+	// if(LIST(open) && x->t != AS_l(open,0)->t) return x;
 	if(_equal(open,close)) {
 		opens=each(open,p1);
 		PF("+ matching opens\n");DUMP(opens);
 		if(_any(opens)) {
+			VP esc = 0;
+			if(y->n >= 3) {
+				esc = matcheasy(x,ELl(y,2));
+				PF("escapes\n");DUMP(esc);
+				EL(opens,VP,0)=and(AS_l(opens,0),shift_(not(esc),-1));
+				PF("new escaped opens\n");
+			}	
 			opens=signaljoin(xb(1),AS_l(opens,0));
 			PF("after signaljoin\n");DUMP(opens);
 			out=partgroups(condense(opens));
@@ -2298,10 +2341,33 @@ VP parselambda(VP x) {
 }
 VP parsestrlit(VP x) {
 	int i,arity=1,typerr=-1,traw=Ti(raw);
-	PF("parsestrlit\n");DUMP(x);
+	PF("PARSESTRLIT!!!\n");DUMP(x);
 	if(LIST(x) && IS_c(AS_l(x,0)) && AS_c(AS_l(x,0),0)=='"') {
-		VP res;
-		res=drop_(drop_(x,-1),1);
+		VP res=xlsz(x->n), el, next; int ch,nextch,last;
+		last=x->n-1;
+		for(i=0;i<x->n;i++) {
+			PF("parsestrlit #%d\n",i);
+			el=AS_l(x,i);
+			DUMP(el);
+			if(IS_c(el)) {
+				ch=AS_c(el,0);
+				if ((i==0 || i==last) && ch=='"')
+					continue; // skip start/end quotes
+				if (i<last &&
+				    (ch=AS_c(el,0))=='\\') {
+					next=AS_l(x,i+1);
+					nextch=AS_c(next,0);
+					if(nextch=='r') 
+						res=append(res,xc(13));
+					if(nextch=='n')
+						res=append(res,xc(10));
+				} else  
+					res=append(res,el);
+			} else {
+				res=append(res,el);
+			}
+		}
+		res=flatten(res);
 		DUMP(res);
 		// if(PF_LVL) sleep(5);
 	// sleep(2);
@@ -2324,7 +2390,7 @@ VP parsestr(const char* str) {
 	pats=xln(3,
 		proj(2,&nest,0,xln(4, xfroms("//"), xfroms("\n"), xfroms(""), Tt(comment))),
 		proj(2,&nest,0,xln(4, xfroms("/*"), xfroms("*/"), xfroms(""), Tt(comment))),
-		proj(2,&nest,0,xln(5, xfroms("\""), xfroms("\""), xfroms(""), Tt(string), x1(&parsestrlit)))
+		proj(2,&nest,0,xln(5, xfroms("\""), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit)))
 	);
 	ctx=append(ctx,pats);
 	acc=exhaust(acc,ctx);
@@ -2363,7 +2429,7 @@ VP parsestr(const char* str) {
 	t2=t1;
 	for(i=0;i<pats->n;i++) {
 		PF("parsestr exhausting %d\n", i);
-		t2=exhaust(t2,ELl(pats,i));
+		t2=exhaust(t2,proj(2,&wide,0,ELl(pats,i)));
 	}
 	return t2;
 }
