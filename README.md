@@ -1,4 +1,4 @@
-![XXL logo](http://www.modernmethod.com/send/files/xxl-logo.gif)
+![XXL logo](http://www.modernmethod.com/send/files/xxl-logo-2.png)
 
 # XXL, a small language
 
