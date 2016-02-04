@@ -52,6 +52,14 @@ DUMP(d);
 ASSERT(!_equal(b,d) && _equal(b,xi(777)) && _equal(d,x1(&last)), "names derived from root");
 xfree(b);xfree(d);xfree(c);
 
+/* 
+this doesnt work yet - probably rightfully.. 
+c=mkworkspace();
+b=evalstrin("(1,2)as 'd;(3,4)as 'e;(d,e)",c);
+ASSERT(_equal(b,xin(4,1,2,3,4)),"compound subexpr 0");
+xfree(c);xfree(b);
+*/
+
 #ifdef STDLIBFILE
 c=mkworkspace();
 b=evalstrin(".file.get",c);

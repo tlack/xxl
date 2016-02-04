@@ -64,11 +64,14 @@ VP split(VP x,VP tok);
 static inline VP str2num(VP x);
 static inline VP str2tag(VP str); // turns string, or list of strings, into tag vector
 static inline VP tagname(I32 tag);
-static inline VP tagv(const char* name, VP x);
+/*static inline */
+VP tagv(const char* name, VP x);
 VP take_(VP x,int i);
 VP take(VP x,VP y);
 static inline int _tagnum(VP name);
-static inline int _tagnums(const char* name);
+/*static inline */
+int _tagnums(const char* name);
+void thr_run(VP ctx);
 static type_info_t typeinfo(type_t n); 
 static type_info_t typechar(char c);
 VP xalloc(type_t t,I32 initn);
@@ -77,13 +80,15 @@ VP xfroms(const char* str);
 VP xor(VP x,VP y);
 VP xrealloc(VP x,I32 newn);
 
+#ifdef STDLIBNET
 // from net.c
-void net(void);
-size_t netr(int sock,void* b,size_t maxl);
-void netw(int sock,void* b,size_t l);
-void netloop(int sock);
+VP netbind(VP opts,VP callback);
+VP netloop(VP xsock,VP cb);
+#endif
 
+#ifdef STDLIBFILE
 // stdlib
 VP fileget(VP fn);
 VP fileset(VP str,VP fn);
+#endif
 

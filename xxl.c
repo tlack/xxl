@@ -990,18 +990,19 @@ VP apply(VP x,VP y) {
 		}
 		if(p->type==2) {
 			PF("proj2\n"); 
-			if(!y) return x;
-			else {
-				PFIN();
-				if(p->left)
-					y=(*p->f2)(p->left, y);
-				else if (p->right)
-					y=(*p->f2)(y,p->right);
-				else
-					y=proj(2,p->f2,y,0);
-				PFOUT(); PF("proj2 done\n"); DUMP(y);
-				return y;
-			}
+			PFIN();
+			if(p->left && p->right)
+				y=(*p->f2)(p->left,p->right);
+			else if(y && p->left)
+				y=(*p->f2)(p->left, y);
+			else if (y && p->right)
+				y=(*p->f2)(y,p->right);
+			else if (y) 
+				y=proj(2,p->f2,y,0);
+			else
+				y=x;
+			PFOUT(); PF("proj2 done\n"); DUMP(y);
+			return y;
 		}
 		return xp(*p);
 	}
@@ -1615,7 +1616,9 @@ static inline VP str2tag(VP str) { // turns string, or list of strings, into tag
 static inline VP tagwrap(VP tag,VP x) {
 	return entag(xln(1, x),tag);
 }
-static inline VP tagv(const char* name, VP x) {
+/*static inline 
+*/
+VP tagv(const char* name, VP x) {
 	return entags(xln(1,x),name);
 }
 static inline VP entag(VP x,VP t) {
@@ -1648,7 +1651,8 @@ static inline int _tagnum(const VP s) {
 	});
 	return i;
 }
-static inline int _tagnums(const char* name) {
+/* static inline  */
+int _tagnums(const char* name) {
 	int t;VP s;
 	//printf("_tagnums %s\n",name);
 	//printf("tagnums free\n");
@@ -2404,19 +2408,25 @@ void thr_start() {
 	#endif
 	return;
 }
-void* thr_run0(void *fun(void*)) {
+void* thr_run0(void* VPctx) {
 	#ifndef THREAD
 	#else
-	(*fun)(NULL); pthread_exit(NULL);
+	VP ctx=VPctx;
+	PFW(({
+	printf("thr_run %s\n", reprA(ctx));
+	ctx=apply(ctx,xl0());
+	DUMP(ctx);
+	}));
+	pthread_exit(NULL);
 	#endif
-	return NULL;
+	return 0;
 }
-void thr_run(void *fun(void*)) {
+void thr_run(VP ctx) {
 	#ifndef THREAD
 	#else
 	pthread_attr_t a; pthread_attr_init(&a); pthread_attr_setdetachstate(&a, PTHREAD_CREATE_JOINABLE);
 	// nthr=sysconf(_SC_NPROCESSORS_ONLN);if(nthr<2)nthr=2;
-	WITHLOCK(thr,pthread_create(&THR[NTHR++], &a, &thr_run0, fun));
+	WITHLOCK(thr,pthread_create(&THR[NTHR++], &a, &thr_run0, ctx));
 	#endif
 	return;
 }
@@ -2583,6 +2593,7 @@ void tests() {
 }
 void init(){
 	XI0=xi(0); XI1=xi(1);
+	thr_start();
 }
 int main(int argc, char* argv[]) {
 	init();

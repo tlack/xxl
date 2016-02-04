@@ -48,12 +48,19 @@
 	res=assign(res,Tt(over),x2(&over));
 
 	//stdlib
-	#ifdef STDLIBFILE
 	VP d;
+	#ifdef STDLIBFILE
 	d=xd0();
 	d=assign(d,Tt(get),x1(&fileget));
 	d=assign(d,Tt(set),x2(&fileset));
 	res=assign(res,Tt(file),d);
+	xfree(d);
+	#endif
+
+	#ifdef STDLIBNET
+	d=xd0();
+	d=assign(d,Tt(bind),x2(&netbind));
+	res=assign(res,Tt(net),d);
 	xfree(d);
 	#endif
 
