@@ -513,17 +513,8 @@ VP join(VP x,VP y) {
 		PF("join3\n");
 		if(DICT(x))
 			return dict(x,y);
-		else if(LIST(x)) {
-			int has_structure=0;
-			if(y->tag != 0 || x->tag != 0 || (x->n > 0 && ELl(x,x->n-1)->tag != 0)) {
-				// avoid joining structured lists - feels hackish
-				PF("has_structure\n");
-				has_structure=1;
-			}
-			if(LIST(y) && _flat(y) && !has_structure) 
-				FOR(0,y->n,res=append(x,ELl(y,_i)));
-			else 
-				res=append(x,y);
+		else if(LIST(x) && (!LIST(y) || y->n==1)) {
+			res=append(x,y);
 		} else {
 			PF("join4\n");
 			res=xlsz(2);
