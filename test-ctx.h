@@ -377,3 +377,14 @@
 	ASSERT(_equal(tmp1,xi(42)),"test y projection");
 	xfree(ctx);xfree(tmp1);
 
+	ctx=mkworkspace();
+	append(ctx,parsestr(";10 as 'z;17 as '.z;z"));
+	tmp1=apply(ctx,xl0());
+	ASSERT(_equal(tmp1,xi(10)),"test assign at depth 0");
+	xfree(ctx);xfree(tmp1);
+
+	ctx=mkworkspace();
+	append(ctx,parsestr(";10 as 'z;17 as '.z;.z"));
+	tmp1=apply(ctx,xl0());
+	ASSERT(_equal(tmp1,xi(17)),"test assign at depth 1");
+	xfree(ctx);xfree(tmp1);

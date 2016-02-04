@@ -387,12 +387,23 @@ VP amend(VP x,VP y) {
 }
 static inline VP assign(VP x,VP k,VP val) {
 	// PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
+	if (LIST(k) && k->n) {
+		int i=0;VP res=x;
+		for(;i<k->n-1;i++) {
+			PF("assign-at-depth %d\n",i);
+			res=apply(res,ELl(k,i));
+			DUMP(res);
+			if(UNLIKELY(IS_EXC(res)) || res->n==0)
+				return res;
+		}
+		PF("assign-at-depth setting\n");
+		assign(res,ELl(k,k->n-1),val);
+		return res;
+	}
 	if(DICT(x)) {
 		xref(k); xref(val);
 		return append(x,xln(2,k,val));
-	}
-	// TODO assign should support numeric indices
-	if(NUM(k)) {
+	} else if(SIMPLE(x) && NUM(k)) {
 		// PF("assign");DUMP(x);DUMP(k);DUMP(val);
 		if(x->t != val->t) return EXC(Tt(type),"assign value and target types don't match",x,val);
 		int typerr=-1;
@@ -844,7 +855,8 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				item=yarg;
 			}
 			else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
-				left=TRACELBL(proj(2,&set,xln(2,parent,left),0),Ti(setproj));
+				left=proj(2,&set,xln(2,parent,left),0);
+				left->tag=Ti(setproj);
 				xfree(left);
 				PF("created set projection\n");
 				DUMP(left);
@@ -1462,17 +1474,36 @@ VP set(VP x,VP y) {
 		if(x->n!=2) return EXC(Tt(type),"set x must be (context,value)",x,y);
 		if(!IS_t(y)) return EXC(Tt(type),"set y must be symbol",x,y);
 		ctx=AS_l(x,0);val=AS_l(x,1); i=ctx->n-1;
-		for(;i>=0;i--) {
-			VP dest = AS_x(ctx,i);
-			DUMP(dest);
-			if(LIST(dest) || CALLABLE(dest)) // skip code bodies
-				continue;
-			if(DICT(dest)) {
-				PF("set assigning..\n");
-				dest=assign(dest,y,val);
-				PF("set in %p\n",dest);
-				DUMP(dest);
-				return val;
+
+		// TODO rewrite these to share logic in the body of loop .. must be an easy
+		// way without using a helper func or macro
+		if(IS_t(y) && y->n > 1 && AS_t(y,0)==0) { // empty first element = start from root
+			PF("set starting from root\n");
+			i=0;y=list(behead(y));
+			for(;i<ctx->n;i++) {
+				VP dest = AS_x(ctx,i);
+				if(LIST(dest) || CALLABLE(dest)) // skip code bodies
+					continue;
+				if(DICT(dest)) {
+					PF("set assigning in %d..\n", i);
+					dest=assign(dest,y,val);
+					PF("set in %p\n",dest);
+					DUMP(dest);
+					return val;
+				}
+			}
+		} else {
+			for(;i>=0;i--) {
+				VP dest = AS_x(ctx,i);
+				if(LIST(dest) || CALLABLE(dest)) // skip code bodies
+					continue;
+				if(DICT(dest)) {
+					PF("set assigning..\n");
+					dest=assign(dest,y,val);
+					PF("set in %p\n",dest);
+					DUMP(dest);
+					return val;
+				}
 			}
 		}
 		return EXC(Tt(set),"could not set value in parent scope",x,y);
@@ -2215,10 +2246,15 @@ VP parsename(VP x) {
 	VP res=flatten(x);
 	if(IS_c(res)) {
 		if(AS_c(res,0)=='\'') {
+			PF("parsename tag\n");
+			res=behead(res);
 			res=split(res,xc('.')); // very fast if not found
-			return xt(_tagnum(behead(res)));
+			DUMP(res);
+			return str2tag(res);
 		} else {
+			PF("parsename non-tag\n");
 			res=split(res,xc('.')); // very fast if not found
+			DUMP(res);
 			res->tag=Ti(name);
 		}
 	}
