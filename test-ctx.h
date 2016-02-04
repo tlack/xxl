@@ -260,7 +260,7 @@
 	append(ctx,parsestr("['a:1,'b:2]"));
 	tmp1=apply(ctx,xi(0));
 	DUMP(repr(tmp1));
-	tmp2=xfroms("'dict['a:1i, 'b:2i]");
+	tmp2=xfroms("['a:1i, 'b:2i]");
 	DUMP(tmp1);DUMP(tmp2);
 	ASSERT(_equal(repr(tmp1),tmp2),"test parsestr dict literal 25");
 	xfree(ctx);xfree(tmp1);xfree(tmp2);
@@ -290,14 +290,14 @@
 	tmp1=apply(ctx,xi(0));
 	DUMP(tmp1);
 	DUMP(repr(tmp1));
-	ASSERT(_equal(repr(tmp1),xfroms("'dict['a:(1,2i), 'b:'string(\"barf\")]")),"test parsestr dict literal 26");
+	ASSERT(_equal(repr(tmp1),xfroms("['a:(1,2i), 'b:'string(\"barf\")]")),"test parsestr dict literal 26");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("('a,'b):((1,2),\"barf\")"));
 	tmp1=apply(ctx,xi(0));
 	DUMP(tmp1);
-	ASSERT(_equal(repr(tmp1),xfroms("'dict['a:(1,2i), 'b:'string(\"barf\")]")),"test parsestr dict literal 27");
+	ASSERT(_equal(repr(tmp1),xfroms("['a:(1,2i), 'b:'string(\"barf\")]")),"test parsestr dict literal 27");
 	// ^ note this is an example of a bug that still exists - see quotes inside string
 
 	ctx=mkworkspace();

@@ -126,7 +126,7 @@ char* repr_d(VP x,char* s,size_t sz) {
 	int i, n;
 	VP k=KEYS(x),v=VALS(x);
 	if (!k || !v) { APF(sz,"[null]",0); return s; }
-	APF(sz,"'dict[",0);
+	APF(sz,"[",0);
 	n=k->n;
 	for(i=0;i<n;i++) {
 		repr0(apply(k,xi(i)), s, sz);
