@@ -268,3 +268,17 @@
 	a=xi(3);
 	ASSERT(_equal(a, plus(xf(1.5),xf(1.5))), "float int compare 0");
 	xfree(a);xfree(b);
+	
+	a=xin(5,1,2,3,4,5);
+	b=split(a,xi(3));
+	DUMP(b);
+	ASSERT(_equal(xln(2,xin(2,1,2),xin(2,4,5)),b),"split int token");
+	a=xfroms(".hello.there");
+	b=split(a,xfroms("."));
+	DUMP(b);
+	ASSERT(_equal(xln(3,xc0(),xfroms("hello"),xfroms("there")),b),"split char token 0");
+	a=xfroms(".hello..there.");
+	b=split(a,xfroms("."));
+	DUMP(b);
+	ASSERT(_equal(xln(5,xc0(),xfroms("hello"),xc0(),xfroms("there"),xc0()),b),"split char token 1");
+

@@ -24,6 +24,7 @@ VP drop(VP x,VP y);
 static inline VP each(VP obj,VP fun);
 static inline VP entag(VP x,VP t);
 static inline VP entags(VP x,const char* name);
+static inline int _equalm(const VP x,const int xi,const VP y,const int yi);
 VP evalstrin(const char* str,VP ctx);
 VP evalin(VP str,VP ctx);
 int _find1(VP x,VP y);

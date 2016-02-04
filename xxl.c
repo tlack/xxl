@@ -626,7 +626,23 @@ VP split(VP x,VP tok) {
 		PF("split returning\n");DUMP(tmp);
 		return tmp;
 	}
-	return EXC(Tt(nyi),"split with non-null token not yet implemented",x,tok);
+
+	if(x->t == tok->t && tok->n==1) {
+		int i=0,j=0,last=0;
+		VP rest=x,acc=0;
+		for(;i<x->n;i++) {
+			if (_equalm(x,i,tok,0)) {
+				if(!acc)acc=xlsz(x->n/1);
+				acc=append(acc,take_(rest,i-last));
+				rest=drop_(rest,i+1-last);
+				last=i+1;
+			}
+		}
+		if(acc){ acc=append(acc,rest); return acc; }
+		else return x;
+	}
+
+	return EXC(Tt(nyi),"split with that type of data not yet implemented",x,tok);
 }
 VP take_(const VP x,const int i) {
 	VP res;
@@ -2158,9 +2174,9 @@ VP mklexer(const char* chars, const char* label) {
 }
 VP parseexpr(VP x) {
 	PF("parseexpr\n");DUMP(x);
-	if(LIST(x) && IS_c(ELl(x,0)) && (
-			AS_c(ELl(x,0),0)=='(') ||
-			AS_c(ELl(x,0),0)=='[')
+	if(LIST(x) && IS_c(ELl(x,0)) && 
+			((AS_c(ELl(x,0),0)=='(') ||
+			  AS_c(ELl(x,0),0)=='['))
 		return drop_(drop_(x,-1),1);
 	else
 		return x;
