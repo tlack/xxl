@@ -848,8 +848,8 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			RETURN_IF_EXC(item);
 			if(tag==Ti(listexpr)&&!CONTAINER(item)) item=list(item);
 			PF("subexpression came back with");DUMP(item);
-		}
-
+		} else 
+		// if(LIKELY(IS_c(item)) && tag != tstr) {
 		if(LIKELY(IS_c(item)) && tag != tstr) {
 			ch = AS_c(item,0);
 			if(ch==';') { // end of expr; remove left/x
@@ -954,6 +954,7 @@ VP applyctx(VP x,VP y) {
 		if(LIST(this)) { // code bodies are lists - maybe use 'code tag instead? 
 			PF("CTX CODE BODY\n");DUMP(this);
 			res=applyexpr(x,this,y,0);
+			if(!res) return res;
 		}
 		// NB. if the function body returns an empty list, we try the scopes (dictionaries).
 		// this may not be what we want in the long run.
@@ -1189,7 +1190,6 @@ VP scan(VP x,VP y) { // always returns a list
 	return acc;
 }
 VP wide(VP obj,VP f) {
-	// TODO perhaps deep() should throw an error with non-list args - calls each() now
 	int i; VP acc;
 	PF("wide\n");DUMP(info(obj));DUMP(obj);DUMP(f);
 
@@ -2357,10 +2357,11 @@ VP parsestrlit(VP x) {
 				    (ch=AS_c(el,0))=='\\') {
 					next=AS_l(x,i+1);
 					nextch=AS_c(next,0);
-					if(nextch=='r') 
-						res=append(res,xc(13));
-					if(nextch=='n')
-						res=append(res,xc(10));
+					if(nextch=='n') {
+						res=append(res,xc(10)); i++;
+					} else if(nextch=='r') {
+						res=append(res,xc(13)); i++;
+					}
 				} else  
 					res=append(res,el);
 			} else {
