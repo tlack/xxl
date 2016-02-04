@@ -1,6 +1,6 @@
 
 	// postfix/unary operators
-	res=assign(res,xt(_tagnums("]")),x1(&identity));
+	// res=assign(res,xt(_tagnums("]")),x1(&identity));
 	res=assign(res,Tt(condense),x1(&condense));
 	res=assign(res,Tt(curtail),x1(&curtail));
 	res=assign(res,Tt(info),x1(&info));
@@ -27,7 +27,7 @@
 	res=assign(res,Tt(&),x2(&and));
 	res=assign(res,xt(_tagnums("<")),x2(&lesser));
 	res=assign(res,xt(_tagnums(">")),x2(&greater));
-	res=assign(res,xt(_tagnums("[")),x2(&list2));
+	// res=assign(res,xt(_tagnums("[")),x2(&list2));
 	res=assign(res,Tt(~),x2(&matcheasy));
 	res=assign(res,Tt(!),x2(&amend));
 	res=assign(res,Tt(@),x2(&apply));

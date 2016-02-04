@@ -23,7 +23,7 @@ void repl() {
 		// DUMP(t2);
 		PF("APPENDING!!\n");
 		append(ws,t2);
-		t3=applyctx(ws,xi0());
+		t3=applyctx(ws,0);
 		});
 		PF("curtailing\n");
 		ws=curtail(ws);

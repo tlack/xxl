@@ -1,5 +1,3 @@
-
-
 	ctx=mkworkspace();
 	tmp1=xl(mkproj(2,&plus,xi(2),0));
 	append(ctx,tmp1);
@@ -372,4 +370,3 @@
 	tmp2=evalstrin("['q:1, 'w:5]", ctx);
 	ASSERT(_equal(tmp1,tmp2),"test amend dict val");
 	xfree(ctx);xfree(tmp1);xfree(tmp2);
-

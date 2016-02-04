@@ -17,7 +17,7 @@ Let's dive in with a simple prime number tester (returns 0 if not prime, >0
 otherwise):
 
 ```
-17 {til drop 2 % x}
+17 {til drop 2 % x min}
 ```
 
 Here's how it works:

@@ -29,5 +29,24 @@ xfree(c);xfree(b);
 
 c=mkworkspace();
 b=evalstrin("1 ifelse ({x*2},{x*3})",c);
-//ASSERT(_equal(b,xi(2)),"test if 3");
+ASSERT(_equal(b,xi(2)),"test if 3");
 xfree(c);xfree(b);
+
+c=mkworkspace();
+b=evalstrin("[[4,5],[6,7]]@[0,1]",c);
+ASSERT(_equal(b,xi(5)),"test apply at depth 0");
+xfree(c);xfree(b);
+
+c=mkworkspace();
+b=evalstrin("['a:(1,2,3),'b:(4,5,6)]@['b,2]",c);
+ASSERT(_equal(b,xi(6)),"test apply at depth in dict");
+xfree(c);xfree(b);
+
+c=mkworkspace();
+VP d;
+b=evalstrin("777 as 'last;last",c);
+DUMP(b);
+d=evalstrin("777 as 'last;.last",c);
+DUMP(d);
+ASSERT(!_equal(b,d) && _equal(b,xi(777)) && _equal(d,x1(&last)), "names derived from root");
+

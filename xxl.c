@@ -437,7 +437,11 @@ VP curtail(VP x) {
 VP dict(VP x,VP y) {
 	PF("dict\n");DUMP(x);DUMP(y);
 	if(DICT(x)) {
-		if(DICT(y)) return EXC(Tt(nyi),"dict join dict not yet implemented",x,y);
+		if(DICT(y)) {
+			ASSERT(LIST(KEYS(x)) && LIST(VALS(x)),"dict() x keys or vals not list");
+			FOR(0,x->n,({ assign(y,ELl(KEYS(x),_i),ELl(VALS(x),_i)); }));
+			return y;
+		} 
 		if(KEYS(x)->n > VALS(x)->n) { // dangling dictionary detection
 			append(VALS(x),y);
 		} else {
@@ -830,6 +834,9 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			PF("decoded string identifier\n");DUMP(item);
 			if(item->tag==texc)
 				return CALLABLE(left)?left:item;
+		} else if(tag==tname) {
+			PF("non-string name encountered");
+			item=get(parent,item);
 		}
 		
 		if(tag==tlam) { // create a context for lambdas
@@ -937,40 +944,9 @@ VP applyctx(VP x,VP y) {
 }
 VP apply(VP x,VP y) {
 	// this function is everything.
-	VP res=NULL;int i,typerr=-1;
+	VP res=NULL;int i=0,typerr=-1;
 	// PF("apply\n");DUMP(x);DUMP(y);
 	if(x->tag==_tagnums("exception"))return x;
-	if(DICT(x)) {
-		VP k=KEYS(x),v=VALS(x);I8 found;
-		if(k==NULL || v==NULL) return NULL;
-		res=xi0();
-		if(LIST(k) && IS_c(y)) { // special case for strings as dictionary keys - common
-			int idx;
-			PF("searching for string\n");
-			if ((idx=_find1(k,y))>-1) {
-				// PF("string found at idx %d\n", idx);
-				append(res,xi(idx));
-			}
-		} else {
-			ITERV(y,{ 
-				int idx;
-				PF("searching %d\n",_i);
-				DUMP(y); DUMP(k);
-				if(LIST(y)) idx = _find1(k,ELl(y,_i));
-				else idx = _findbuf(k,ELi(y,_i));
-				if(idx>-1) {
-					found=1;
-					PF("found at idx %d\n", idx); 
-					append(res,xi(idx));
-					break;
-				}
-			});
-		}
-		if(res->n==0) {
-			if(x->next!=0) res=apply((VP)x->next, res);
-		}
-		if(res->n==0) return xl0(); else return apply(v,res);
-	}
 	if(IS_p(x)) { 
 		// if its dyadic
 		   // if we have one arg, add y, and call - return result
@@ -1014,9 +990,54 @@ VP apply(VP x,VP y) {
 		PF("apply f2 returning\n");DUMP(res);
 		return res;
 	}
+	if(!CALLABLE(x) && UNLIKELY(LIST(y))) { // indexing at depth - never done for callable types 1, 2, and p (but we do use it for x)
+		PF("indexing at depth\n");
+		DUMP(x);
+		DUMP(info(x));
+		DUMP(y);
+		DUMP(info(y));
+		res=x;
+		for(;i<y->n;i++) {
+			res=apply(res,ELl(y,i));
+			PF("at-depth result %d\n",i);DUMP(res);
+			if(UNLIKELY(IS_EXC(res)) || res->n==0) 
+				return res;
+		}
+		return res;
+	}
 	if(IS_x(x)) {
 		// PF("apply ctx\n");DUMP(x);DUMP(y);
 		return applyctx(x,y);
+	}
+	// TODO apply() is called most often in XXL; maybe worth transforming this if cascade into a case?	
+	if(DICT(x)) {
+		VP k=KEYS(x),v=VALS(x);I8 found;
+		if(k==NULL || v==NULL) return NULL;
+		res=xi0();
+		if(LIST(k) && IS_c(y)) { // special case for strings as dictionary keys - common
+			int idx;
+			PF("searching for string\n");
+			if ((idx=_find1(k,y))>-1)
+				append(res,xi(idx));
+		} else {
+			ITERV(y,{ 
+				int idx;
+				PF("searching %d\n",_i);
+				DUMP(y); DUMP(k);
+				if(LIST(y)) idx = _find1(k,ELl(y,_i));
+				else idx = _findbuf(k,ELi(y,_i));
+				if(idx>-1) {
+					found=1;
+					PF("found at idx %d\n", idx); 
+					append(res,xi(idx));
+					break;
+				}
+			});
+		}
+		if(res->n==0) {
+			if(x->next!=0) res=apply((VP)x->next, res);
+		}
+		if(res->n==0) return xl0(); else return apply(v,res);
 	}
 	if(NUM(y)) {
 		// index a value with an integer 
@@ -1039,7 +1060,7 @@ VP apply(VP x,VP y) {
 			return res;
 		}
 	}
-	return EXC(Tt(apply),"cant apply that",x,y);
+	return EXC(Tt(apply),"apply failure",x,y);
 }
 VP deep(VP obj,VP f) {
 	// TODO perhaps deep() should throw an error with non-list args - calls each() now
@@ -1399,23 +1420,28 @@ VP xor(VP x,VP y) {
 
 VP get(VP x,VP y) {
 	// TODO get support nesting
-	int i; VP res;
+	int i,j; VP res;
 	PF("get\n");DUMP(y);
 	if(IS_x(x)) {
-		if(IS_c(y)) {
-			res=xt(_tagnum(y));
-			xfree(y);
-			y=res;
-		}
-		i=x->n-1;
-		for(;i>=0;i--) {
-			PF("get #%d\n", i);
-			if(LIST(ELl(x,i)))
-				continue;
-			res=apply(ELl(x,i),y);
-			if(!LIST(res) || res->n > 0) {
-				// PF("get returning\n");DUMP(res);
-				return res;
+		if(LIKELY(IS_c(y) || (LIST(y) && IS_c(ELl(y,0))))) 
+			y=str2tag(y);
+		DUMP(y);
+		if(IS_t(y) && y->n > 1 && AS_t(y,0)==0) { // empty first element = start from root
+			PF("get starting from root\n");
+			i=0;y=list(behead(y));
+			for(;i<x->n;i++) {
+				PF("get #%d\n", i);
+				if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
+				res=apply(ELl(x,i),y);
+				if(!LIST(res) || res->n > 0) return res;
+			}
+		} else {
+			i=x->n-1;
+			for(;i>=0;i--) {
+				PF("get #%d\n", i);
+				if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
+				res=apply(ELl(x,i),y);
+				if(!LIST(res) || res->n > 0) return res;
 			}
 		}
 		return EXC(Tt(undef),"undefined",y,x);
@@ -1525,16 +1551,23 @@ VP mkproj(int type, void* func, VP left, VP right) {
 	pv->n=1;
 	return pv;
 }
-VP name2sym(VP x) {
-	PF("name2sym\n");DUMP(x);
-	if(IS_c(x) && AS_c(x,0)=='\'') {
-		return xt(_tagnum(drop_(x,1)));
-	} 
-	else return xl0();
-}
 
 // TAG STUFF:
 
+static inline VP str2tag(VP str) { // turns string, or list of strings, into tag vector
+	int i=0; VP acc=xtsz(str->n);
+	if(IS_c(str)) return xt(_tagnum(str));
+	if(LIST(str)) {
+		VP tmp;
+		for(;i<str->n;i++) {
+			tmp=ELl(str,i);
+			if(!IS_c(tmp)) return EXC(Tt(type),"str2tag arg not string or list of strings",str,0);
+			acc=append(acc,xt(_tagnum(tmp)));
+		}
+		return acc;
+	}
+	return EXC(Tt(type),"str2tag arg not string or list of strings",str,0);
+}
 static inline VP tagwrap(VP tag,VP x) {
 	return entag(xln(1, x),tag);
 }
@@ -2177,9 +2210,12 @@ VP parsename(VP x) {
 	VP res=flatten(x);
 	if(IS_c(res)) {
 		if(AS_c(res,0)=='\'') {
+			res=split(res,xc('.')); // very fast if not found
 			return xt(_tagnum(behead(res)));
+		} else {
+			res=split(res,xc('.')); // very fast if not found
+			res->tag=Ti(name);
 		}
-		res->tag=Ti(name);
 	}
 	return res;
 }
@@ -2352,6 +2388,7 @@ void test_json() {
 }
 void test_logic() {
 	VP a,b,c;
+	printf("TEST_LOGIC\n");
 	#include"test-logic.h"
 }
 void test_nest() {
