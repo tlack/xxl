@@ -15,7 +15,7 @@ WARN="$WARN -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format"
 STDLIB="-DSTDLIBFILE -DSTDLIBNET"
 
 # command to use to run it - put testing args to binary for execution here
-RUN="./xxl"
+RUN="./xxl $*"
 
 if [ -x /usr/bin/clang ]; then
 	echo using clang

@@ -4,10 +4,12 @@
 	res=assign(res,Tt(condense),x1(&condense));
 	res=assign(res,Tt(curtail),x1(&curtail));
 	res=assign(res,Tt(info),x1(&info));
+	res=assign(res,Tt(flat),x1(&flatten));
 	res=assign(res,Tt(last),x1(&last));
 	res=assign(res,Tt(len),x1(&len));
 	res=assign(res,Tt(min),x1(&min));
 	res=assign(res,Tt(max),x1(&max));
+	res=assign(res,Tt(not),x1(&not));
 	res=assign(res,Tt(parse),x1(&parse));
 	res=assign(res,Tt(repr),x1(&repr));
 	res=assign(res,Tt(rev),x1(&reverse));
@@ -40,7 +42,7 @@
 	res=assign(res,Tt(each),x2(&each));
 	res=assign(res,Tt(evalin),x2(&evalin));
 	res=assign(res,Tt(iftrue),x2(&iftrue));
-	res=assign(res,Tt(ifelse),entags(x2(&ifelse),"ifelse"));
+	res=assign(res,Tt(ifelse),x2(&ifelse));
 	res=assign(res,Tt(in),x2(&matchany));
 	res=assign(res,Tt(nest),x2(&nest));
 	res=assign(res,Tt(pick),x2(&pick));

@@ -90,6 +90,7 @@ char* repr_c(VP x,char* s,size_t sz) {
 		ch = AS_c(x,i);
 		if(ch=='"') APF(sz,"\\", 0);
 		if(ch=='\n') APF(sz,"\\n", 0);
+		if(ch=='\r') APF(sz,"\\r", 0);
 		else APF(sz,"%c",ch);
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
@@ -439,8 +440,8 @@ VP flatten(VP x) {
 			} else
 				append(res,ELl(x,i));
 		}
-	}
-	return res;
+		return res;
+	} else return xl0();
 }
 VP curtail(VP x) {
 	PF("curtail\n");DUMP(x);
@@ -847,8 +848,8 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			RETURN_IF_EXC(item);
 			if(tag==Ti(listexpr)&&!CONTAINER(item)) item=list(item);
 			PF("subexpression came back with");DUMP(item);
-		}
-
+		} else 
+		// if(LIKELY(IS_c(item)) && tag != tstr) {
 		if(LIKELY(IS_c(item)) && tag != tstr) {
 			ch = AS_c(item,0);
 			if(ch==';') { // end of expr; remove left/x
@@ -953,6 +954,7 @@ VP applyctx(VP x,VP y) {
 		if(LIST(this)) { // code bodies are lists - maybe use 'code tag instead? 
 			PF("CTX CODE BODY\n");DUMP(this);
 			res=applyexpr(x,this,y,0);
+			if(!res) return res;
 		}
 		// NB. if the function body returns an empty list, we try the scopes (dictionaries).
 		// this may not be what we want in the long run.
@@ -1187,6 +1189,24 @@ VP scan(VP x,VP y) { // always returns a list
 	PF("scan result\n");DUMP(acc);
 	return acc;
 }
+VP wide(VP obj,VP f) {
+	int i; VP acc;
+	PF("wide\n");DUMP(info(obj));DUMP(obj);DUMP(f);
+
+	if(!CONTAINER(obj)) return apply(f, obj);
+
+	PF("wide top level\n");DUMP(obj);
+	acc=apply(f,obj);
+	if(CONTAINER(acc)) {
+		for(i=0;i<acc->n;i++) {
+			PF("wide #%d\n",i);
+			PFIN();
+			EL(acc,VP,i)=wide(AS_l(acc,i),f);
+			PFOUT();
+		}
+	}
+	return acc;
+}
 
 // MATHY STUFF:
 
@@ -1290,21 +1310,6 @@ VP lesser(VP x,VP y) {
 	xfree(v0);xfree(v1);
 	return acc;
 }
-VP or(VP x,VP y) { // TODO most of these primitive functions have the same pattern - abstract?
-	int typerr=-1;
-	VP acc;
-	// PF("or\n"); DUMP(x); DUMP(y); // TODO or() and friends should handle type conversion better
-	if(x->n==0) return y;
-	if(y->n==0) return x;
-	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "or arguments should be same length", x, y);	
-	if(x->t == y->t) acc=xalloc(x->t, x->n);
-	else acc=xlsz(x->n);
-	VARY_EACHBOTH(x,y,({ if (_x > _y) appendbuf(acc, (buf_t)&_x, 1); 
-		else appendbuf(acc, (buf_t)&_y, 1); }), typerr);
-	IF_EXC(typerr != -1, Tt(type), "or arg type not valid", x, y);
-	// PF("or result\n"); DUMP(acc);
-	return acc;
-}
 VP min(VP x) { 
 	if (!SIMPLE(x)) return over(x, x2(&and));
 	if(x->n==1)return x;
@@ -1347,6 +1352,33 @@ VP mod(VP x,VP y) {
 	}
 	IF_EXC(typerr > -1, Tt(type), "mod arg wrong type", x, y);
 	PF("mod result\n"); DUMP(acc);
+	return acc;
+}
+VP not(VP x) {
+	int typerr=-1;
+	VP acc;
+	// PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
+	acc=ALLOC_LIKE(x);
+	VARY_EACH(x,({ 
+		_x=!_x; appendbuf(acc,(buf_t)&_x,1);
+	}),typerr);
+	IF_EXC(typerr != -1, Tt(type), "not arg type not valid", x, 0);
+	// PF("and result\n"); DUMP(acc);
+	return acc;
+}
+VP or(VP x,VP y) { // TODO most of these primitive functions have the same pattern - abstract?
+	int typerr=-1;
+	VP acc;
+	// PF("or\n"); DUMP(x); DUMP(y); // TODO or() and friends should handle type conversion better
+	if(x->n==0) return y;
+	if(y->n==0) return x;
+	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "or arguments should be same length", x, y);	
+	if(x->t == y->t) acc=xalloc(x->t, x->n);
+	else acc=xlsz(x->n);
+	VARY_EACHBOTH(x,y,({ if (_x > _y) appendbuf(acc, (buf_t)&_x, 1); 
+		else appendbuf(acc, (buf_t)&_y, 1); }), typerr);
+	IF_EXC(typerr != -1, Tt(type), "or arg type not valid", x, y);
+	// PF("or result\n"); DUMP(acc);
 	return acc;
 }
 VP plus(VP x,VP y) {
@@ -1766,13 +1798,24 @@ VP signaljoin(VP x,VP y) {
 VP nest(VP x,VP y) {
 	VP p1,p2,open,close,opens,closes,where,rep,out;
 	PF("NEST\n");DUMP(x);DUMP(y);
+	//if(!LIST(x) || x->n < 2) return x;
+	if(x->n<2)return x;
 	p1=proj(2,&matcheasy,x,0);
 	p2=proj(2,&matcheasy,x,0);
 	open=apply(y,xi(0)); close=apply(y,xi(1));
+	if(!LIST(x) && x->t != open->t) return x;
+	// if(LIST(open) && x->t != AS_l(open,0)->t) return x;
 	if(_equal(open,close)) {
 		opens=each(open,p1);
 		PF("+ matching opens\n");DUMP(opens);
 		if(_any(opens)) {
+			VP esc = 0;
+			if(y->n >= 3) {
+				esc = matcheasy(x,ELl(y,2));
+				PF("escapes\n");DUMP(esc);
+				EL(opens,VP,0)=and(AS_l(opens,0),shift_(not(esc),-1));
+				PF("new escaped opens\n");
+			}	
 			opens=signaljoin(xb(1),AS_l(opens,0));
 			PF("after signaljoin\n");DUMP(opens);
 			out=partgroups(condense(opens));
@@ -2219,6 +2262,7 @@ VP list2vec(VP obj) {
 	VP acc,this;
 	PF("list2vec\n"); DUMP(obj);
 	if(!LIST(obj)) return obj;
+	if(!obj->n) return obj;
 	acc=ALLOC_LIKE(ELl(obj,0));
 	if(obj->tag!=0) acc->tag=obj->tag;
 	FOR(0,obj->n,({ this=ELl(obj,_i);
@@ -2298,10 +2342,41 @@ VP parselambda(VP x) {
 }
 VP parsestrlit(VP x) {
 	int i,arity=1,typerr=-1,traw=Ti(raw);
-	PF("parsestrlit\n");DUMP(x);
+	PF("PARSESTRLIT!!!\n");DUMP(x);
 	if(LIST(x) && IS_c(AS_l(x,0)) && AS_c(AS_l(x,0),0)=='"') {
-		VP res;
-		res=drop_(drop_(x,-1),1);
+		VP res=xlsz(x->n), el, next; int ch,nextch,last;
+		last=x->n-1;
+		for(i=0;i<x->n;i++) {
+			PF("parsestrlit #%d/%d\n",i,last);
+			el=AS_l(x,i);
+			DUMP(el);
+			if(IS_c(el)) {
+				ch=AS_c(el,0);
+				PF("parselit ch=%c\n",ch);
+				if ((i==0 || i==last) && ch=='"')
+					continue; // skip start/end quotes
+				if (i<last &&
+				    (ch=AS_c(el,0))=='\\') {
+					PF("investigating %d\n",i+1);
+					next=AS_l(x,i+1);
+					if(IS_c(next) && next->n) {
+						nextch=AS_c(next,0);
+						if(nextch=='n') {
+							res=append(res,xc(10)); i++;
+						} else if(nextch=='r') {
+							res=append(res,xc(13)); i++;
+						}
+					}
+				} else  
+					res=append(res,el);
+			} else {
+				res=append(res,el);
+			}
+		}
+		// due to the looping logic, we would wind up with an empty list - we want an empty list with an empty string! :)
+		if(res->n==0) res=append(res,xc0()); 
+		PF("flattenin\n");DUMP(res);
+		res=flatten(res);
 		DUMP(res);
 		// if(PF_LVL) sleep(5);
 	// sleep(2);
@@ -2324,7 +2399,7 @@ VP parsestr(const char* str) {
 	pats=xln(3,
 		proj(2,&nest,0,xln(4, xfroms("//"), xfroms("\n"), xfroms(""), Tt(comment))),
 		proj(2,&nest,0,xln(4, xfroms("/*"), xfroms("*/"), xfroms(""), Tt(comment))),
-		proj(2,&nest,0,xln(5, xfroms("\""), xfroms("\""), xfroms(""), Tt(string), x1(&parsestrlit)))
+		proj(2,&nest,0,xln(5, xfroms("\""), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit)))
 	);
 	ctx=append(ctx,pats);
 	acc=exhaust(acc,ctx);
@@ -2363,7 +2438,7 @@ VP parsestr(const char* str) {
 	t2=t1;
 	for(i=0;i<pats->n;i++) {
 		PF("parsestr exhausting %d\n", i);
-		t2=exhaust(t2,ELl(pats,i));
+		t2=exhaust(t2,proj(2,&wide,0,ELl(pats,i)));
 	}
 	return t2;
 }
@@ -2423,6 +2498,7 @@ void* thr_run0(void* VPctx) {
 }
 void thr_run(VP ctx) {
 	#ifndef THREAD
+	apply(ctx,xl0());
 	#else
 	pthread_attr_t a; pthread_attr_init(&a); pthread_attr_setdetachstate(&a, PTHREAD_CREATE_JOINABLE);
 	// nthr=sysconf(_SC_NPROCESSORS_ONLN);if(nthr<2)nthr=2;
@@ -2500,6 +2576,7 @@ void test_proj() {
 	//DUMP(c);
 }
 void test_proj_thr0(void* _) {
+	/*
 	VP a,b,c,n; int i;
 	for (i=0;i<1024;i++) {
 		printf("TEST_PROJ %d\n", pthread_self());
@@ -2514,6 +2591,7 @@ void test_proj_thr0(void* _) {
 		xfree(a);xfree(b);xfree(c);xfree(n);
 	}
 	return;
+	*/
 }
 void test_proj_thr() {
 	int n = 2, i; void* status;
@@ -2528,10 +2606,10 @@ void test_proj_thr() {
 	for(i=0; i<n; i++) {
 		pthread_join(&thr[i], &status);
 	}
-	*/
 	thr_start();
 	for(i=0;i<n;i++) thr_run(test_proj_thr0);
 	thr_wait();
+	*/
 }
 VP evalin(VP tree,VP ctx) {
 	if(IS_c(tree)) return evalstrin(sfromx(tree),ctx);
@@ -2566,7 +2644,7 @@ void evalfile(VP ctx,const char* fn) {
 	PF("evalfile done"); DUMP(res);
 	});
 	printf("%s\n",repr(res));
-	exit(1);
+	// exit(1); fall through to repl
 }
 void tests() {
 	int i;
