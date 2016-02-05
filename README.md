@@ -80,9 +80,10 @@ this as`./c examples/web-ctr.xxl`. Source code in full:
 ```
 
 The first line declares a global variable named `ctr`. Variables are defined
-using a symbol containing their name. Symbols (also called tags) start with
+using a symbol (also called a tag) containing their name. Symbols start with
 apostrophe `'`.  Names starting with `.` are referrenced from the root of the
-XXL context tree, rather than being resolved in the locals context to start.
+XXL context tree, rather than being resolved in the locals context to start, which makes
+them behave something like globals in traditional languages.
 
 The second line invokes the built in `.net.bind` verb. On the left is the configuration
 options. In this case, port 8080 on localhost.
@@ -91,11 +92,19 @@ On the right side of the `.net.bind` verb we supply a callback to be invoked whe
 and a request is received. This callback is invoked with one argument, which is a list containing the request
 body in the first member and the remote IP address in the second.
 
-At the moment, `.net.bind` only supports client-speaks-first-style
-servers, such as HTTP.
+At the moment, `.net.bind` only supports client-speaks-first-style network
+protocols, such as HTTP.
 
 Inside the callback, we display the request on the server's screen (`x show`), increase
-and store the counter value, and then generate an HTTP response. Voila.
+and store the counter value, and then generate an HTTP response with a couple of headers.
+
+Since we want to include the counter's current value, we append it to the string after
+calling `repr` on the counter value only (since it's in parenthesis). The resulting list
+needs to be flattened so we can spit it out as one long string to the client's socket, so
+we call XXL's `flat` verb, which removes a level of nesting on a general list (akin to
+`raze` in Q).
+
+Voila!
 
 ## More examples
 
