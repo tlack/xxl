@@ -84,7 +84,7 @@ using a symbol containing their name. Symbols (also called tags) start with
 apostrophe `'`.  Names starting with `.` are referrenced from the root of the
 XXL context tree, rather than being resolved in the locals context to start.
 
-The second line invokes the built in .net.bind verb. On the left is the configuration
+The second line invokes the built in `.net.bind` verb. On the left is the configuration
 options. In this case, port 8080 on localhost.
 
 On the right side of the `.net.bind` verb we supply a callback to be invoked when a connection is made
