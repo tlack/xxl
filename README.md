@@ -177,11 +177,12 @@ wrong (which they will.. often).
 
 ## Size
 
-XXL is about 3,000 lines of hand-written C, plus 2000 lines of auto-generated
+XXL is about 3,000 lines of hand-written C, plus 2,000 lines of auto-generated
 .h files. Stripped executable is about 400kb.
 
-I dislike large systems and aim to keep XXL small, though I would like to make
-code sharing easy and convenient ala npm (though different in many respects).
+I dislike large systems and aim to keep XXL small, but I also want programmers
+to be able to easily get at functionality they need, both through a decent set
+of built-ins, and through something akin to npm (still pondering this).
 
 I believe XXL could be reduced to 1,000 lines or less of JavaScript or another
 language that offers a more flexible type system than C's. I also wrote different
