@@ -2,5 +2,5 @@
 (8080,"").net.bind{
 	x show;
 	.ctr + 1 as '.ctr; 
-	"HTTP/1.0 200 OK\r\nConnection: close\r\nServer: xxl v0.0\r\n\r\nHello ",
-	(.ctr repr) flat}
+	"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\nServer: xxl v0.0\r\n\r\nHello ",
+	(.ctr repr),"\r\n" flat}
