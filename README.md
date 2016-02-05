@@ -1,6 +1,10 @@
 ![XXL logo](http://www.modernmethod.com/send/files/xxl-logo-2.png)
 
-# XXL, a small language
+# What is XXL?
+
+XXL is a new programming language whose goals are simplicity, power, and speed.
+We throw out most of conventional programming language thinking in order to
+attain these goals.
 
 ## Status
 
@@ -61,7 +65,45 @@ As you can say, 3 cleanly divides 9, so the value in that position is zero.
 zero, that means that the target number can be evenly divided by one of
 the numbers lower than it, and thus, it is not prime. Tada!
 
-See the various tests for more examples. 
+## Web Server
+
+Here's an example web server application that acts as a counter. You can run
+this as`./c examples/web-ctr.xxl`. Source code in full:
+
+```
+0 as '.ctr;
+(8080,"localhost").net.bind{
+	x show;
+	.ctr + 1 as '.ctr;
+	"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n",
+	"Connection: close\r\nServer: xxl v0.0\r\n\r\nHello ",
+		(.ctr repr),"\r\n" flat}
+```
+
+The first line declares a global variable named ctr. Variables are defined
+using a symbol containing their name. Symbols (also called tags) start with
+apostrophe `'`.  Names starting with `.` are referrenced from the root of the
+XXL context tree, rather than being resolved in the locals context to start.
+
+The second line invokes the built in .net.bind verb. On the left is the configuration
+options. In this case, port 8080 on localhost.
+
+On the right side of the `.net.bind` verb we supply a callback to be invoked when a connection is made
+and a request is received. This callback is invoked with one argument, which is a list containing the request
+body in the first member and the remote IP address in the second.
+
+At the moment, `.net.bind` only supports client-speaks-first-style
+servers, such as HTTP.
+
+Inside the callback, we display the request on the server's screen (`x show`), increase
+and store the counter value, and then generate an HTTP response. Voila.
+
+## More examples
+
+This inchoate document is no excuse for real documentation, which is coming soon.
+
+See the various tests for more examples. In particular, you may appreciate
+`test-ctx.h and `test-logic.h`.
 
 ## Philosophy
 
@@ -97,6 +139,7 @@ syntax.
 - Minimalist syntax. Clean, very easy to understand and parse left-to-right
 	syntax with only three special forms: comments, strings, and grouping (i.e.,
 	`( )` and `{ }`)
+- Agnostic about whitespace. Don't let invisible special characters ruin your day.
 - Very fast operations on values, especially large arrays (pretty slow parser, though)
 - Vector-oriented and convenient operation on primitives 
 - Diverse integer type options, including 128bit octoword (denoted with `o`).
