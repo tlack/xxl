@@ -2576,6 +2576,7 @@ void test_proj() {
 	//DUMP(c);
 }
 void test_proj_thr0(void* _) {
+	/*
 	VP a,b,c,n; int i;
 	for (i=0;i<1024;i++) {
 		printf("TEST_PROJ %d\n", pthread_self());
@@ -2590,6 +2591,7 @@ void test_proj_thr0(void* _) {
 		xfree(a);xfree(b);xfree(c);xfree(n);
 	}
 	return;
+	*/
 }
 void test_proj_thr() {
 	int n = 2, i; void* status;
@@ -2604,10 +2606,10 @@ void test_proj_thr() {
 	for(i=0; i<n; i++) {
 		pthread_join(&thr[i], &status);
 	}
-	*/
 	thr_start();
 	for(i=0;i<n;i++) thr_run(test_proj_thr0);
 	thr_wait();
+	*/
 }
 VP evalin(VP tree,VP ctx) {
 	if(IS_c(tree)) return evalstrin(sfromx(tree),ctx);
