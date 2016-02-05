@@ -88,9 +88,11 @@ them behave something like globals in traditional languages.
 The second line invokes the built in `.net.bind` verb. On the left is the configuration
 options. In this case, port 8080 on localhost.
 
-On the right side of the `.net.bind` verb we supply a callback to be invoked when a connection is made
-and a request is received. This callback is invoked with one argument, which is a list containing the request
-body in the first member and the remote IP address in the second.
+On the right side of the `.net.bind` verb we supply an anonymous function body
+to act as the callback to be invoked when a connection is made and a request is
+received. This callback is invoked with one argument, which is a list
+containing the request body in the first member and the remote IP address in
+the second.
 
 At the moment, `.net.bind` only supports client-speaks-first-style network
 protocols, such as HTTP.
@@ -111,7 +113,7 @@ Voila!
 This inchoate document is no excuse for real documentation, which is coming soon.
 
 See the various tests for more examples. In particular, you may appreciate
-`test-ctx.h and `test-logic.h`.
+`test-ctx.h` and `test-logic.h`.
 
 ## Philosophy
 
@@ -128,9 +130,14 @@ See the various tests for more examples. In particular, you may appreciate
 - *Fast*. XXL cares deeply about performance, for the same reason a person should care
 	about the quality of any tool they use for professional work. 
 
+- *Tangible*. Abstractions provided by many systems and platforms make it much harder
+  to reason about what your program is doing. XXL just helps you program the computer
+	in the way the computer wants to be programmed. Those with a background in assembly
+	might see some familiar tones in XXL.
+
 ## Inspiration
 
-K4/Q by [Kx Systems&trade;](http://kx.com), 
+K4/Q by [Kx Systems&trade;](http://kx.com), the quirky
 [Klong by Nils Holm](http://t3x.org/klong/), Erlang
 (process model, introspection, parse tree/transforms), 
 [Kerf's approachablity](http://kerfsoftware.com), 
@@ -149,7 +156,9 @@ syntax.
 	`( )` and `{ }`)
 - Agnostic about whitespace. Don't let invisible special characters ruin your day.
 - Very fast operations on values, especially large arrays (pretty slow parser, though)
-- Vector-oriented and convenient operation on primitives 
+- Vector-oriented and convenient operation on primitive values. For instance,
+  `1,2,3 * (4,5,6)` is perfectly legal and returns 4,10,18. This is a huge time saver
+	and eliminates many loops.
 - Diverse integer type options, including 128bit octoword (denoted with `o`).
 - Threading support, kinda (requires attention)
 - Values can have `tags` associated with them, allowing you to create an
@@ -157,7 +166,13 @@ syntax.
 	seamlessly as if you were using the underlying data type.
 - BSD license
 - Built in web server (half way there at least)
-- Very small
+- Variable names can't contain numbers, so you can build up some pretty clean and
+  short expressions that mirror mathematics. `3u b5` means `3 * u b 5`, assuming
+	u is a single argument (unary) function and b is a two argument (binary) function.
+	If you're recoiling in horror right now at losing your precious numerals in variable
+	names, consider how often you're just poorly naming a temp variable.
+- Variable names can contain `?`, so you can name your predicate functions in a
+	pleasant manner.
 - No stinkin loops (and no linked lists, either)
 - Supports `\\` to exit the REPL, as god intended (`quit` and `exit` too)
 
@@ -181,12 +196,26 @@ major features I anticipate finishing soon-ish.
 - Mailboxes/processes (implemented as a writer-blocks general list)
 - Streams (perhaps a mailbox as well; studying other systems now)
 
+## Well known bugs
+
+Work in progress on these:
+
+- Comments have some decent tests, but the comment parser/lexer still seems to get confused
+in longer code samples. 
+
+- The join verb (`,`) is still finnicky about joining like-types of data with
+	general lists. In particular, I often find myself a bit puzzled by results
+	like `['a,2],3` - should this be a two-item list with two items in the first
+	sublist, or a three element list? Before you answer, consider `['a,2] as
+	'q;q,3`.
+
 ## Open questions
 
 - What syntax for `each`, `eachleft`, `eachright`, `eachboth`, and `eachpair`?
   Experimenting with `@` at this time, but open to suggestions.
 
-- What's the best way to represent dates/times and time spans? 
+- What's the best way to represent dates/times and time spans? What about datetime literals in
+  source code? 
 
 - Should our tag/symbol implementation work with ints or char pointers? 
 
