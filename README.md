@@ -21,7 +21,7 @@ Let's dive in with a simple prime number tester (returns 0 if not prime, >0
 otherwise):
 
 ```
-17 {til drop 2 % x min}
+17 {count drop 2 % x min}
 ```
 
 Here's how it works:
@@ -30,10 +30,10 @@ Here's how it works:
 
 `{..}` marks an anonymous function (also called a closure or lambda).
 
-`til` returns the numbers from 0 til its left argument. Note that in this
-case we're using the "implied" x variable that is silently prepended to
-all lines. This is equivalent to saying `x til`. In our example with 17,
-the result would be `(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16i)`.
+`count` returns the range of numbers from 0 until its left argument. Note that
+in this case we're using the "implied" x variable that is silently prepended to
+all lines. This is equivalent to saying `x count`. In our example with 17, the
+result would be `(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16i)`.
 
 `drop 2` removes the first two items - 0 and 1 in this case. Our expression
 currently stands at `(2,3,4,5,6,7,8,8,9,10,11,12,13,14,15,16i)`.
@@ -55,7 +55,7 @@ be prime.
 If you try it with a different sequence, you'll see why this works:
 
 ```
-9 til drop 2 % 9
+9 count drop 2 % 9
 (1,0,1,4,3,2,1i)
 ```
 
@@ -153,7 +153,7 @@ syntax.
 
 - Minimalist syntax. Clean, very easy to understand and parse left-to-right
 	syntax with only three special forms: comments, strings, and grouping (i.e.,
-	`( )` and `{ }`)
+	`( )`, `[ ]` and `{ }`)
 - Agnostic about whitespace. Don't let invisible special characters ruin your day.
 - Very fast operations on values, especially large arrays (pretty slow parser, though)
 - Vector-oriented and convenient operation on primitive values. For instance,
@@ -195,6 +195,8 @@ major features I anticipate finishing soon-ish.
 - Logged updates (I like [Kdb's approach to this](http://code.kx.com/wiki/Cookbook/Logging))
 - Mailboxes/processes (implemented as a writer-blocks general list)
 - Streams (perhaps a mailbox as well; studying other systems now)
+- Tail call optimization in functions using the `self` keyword as 
+	[as per Kuc's approach](https://github.com/zholos/kuc/blob/1cace4608ba0398de6054349abea9b97100386cd/func.c#L726)
 
 ## Well known bugs
 
@@ -227,7 +229,7 @@ in longer code samples.
 
 ## Probably not
 
-- proper unicode
+- Unicode
 
 ## Installation
 
