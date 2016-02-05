@@ -24,8 +24,9 @@
 	res=assign(res,Tt(*),x2(&times));
 	res=assign(res,Tt(/),x2(&divv));
 	res=assign(res,Tt(%),x2(&mod));
-	res=assign(res,Tt(|),x2(&or));
 	res=assign(res,Tt(&),x2(&and));
+	res=assign(res,Tt(|),x2(&or));
+	res=assign(res,Tt(^),x2(&xor));
 	res=assign(res,xt(_tagnums("<")),x2(&lesser));
 	res=assign(res,xt(_tagnums(">")),x2(&greater));
 	res=assign(res,Tt(~),x2(&matcheasy));
