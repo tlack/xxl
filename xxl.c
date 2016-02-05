@@ -2490,6 +2490,7 @@ void* thr_run0(void* VPctx) {
 }
 void thr_run(VP ctx) {
 	#ifndef THREAD
+	apply(ctx,xl0());
 	#else
 	pthread_attr_t a; pthread_attr_init(&a); pthread_attr_setdetachstate(&a, PTHREAD_CREATE_JOINABLE);
 	// nthr=sysconf(_SC_NPROCESSORS_ONLN);if(nthr<2)nthr=2;
