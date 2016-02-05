@@ -73,14 +73,13 @@ this as`./c examples/web-ctr.xxl`. Source code in full:
 ```
 0 as '.ctr;
 (8080,"localhost").net.bind{
-	x show;
-	.ctr + 1 as '.ctr;
+	x show; .ctr + 1 as '.ctr;
 	"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n",
 	"Connection: close\r\nServer: xxl v0.0\r\n\r\nHello ",
 		(.ctr repr),"\r\n" flat}
 ```
 
-The first line declares a global variable named ctr. Variables are defined
+The first line declares a global variable named `ctr`. Variables are defined
 using a symbol containing their name. Symbols (also called tags) start with
 apostrophe `'`.  Names starting with `.` are referrenced from the root of the
 XXL context tree, rather than being resolved in the locals context to start.
