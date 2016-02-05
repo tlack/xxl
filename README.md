@@ -81,7 +81,7 @@ this as`./c examples/web-ctr.xxl`. Source code in full:
 
 The first line declares a global variable named `ctr`. Variables are defined
 using a symbol (also called a tag) containing their name. Symbols start with
-apostrophe `'`.  Names starting with `.` are referrenced from the root of the
+apostrophe `'`.  Names starting with `.` are referenced from the root of the
 XXL context tree, rather than being resolved in the locals context to start, which makes
 them behave something like globals in traditional languages.
 
@@ -155,17 +155,6 @@ syntax.
 	syntax with only three special forms: comments, strings, and grouping (i.e.,
 	`( )`, `[ ]` and `{ }`)
 - Agnostic about whitespace. Don't let invisible special characters ruin your day.
-- Very fast operations on values, especially large arrays (pretty slow parser, though)
-- Vector-oriented and convenient operation on primitive values. For instance,
-  `1,2,3 * (4,5,6)` is perfectly legal and returns 4,10,18. This is a huge time saver
-	and eliminates many loops.
-- Diverse integer type options, including 128bit octoword (denoted with `o`).
-- Threading support, kinda (requires attention)
-- Values can have `tags` associated with them, allowing you to create an
-	OOP-like concept of structure within data, while all regular operations work
-	seamlessly as if you were using the underlying data type.
-- BSD license
-- Built in web server (half way there at least)
 - Variable names can't contain numbers, so you can build up some pretty clean and
   short expressions that mirror mathematics. `3u b5` means `3 * u b 5`, assuming
 	u is a single argument (unary) function and b is a two argument (binary) function.
@@ -173,8 +162,22 @@ syntax.
 	names, consider how often you're just poorly naming a temp variable.
 - Variable names can contain `?`, so you can name your predicate functions in a
 	pleasant manner.
+- Values can have "tags" associated with them, allowing you to create an
+	OOP-like concept of structure within data, while all regular operations work
+	seamlessly as if you were using the underlying data type. Consider the
+	classic OOP example of a "point", which in XXL would just be a tagged int
+	vector like `'point(100,150)`
+- Very fast operations on arrays of values, especially large ones (don't get
+	too excited - the parser is pretty slow)
+- Vector-oriented and convenient manipulation on primitive values. For instance,
+  `1,2,3 * (4,5,6)` is perfectly legal and returns 4,10,18. This is a huge time saver
+	and eliminates many loops.
+- Diverse integer type options, including 128bit octoword (denoted with `o`).
+- Threading support, kinda (requires attention)
+- Built in web server (half way there at least)
 - No stinkin loops (and no linked lists, either)
 - Supports `\\` to exit the REPL, as god intended (`quit` and `exit` too)
+- BSD license
 
 ## Not yet implemented
 

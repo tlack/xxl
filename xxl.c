@@ -1436,13 +1436,13 @@ VP sums(VP x) {
 	PF("sums result\n"); DUMP(acc);
 	return acc;
 }
-VP til(VP x) {
+VP count(VP x) {
 	VP acc=0;int i;int typerr=-1;
-	PF("til\n"); DUMP(x);
+	PF("count\n"); DUMP(x);
 	VARY_EL_NOFLOAT(x, 0, 
 		{ __typeof__(_x) i; acc=xalloc(x->t,MAX(_x,1)); acc->n=_x; for(i=0;i<_x;i++) { EL(acc,__typeof__(i),i)=i; } }, 
 		typerr);
-	IF_RET(typerr>-1, EXC(Tt(type), "til arg must be numeric", x, 0));
+	IF_RET(typerr>-1, EXC(Tt(type), "count arg must be numeric", x, 0));
 	DUMP(acc);
 	return acc;
 }
@@ -1474,6 +1474,24 @@ VP xor(VP x,VP y) {
 }
 
 // MANIPULATING LISTS AND VECTORS (misc):
+
+VP key(VP x) {
+	if(DICT(x)) return ELl(x,0);
+	if(IS_x(x)){ // locals for context
+		int i;VP item;
+		for(i=x->n-1;i>=0;i--) 
+			if(DICT(ELl(x,i)))
+				return ELl(ELl(x,i),0);
+		return xd0();
+	}
+	if(SIMPLE(x)) return count(xi(x->n));
+	return EXC(Tt(type),"key can't operate on that type",x,0);
+}
+
+VP val(VP x) {
+	if(DICT(x)) return ELl(x,1);
+	return EXC(Tt(type),"val can't operate on that type",x,0);
+}
 
 VP get(VP x,VP y) {
 	// TODO get support nesting
@@ -2565,8 +2583,8 @@ void test_proj() {
 	VP a,b,c,n;
 	printf("TEST_PROJ\n");
 	n=xi(1024*1024);
-	//a=proj(1,&til,n,0);
-	a=x1(&til);
+	//a=proj(1,&count,n,0);
+	a=x1(&count);
 	b=apply(a,n);
 	PF("b\n");DUMP(b);
 	c=apply(proj(1,&sum,b,0),0);
@@ -2581,8 +2599,8 @@ void test_proj_thr0(void* _) {
 	for (i=0;i<1024;i++) {
 		printf("TEST_PROJ %d\n", pthread_self());
 		n=xi(1024*1024);
-		//a=proj(1,&til,n,0);
-		a=x1(&til);
+		//a=proj(1,&count,n,0);
+		a=x1(&count);
 		b=apply(a,n);
 		PF("b\n");DUMP(b);
 		c=apply(proj(1,&sum,b,0),0);

@@ -199,8 +199,8 @@
 	ASSERT(_equal(a,b)&&b->n==2&&AS_b(b,0)==9,"cbb");
 	xfree(a);xfree(b);
 
-	ASSERT(_equal(til(xb(3)),xbn(3,0,1,2)),"til b");
-	ASSERT(_equal(til(xo(3)),xon(3,0,1,2)),"til o");
+	ASSERT(_equal(count(xb(3)),xbn(3,0,1,2)),"count b");
+	ASSERT(_equal(count(xo(3)),xon(3,0,1,2)),"count o");
 
 	c=and(xi(0),xi(1));
 	DUMP(c);
@@ -282,4 +282,9 @@
 	b=split(a,xfroms("."));
 	DUMP(b);
 	ASSERT(_equal(xln(5,xc0(),xfroms("hello"),xc0(),xfroms("there"),xc0()),b),"split char token 1");
+	xfree(a);xfree(b);
+
+	a=xd0();a=assign(a,Tt(q),xi(10));a=assign(a,Tt(w),xi(11));b=key(a);
+	ASSERT(_equal(b,xln(2,Tt(q),Tt(w))),"key0");
+	ASSERT(_equal(key(xin(3,5,6,7)),xin(3,0,1,2)),"key1");
 

@@ -31,7 +31,7 @@
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
 	ctx=mkworkspace(); // simple unary function application
-	tmp1=xl(proj(1,&til,0,0));
+	tmp1=xl(proj(1,&count,0,0));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(4));
 	DUMP(tmp2);
@@ -39,7 +39,7 @@
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
 	ctx=mkworkspace(); // try applying an index to a function result
-	tmp1=xln(2,proj(1,&til,0,0),xi(2));
+	tmp1=xln(2,proj(1,&count,0,0),xi(2));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(5));
 	DUMP(tmp2);
@@ -47,7 +47,7 @@
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
 	ctx=mkworkspace(); // subexpression
-	tmp1=xln(2,proj(2,&plus,xi(2),0),proj(1,&til,0,0));
+	tmp1=xln(2,proj(2,&plus,xi(2),0),proj(1,&count,0,0));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(4));
 	DUMP(tmp2);
@@ -193,14 +193,14 @@
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
-	append(ctx,parsestr("{til}"));
+	append(ctx,parsestr("{count}"));
 	tmp1=apply(ctx,xi(3));
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,xin(3,0,1,2)),"test parsestr 17");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
-	append(ctx,parsestr("til+2 each {til}"));
+	append(ctx,parsestr("count+2 each {count}"));
 	tmp1=apply(ctx,xi(3));
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,xln(3,xin(2,0,1),xin(3,0,1,2),xin(4,0,1,2,3))),"test parsestr 18");
@@ -395,10 +395,8 @@
 	ASSERT(_equal(tmp1,xcn(7,'a','"','b','"','c',13,10)),"parse quoted string");
 	xfree(ctx);xfree(tmp1);
 
-	PFW({
 	ctx=mkworkspace();
 	append(ctx,parsestr("\"\""));
 	tmp1=apply(ctx,0);
 	ASSERT(_equal(tmp1,xc0()),"parse empty quoted string");
-	});
 

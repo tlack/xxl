@@ -7,6 +7,7 @@
 	res=assign(res,Tt(flat),x1(&flatten));
 	res=assign(res,Tt(last),x1(&last));
 	res=assign(res,Tt(len),x1(&len));
+	res=assign(res,Tt(key),x1(&key));
 	res=assign(res,Tt(min),x1(&min));
 	res=assign(res,Tt(max),x1(&max));
 	res=assign(res,Tt(not),x1(&not));
@@ -15,7 +16,8 @@
 	res=assign(res,Tt(rev),x1(&reverse));
 	res=assign(res,Tt(show),x1(&show));
 	res=assign(res,Tt(sum),x1(&sum));
-	res=assign(res,Tt(til),x1(&til));
+	res=assign(res,Tt(count),x1(&count));
+	res=assign(res,Tt(val),x1(&val));
 	res=assign(res,Tt(ver),xi(0));
 
 	// infix/binary operators
