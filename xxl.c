@@ -1891,246 +1891,6 @@ VP nest(VP x,VP y) {
 	PF("nest returning\n"); DUMP(out);
 	return out;
 }
-
-static inline void matchanyof_(const VP obj,const VP pat,const int max_match,int* n_matched,int* matchidx) {
-	int i=0,j=0;VP item,rule,tmp=xi(0);
-	int submatches;
-	int submatchidx[1024];
-	for(;i<obj->n;j++) {
-		for(;i<pat->n;i++) {
-			EL(tmp,int,0)=i;
-			item=apply(obj,tmp);
-			rule=apply(obj,tmp);
-			xfree(item);
-		}
-	}
-}
-
-static inline int match_(const VP obj_,int ostart, const VP pat_, int pstart, 
-		const int max_match,const int max_fails, 
-		int* n_matched,int* matchidx) {
-	// abandon all hope, ye who enter here
-	int anyof=_tagnums("anyof"),exact=_tagnums("exact"),greedy=_tagnums("greedy"),start=_tagnums("start"),
-			not=_tagnums("not");
-	int matchopt;
-	int io, ip;
-	int done,found;
-	VP obj,pat,item=NULL,rule=NULL,iov,ipv;
-	int submatches;
-	int submatchidx[1024];
-	int i,tag;
-	int gotmatch;
-	int io_save;
-
-	#define MATCHOPT(tag) ({ \
-		if(tag != 0 && \
-			 (tag==anyof||tag==exact||tag==greedy||tag==start\
-			  ||tag==not)) { \
-			PF("adopting matchopt %d %s\n", tag, tagnames(tag)); \
-			matchopt = tag; \
-			tag = 0; \
-		} }) 
-
-	pat=pat_; obj=obj_;
-	tag=pat->tag;
-
-	PF("### MATCH_ ostart=%d pstart=%d mm=%d nm=%d, obj and pat:\n",ostart,pstart,max_match,*n_matched);
-	DUMP(obj);DUMP(pat);
-	//DUMPRAW(matchidx,max_match);
-
-	matchopt=0;
-	MATCHOPT(tag);
-	if(ENLISTED(pat)) {
-		PF("picked up enlisted pat, grabbed \n");
-		pat=ELl(pat,0);
-		MATCHOPT(pat->tag);
-		DUMP(pat);
-	}
-	if(matchopt==exact&&obj->n!=pat->n) {
-		gotmatch=0;
-		PF("exact match sizes don't match"); goto fin;
-	}
-	io=ostart; ip=pstart; iov=xi(io); ipv=xi(ip);
-	done=0; found=0; gotmatch=0;
-	if(tag != 0 && tag != obj->tag) {
-		gotmatch=0;
-		PF("tag mismatch at top level p=%d, o=%d\n", pat->tag, obj->tag); found=0; goto fin;
-	}
-	if(pat->n==0) { 
-		PF("empty pat means success\n");
-		gotmatch++;
-		matchidx[*n_matched]=ostart;
-		(*n_matched)=(*n_matched)+1;
-		goto fin;
-	}
-	while (!done && gotmatch < max_match) {
-		found=0;
-		EL(iov,int,0)=io; EL(ipv,int,0)=ip;
-		if(item)xfree(item); if(rule)xfree(rule);
-		item=apply(obj, iov); rule=apply(pat, ipv); found=0;
-		PF("((( Match loop top. type=%s obj=%d pat=%d: \n",tagnames(matchopt),io,ip);
-		DUMP(item);DUMP(rule);
-
-		if(LIST(rule)) { 
-			PF("Attempting submatch due to rule being a list..\n"); DUMP(item); DUMP(rule);
-			PFIN();
-			submatches=*n_matched;
-			memcpy(submatchidx, matchidx, sizeof(submatchidx)/sizeof(int));
-			match_(obj,io,rule,0,sizeof(submatchidx)/sizeof(int),0,&submatches,matchidx);
-			PFOUT();
-			if(submatches - *n_matched > 0) {
-				PF("Got %d submatches for obj=%d pat=%d\n",submatches,io,ip);found=1;
-				io=io + (submatches - *n_matched) -1;
-				PF("!!!! NEW IO %d\n", io);
-				*n_matched=submatches-1;
-				DUMP(item);
-				DUMP(rule);
-			}
-			goto done;
-		}
-
-		if(IS_t(rule)) {
-			if((AS_t(rule,0) != item->tag && AS_t(rule,0) != obj->tag) ||
-				 (rule->tag != 0 && item->tag != rule->tag)) {
-				PF("tag mismatch rule=%d, item=%d\n", rule->tag, item->tag); 
-				found=0; goto done;
-			}
-			PF("))) Tag rule seemed to match; continuing..\n");
-			ip++;
-			continue;
-		}
-		// Tags used as arguments in match expressions match the type of the object
-		// TODO rethink tag matching - seems ambiguous
-		if(!IS_t(rule) && item->t != rule->t) {
-			PF("Type mismatch rule=%d, item=%d\n", rule->t, item->t); found=0; goto done;
-		}
-		if(!IS_t(rule) && rule->n==0) { 
-			PF("Empty rule = found\n"); found=1; goto done;
-		} // empty rules are just type/tag checks
-		if(_equal(item,rule)) {
-			if(matchopt == not || rule->tag == not) {
-				PF("Match_ equal, but NOT mode = not found\n"); found=0; goto done;
-			} else {
-				PF("Match_ equal = found\n"); found=1; goto done;
-			}
-		} else {
-			if(matchopt == not || rule->tag == not) {
-				PF("Match NOT equal, but NOT mode = found\n"); found=1; goto done;
-			}
-		}
-
-		done:
-		if(found) {
-			gotmatch++;
-			PF("+++ FOUND! result #%d, io=%d, ip=%d..\n", *n_matched, io, ip);
-			DUMP(item);
-			DUMP(rule);
-			found=0;
-			for(i=0;i<*n_matched;i++) {
-				if (matchidx[i]==io) found=1;
-			}
-			if (!found)matchidx[*n_matched]=io;
-			found=1;
-			*n_matched=*n_matched+1;
-			if(matchopt==anyof) {
-				io++;
-				ip++;
-			} else if (matchopt==exact) {
-				io++;
-				ip++;
-			} else if (matchopt==greedy) {
-
-				if (IS_t(rule) && rule->n==1 && ip==0) {
-					// even if we're doing a greedy match, if the first element
-					// is a tag, we only want to match the tags of subsequent
-					// elements.. so move beyond it even if greedy
-					PF("greedy submatch for empty tag == tag match, continue..\n");
-					ip++;
-					continue;
-				}
-
-				PF(">> greedy submatch on obj %d/%d\n", io, obj->n);
-				PFIN();
-				// if(rule->tag == 0) rule=tagv("start",rule);
-				io++;
-				io_save=io;
-				while (io < obj->n && (submatches=match_(obj, io, rule, 0, max_match, 1, n_matched, matchidx))) {
-					io+=submatches;
-					gotmatch+=submatches;
-					io_save+=submatches;
-					PFOUT();
-					PF(">> greedy advancing to %d/%d, nm=%d, sm=%d, ", io, obj->n, *n_matched, submatches);
-					PF("so far: ");
-					PFIN();
-				}
-				if(gotmatch==0) {
-					io=io_save;
-					PF("<< no submatches, decreasing io to %d\n", io);
-				}
-				PFOUT();
-				ip++;
-				PF("<< inner greedy done at io=%d, increase ip=%d\n", io, ip);
-			} else if (matchopt==start) {
-				io++;
-				ip++;
-			} else {
-				io++;
-				// special case for scalar patterns: try to match all items against it
-				if(pat->n > 1) 
-					ip++;
-			}
-		} else {
-			PF("--- not found! obj=%d pat=%d (result pos #%d)\n", io, ip, *n_matched);
-			if(matchopt==anyof) {
-				ip++;
-				if(ip==pat->n) {
-					PF("restarting anyof on next obj, resetting ip\n");
-					io++;
-					ip=0;
-				}
-			} else if(max_fails>=1) {
-				goto fin;
-			} else if (matchopt==exact) {
-				goto fin;
-			} else if (matchopt==greedy) {
-				io++;
-				if(gotmatch) ip++; // if we've already seen a match, and we don't match this time, try next rule
-			} else if (matchopt==start) {
-				goto fin;
-			} else {
-				io++;
-			}
-		}
-		if(ip>=pat->n||io>=obj->n) done=1;
-		PF("done=%d\n",done);
-		PF("))) Match loop end.. done=%d, type=%s, found=%d, obj=%d/%d, pat=%d/%d\n", 
-			done, tagnames(matchopt), found, io, obj->n, ip, pat->n);
-	}
-
-	fin:
-	if(item)xfree(item); if(rule)xfree(rule);
-	PF("done in match_ with %d matches ", *n_matched);
-	if(PF_LVL) { FOR(0,(*n_matched),printf("%d ",matchidx[_i])); printf("\n"); }
-	return gotmatch;
-}
-int matchpass(VP obj,VP pat) { 
-	// degenerate version of match() when we dont care about pass/fail, not results
-	int n_matches=0;
-	int matchidx[1024]={0};
-	match_(obj,0,pat,0,sizeof(matchidx)/sizeof(int),0,&n_matches,&matchidx);
-	return n_matches;
-}
-VP match(VP obj,VP pat) {
-	int n_matches=0;
-	int matchidx[1024];
-	VP acc;
-	match_(obj,0,pat,0,sizeof(matchidx)/sizeof(int),0,&n_matches,&matchidx);
-	acc=xisz(n_matches); // TODO match() limited to 4bil items due to int as idx
-	if(n_matches)
-		appendbuf(acc,(buf_t)&matchidx,n_matches);
-	PF("match() obj, pat, and result:\n"); DUMP(obj); DUMP(pat); DUMP(acc);
-	return acc;
-}
 VP matchany(VP obj,VP pat) {
 	IF_EXC(!SIMPLE(obj) && !LIST(obj),Tt(type),"matchany only works with simple or list types in x",obj,pat);
 	// IF_EXC(!SIMPLE(pat),Tt(type),"matchany only works with simple types in y",obj,pat);
@@ -2396,8 +2156,6 @@ VP parsestrlit(VP x) {
 		PF("flattenin\n");DUMP(res);
 		res=flatten(res);
 		DUMP(res);
-		// if(PF_LVL) sleep(5);
-	// sleep(2);
 		return res;
 	} else {
 		PF("parsestrlit not interested in\n");
@@ -2555,9 +2313,6 @@ void test_deal_speed() {
 void test_eval() {
 	#include"test-eval.h"
 }
-void test_match() {
-	#include"test-match.h"
-}
 void test_json() {
 	VP mask, jsrc, res; char str[256]={0};
 	strncpy(str,"[[\"abc\",5,[\"def\"],6,[7,[8,9]]]]",256);
@@ -2673,7 +2428,6 @@ void tests() {
 		// xprofile_start();
 		printf("TESTS START\n");
 		test_basics();
-		test_match();
 		test_nest();
 		// test_json();
 		test_ctx();

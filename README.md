@@ -200,6 +200,7 @@ major features I anticipate finishing soon-ish.
 - Streams (perhaps a mailbox as well; studying other systems now)
 - Tail call optimization in functions using the `self` keyword as 
 	[as per Kuc's approach](https://github.com/zholos/kuc/blob/1cace4608ba0398de6054349abea9b97100386cd/func.c#L726)
+- Sorted vectors
 
 ## Well known bugs
 
@@ -215,6 +216,10 @@ in longer code samples.
 	'q;q,3`.
 
 ## Open questions
+
+- Date and time stamps: Nanosecond precision from uint64 sufficient? What about literal
+  representation? Can we use `1997.12.31.09.31.45.333` or something non-pollutey like that?
+	Need to patch up apply() to allow you to index `'day` and similar.
 
 - What syntax for `each`, `eachleft`, `eachright`, `eachboth`, and `eachpair`?
   Experimenting with `@` at this time, but open to suggestions.
