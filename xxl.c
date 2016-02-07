@@ -870,7 +870,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				PF("created set projection\n");
 				DUMP(left);
 				continue;
-			} else if(item->n==2 && ch=='.' && AS_c(item,1)=='t') {
+			} else if(item->n==2 && ch=='.' && AS_c(item,1)=='t') {  // TODO .t should be an operator or variable 
 				printf("timer on\n");
 				st=clock();
 				continue;
@@ -2105,12 +2105,12 @@ VP parsenum(VP x) {
 	} else return res;
 }
 VP parselambda(VP x) {
-	int i,arity=1,typerr=-1,traw=Ti(raw); VP this;
+	int i,arity=1,typerr=-1,tname=Ti(name),traw=Ti(raw); VP this;
 	PF("parselambda\n");DUMP(x);
 	x=list(x);
 	for(i=0;i<x->n;i++) {
-		this=ELl(x,i);
-		if(IS_c(this) && this->tag==traw && AS_c(this,0)=='y') { 
+		this=ELl(x,i); // not alloced, no need to free
+		if(IS_c(this) && this->tag==tname && AS_c(this,0)=='y') { 
 			arity=2;break;
 		}
 	};

@@ -400,3 +400,10 @@
 	tmp1=apply(ctx,0);
 	ASSERT(_equal(tmp1,xc0()),"parse empty quoted string");
 
+	ctx=mkworkspace();
+	append(ctx,parsestr("{x*3}"));
+	tmp1=apply(ctx,0);
+	DUMP(tmp1);
+	ASSERT(LIST(tmp1) && tmp1->tag==Ti(lambda) && tmp1->n==2 && _equal(ELl(tmpl,1),xi(1))),"test lambda internals 0");
+	xfree(ctx);xfree(tmp1);
+
