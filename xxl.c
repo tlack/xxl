@@ -2472,6 +2472,10 @@ int main(int argc, char* argv[]) {
 }
 /*
 	
+	TODO diff: (1,2,3,4)diff(1,2,55) = [['set,2,55],['del,3]] (plus an easy way to map that diff to funcs to perform)
+	TODO set PF_LVL from code via 'xray' or 'trace' vals
+	TODO mailboxes
+	TODO some kind of backing store for contexts cant stand losing my work
 	TODO decide operator for typeof
 	TODO decide operator for tagof
 	TODO decide operator for applytag
