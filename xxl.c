@@ -1256,12 +1256,12 @@ VP any(VP x) {
 	if(LIST(x)) return deep(x,x1(&any));
 	return xb(_any(x));
 }
-static inline VP divv(VP x,VP y) {
+static inline VP divv(VP x,VP y) { 
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
 	PF("div");DUMP(x);DUMP(y);DUMP(info(acc));
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"div argument should be simple types",x,0);
 	VARY_EACHBOTH(x,y,({
-		if(LIKELY(x->t > y->t)) { _x=_x/_y; appendbuf(acc,(buf_t)&_x,1); }
+		if(LIKELY(x->t > y->t)) { _x=_y/_x; appendbuf(acc,(buf_t)&_x,1); }
 		else { _y=_y/_x; appendbuf(acc,(buf_t)&_y,1); }
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}),typerr);
