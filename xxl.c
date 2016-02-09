@@ -241,7 +241,7 @@ VP xrealloc(VP x,I32 newn) {
 			MEM_REALLOCS++;
 		}
 		// PF("realloc new ptr = %p\n", newp);
-		if(newp==NULL) perror("realloc");
+		if(newp==NULL) PERR("realloc");
 		x->dyn=newp;
 		x->cap=newn;
 		x->sz=newsz;
@@ -348,6 +348,7 @@ VP append(VP x,VP y) {
 		// PF("afterward:\n"); DUMP(x);
 	} else {
 		buf_t dest;
+		PF("append disaster\n");DUMP(info(x));DUMP(x);DUMP(info(y));DUMP(y);
 		dest = BUF(x) + (x->n*x->itemsz);
 		x=xrealloc(x,x->n + y->n);
 		memmove(ELsz(x,x->itemsz,x->n),BUF(y),y->sz);
@@ -2262,12 +2263,13 @@ void thr_start() {
 void* thr_run0(void* VPctx) {
 	#ifndef THREAD
 	#else
-	VP ctx=VPctx;
+	VP ctx=clone(VPctx);
 	PFW(({
 	printf("thr_run %s\n", reprA(ctx));
 	ctx=apply(ctx,xl0());
 	DUMP(ctx);
 	}));
+	printf("thr_run0 done\n");
 	pthread_exit(NULL);
 	#endif
 	return 0;
@@ -2278,7 +2280,7 @@ void thr_run(VP ctx) {
 	#else
 	pthread_attr_t a; pthread_attr_init(&a); pthread_attr_setdetachstate(&a, PTHREAD_CREATE_JOINABLE);
 	// nthr=sysconf(_SC_NPROCESSORS_ONLN);if(nthr<2)nthr=2;
-	WITHLOCK(thr,pthread_create(&THR[NTHR++], &a, &thr_run0, ctx));
+	WITHLOCK(thr,if(pthread_create(&THR[NTHR++], &a, &thr_run0, ctx)!=0)PERR("pthread_create"));
 	#endif
 	return;
 }
@@ -2401,15 +2403,7 @@ VP evalstrin(const char* str, VP ctx) {
 	return r;
 }
 void evalfile(VP ctx,const char* fn) {
-	#define EFBLK 65535
-	int fd,r;char buf[EFBLK];VP acc=xcsz(1024),res;
-	fd=open(fn,O_RDONLY);
-	if(fd<0)return perror("evalfile open");
-	do {
-		r=read(fd,buf,EFBLK);
-		if(r<0)perror("evalfile read");
-		else appendbuf(acc,(buf_t)buf,r);
-	} while (r==EFBLK);
+	VP res,acc = fileget(xfroms(fn));
 	PFW({
 	PF("evalfile executing\n"); DUMP(acc);
 	append(ctx,parsestr(sfromx(acc)));

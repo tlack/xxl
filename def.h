@@ -52,6 +52,8 @@
 		} \
 	} \
 })
+#define PERR(msg) {perror(msg);exit(1);}
+
 /* Debugging: */
 #define APF(sz,fmt,...) ({ snprintf(s+strlen(s),sz-strlen(s),fmt,__VA_ARGS__); s; })
 #define ASSERT(cond,txt) ({ if (!(cond)) { printf("ASSERT: %s\n", txt); raise(SIGABRT); exit(1); } })

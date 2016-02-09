@@ -84,6 +84,7 @@ VP xfree(VP x);
 VP xfroms(const char* str);
 VP xor(VP x,VP y);
 VP xrealloc(VP x,I32 newn);
+VP xref(VP x);
 
 #ifdef STDLIBNET
 // from net.c
