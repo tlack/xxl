@@ -17,45 +17,61 @@ Android runtime on NDK (contact me if interested).
 
 ## Examples
 
-Let's dive in with a simple prime number tester (returns 0 if not prime, >0
-otherwise):
+Remember prime numbers? Those are numbers that can't be divided by anything
+else without there being a remainder (a fraction) except for 1. For instance,
+you can't perfectly divide 7 by anything other than 1 and 7. 
+
+Stick with me. Prime numbers may not be very exciting, but it makes a good
+short example for XXL's purposes.
+
+How can a computer figure out if a number is prime? Let's dive in with a simple
+prime number tester. This code will return 1 when a number is prime, and 0
+if the number is not prime. 
 
 ```
-17 {count drop 2 % x min}
+xxl>7 count drop 2 % 7 min not
+0
+xxl>9 count drop 2 % 9 min not
+1
 ```
 
-Here's how it works:
+Don't freak out. Read it word by word, starting from the first word on the left.
+XXL code is just a mix of nouns (numbers, variables, other kinds of values) and 
+verbs (functions, operators). Every verb takes either one or two arguments.
+Unlike other languages, you never use unwiedly long argument lists to functions.
+Here's how to read this code.
 
-`17` is the number 17, obviously, used as an example here.
+We're going to go about this by figuring out if any other number below this
+number can evenly divide it.
 
-`{..}` marks an anonymous function (also called a closure or lambda).
+`7` is the number 7, obviously, used as an example here.
 
-`count` returns the range of numbers from 0 until its left argument. Note that
-in this case we're using the "implied" x variable that is silently prepended to
-all lines. This is equivalent to saying `x count`. In our example with 17, the
-result would be `(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16i)`.
+`count` returns the range of numbers from 0 to its left argument. In our
+example with 7, the result would be `(0,1,2,3,4,5,6i)`.
 
-`drop 2` removes the first two items - 0 and 1 in this case. Our expression
-currently stands at `(2,3,4,5,6,7,8,8,9,10,11,12,13,14,15,16i)`.
+`drop 2` removes the first two items from that set of numbers. We do this because
+dividing by zero is naughty and because anything can be divided by 1. Now we
+have `2,3,4,5,6i` built up as our argument to the next verb.
 
-`% x` invokes the "mod" operator, returning the integer remainder of y divided
-by x. This part highlights an interesting and important detail of XXL that
-separates it from more popular languages: most simple operators, like the math
+`% 7 invokes the "mod" operator, returning the integer remainder of x divided
+by y. This part highlights an interesting and important detail of XXL that
+separates it many common programming languages: most simple operators, like the math
 functions `+ - / * % | &` can work with one or more numbers on both sides of
-them. This is a big time saver compared to writing endless horrible loops in
+them. The result will be the same size as the larger of the two parameters (x or y).
+This is a big time saver compared to writing endless horrible loops in
 other languages.
 
-So with `(result) % x` we're getting the remainder of that whole list, divided
-by our target number, `17`. 
+So with `(result) % 7` we're getting the remainder of that whole list, divided
+by our target number, `7`. 
 
-This yields the uninteresting `(2,3,4,5,6,7,8,9,10,11,12,13,14,15,16i)`, which
+This yields the uninteresting `(2,3,4,5,6i)`, which
 is what we would expect: nothing *evenly* divides into 17, or else it wouldn't
-be prime. 
+be prime.
 
 If you try it with a different sequence, you'll see why this works:
 
 ```
-9 count drop 2 % 9
+9 count drop 2 % 3
 (1,0,1,4,3,2,1i)
 ```
 
@@ -63,9 +79,18 @@ As you can say, 3 cleanly divides 9, so the value in that position is zero.
 
 `min` then allows us to find the lowest number in this sequence. If it's 
 zero, that means that the target number can be evenly divided by one of
-the numbers lower than it, and thus, it is not prime. Tada!
+the numbers lower than it, and thus, it is not prime. 
 
-## Web Server
+But of course, we want our function to return the opposite - 1 if it's
+prime, not 0. So we run it through `not`.
+
+You'd normally give this function a name and call it more easily:
+
+```
+{x drop 2 % x min not} as 'prime?; 30 prime?, 31 prime?
+```
+
+## Micro Web Counter
 
 Here's an example web server application that acts as a counter. You can run
 this as`./c examples/web-ctr.xxl`. Source code in full:

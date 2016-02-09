@@ -871,7 +871,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				PF("created set projection\n");
 				DUMP(left);
 				continue;
-			} else if(item->n==2 && ch=='.' && AS_c(item,1)=='t') {
+			} else if(item->n==2 && ch=='.' && AS_c(item,1)=='t') {  // TODO .t should be an operator or variable 
 				printf("timer on\n");
 				st=clock();
 				continue;
@@ -938,6 +938,26 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	}
 	return left;
 }
+static inline VP ctxarity(VP x) {
+	int i,a=0;
+	if(LIST(x) && x->tag==Ti(lambda)) {
+		return ELl(x,1); // second item in lambda is arity
+	}
+	for(i=0;i<x->n;i++){ 
+		// this lame loop is another example of our need for a good list iteration
+		// macro; perhaps we could generalize the concept of a "result stack" that
+		// can be pushed and popped and utilize that everywhere.
+		// see http://www.chiark.greenend.org.uk/~sgtatham/coroutines.html
+		VP this=ELl(x,i);
+		switch (this->t) {
+			CASE(T_1,a+=1);
+			CASE(T_2,a+=2);
+			CASE(T_p,{ Proj p = AS_p(this,0); a+=MAX(p.type - (p.left!=0?1:0) - (p.right!=0?1:0), 0); });
+			CASE(T_x || this->tag==Ti(lambda),a+=ctxarity(this));
+		}
+	}
+		return xi(a);
+}
 VP applyctx(VP x,VP y) {
 	// structure of a context. like a general list conforming to:
 	// first item: code. list of projections or values. evaluated left to right.
@@ -946,7 +966,7 @@ VP applyctx(VP x,VP y) {
 	// .. and so on
 	// checked in order from top to bottom with apply()
 	if(!IS_x(x)) return EXC(Tt(type),"context not a context",x,y);
-	int i;VP this,res=NULL;
+	int i,tlam=Ti(lambda);VP this,res=NULL;
 	PF("applyctx\n");DUMP(x);DUMP(y);
 	for(i=x->n-1;i>=0;i--) {
 		this=ELl(x,i);
@@ -980,11 +1000,8 @@ VP apply(VP x,VP y) {
 			 // if we have no args, set y as left, and return x
 		// if its monadic
 			// if we have one arg already, call x[left], and then apply result with y
-			// i think this is right..
 		// PF("apply proj\n");DUMP(x);
 		Proj* p; p=(Proj*)ELi(x,0);
-		// if(!p->left) p->left=y; else if (!p->right) p->right=y;
-		// DUMP(p->left); DUMP(p->right);
 		if(p->type==1) {
 			if (p->left) // not sure if this will actually happen - seems illogical
 				return (*p->f1)(p->left);
@@ -994,17 +1011,12 @@ VP apply(VP x,VP y) {
 		if(p->type==2) {
 			PF("proj2\n"); 
 			PFIN();
-			if(p->left && p->right)
-				y=(*p->f2)(p->left,p->right);
-			else if(y && p->left)
-				y=(*p->f2)(p->left, y);
-			else if (y && p->right)
-				y=(*p->f2)(y,p->right);
-			else if (y) 
-				y=proj(2,p->f2,y,0);
-			else
-				y=x;
-			PFOUT(); PF("proj2 done\n"); DUMP(y);
+			if(p->left && p->right) y=(*p->f2)(p->left,p->right);
+			else if(y && p->left) y=(*p->f2)(p->left, y);
+			else if(y && p->right) y=(*p->f2)(y,p->right);
+			else if(y) y=proj(2,p->f2,y,0);
+			else y=x;
+			PFOUT(); PF("proj2 done\n");DUMP(y);
 			return y;
 		}
 		return xp(*p);
@@ -1018,7 +1030,15 @@ VP apply(VP x,VP y) {
 		PF("apply f2 returning\n");DUMP(res);
 		return res;
 	}
-	if(!CALLABLE(x) && UNLIKELY(LIST(y))) { // indexing at depth - never done for callable types 1, 2, and p (but we do use it for x)
+	if(!CALLABLE(x) && UNLIKELY(LIST(y))) { 
+		// indexing at depth - never done for callable types 1, 2, and p (but we do
+		// use it for x).  we should think about when applying with a list really
+		// means apply-at-depth. it would seem to make sense to have a list of
+		// operations and a list of values and apply them to each but any kind of
+		// logic likes this leads to ambiguity when the thing on the left is a
+		// function that takes a general list as an argument (pretty common).
+		// perhaps apply-at-depth should be a different operator, or only work when
+		// using the @ form of apply (f@x rather than f x)
 		PF("indexing at depth\n");
 		DUMP(x);
 		DUMP(info(x));
@@ -1067,18 +1087,13 @@ VP apply(VP x,VP y) {
 		}
 		if(res->n==0) return xl0(); else return apply(v,res);
 	}
-	if(NUM(y)) {
-		// index a value with an integer 
+	if(NUM(y)) { // index a value with an integer 
 		if(y->n==1 && LIST(x)) {
-			// special case for generic lists:
-			// if you index with one item, return just that item
-			// generally you would receive a list back
-			// this may potentially become painful later on 
+			// special case for generic lists: if you index with one item, return
+			// just that item generally you would receive a list back this may
+			// potentially become painful later on 
 			i = AS_i(y,0); 
-			IF_RET(i>=x->n, ({
-				EXC(Tt(index),"index out of range",x,y);	
-			}));
-
+			IF_RET(i>=x->n, ({ EXC(Tt(index),"index out of range",x,y);	}));
 			VP tmp = ELl(x,i); xref(tmp); return tmp;
 		} else {
 			res=xalloc(x->t,y->n);
@@ -1107,10 +1122,8 @@ VP deep(VP obj,VP f) {
 	FOR(0,obj->n,({
 		// PF("deep %d\n", _i);
 		subobj=ELl(obj,_i);
-		if(LIST(subobj))
-			subobj=deep(subobj,f);
-		else
-			subobj=apply(f,subobj);
+		if(LIST(subobj)) subobj=deep(subobj,f);
+		else subobj=apply(f,subobj);
 		// append(acc,subobj);
 		EL(acc,VP,_i) = subobj; // this may not be safe, but append() is overriden for dicts, so we cant simply append the list
 	}));
@@ -1244,12 +1257,12 @@ VP any(VP x) {
 	if(LIST(x)) return deep(x,x1(&any));
 	return xb(_any(x));
 }
-static inline VP divv(VP x,VP y) {
+static inline VP divv(VP x,VP y) { 
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
 	PF("div");DUMP(x);DUMP(y);DUMP(info(acc));
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"div argument should be simple types",x,0);
 	VARY_EACHBOTH(x,y,({
-		if(LIKELY(x->t > y->t)) { _x=_x/_y; appendbuf(acc,(buf_t)&_x,1); }
+		if(LIKELY(x->t > y->t)) { _x=_y/_x; appendbuf(acc,(buf_t)&_x,1); }
 		else { _y=_y/_x; appendbuf(acc,(buf_t)&_y,1); }
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}),typerr);
@@ -1495,6 +1508,9 @@ VP val(VP x) {
 }
 
 VP get(VP x,VP y) {
+	// get is used to resolve names in applyctx(). x is context, y is thing to
+	// look up. scans tree of scopes/closures to get value. in k/q, get is
+	// overriden to do special things with files and other handles as well.
 	// TODO get support nesting
 	int i,j; VP res;
 	PF("get\n");DUMP(y);
@@ -2106,12 +2122,12 @@ VP parsenum(VP x) {
 	} else return res;
 }
 VP parselambda(VP x) {
-	int i,arity=1,typerr=-1,traw=Ti(raw); VP this;
+	int i,arity=1,typerr=-1,tname=Ti(name),traw=Ti(raw); VP this;
 	PF("parselambda\n");DUMP(x);
 	x=list(x);
 	for(i=0;i<x->n;i++) {
-		this=ELl(x,i);
-		if(IS_c(this) && this->tag==traw && AS_c(this,0)=='y') { 
+		this=ELl(x,i); // not alloced, no need to free
+		if(IS_c(this) && this->tag==tname && AS_c(this,0)=='y') { 
 			arity=2;break;
 		}
 	};
@@ -2450,6 +2466,10 @@ int main(int argc, char* argv[]) {
 }
 /*
 	
+	TODO diff: (1,2,3,4)diff(1,2,55) = [['set,2,55],['del,3]] (plus an easy way to map that diff to funcs to perform)
+	TODO set PF_LVL from code via 'xray' or 'trace' vals
+	TODO mailboxes
+	TODO some kind of backing store for contexts cant stand losing my work
 	TODO decide operator for typeof
 	TODO decide operator for tagof
 	TODO decide operator for applytag
