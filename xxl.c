@@ -955,7 +955,7 @@ static inline VP ctxarity(VP x) {
 			CASE(T_x || this->tag==Ti(lambda),a+=ctxarity(this));
 		}
 	}
-	return xi(a);
+		return xi(a);
 }
 VP applyctx(VP x,VP y) {
 	// structure of a context. like a general list conforming to:
@@ -1507,6 +1507,9 @@ VP val(VP x) {
 }
 
 VP get(VP x,VP y) {
+	// get is used to resolve names in applyctx(). x is context, y is thing to
+	// look up. scans tree of scopes/closures to get value. in k/q, get is
+	// overriden to do special things with files and other handles as well.
 	// TODO get support nesting
 	int i,j; VP res;
 	PF("get\n");DUMP(y);

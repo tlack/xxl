@@ -29,7 +29,7 @@
 		 _a > _b ? _a : _b; })
 
 #define ABS(a) ( (a)<0 ? -1*(a) : (a) )
-
+#define CASE(a,b) case (a): b; break
 #define FOR(st,en,stmt) ({ int _i;for(_i=(st);_i<(en);_i++)stmt; })
 #define IF_RET(cond,thing) if((cond)) return thing
 #define ITER(thing,n,body) ({ int _i;for(_i=0;_i<sizeof(thing);_i++) { typeof(*thing) _x; _x=thing[_i]; body; } })
@@ -90,8 +90,14 @@
 #define CONTAINER(v) (IS_l(v)||IS_d(v)||IS_x(v))         // is v any kind of container? (i.e., non-vec but has children)
 #define CALLABLE(v) (IS_1(v)||IS_2(v)||IS_p(v)||IS_x(v)) // callable types - represent funcs or contexts
 #define ENLISTED(v) (LIST(v)&&SCALAR(v))                 // is v a single item inside a list?
+
 #define KEYS(v) (ELl(v,0))                               // keys for dict v
 #define VALS(v) (ELl(v,1))                               // values for dict v
+
+// is this member of a context (gen list) a body of code? 
+#define XLAMBDAISH(ctxmem) (LIST(ctxmem)&&(CALLABLE(ELl(ctxmem,0))||(ctxmem)->tag==Ti(lambda))) 
+// is this member a dictionary of scope definitions (resolvable identifiers)
+#define XFRAME(ctxmem) (DICT(ctxmem))                    
 #define Ti(n) (_tagnums(#n))                             // int value for tag n (literal not string)
 #define Tt(n) (xt(_tagnums(#n)))                         // tag n (literal not string) as a scalar of type tag
 #define ALLOC_BEST(x,y) ({ \
