@@ -388,7 +388,7 @@ VP amend(VP x,VP y) {
 	PF("amend returning\n");DUMP(x);
 	return x;
 }
-static inline VP assign(VP x,VP k,VP val) {
+inline VP assign(VP x,VP k,VP val) {
 	// PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
 	if (LIST(k) && k->n) {
 		int i=0;VP res=x;
@@ -858,11 +858,21 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				continue;
 			} 
 			PF("much ado about\n");DUMP(item);
-			if(item->n==1 && ch=='x')
-				item=xarg;
-			else if(item->n==1 && ch=='y' && yarg!=0) {
-				PF("picking up y arg\n");DUMP(yarg);
-				item=yarg;
+			if(item->n==1 && ch=='x') {
+				if (LIKELY(xarg!=0)) 
+					item=xarg;
+				else
+					return EXC(Tt(undef),"undefined x",xarg,yarg);
+			} else if(item->n==1 && ch=='y') {
+				if (LIKELY(yarg!=0)) {
+					PF("picking up y arg\n");DUMP(yarg);
+					item=yarg;
+				} else {
+					// should return a projection here, but right now there is no way
+					// to return a projection to a context
+					item=EXC(Tt(undef),"undefined y",xarg,yarg);
+					// this exception in item is further handled below
+				}
 			}
 			else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
 				left=proj(2,&set,xln(2,parent,left),0);

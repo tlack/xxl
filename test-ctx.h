@@ -189,14 +189,14 @@
 	append(ctx,parsestr("5 {x*y} x"));
 	tmp1=apply(ctx,xi(2));
 	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xi(10)),"test parsestr 16b");
+	ASSERT(_equal(tmp1,xi(10)),"test parsestr y in func body");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("{count}"));
 	tmp1=apply(ctx,xi(3));
 	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xin(3,0,1,2)),"test parsestr 17");
+	ASSERT(_equal(tmp1,xin(3,0,1,2)),"test parsestr count in func body");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
@@ -206,6 +206,11 @@
 	ASSERT(_equal(tmp1,xln(3,xin(2,0,1),xin(3,0,1,2),xin(4,0,1,2,3))),"test parsestr 18");
 	xfree(ctx);xfree(tmp1);
 
+	/*
+	 * this test should probably never have passed
+	 * it doesnt make sense to resolve 'y' as a variable from scope
+	 * think of the chaos that could cause when you intend a projection and you
+	 * get a parent scope's ctx value y! i'm disabling this for now
 	ctx=mkworkspace();
 	tmp1=xd0();
 	assign(tmp1,Tt(y),xi(7));
@@ -215,6 +220,7 @@
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,xi(27)),"test parsestr 19");
 	xfree(ctx);xfree(tmp1);
+	*/
 
 	ctx=mkworkspace();
 	tmp1=xd0();

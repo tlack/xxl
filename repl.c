@@ -31,12 +31,15 @@ void repl() {
 		PF("APPENDING!!\n");
 		append(ws,t2);
 		t3=applyctx(ws,0);
-		out=append(out,t3);
-		PF("curtailing\n");
 		ws=curtail(ws);
-		DUMP(ws);
 		printf("inputs@%d: %s\n", i, line);
-		printf("outputs@%d: %s\n", i, sfromx(repr(t3)));
+		if(!IS_EXC(t3)) {
+			out=append(out,t3);
+			printf("outputs@%d: %s\n", i, sfromx(repr(t3)));
+		} else {
+			printf("Oops. Exception: %s\n", sfromx(repr(t3)));
+			out=append(out,Tt(exception));
+		}
 		i++;
 	}
 }
