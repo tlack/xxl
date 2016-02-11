@@ -413,3 +413,10 @@
 	DUMP(tmp2);
 	ASSERT(LIST(tmp2) && tmp2->tag==Ti(lambda) && tmp2->n==2 && _equal(ELl(tmp2,1),xi(1)),"test lambda internals 0");
 	xfree(ctx);xfree(tmp1);
+	DUMP(ctx);DUMP(tmp1);
+
+	tmp1=parsestr("/*{1}*/");
+	DUMP(tmp1);
+	ASSERT(LIST(tmp1) && ELl(tmp1,0)->tag==Ti(comment) && ELl(tmp1,1)->tag==Ti(ws),"lambda in comment");
+	xfree(tmp1);
+

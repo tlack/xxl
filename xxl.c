@@ -422,7 +422,7 @@ static inline VP assigns(VP x,const char* key,VP val) {
 	return assign(x,xfroms(key),val);
 }
 VP behead(VP x) {
-	PF("behead\n");DUMP(x);
+	// PF("behead\n");DUMP(x);
 	return drop_(x,1);
 }
 int _flat(VP x) { // returns 1 if vector, or a list composed of vectors (and not other lists)
@@ -445,7 +445,7 @@ VP flatten(VP x) {
 	} else return xl0();
 }
 VP curtail(VP x) {
-	PF("curtail\n");DUMP(x);
+	// PF("curtail\n");DUMP(x);
 	return drop_(x,-1);
 }
 VP dict(VP x,VP y) {
@@ -492,8 +492,7 @@ VP drop_(VP x,int i) {
 	int st, end;
 	if(i<0) { st = 0; end=x->n+i; }
 	else { st = i; end=x->n; }
-	PF("drop_(,%d) %d %d %d\n", i, x->n, st, end);
-	DUMP(x);
+	// PF("drop_(,%d) %d %d %d\n", i, x->n, st, end); DUMP(x);
 	res=ALLOC_LIKE_SZ(x,end-st);
 	// DUMP(info(res));
 	if(end-st > 0) {
@@ -505,7 +504,7 @@ VP drop_(VP x,int i) {
 VP drop(VP x,VP y) {
 	VP res=0;
 	int typerr=-1;
-	PF("drop args\n"); DUMP(x); DUMP(y);
+	// PF("drop args\n"); DUMP(x); DUMP(y);
 	IF_RET(!NUM(y) || !SCALAR(y), EXC(Tt(type),"drop y arg must be single numeric",x,y));	
 	VARY_EL(y, 0, ({ return drop_(x,_x); }), typerr);
 	return res;
@@ -578,7 +577,7 @@ VP reverse(VP x) {
 	return acc;
 }
 VP shift_(VP x,int i) {
-	PF("shift_ %d\n",i);DUMP(x);
+	// PF("shift_ %d\n",i);DUMP(x);
 	int n=x->n;
 	if(i<0) 
 		return join(take_(x,i%n),drop_(x,i%n));
@@ -1219,14 +1218,13 @@ VP wide(VP obj,VP f) {
 
 	if(!CONTAINER(obj)) return apply(f, obj);
 
-	PF("wide top level\n");DUMP(obj);
+	// PF("wide top level\n");DUMP(obj);
 	acc=apply(f,obj);
 	if(CONTAINER(acc)) {
 		for(i=0;i<acc->n;i++) {
-			PF("wide #%d\n",i);
-			PFIN();
+			//PF("wide #%d\n",i);PFIN();
 			EL(acc,VP,i)=wide(AS_l(acc,i),f);
-			PFOUT();
+			//PFOUT();
 		}
 	}
 	return acc;
@@ -2223,7 +2221,6 @@ VP parsestr(const char* str) {
 	append(pats,ELl(lex,1));
 	xfree(lex);
 	t1=matchexec(acc,pats);
-
 	xfree(pats);
 	xfree(acc);
 	//xfree(ctx);
