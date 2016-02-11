@@ -420,3 +420,10 @@
 	ASSERT(LIST(tmp1) && ELl(tmp1,0)->tag==Ti(comment) && ELl(tmp1,1)->tag==Ti(ws),"lambda in comment");
 	xfree(tmp1);
 
+	tmp1=parsestr("{/*a*/}");
+	DUMP(tmp1);
+	ASSERT(LIST(tmp1) && ELl(tmp1,0)->tag==Ti(lambda) 
+									  && ELl(ELl(ELl(tmp1,0),0),0)->tag==Ti(comment)
+									  && ELl(tmp1,1)->tag==Ti(ws),"comment in lambda");
+	xfree(tmp1);
+

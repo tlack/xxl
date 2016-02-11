@@ -89,8 +89,8 @@ char* repr_c(VP x,char* s,size_t sz) {
 	for(;i<n;i++){
 		ch = AS_c(x,i);
 		if(ch=='"') APF(sz,"\\", 0);
-		if(ch=='\n') APF(sz,"\\n", 0);
-		if(ch=='\r') APF(sz,"\\r", 0);
+		else if(ch=='\n') APF(sz,"\\n", 0);
+		else if(ch=='\r') APF(sz,"\\r", 0);
 		else APF(sz,"%c",ch);
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
@@ -2206,9 +2206,9 @@ VP parsestr(const char* str) {
 		append(acc,entags(xc('\n'),"raw"));
 	ctx=mkbarectx();
 	pats=xln(3,
-		proj(2,&nest,0,xln(4, xfroms("//"), xfroms("\n"), xfroms(""), Tt(comment))),
-		proj(2,&nest,0,xln(4, xfroms("/*"), xfroms("*/"), xfroms(""), Tt(comment))),
-		proj(2,&nest,0,xln(5, xfroms("\""), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit)))
+		proj(2,&nest,0,xln(4, entags(xfroms("//"),"raw"), xfroms("\n"), xfroms(""), Tt(comment))),
+		proj(2,&nest,0,xln(4, entags(xfroms("/*"),"raw"), xfroms("*/"), xfroms(""), Tt(comment))),
+		proj(2,&nest,0,xln(5, entags(xfroms("\""),"raw"), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit)))
 	);
 	ctx=append(ctx,pats);
 	acc=exhaust(acc,ctx);
@@ -2240,8 +2240,8 @@ VP parsestr(const char* str) {
 	ctx=mkbarectx();
 	pats=xln(3,
 		proj(2,&nest,0,xln(5, entags(xfroms("{"),"raw"), entags(xfroms("}"),"raw"), xfroms(""), Tt(lambda), x1(&parselambda))),
-		proj(2,&nest,0,xln(5, xfroms("("), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr))),
-		proj(2,&nest,0,xln(5, xfroms("["), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)))
+		proj(2,&nest,0,xln(5, entags(xfroms("("),"raw"), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr))),
+		proj(2,&nest,0,xln(5, entags(xfroms("["),"raw"), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)))
 	);
 	t2=t1;
 	for(i=0;i<pats->n;i++) {
