@@ -220,7 +220,7 @@ lib.each(lib.types,function(tx) {
 	}
 });
 var tmpl="\tif(_xt=={{x0}}&&_yt=={{y0}}){/*{{x2}} x {{y2}}*/ \\\n" +
-	"\t\t{{x3}} _x;{{y3}} _y; _y=AS_{{x1}}(y,0);\\\n" + 
+	"\t\t{{x3}} _x;{{y3}} _y; _y=AS_{{y1}}(y,0);\\\n" + 
 	"\t\twhile (_i < _xn) { _x=AS_{{x1}}(x,_i); stmt; _i++; }\\\n" + 
 	"\t}\\";
 lib.each(lib.types,function(tx) {
