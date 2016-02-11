@@ -87,29 +87,32 @@
 #define SIMPLE(v) (IS_t(v)||IS_c(v)||IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v)||IS_f(v))
 #define COMPARABLE(v) (NUM(v) || IS_c(v))
 #define LIST(v) ((v)->t==0)                              // is v a general list type?
+#define ENLISTED(v) (LIST(v)&&SCALAR(v))                 // is v a single item inside a list?
 #define DICT(v) (IS_d(v))                                // is v a dictionary?
 #define LISTDICT(v) (IS_l(v)||IS_d(v))                   // is v a list or dictionary?
 #define CONTAINER(v) (IS_l(v)||IS_d(v)||IS_x(v))         // is v any kind of container? (i.e., non-vec but has children)
 #define CALLABLE(v) (IS_1(v)||IS_2(v)||IS_p(v)||IS_x(v)) // callable types - represent funcs or contexts
-#define ENLISTED(v) (LIST(v)&&SCALAR(v))                 // is v a single item inside a list?
-
 #define KEYS(v) (ELl(v,0))                               // keys for dict v
 #define VALS(v) (ELl(v,1))                               // values for dict v
 
 // is this member of a context (gen list) a body of code? 
-#define XLAMBDAISH(ctxmem) (LIST(ctxmem)&&(CALLABLE(ELl(ctxmem,0))||(ctxmem)->tag==Ti(lambda))) 
+#define LAMBDAISH(ctxmem) (LIST(ctxmem)&&(CALLABLE(ELl(ctxmem,0))||(ctxmem)->tag==Ti(lambda))) 
 // is this member a dictionary of scope definitions (resolvable identifiers)
-#define XFRAME(ctxmem) (DICT(ctxmem))                    
+#define FRAME(ctxmem) (DICT(ctxmem))
+#define LAMBDAARITY(x) (AS_i(ELl(x,1),0))
+
 #define Ti(n) (_tagnums(#n))                             // int value for tag n (literal not string)
 #define Tt(n) (xt(_tagnums(#n)))                         // tag n (literal not string) as a scalar of type tag
+
+#define BEST_NUM_FIT(val) ({ int t; \
+	if(val<MAX_i)t=T_i; else if (val<MAX_j)t=T_j; else t=T_o; \
+	t; })
 #define ALLOC_BEST(x,y) ({ \
 	VP new_ = xalloc(MAX(x->t,y->t),MAX(x->n,y->n)); \
 	if(UNLIKELY(x->tag))new_->tag=x->tag; new_; })
 #define ALLOC_LIKE(x) ({ VP new_ = xalloc(x->t,x->n); if(UNLIKELY(x->tag))new_->tag=x->tag; new_; })
 #define ALLOC_LIKE_SZ(x,sz) ({ VP new_ = xalloc(x->t,sz); if(UNLIKELY(x->tag))new_->tag=x->tag; new_; })
-#define ALLOC_BEST_FIT(val,sz) ({ int t; \
-	if(val<MAX_i)t=T_i else if (val<MAX_j)t=T_j else if (val<MAX_o)t=T_o; \
-	xalloc(t,sz); })
+#define ALLOC_BEST_FIT(val,sz) (xalloc(BEST_NUM_FIT(bval),sz))
 
 #ifdef DEBUG
 	#define TRACELBL(x,lbl) ( (x)->tag=lbl, x )

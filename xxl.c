@@ -547,7 +547,8 @@ VP join(VP x,VP y) {
 VP last(VP x) {
 	VP res=ALLOC_LIKE_SZ(x,1);
 	if(x->n==0) return res;
-	res=appendbuf(res,ELi(x,x->n-1),1);
+	if(CONTAINER(x)) return xref(ELl(x,x->n-1));
+	else res=appendbuf(res,ELi(x,x->n-1),1);
 	return res;
 }
 static inline VP list(VP x) { // convert x to general list
@@ -1444,11 +1445,17 @@ static inline VP str2num(VP x) {
 }
 VP sum(VP x) {
 	PF("sum");DUMP(x);
-	I64 val=0;int i,typerr=-1;
+	I128 val=0;int out,typerr=-1;
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"sum argument should be simple types",x,0);
 	VARY_EACH(x,({ val += _x; }),typerr);
 	IF_EXC(typerr > -1, Tt(type), "sum arg wrong type", x, 0);
-	return xj(val);
+	out=BEST_NUM_FIT(val);
+	switch(out) {
+		CASE(T_b,return xb(val));
+		CASE(T_i,return xi(val));
+		CASE(T_j,return xj(val));
+		default: return xo(val);
+	}
 }
 VP sums(VP x) {
 	PF("sums\n");DUMP(x);
@@ -2144,9 +2151,12 @@ VP parsename(VP x) {
 			return str2tag(res);
 		} else {
 			PF("parsename non-tag\n");
-			res=split(res,xc('.')); // very fast if not found
-			DUMP(res);
-			res->tag=Ti(name);
+			if(res->n==1 && AS_c(res,0)=='.')
+				return entags(Tt(.),"name");
+			else {
+				res=split(res,xc('.')); // very fast if not found
+				res->tag=Ti(name);
+			}
 		}
 	}
 	return res;

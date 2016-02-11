@@ -67,6 +67,8 @@ VP show(VP x);
 VP split(VP x,VP tok);
 static inline VP str2num(VP x);
 static inline VP str2tag(VP str); // turns string, or list of strings, into tag vector
+VP sum(VP x);
+VP sums(VP x);
 static inline VP tagname(I32 tag);
 /*static inline */
 VP tagv(const char* name, VP x);
