@@ -900,17 +900,26 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 		
 		PF("before grand switch, xused=%d:\n", xused);
 		DUMP(left);
+		if(left!=0) PF("left arity=%d\n", _arity(left)); 
 		DUMP(item);
 
-		if(left!=0 && CALLABLE(left)) {
+		if(left!=0 && CALLABLE(left) && _arity(left)>0) {
 			// they seem to be trying to call a unary function, though it's on the
 			// left - NB. possibly shady
 			//
-			// if you pass a projection as the xargument, we should NOT immediately pass
-			// the next value to it, even though it appears as "left". xused acts
-			// as a gate for that "are we still possibly needing the passed-in (left) value?"
+			// note about IS_x use here: contexts are often passed around as values,
+			// and this behavior is overriden to not support them in the left
+			// position. this came about while testing ". get 'zebra" because "." is
+			// a context which is callable and get is a verb which is (obviously)
+			// callable. 
+			//
+			// regarding the first position in an expression: if you pass a
+			// projection as the xargument, we should NOT immediately pass the next
+			// value to it, even though it appears as "left". xused acts as a gate
+			// for that "are we still possibly needing the passed-in (left) value?"
 			// logic to not allow this behavior in first position inside expression
 			Proj p;
+			PF("applying dangling left callable\n");
 			left=apply(left,item);
 			RETURN_IF_EXC(left);
 			if(IS_p(left)) {
@@ -951,25 +960,29 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	}
 	return left;
 }
-static inline VP ctxarity(VP x) {
-	int i,a=0;
-	if(LIST(x) && x->tag==Ti(lambda)) {
-		return ELl(x,1); // second item in lambda is arity
-	}
-	for(i=0;i<x->n;i++){ 
-		// this lame loop is another example of our need for a good list iteration
-		// macro; perhaps we could generalize the concept of a "result stack" that
-		// can be pushed and popped and utilize that everywhere.
-		// see http://www.chiark.greenend.org.uk/~sgtatham/coroutines.html
-		VP this=ELl(x,i);
-		switch (this->t) {
-			CASE(T_1,a+=1);
-			CASE(T_2,a+=2);
-			CASE(T_p,{ Proj p = AS_p(this,0); a+=MAX(p.type - (p.left!=0?1:0) - (p.right!=0?1:0), 0); });
-			CASE(T_x || this->tag==Ti(lambda),a+=ctxarity(this));
+static inline int _arity(VP x) {
+	int a=0;
+	if(!CALLABLE(x)) return 0;
+	if(CONTAINER(x)) {
+		if (x->n >= 2 && x->tag==Ti(lambda)) 
+			return LAMBDAARITY(x); // second item in lambda is arity
+		else {
+			int i;
+			for(i=0; i<x->n;i++) 
+				a+=_arity(ELl(x,i));
+			return a;
 		}
 	}
-		return xi(a);
+	switch (x->t) {
+		CASE(T_1,a+=1);
+		CASE(T_2,a+=2);
+		CASE(T_p,{ Proj p = AS_p(x,0); a+=MAX(p.type - (p.left!=0?1:0) - (p.right!=0?1:0), 0); });
+	}
+	return a;
+}
+static inline VP arity(VP x) {
+	PF("arity%d\n", x);
+	return xi(_arity(x));
 }
 VP applyctx(VP x,VP y) {
 	// structure of a context. like a general list conforming to:
@@ -1556,8 +1569,8 @@ VP get(VP x,VP y) {
 		if(LIKELY(IS_c(y) || (LIST(y) && IS_c(ELl(y,0))))) 
 			y=str2tag(y);
 		DUMP(y);
-		if(IS_t(y) && AS_t(y,0)==Ti(this)) {
-			return clone(KEYS(x));
+		if(IS_t(y) && AS_t(y,0)==Ti(.)) {
+			return clone(curtail(x)); // clone(KEYS(x));
 		} else if(IS_t(y) && yn > 1 && AS_t(y,0)==0) { // empty first element = start from root
 			PF("get starting from root\n");
 			i=0;y=list(behead(y));

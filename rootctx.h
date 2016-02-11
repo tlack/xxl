@@ -1,6 +1,7 @@
 
 	// postfix/unary operators
 	// res=assign(res,xt(_tagnums("]")),x1(&identity));
+	res=assign(res,Tt(arity),x1(&arity));
 	res=assign(res,Tt(condense),x1(&condense));
 	res=assign(res,Tt(curtail),x1(&curtail));
 	res=assign(res,Tt(info),x1(&info));

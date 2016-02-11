@@ -378,7 +378,12 @@
 	xfree(ctx);xfree(tmp1);xfree(tmp2);
 
 	ctx=mkworkspace();
-	append(ctx,parsestr(";{x*y}as 'z;z 7 6")); // without the semicolon the system tries to use xl0 as x.. helpfully
+	append(ctx,parsestr(";{x*y}as 'z;7 z 6")); // without the semicolon the system tries to use xl0 as x.. helpfully
+	// note: last part above used to read 'z 7 6' but the interpreter was getting
+	// confused by the context (z) sometimes being treated as data and sometimes
+	// as invokable. the correct syntax to use with z here is 7 z 6, so i've
+	// updated it as such. this convenience feature has created a lot of
+	// annoyance.
 	tmp1=apply(ctx,xl0());
 	ASSERT(_equal(tmp1,xi(42)),"test y projection");
 	xfree(ctx);xfree(tmp1);

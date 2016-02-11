@@ -10,6 +10,8 @@ VP apply(VP x,VP y);
 VP applyctx(VP x,VP y);
 VP append(VP x,VP y);
 VP appendbuf(VP x,buf_t buf,size_t nelem);
+static inline int _arity(VP x);
+static inline VP arity(VP x);
 VP assign(VP x,VP k,VP val);
 VP behead(VP x); // everything except the first element
 VP cast(VP x,VP y);
