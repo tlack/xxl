@@ -1517,28 +1517,52 @@ VP val(VP x) {
 	return EXC(Tt(type),"val can't operate on that type",x,0);
 }
 
+inline VP _getmodular(VP x,VP y) {
+	ASSERT((DICT(x)||IS_x(x))&&LIST(y),"_getmodular");
+	PF("_getmodular");DUMP(y);
+	VP rootscope;
+	if(DICT(x))
+		rootscope=x;
+	else {
+	 	rootscope=KEYS(x);
+		if(!DICT(rootscope)) return 0;
+	}
+	VP tag=ELl(y,0);
+	VP res=apply(rootscope,tag); // need a fast-path dict lookup
+	if(LIST(res) && res->n==0) return 0;
+	res=apply(res,Tt(get));
+	if(LIST(res) && res->n==0) return 0;
+	return apply(res,ELl(y,1));
+}
+
 VP get(VP x,VP y) {
 	// get is used to resolve names in applyctx(). x is context, y is thing to
 	// look up. scans tree of scopes/closures to get value. in k/q, get is
 	// overriden to do special things with files and other handles as well.
 	// TODO get support nesting
-	int i,j; VP res;
+	int xn=x->n,yn=y->n,i,j;VP res;
 	PF("get\n");DUMP(y);
+	if((DICT(x)||IS_x(x)) && LIST(y) && yn >= 2 && IS_t(ELl(y,0))) {
+		res=_getmodular(x,y);
+		if(res!=0) return res;
+	}
 	if(IS_x(x)) {
 		if(LIKELY(IS_c(y) || (LIST(y) && IS_c(ELl(y,0))))) 
 			y=str2tag(y);
 		DUMP(y);
-		if(IS_t(y) && y->n > 1 && AS_t(y,0)==0) { // empty first element = start from root
+		if(IS_t(y) && AS_t(y,0)==Ti(this)) {
+			return clone(KEYS(x));
+		} else if(IS_t(y) && yn > 1 && AS_t(y,0)==0) { // empty first element = start from root
 			PF("get starting from root\n");
 			i=0;y=list(behead(y));
-			for(;i<x->n;i++) {
+			for(;i<xn;i++) {
 				PF("get #%d\n", i);
 				if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
 				res=apply(ELl(x,i),y);
 				if(!LIST(res) || res->n > 0) return res;
 			}
 		} else {
-			i=x->n-1;
+			i=xn-1;
 			for(;i>=0;i--) {
 				PF("get #%d\n", i);
 				if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
