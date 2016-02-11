@@ -1839,13 +1839,13 @@ VP signaljoin(VP x,VP y) {
 // MATCHING
 
 VP nest(VP x,VP y) {
-	VP p1,p2,open,close,opens,closes,where,rep,out;
+	VP p1,p2,open,close,opens,closes,where,rep,out,base;
 	PF("NEST\n");DUMP(x);DUMP(y);
 	//if(!LIST(x) || x->n < 2) return x;
 	if(x->n<2)return x;
 	p1=proj(2,&matcheasy,x,0);
 	p2=proj(2,&matcheasy,x,0);
-	open=apply(y,xi(0)); close=apply(y,xi(1));
+	open=apply(y,XI0); close=apply(y,XI1);
 	if(!LIST(x) && x->t != open->t) return x;
 	// if(LIST(open) && x->t != AS_l(open,0)->t) return x;
 	if(_equal(open,close)) {
@@ -1859,7 +1859,10 @@ VP nest(VP x,VP y) {
 				EL(opens,VP,0)=and(AS_l(opens,0),shift_(not(esc),-1));
 				PF("new escaped opens\n");
 			}	
-			opens=signaljoin(xb(1),AS_l(opens,0));
+			if(open->tag) base=matchtag(x,xt(open->tag));
+			else base=xb(1);
+			opens=signaljoin(base,AS_l(opens,0));
+			xfree(base);
 			PF("after signaljoin\n");DUMP(opens);
 			out=partgroups(condense(opens));
 			if(out->n) {
@@ -1890,7 +1893,11 @@ VP nest(VP x,VP y) {
 		closes=consecutivejoin(xb(1),closes);
 		if(close->n > 1)
 			closes=shift_(closes, (close->n-1)*-1);
-		out=bracketjoin(xb(1), xln(2,consecutivejoin(xb(1),opens),closes)); 
+		if(open->tag) base=matchtag(x,xt(open->tag));
+		else base=xb(1);
+		out=bracketjoin(xb(1), xln(2,consecutivejoin(base,opens),closes)); 
+		xfree(base);
+		DUMP(base);
 		DUMP(out);
 		where=condense(out);
 	}
@@ -2009,6 +2016,7 @@ VP matchexec(VP obj,VP pats) {
 }
 VP matchtag(VP obj,VP pat) {
 	IF_EXC(!SIMPLE(obj) && !LIST(obj),Tt(type),"matchtag only works with numeric or string types in x",obj,pat);
+	IF_EXC(!IS_t(pat), Tt(type), "matchtag y must be tag",obj,pat);
 	int j,n=obj->n,typerr=-1;VP item, acc;
 	PF("matchtag\n"); DUMP(obj); DUMP(pat);
 	acc=xbsz(n); // TODO matcheasy() should be smarter about initial buffer size
@@ -2231,7 +2239,7 @@ VP parsestr(const char* str) {
 	// its faster to scan a flat list)
 	ctx=mkbarectx();
 	pats=xln(3,
-		proj(2,&nest,0,xln(5, xfroms("{"), xfroms("}"), xfroms(""), Tt(lambda), x1(&parselambda))),
+		proj(2,&nest,0,xln(5, entags(xfroms("{"),"raw"), entags(xfroms("}"),"raw"), xfroms(""), Tt(lambda), x1(&parselambda))),
 		proj(2,&nest,0,xln(5, xfroms("("), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr))),
 		proj(2,&nest,0,xln(5, xfroms("["), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)))
 	);
