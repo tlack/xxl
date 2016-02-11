@@ -722,8 +722,10 @@ int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
 int _find1(VP x,VP y) {        // returns index or -1 on not found
 	// probably the most common, core call in the code. worth trying to optimize.
 	// PF("_find1\n",x,y); DUMP(x); DUMP(y);
-	ASSERT(LIST(x) || (x->t==y->t && y->n==1), "_find1(): x must be list, or types must match with right scalar");
-	if(LISTDICT(x)) { ITERV(x,{ 
+	ASSERT(LISTDICT(x) || (x->t==y->t && y->n==1), "_find1(): x must be list, or types must match with right scalar");
+	if(UNLIKELY(DICT(x))) {
+		return _find1(KEYS(x),y);
+	} if(LIST(x)) { ITERV(x,{ 
 		VP xx; xx=ELl(x,_i);
 		// PF("_find1 %d\n",_i); DUMP(xx);
 		if(xx!=NULL) 
