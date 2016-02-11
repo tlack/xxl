@@ -1,0 +1,14 @@
+// not yet working
+{y as x} as 'is;
+
+'ack is {
+	x as 'm; y as 'n;
+	['ack,m,n] show;
+	m=0 ifelse ({n+1},{
+		n=0 ifelse (
+			{m-1 self 1},
+			{m-1 self (m self (n-1))}
+	})
+};
+
+
