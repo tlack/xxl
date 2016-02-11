@@ -126,13 +126,14 @@ char* repr_x(VP x,char* s,size_t sz) {
 char* repr_d(VP x,char* s,size_t sz) {
 	int i, n;
 	VP k=KEYS(x),v=VALS(x);
+	if(!sz)return;
 	if (!k || !v) { APF(sz,"[null]",0); return s; }
 	APF(sz,"[",0);
 	n=k->n;
 	for(i=0;i<n;i++) {
-		repr0(apply(k,xi(i)), s, sz);
+		repr0(apply(k,xi(i)), s, sz-1);
 		APF(sz,":",0);
-		repr0(apply(v,xi(i)), s, sz);
+		repr0(apply(v,xi(i)), s, sz-2);
 		if(i!=n-1)
 			APF(sz,", ",0);
 	}
@@ -1033,12 +1034,12 @@ VP apply(VP x,VP y) {
 		return xp(*p);
 	}
 	if(IS_1(x)) {
-		PF("apply 1\n");DUMP(x);DUMP(y);
+		// PF("apply 1\n");DUMP(x);DUMP(y);
 		unaryFunc* f; f=AS_1(x,0); return (*f)(y);
 	}
 	if(IS_2(x)) {
 		res=proj(2,AS_2(x,0),y,0);
-		PF("apply f2 returning\n");DUMP(res);
+		// PF("apply f2 returning\n");DUMP(res);
 		return res;
 	}
 	if(!CALLABLE(x) && UNLIKELY(LIST(y))) { 
@@ -1052,9 +1053,7 @@ VP apply(VP x,VP y) {
 		// using the @ form of apply (f@x rather than f x)
 		PF("indexing at depth\n");
 		DUMP(x);
-		DUMP(info(x));
 		DUMP(y);
-		DUMP(info(y));
 		res=x;
 		for(;i<y->n;i++) {
 			res=apply(res,ELl(y,i));
@@ -1771,29 +1770,27 @@ VP bracketjoin(VP x,VP y) {
 	// otherwise 0
 	// useful for matching patterns involving more than one entity
 	int i,on=0,typerr=-1; VP c,ret,acc,y0,y1,mx;
-	PF("bracketjoin\n");DUMP(x);DUMP(y);
+	// PF("bracketjoin\n");DUMP(x);DUMP(y);
 	IF_EXC(!LIST(y)||y->n!=2,Tt(type),"bracketjoin y must be 2-arg list",x,y);
 	y0=ELl(y,0); y1=ELl(y,1);
 	IF_EXC(y0->t != y1->t,Tt(type),"bracketjoin y items must be same type",x,y);
 	acc=plus(y0, times(xi(-1),y1));
-	DUMP(acc);
 	acc=sums(acc);
-	PF("bracket sums\n");DUMP(acc);
+	// PF("bracket sums\n");DUMP(acc);
 	mx=max(acc);
-	PF("bracket max\n");DUMP(mx);
-	PF("bracket x\n");DUMP(x);
+	// PF("bracket max\n");DUMP(mx);
+	// PF("bracket x\n");DUMP(x);
 	ret=take(xi(0),xi(y0->n));
 	if(EL(mx,CTYPE_b,0)==0) { PF("bracketjoin no coverage\n"); DUMP(acc); return ret; }
 	c=ELl(partgroups(condense(and(x,matcheasy(acc,mx)))),0);
 	DUMP(c);
 	if(c->n) {
 		c=append(c,plus(max(c),xi(1)));
-		PF("bracket append next\n");
-		DUMP(c);
+		// PF("bracket append next\n"); DUMP(c);
 	}
 	ret=assign(ret,c,xi(1));
 	// acc=pick(x,matcheasy(acc,mx));
-	PF("bracket acc after pick");DUMP(ret);
+	// PF("bracket acc after pick");DUMP(ret);
 	return ret;
 	acc = ALLOC_LIKE_SZ(x,y0->n);
 	VARY_EACHRIGHT(x,y0,({
@@ -1806,7 +1803,7 @@ VP bracketjoin(VP x,VP y) {
 	IF_EXC(typerr>-1,Tt(type),"bracketjoin couldnt work with those types",x,y);
 	acc->n=y0->n;
 	mx=max(acc);
-	PF("bracketjoin max\n");DUMP(mx);
+ 	// PF("bracketjoin max\n");DUMP(mx);
 	acc=matcheasy(acc,mx);
 	PF("bracketjoin return\n");DUMP(acc);
 	return acc;
@@ -1814,10 +1811,8 @@ VP bracketjoin(VP x,VP y) {
 VP consecutivejoin(VP x, VP y) {
 	// returns x[n] if y[0][n]==1 && y[1][n+1]==1 && .. else 0
 	int j,n=y->n, typerr=-1, on=0; VP acc,tmp;
-	PF("consecutivejoin\n"); DUMP(x); DUMP(y);
-	
+	//PF("consecutivejoin\n"); DUMP(x); DUMP(y);
 	if(!LIST(y)) return and(x,y);
-
 	IF_EXC(!LIST(y)||y->n<1,Tt(type),"consecutivejoin y must be list of simple types",x,y);
 	VP y0=ELl(y,0);
 	for(j=0; tmp=ELl(y,j), j<n; j++) 
@@ -1841,7 +1836,7 @@ VP consecutivejoin(VP x, VP y) {
 VP signaljoin(VP x,VP y) {
 	// could be implemented as +over and more selection but this should be faster
 	int typerr=-1, on=0; VP acc;
-	PF("signaljoin\n");DUMP(x);DUMP(y);
+	// PF("signaljoin\n");DUMP(x);DUMP(y);
 	acc = ALLOC_LIKE_SZ(x,y->n);
 	if(SCALAR(x)) { // TODO signaljoin() should use take to duplicate scalar args.. but take be broke
 		VARY_EACHRIGHT(x,y, ({
