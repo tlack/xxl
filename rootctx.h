@@ -36,6 +36,7 @@
 	res=assign(res,Tt(~),x2(&matcheasy));
 	res=assign(res,Tt(!),x2(&amend));
 	res=assign(res,Tt(@),x2(&apply));
+	res=assign(res,Tt(?),x2(&find1));
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
 	res=assign(res,Tt(cast),x2(&cast));
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));
@@ -43,6 +44,7 @@
 	res=assign(res,Tt(drop),x2(&drop));
 	res=assign(res,Tt(each),x2(&each));
 	res=assign(res,Tt(evalin),x2(&evalin));
+	res=assign(res,Tt(get),x2(&get));
 	res=assign(res,Tt(iftrue),x2(&iftrue));
 	res=assign(res,Tt(ifelse),x2(&ifelse));
 	res=assign(res,Tt(in),x2(&matchany));
