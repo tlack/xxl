@@ -2241,14 +2241,15 @@ VP parsestr(const char* str) {
 	// its faster to scan a flat list)
 	ctx=mkbarectx();
 	pats=xln(3,
-		proj(2,&nest,0,xln(5, entags(xfroms("{"),"raw"), entags(xfroms("}"),"raw"), xfroms(""), Tt(lambda), x1(&parselambda))),
+		proj(2,&nest,0,xln(5, entags(xfroms("{"),"raw"), xfroms("}"), xfroms(""), Tt(lambda), x1(&parselambda))),
 		proj(2,&nest,0,xln(5, entags(xfroms("("),"raw"), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr))),
 		proj(2,&nest,0,xln(5, entags(xfroms("["),"raw"), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)))
 	);
 	t2=t1;
 	for(i=0;i<pats->n;i++) {
 		PF("parsestr exhausting %d\n", i);
-		t2=exhaust(t2,proj(2,&wide,0,ELl(pats,i)));
+		// t2=exhaust(t2,proj(2,&wide,0,ELl(pats,i)));
+		t2=exhaust(t2,ELl(pats,i)); // wide doesnt seem needed here after tag fixes
 	}
 	return t2;
 }
