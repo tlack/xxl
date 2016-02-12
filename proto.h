@@ -106,3 +106,8 @@ VP fileget(VP fn);
 VP fileset(VP str,VP fn);
 #endif
 
+#ifdef STDLIBSHAREDLIB
+VP sharedlibget(VP fn);
+VP sharedlibset(VP fn,VP funs);
+#endif
+

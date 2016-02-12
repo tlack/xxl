@@ -31,6 +31,10 @@ static pthread_t THR[MAXTHR]={0};
 #include "accessors.h"
 #include "vary.h"
 
+#ifdef STDLIBSHAREDLIB
+#include <dlfcn.h>
+#endif
+
 /*
 char* repr_1(VP x,char* s,size_t sz) {
 	APF(sz,"[ unary func = %p ],",x);
@@ -2357,6 +2361,7 @@ VP parse(VP x) {
 
 // STANDARD LIBRARY
 
+#ifdef STDLIBFILE
 VP fileget(VP fn) {
 	#define READFILEBLK 1024 * 64
 	char buf[READFILEBLK]; int r=0,fd=0;
@@ -2381,6 +2386,32 @@ VP fileset(VP str,VP fn) {
 	close(fd);
 	return str;
 }
+#endif
+
+#ifdef STDLIBSHAREDLIB
+VP sharedlibget(VP fn) {
+	if(!IS_c(fn)) return EXC(Tt(type),".sharedlib.get requires a filename string as argument",fn,0);
+	void* fp;void* itemp;char* fns=sfromx(fn);
+	fp=dlopen(fns,RTLD_LAZY);
+	if(fp==NULL) { 
+		printf("dlerr:%s\n",dlerror());
+		return EXC(Tt(open),".sharedlib.get could not open shared library",fn,0);
+	}
+	itemp=dlsym(fp,"XXL_INDEX");
+	if(itemp==NULL) return EXC(Tt(read),".sharedlib.get could not read index",fn,0);
+	PF_LVL=10;
+	struct xxl_index_t* idx;
+	idx=&itemp;
+	int i=0;
+	printf("%s %d\n", idx[0].name, idx[0].arity);
+	VP item=xl0();
+	return item;
+}
+VP sharedlibset(VP fn,VP funcs) {
+	return EXC(Tt(nyi),".sharedlib.set nyi",fn,funcs);
+}
+#endif 
+
 
 // Threading
 void thr_start() {

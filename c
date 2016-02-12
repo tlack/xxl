@@ -12,7 +12,7 @@ WARN="-Wall -Wno-format-extra-args -Wno-unused-function -Wno-unused-value "
 WARN="$WARN -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format"
 
 # decide what goes into stdlib
-STDLIB="-DSTDLIBFILE -DSTDLIBNET"
+STDLIB="-DSTDLIBFILE -DSTDLIBNET -DSTDLIBSHAREDLIB"
 
 # command to use to run it - put testing args to binary for execution here
 RUN="./xxl $*"

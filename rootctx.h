@@ -70,6 +70,14 @@
 	xfree(d);
 	#endif
 
+	#ifdef STDLIBSHAREDLIB
+	d=xd0();
+	d=assign(d,Tt(get),x1(&sharedlibget));
+	d=assign(d,Tt(set),x2(&sharedlibset));
+	res=assign(res,Tt(sharedlib),d);
+	xfree(d);
+	#endif
+
 	#ifdef STDLIBNET
 	d=xd0();
 	d=assign(d,Tt(bind),x2(&netbind));

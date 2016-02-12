@@ -159,6 +159,13 @@ typedef struct Proj0 Proj;
 struct type_info { type_t t; char c; int sz; char name[32]; reprFunc* repr; };
 typedef struct type_info type_info_t;
 
+#ifdef STDLIBSHAREDLIB
+struct xxl_index_t {
+	char name[40];
+	char implfunc[40];
+	int arity;
+};
+#endif
 
 // GLOBALS FROM xxl.c
 extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; extern VP TAGS;
