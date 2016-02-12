@@ -23,12 +23,11 @@ VP testfunc(VP x) {
 	printf("testfunc\n");
 	PF_LVL=10;
 	printf("%s\n", reprA(x));
-	VP res=xi(100);
+	VP res=xln(3,xi(111),x,xi(444));
 	DUMP(res);
 	PF_LVL=0;
 	printf("%s\n", reprA(res));
 	return res;
-	// return xln(3,333,x,444);
 }
 
 struct xxl_index_t XXL_INDEX[] = {
