@@ -23,10 +23,9 @@
 	res=assign(res,Tt(ver),xi(0));
 
 	// infix/binary operators
-	res=assign(res,xt(_tagnums(",")),x2(&join)); // gcc gets confused by Tt(,) - thinks its two empty args
-	res=assign(res,Tt(:),x2(&dict)); // gcc gets confused by Tt(,) - thinks its two empty args
+	res=assign(res,Tt(=),x2(&equal));
 	res=assign(res,Tt(+),x2(&plus));
-	res=assign(res,Tt(-),x2(&plus));
+	res=assign(res,Tt(-),x2(&minus));
 	res=assign(res,Tt(*),x2(&times));
 	res=assign(res,Tt(/),x2(&divv));
 	res=assign(res,Tt(%),x2(&mod));
@@ -35,10 +34,12 @@
 	res=assign(res,Tt(^),x2(&xor));
 	res=assign(res,xt(_tagnums("<")),x2(&lesser));
 	res=assign(res,xt(_tagnums(">")),x2(&greater));
-	res=assign(res,Tt(~),x2(&matcheasy));
 	res=assign(res,Tt(!),x2(&amend));
 	res=assign(res,Tt(@),x2(&apply));
+	res=assign(res,Tt(:),x2(&dict)); // gcc gets confused by Tt(,) - thinks its two empty args
 	res=assign(res,Tt(?),x2(&find1));
+	res=assign(res,Tt(~),x2(&matcheasy));
+	res=assign(res,xt(_tagnums(",")),x2(&join)); // gcc gets confused by Tt(,) - thinks its two empty args
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
 	res=assign(res,Tt(cast),x2(&cast));
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));

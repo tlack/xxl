@@ -709,6 +709,9 @@ int _equal(const VP x,const VP y) {
 	} else
 		return 0;
 }
+VP equal(const VP x,const VP y) {
+	return xb(_equal(x,y));
+}
 int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
 	// PF("findbuf\n");DUMP(x);
 	if(LISTDICT(x)) { ITERV(x,{ 
@@ -1370,6 +1373,20 @@ VP max(VP x) {
 	}),typerr); // no need to check typerr due to SIMPLE check above
 	res->n=1;
 	return res;
+}
+VP minus(VP x,VP y) {
+	int typerr=-1;
+	// PF("minus\n");DUMP(x);DUMP(y);
+	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "minus args should be simple types", x, y); 
+	VP acc=ALLOC_BEST(x,y);
+	VARY_EACHBOTH(x,y,({
+		if(LIKELY(x->t > y->t)) { _x=_x-_y; appendbuf(acc,(buf_t)&_x,1); }
+		else { _y=_y-_x; appendbuf(acc,(buf_t)&_y,1); }
+		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
+	}),typerr);
+	IF_EXC(typerr > -1, Tt(type), "minus arg wrong type", x, y);
+	// PF("minus result\n"); DUMP(acc);
+	return acc;
 }
 VP mod(VP x,VP y) {
 	// TODO mod probably *doesnt* need type promotion
