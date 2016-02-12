@@ -2305,9 +2305,9 @@ VP parsestr(const char* str) {
 		append(acc,entags(xc('\n'),"raw"));
 	ctx=mkbarectx();
 	pats=xln(3,
+		proj(2,&nest,0,xln(5, entags(xfroms("\""),"raw"), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit))),
 		proj(2,&nest,0,xln(4, entags(xfroms("//"),"raw"), xfroms("\n"), xfroms(""), Tt(comment))),
-		proj(2,&nest,0,xln(4, entags(xfroms("/*"),"raw"), xfroms("*/"), xfroms(""), Tt(comment))),
-		proj(2,&nest,0,xln(5, entags(xfroms("\""),"raw"), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit)))
+		proj(2,&nest,0,xln(4, entags(xfroms("/*"),"raw"), xfroms("*/"), xfroms(""), Tt(comment)))
 	);
 	ctx=append(ctx,pats);
 	acc=exhaust(acc,ctx);
