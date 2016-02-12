@@ -143,8 +143,7 @@ char* repr_d(VP x,char* s,size_t sz) {
 }
 char* repr_p(VP x,char* s,size_t sz) {
 	Proj p = EL(x,Proj,0);
-	ASSERT(1,"repr_p");
-	APF(sz,"'projection(%p,%d,%p,",x,p.type,p.type==1?p.f1:p.f2);
+	APF(sz,"'projection(%p,%d,",x,p.type);
 	if(p.left!=NULL) 
 		repr0(p.left, s, sz);
 	else
@@ -824,6 +823,15 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	traw=Ti(raw); tname=Ti(name); tstr=Ti(string); tws=Ti(ws);
 
 	if(SIMPLE(code)) return code;
+	if(LIST(code) && code->tag==tlam && code->n == 2) {
+		int arity=LAMBDAARITY(code);
+		if(arity==1 && xarg==0)
+			return proj(-1,parent,xarg,yarg);
+		if(arity==2 && (xarg==0||yarg==0))
+			return proj(-2,parent,xarg,yarg);
+		code=ELl(code,0);
+	}
+	
 	if(!LIST(code)) code=list(code);
 	PFIN();
 	for(i=0;i<code->n;i++) {
@@ -845,13 +853,13 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				if(j!=parent->n-1 || !LIST(this))
 					append(newctx,clone(ELl(parent,j)));
 			}
-			append(newctx,entags(ELl(item,0),"")); // second item of lambda is arity; ignore for now
+			append(newctx,item); // second item of lambda is arity; ignore for now
 			item=newctx;
 			PF("created new lambda context item=\n");DUMP(item);
 		} else if (tag==Ti(listexpr) || tag==Ti(expr)) {
 			PF("applying subexpression\n");
 			PFIN();
-			item=applyexpr(parent,item,0,0);
+			item=applyexpr(parent,item,xarg,yarg);
 			PFOUT();
 			RETURN_IF_EXC(item);
 			if(tag==Ti(listexpr)&&!CONTAINER(item)) item=list(item);
@@ -869,7 +877,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				if (LIKELY(xarg!=0)) 
 					item=xarg;
 				else
-					return EXC(Tt(undef),"undefined x",xarg,yarg);
+					return proj(_arity(parent)*-1, parent, xarg, yarg);
 			} else if(item->n==1 && ch=='y') {
 				if (LIKELY(yarg!=0)) {
 					PF("picking up y arg\n");DUMP(yarg);
@@ -877,8 +885,9 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				} else {
 					// should return a projection here, but right now there is no way
 					// to return a projection to a context
-					item=EXC(Tt(undef),"undefined y",xarg,yarg);
+					// item=EXC(Tt(undef),"undefined y",xarg,yarg);
 					// this exception in item is further handled below
+					return proj(-2,parent,xarg,yarg);
 				}
 			}
 			else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
@@ -888,13 +897,17 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				PF("created set projection\n");
 				DUMP(left);
 				continue;
+			} else if(item->n == 4 && ch == 's' 
+						  && AS_c(item,1)=='e' && AS_c(item,2)=='l' && AS_c(item,3)=='f') {
+				PF("using self");
+				item=clone(parent);
 			} else if(item->n==2 && ch=='.' && AS_c(item,1)=='t') {  // TODO .t should be an operator or variable 
 				printf("timer on\n");
 				st=clock();
 				continue;
 			} else
 				item=get(parent,item);
-			PF("decoded string identifier\n");DUMP(item);
+			PF("decoded string identifier for %s\n",sfromx(item));DUMP(item);
 			if(IS_EXC(item)) return left!=0 && CALLABLE(left)?left:item;
 		} else if(tag==tname) {
 			PF("non-string name encountered");
@@ -902,7 +915,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			RETURN_IF_EXC(item);
 		}
 		
-		PF("before grand switch, xused=%d:\n", xused);
+		PF("before grand switch (left,item), xused=%d:\n", xused);
 		DUMP(left);
 		if(left!=0) PF("left arity=%d\n", _arity(left)); 
 		DUMP(item);
@@ -940,7 +953,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			left=item;
 		} else {
 			if(left) {
-				PF("applyexpr calling apply\n");DUMP(item);DUMP(left);
+				PF("applyexpr calling apply(item,left)\n");DUMP(item);DUMP(left);
 				xused=1;
 				PFIN();
 				left=apply(item,left);
@@ -980,7 +993,7 @@ static inline int _arity(VP x) {
 	switch (x->t) {
 		CASE(T_1,a+=1);
 		CASE(T_2,a+=2);
-		CASE(T_p,{ Proj p = AS_p(x,0); a+=MAX(p.type - (p.left!=0?1:0) - (p.right!=0?1:0), 0); });
+		CASE(T_p,{ Proj p = AS_p(x,0); a+=MAX(abs(p.type) - (p.left!=0?1:0) - (p.right!=0?1:0), 0); });
 	}
 	return a;
 }
@@ -988,16 +1001,29 @@ static inline VP arity(VP x) {
 	PF("arity%d\n", x);
 	return xi(_arity(x));
 }
-VP applyctx(VP x,VP y) {
+VP applyctx(VP ctx,VP x,VP y) {
+	if(!IS_x(ctx)) return EXC(Tt(type),"context not a context",x,y);
+	int a=_arity(ctx);
+	if(a > 0) {
+		if(a == 2 && (x==0 || y==0))
+			return proj(a*-1, ctx, x, y);
+		if(a == 1 && (x==0 && y==0))
+			return proj(a*-1, ctx, x, y);
+	}
 	// structure of a context. like a general list conforming to:
-	// first item: code. list of projections or values. evaluated left to right.
-	// second item: parent context. used to resolve unidentifiable symbols
-	// third item: parent's parent
-	// .. and so on
-	// checked in order from top to bottom with apply()
-	if(!IS_x(x)) return EXC(Tt(type),"context not a context",x,y);
-	int i,tlam=Ti(lambda);VP this,res=NULL;
-	PF("applyctx\n");DUMP(x);DUMP(y);
+	// first: root context
+	// second: nested context
+	// third: ...
+	// last: list of projections or lambda
+	int i,tlam=Ti(lambda);
+	VP code,res=NULL;
+	PF("applyctx\n");DUMP(ctx);DUMP(x);DUMP(y);
+	code=ELl(ctx,ctx->n-1);
+	if(LIST(code))
+		res=applyexpr(ctx,code,x,y);
+	PF("applyctx returning\n"); DUMP(res);
+	return res;
+	/*
 	for(i=x->n-1;i>=0;i--) {
 		this=ELl(x,i);
 		PF("applyctx #%d\n", i);
@@ -1011,12 +1037,14 @@ VP applyctx(VP x,VP y) {
 		// this may not be what we want in the long run.
 		if(res==NULL || (LIST(res) && res->n == 0))
 			res=apply(this,y);
-		PF("applyctx apply result was\n");DUMP(res);
+		PF("callctx apply result was\n");DUMP(res);
 		if(!LIST(res) || res->n > 0) {
-			PF("applyctx returning\n"); DUMP(res); 
+			PF("callctx returning\n"); DUMP(res); 
 			return res;
 		}
 	}
+	*/
+
 	return EXC(Tt(undef),"undefined in applyctx",x,y);
 }
 VP apply(VP x,VP y) {
@@ -1030,15 +1058,22 @@ VP apply(VP x,VP y) {
 			 // if we have no args, set y as left, and return x
 		// if its monadic
 			// if we have one arg already, call x[left], and then apply result with y
-		// PF("apply proj\n");DUMP(x);
+		PF("apply proj\n");DUMP(x);DUMP(y);
 		Proj* p; p=(Proj*)ELi(x,0);
-		if(p->type==1) {
+		// this logic needs a simplification and rethink
+		if(p->type < 0) {
+			int a=p->type*-1;
+			if(!p->left && y)
+				p->left=y;
+			else if (a==2 && !p->right && y) 
+				p->right=y;
+			return applyctx(p->ctx, p->left, p->right);
+		} else if(p->type==1) {
 			if (p->left) // not sure if this will actually happen - seems illogical
 				return (*p->f1)(p->left);
 			else
 				return (*p->f1)(y);
-		}
-		if(p->type==2) {
+		} else if(p->type==2) {
 			PF("proj2\n"); 
 			PFIN();
 			if(p->left && p->right) y=(*p->f2)(p->left,p->right);
@@ -1083,7 +1118,7 @@ VP apply(VP x,VP y) {
 	}
 	if(IS_x(x)) {
 		// PF("apply ctx\n");DUMP(x);DUMP(y);
-		return applyctx(x,y);
+		return applyctx(x,y,0);
 	}
 	// TODO apply() is called most often in XXL; maybe worth transforming this if cascade into a case?	
 	if(DICT(x)) {
@@ -1573,7 +1608,7 @@ inline VP _getmodular(VP x,VP y) {
 }
 
 VP get(VP x,VP y) {
-	// get is used to resolve names in applyctx(). x is context, y is thing to
+	// get is used to resolve names in callctx(). x is context, y is thing to
 	// look up. scans tree of scopes/closures to get value. in k/q, get is
 	// overriden to do special things with files and other handles as well.
 	// TODO get support nesting
@@ -1645,7 +1680,7 @@ VP set(VP x,VP y) {
 				if(LIST(dest) || CALLABLE(dest)) // skip code bodies
 					continue;
 				if(DICT(dest)) {
-					PF("set assigning..\n");
+					PF("set assigning in #%d\n",i);DUMP(dest);
 					dest=assign(dest,y,val);
 					PF("set in %p\n",dest);
 					DUMP(dest);
@@ -1724,16 +1759,17 @@ VP proj(int type, void* func, VP left, VP right) {
 	Proj p;
 	VP pv=xpsz(1);
 	p.type=type;
-	if(type==1) {
-		p.f1=func; p.left=left; p.right=0;
-	} else {
-		p.f2=func; p.left=left; p.right=right;
-	}
+	if(type<0) 
+		p.ctx=func;
+	else if(type==1) 
+		p.f1=func; 
+	else
+		p.f2=func;
+	p.left=left; p.right=right;
 	EL(pv,Proj,0)=p;
 	pv->n=1;
 	return pv;
 }
-
 
 // TAG STUFF:
 
@@ -2483,7 +2519,7 @@ VP evalin(VP tree,VP ctx) {
 		ctx=xxn(2,ctx,tree);
 	else
 		append(ctx,tree);
-	return applyctx(ctx,0); 
+	return applyctx(ctx,0,0); 
 }
 VP evalstrin(const char* str, VP ctx) {
 	VP r;
@@ -2494,13 +2530,14 @@ VP evalstrin(const char* str, VP ctx) {
 	return r;
 }
 void evalfile(VP ctx,const char* fn) {
-	VP res,acc = fileget(xfroms(fn));
-	PFW({
+	VP res,parse,acc = fileget(xfroms(fn));
 	PF("evalfile executing\n"); DUMP(acc);
-	append(ctx,parsestr(sfromx(acc)));
-	res=apply(ctx,xl0()); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
-	PF("evalfile done"); DUMP(res);
-	});
+	parse=parsestr(sfromx(acc));
+	append(ctx,parse);
+	PFW(({
+	res=apply(ctx,0); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
+	}));
+	// PF("evalfile done\n"); DUMP(ctx); DUMP(res);
 	printf("%s\n",repr(res));
 	// exit(1); fall through to repl
 }

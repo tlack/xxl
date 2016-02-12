@@ -17,7 +17,7 @@ void repl() {
 	i=0;
 	for(;;) {
 		// printf("xxl@%s> ", sfromx(get(ws,t1)));
-		PF_LVL=2;
+		//PF_LVL=2;
 		printf("xxl %d>",i);
 		fgets(line, sizeof(line), stdin);
 		if(strncmp(line,"\n",1024)==0) continue;
@@ -30,7 +30,7 @@ void repl() {
 		// DUMP(t2);
 		PF("APPENDING!!\n");
 		append(ws,t2);
-		t3=applyctx(ws,0);
+		t3=applyctx(ws,0,0);
 		ws=curtail(ws);
 		printf("inputs@%d: %s\n", i, line);
 		if(!IS_EXC(t3)) {

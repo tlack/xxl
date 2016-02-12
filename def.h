@@ -153,7 +153,7 @@ typedef VP (binaryFunc)(VP x,VP y);
 typedef char* (reprFunc)(VP x,char*s,size_t sz);
 
 // TODO projection C type should work with VP's of type 1/2 (un/bin func), rather than C-style function pointers
-struct Proj0 { int type; union { unaryFunc* f1; binaryFunc* f2; }; VP left; VP right; };
+struct Proj0 { int type; union { unaryFunc* f1; binaryFunc* f2; VP ctx; }; VP left; VP right; };
 typedef struct Proj0 Proj;
 
 struct type_info { type_t t; char c; int sz; char name[32]; reprFunc* repr; };
