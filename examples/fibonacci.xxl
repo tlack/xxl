@@ -1,0 +1,8 @@
+{
+	x as 'n;
+	['fib,n] show;
+	n<2 ifelse(1,{(n-2 self) + (n-1 self)})
+} as 'fib;
+3 fib
+
+
