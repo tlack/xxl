@@ -906,28 +906,14 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 						  && AS_c(item,1)=='e' && AS_c(item,2)=='l' && AS_c(item,3)=='f') {
 				PF("using self");
 				item=clone(parent);
-			} else if(item->n==2 && ch=='.' && AS_c(item,1)=='t') { // .t [expr] - turn on timings
-				// TODO .t should be an operator or variable 
-				printf("timer on\n");
-				st=clock();
-				continue;
-			} else if(item->n==2 && ch=='.' && AS_c(item,1)=='x') {  // .x [expr] - turn on debugging
-				// TODO .x should be an operator or variable 
-				printf("xray on\n");
-				PF_LVL=2;
-				continue;
 			} else
 				item=get(parent,item);
 			PF("decoded string identifier for %s\n",sfromx(item));DUMP(item);
 			if(IS_EXC(item)) return left!=0 && CALLABLE(left)?left:item;
-		} else if(tag==tname) { 
+		} else if(tag==tname) {
 			PF("non-string name encountered");
 			item=get(parent,item);
 			RETURN_IF_EXC(item);
-		} else if(IS_t(item) && AS_t(item,0)==Ti(x)) {
-			printf("xray on\n");
-			PF_LVL=2;
-			continue;
 		}
 		
 		PF("before grand switch (left,item), xused=%d:\n", xused);

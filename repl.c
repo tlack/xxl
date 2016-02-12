@@ -7,6 +7,7 @@ void repl(VP ctx) {
 	VP in,out,t1,t2,t3;
 	char line[1024];
 	int i;
+	clock_t st,en;
 	t1=xfroms("wkspc");
 	in=xl0();
 	assign(ELl(ctx,1),Tt(inputs),in);
@@ -34,6 +35,7 @@ void repl(VP ctx) {
 			}
 			continue;
 		}
+		st=clock();
 		t2=parsestr(line);
 		in=append(in,t2);
 		// DUMP(t2);
@@ -41,7 +43,8 @@ void repl(VP ctx) {
 		append(ctx,t2);
 		t3=applyctx(ctx,0,0);
 		ctx=curtail(ctx);
-		printf("inputs@%d: %s\n", i, line);
+		en=clock();
+		printf("(%0.04f sec)\ninputs@%d: %s\n", ((double)(en-st)/CLOCKS_PER_SEC), i, line);
 		if(!IS_EXC(t3)) {
 			out=append(out,t3);
 			printf("outputs@%d: %s\n", i, sfromx(repr(t3)));
