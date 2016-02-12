@@ -52,11 +52,13 @@
 	res=assign(res,Tt(iftrue),x2(&iftrue));
 	res=assign(res,Tt(ifelse),x2(&ifelse));
 	res=assign(res,Tt(in),x2(&matchany));
+	res=assign(res,Tt(loadin),x2(&loadin));
 	res=assign(res,Tt(nest),x2(&nest));
 	res=assign(res,Tt(pick),x2(&pick));
-	res=assign(res,Tt(rot),x2(&shift));
-	res=assign(res,Tt(take),x2(&take));
 	res=assign(res,Tt(over),x2(&over));
+	res=assign(res,Tt(rot),x2(&shift));
+	res=assign(res,Tt(split),x2(&split));
+	res=assign(res,Tt(take),x2(&take));
 
 	//stdlib
 	VP d;

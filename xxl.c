@@ -2543,6 +2543,19 @@ void evalfile(VP ctx,const char* fn) {
 	printf("%s\n",repr(res));
 	// exit(1); fall through to repl
 }
+VP loadin(VP fn,VP ctx) {
+	VP res,parse,acc = fileget(fn);
+	parse=parsestr(sfromx(acc));
+	append(ctx,parse);
+	//PFW(({
+	res=apply(ctx,0); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
+	// }));
+	// PF("evalfile done\n"); DUMP(ctx); DUMP(res);
+	ctx=curtail(ctx);
+	return res;
+	// exit(1); fall through to repl
+
+}
 void tests() {
 	int i;
 	VP a,b,c;
