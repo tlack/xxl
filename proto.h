@@ -84,6 +84,7 @@ int _tagnums(const char* name);
 void thr_run(VP ctx);
 static type_info_t typeinfo(type_t n); 
 static type_info_t typechar(char c);
+VP type(VP x);
 VP wide(VP obj,VP f);
 VP xalloc(type_t t,I32 initn);
 VP xfree(VP x);
