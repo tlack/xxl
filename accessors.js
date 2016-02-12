@@ -1,5 +1,6 @@
 // TODO rename accessor functions to something pretty
-var lib = require('./common.js');
+var max=0;
+var lib=require('./common.js');
 console.log(lib.prelude);
 lib.each(lib.types, function(t) {
 	var tmpls = [
@@ -21,4 +22,6 @@ lib.each(lib.types, function(t) {
 	lib.each(tmpls,function(tmpl) {
 		console.log(lib.exhaust(lib.projr(lib.repl,t),tmpl));
 	});
+	if(t[0]>max) max=t[0];
 });
+console.log('\n\nstatic int MAX_TYPE = '+max+';\n\n');

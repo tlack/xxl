@@ -44,6 +44,7 @@ char* repr_2(VP x,char* s,size_t sz) {
 char* repr0(VP x,char* s,size_t sz) {
 	type_info_t t;
 	if(x==NULL) { APF(sz,"/*null*/",0); return s; }
+	if(x->t < 0 || x->t > MAX_TYPE) { APF(sz,"/*unknown*/",0); return s; }
 	t=typeinfo(x->t);
 	if(0 && DEBUG) {
 		APF(sz," /*%p %s tag=%d#%s itemsz=%d n=%d rc=%d*/ ",x,t.name,
