@@ -2308,8 +2308,8 @@ VP parsestr(const char* str) {
 	t2=t1;
 	for(i=0;i<pats->n;i++) {
 		PF("parsestr exhausting %d\n", i);
-		// t2=exhaust(t2,proj(2,&wide,0,ELl(pats,i)));
-		t2=exhaust(t2,ELl(pats,i)); // wide doesnt seem needed here after tag fixes
+		t2=exhaust(t2,proj(2,&wide,0,ELl(pats,i)));
+		// t2=exhaust(t2,ELl(pats,i)); // wide doesnt seem needed here after tag fixes
 	}
 	return t2;
 }
@@ -2358,12 +2358,9 @@ void* thr_run0(void* VPctx) {
 	#ifndef THREAD
 	#else
 	VP ctx=clone(VPctx);
-	PFW(({
 	printf("thr_run %s\n", reprA(ctx));
-	ctx=apply(ctx,xl0());
-	DUMP(ctx);
-	}));
-	printf("thr_run0 done\n");
+	ctx=apply(ctx,0);
+	printf("thr_run0 done\n"); DUMP(ctx);
 	pthread_exit(NULL);
 	#endif
 	return 0;
