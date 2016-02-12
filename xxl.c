@@ -625,8 +625,8 @@ VP splice(VP x,VP idx,VP replace) {
 	return acc;
 }
 VP split(VP x,VP tok) {
-	PF("split");DUMP(x);DUMP(tok);
-	VP tmp=0,tmp2=0; int locs[1024],typerr=-1;
+	PF("split\n");DUMP(x);DUMP(tok);
+	VP tmp=0,tmp2=0; int typerr=-1;
 
 	// special case for empty or null tok.. split vector into list
 	if(tok->n==0) {
@@ -641,17 +641,23 @@ VP split(VP x,VP tok) {
 		IF_RET(typerr>-1, EXC(Tt(type),"can't split that type", x, tok));
 		PF("split returning\n");DUMP(tmp);
 		return tmp;
-	}
-
-	if(x->t == tok->t && tok->n==1) {
-		int i=0,j=0,last=0;
+	} else if(x->t == tok->t) {
+		PF("splitting\n");
+		int j,i=0,last=0,tokn=tok->n;
 		VP rest=x,acc=0;
 		for(;i<x->n;i++) {
-			if (_equalm(x,i,tok,0)) {
-				if(!acc)acc=xlsz(x->n/1);
-				acc=append(acc,take_(rest,i-last));
-				rest=drop_(rest,i+1-last);
-				last=i+1;
+			PF("i%d\n", i);
+			for(j=0;j < tokn;j++) {
+				PF("j%d\n", i, j);
+				if (!_equalm(x,i+j,tok,j)) 
+					break;
+				if(j==tokn-1) {
+					// we made it!
+					if(!acc)acc=xlsz(x->n/1);
+					acc=append(acc,take_(rest,i-last));
+					rest=drop_(rest,i+(tokn)-last);
+					last=i+(tokn);
+				}
 			}
 		}
 		if(acc){ acc=append(acc,rest); return acc; }
@@ -824,7 +830,6 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	char ch; 
 	int i, tag, tcom, texc, tlam, traw, tname, tstr, tws, savepf=PF_LVL, xused=0, yused=0; 
 	VP left,item;
-	clock_t st=0;
 	left=xarg; if(!yarg) yused=1;
 	tcom=Ti(comment); texc=Ti(exception); tlam=Ti(lambda); 
 	traw=Ti(raw); tname=Ti(name); tstr=Ti(string); tws=Ti(ws);
@@ -971,11 +976,6 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	PFOUT();
 	PF("applyexpr returning\n");
 	DUMP(left);
-	if(st!=0) {
-		clock_t en;
-		en = clock();
-		printf("time=%0.4f\n", ((double)(en-st)) / CLOCKS_PER_SEC); 
-	}
 	return left;
 }
 static inline int _arity(VP x) {

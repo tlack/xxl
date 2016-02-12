@@ -274,6 +274,11 @@
 	b=split(a,xi(3));
 	DUMP(b);
 	ASSERT(_equal(xln(2,xin(2,1,2),xin(2,4,5)),b),"split int token");
+
+	a=xfroms("abXYcd");
+	b=split(a,xfroms("XY"));
+	ASSERT(b->n==2 && _equal(b,xln(2,xfroms("ab"),xfroms("cd"))),"split double char token");
+
 	a=xfroms(".hello.there");
 	b=split(a,xfroms("."));
 	DUMP(b);
