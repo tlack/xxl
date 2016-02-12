@@ -47,9 +47,21 @@ if [ "x$BUILDH" = "xyes" ]; then
 	$NODE repr.js > repr.h 
 fi
 
+echo "#define XXL_COMPILE \"$CC $DEFS $WARN $LIBS $ARCH $STDLIB\"" > compile.h
+
 $CC $DEFS $WARN $LIBS $ARCH $STDLIB \
-	xxl.c net.c repl.c -o ./xxl 2>&1 \
-	&& $RUN
+	xxl.c -c 2>&1 \
+	&& \
+$CC $DEFS $WARN $LIBS $ARCH $STDLIB \
+	repl.c -c 2>&1 \
+	&& \
+$CC $DEFS $WARN $LIBS $ARCH $STDLIB \
+	net.c -c 2>&1 \
+	&& \
+$CC $DEFS $WARN $LIBS $ARCH $STDLIB \
+	xxl.o repl.o net.o -o ./xxl 2>&1 \
+	&& \
+$RUN
 
 
 

@@ -2391,21 +2391,35 @@ VP fileset(VP str,VP fn) {
 #ifdef STDLIBSHAREDLIB
 VP sharedlibget(VP fn) {
 	if(!IS_c(fn)) return EXC(Tt(type),".sharedlib.get requires a filename string as argument",fn,0);
-	void* fp;void* itemp;char* fns=sfromx(fn);
+	const char* fns=sfromx(fn);
+	void* fp;
 	fp=dlopen(fns,RTLD_LAZY);
 	if(fp==NULL) { 
 		printf("dlerr:%s\n",dlerror());
 		return EXC(Tt(open),".sharedlib.get could not open shared library",fn,0);
 	}
-	itemp=dlsym(fp,"XXL_INDEX");
-	if(itemp==NULL) return EXC(Tt(read),".sharedlib.get could not read index",fn,0);
-	PF_LVL=10;
+	void* indexp;
+	indexp=dlsym(fp,"XXL_INDEX");
+	if(indexp==NULL) return EXC(Tt(read),".sharedlib.get could not read index",fn,0);
+	// PF_LVL=10;
 	struct xxl_index_t* idx;
-	idx=&itemp;
+	idx=indexp;
 	int i=0;
-	printf("%s %d\n", idx[0].name, idx[0].arity);
-	VP item=xl0();
-	return item;
+	VP contents=xd0();
+	while(idx[i].arity != 0) {
+		void* itemp;
+		// printf("%s %d\n", idx[0].name, idx[0].arity);
+		itemp=dlsym(fp,idx[i].implfunc);
+		if(itemp==NULL) { xfree(contents); return EXC(Tt(read),".sharedlib.get could not read item",fn,0); }
+		// printf("ptr=%p\n", itemp);
+		if(idx[i].arity == 1)
+			contents=assign(contents,xt(_tagnums(idx[0].name)),x1(itemp));
+		else
+			contents=assign(contents,xt(_tagnums(idx[0].name)),x2(itemp));
+		idx++;
+	}
+	DUMP(contents);
+	return contents;
 }
 VP sharedlibset(VP fn,VP funcs) {
 	return EXC(Tt(nyi),".sharedlib.set nyi",fn,funcs);
