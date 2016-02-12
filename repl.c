@@ -3,20 +3,19 @@
 #include "accessors.h"
 #include "vary.h"
 
-void repl() {
-	VP in,out,t1,t2,t3,ws=mkworkspace();
+void repl(VP ctx) {
+	VP in,out,t1,t2,t3;
 	char line[1024];
 	int i;
 	t1=xfroms("wkspc");
-
 	in=xl0();
-	assign(ELl(ws,1),Tt(inputs),in);
+	assign(ELl(ctx,1),Tt(inputs),in);
 	out=xl0();
-	assign(ELl(ws,1),Tt(outputs),out);
+	assign(ELl(ctx,1),Tt(outputs),out);
 
 	i=0;
 	for(;;) {
-		// printf("xxl@%s> ", sfromx(get(ws,t1)));
+		// printf("xxl@%s> ", sfromx(get(ctx,t1)));
 		//PF_LVL=2;
 		printf("xxl %d>",i);
 		fgets(line, sizeof(line), stdin);
@@ -25,13 +24,23 @@ void repl() {
 			 strncmp(line,"exit\n",1024)==0 ||
 			 strncmp(line,"quit\n",1024)==0)
 			exit(1);
+		if(strncmp(line,"xray\n",1024)==0) {
+			if(PF_LVL) {
+				printf("xray off\n");
+				PF_LVL=0; 
+			} else {
+				printf("xray on\n");
+				PF_LVL=1;
+			}
+			continue;
+		}
 		t2=parsestr(line);
 		in=append(in,t2);
 		// DUMP(t2);
 		PF("APPENDING!!\n");
-		append(ws,t2);
-		t3=applyctx(ws,0,0);
-		ws=curtail(ws);
+		append(ctx,t2);
+		t3=applyctx(ctx,0,0);
+		ctx=curtail(ctx);
 		printf("inputs@%d: %s\n", i, line);
 		if(!IS_EXC(t3)) {
 			out=append(out,t3);

@@ -57,7 +57,7 @@ VP or(VP x,VP y);
 VP parse(VP x);
 VP parsestr(const char* str);
 VP plus(VP x,VP y);
-void repl();
+void repl(VP ctx);
 VP repr(VP x);
 char* repr0(VP x,char* s,size_t len);
 char* reprA(VP x);

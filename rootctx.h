@@ -3,6 +3,7 @@
 	// res=assign(res,xt(_tagnums("]")),x1(&identity));
 	res=assign(res,Tt(arity),x1(&arity));
 	res=assign(res,Tt(condense),x1(&condense));
+	res=assign(res,Tt(count),x1(&count));
 	res=assign(res,Tt(curtail),x1(&curtail));
 	res=assign(res,Tt(info),x1(&info));
 	res=assign(res,Tt(flat),x1(&flatten));
@@ -18,7 +19,7 @@
 	res=assign(res,Tt(show),x1(&show));
 	res=assign(res,Tt(sum),x1(&sum));
 	res=assign(res,Tt(sums),x1(&sums));
-	res=assign(res,Tt(count),x1(&count));
+	res=assign(res,Tt(type),x1(&type));
 	res=assign(res,Tt(val),x1(&val));
 	res=assign(res,Tt(ver),xi(0));
 

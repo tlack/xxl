@@ -793,6 +793,12 @@ VP info(VP x) {
 	res=assign(res,Tt(memptr),xi((int)BUF(x)));
 	return res;
 }
+VP type(VP x) {
+	if(x==0 || x->t<0 || x->t>MAX_TYPE) return Tt(null);
+	type_info_t t;
+	t=typeinfo(x->t);
+	return xt(_tagnums(t.name));
+}
 VP deal(VP range,VP amt) {
 	PF("deal\n");DUMP(range);DUMP(amt);
 	IF_EXC(!NUM(range),Tt(type),"deal: left arg must be numeric", range, amt);
@@ -815,7 +821,8 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	PF("applyexpr (code, xarg, yarg):\n");DUMP(code);DUMP(xarg);DUMP(yarg);
 	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
 	if(!LIST(code))return code;
-	char ch; int i, tag, tcom, texc, tlam, traw, tname, tstr, tws, xused=0, yused=0; 
+	char ch; 
+	int i, tag, tcom, texc, tlam, traw, tname, tstr, tws, savepf=PF_LVL, xused=0, yused=0; 
 	VP left,item;
 	clock_t st=0;
 	left=xarg; if(!yarg) yused=1;
@@ -864,9 +871,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			RETURN_IF_EXC(item);
 			if(tag==Ti(listexpr)&&!CONTAINER(item)) item=list(item);
 			PF("subexpression came back with");DUMP(item);
-		} else 
-		// if(LIKELY(IS_c(item)) && tag != tstr) {
-		if(LIKELY(IS_c(item)) && tag != tstr) {
+		} else if(LIKELY(IS_c(item)) && tag != tstr) {
 			ch = AS_c(item,0);
 			if(ch==';') { // end of expr; remove left/x
 				left=0; xused=1;
@@ -901,18 +906,28 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 						  && AS_c(item,1)=='e' && AS_c(item,2)=='l' && AS_c(item,3)=='f') {
 				PF("using self");
 				item=clone(parent);
-			} else if(item->n==2 && ch=='.' && AS_c(item,1)=='t') {  // TODO .t should be an operator or variable 
+			} else if(item->n==2 && ch=='.' && AS_c(item,1)=='t') { // .t [expr] - turn on timings
+				// TODO .t should be an operator or variable 
 				printf("timer on\n");
 				st=clock();
+				continue;
+			} else if(item->n==2 && ch=='.' && AS_c(item,1)=='x') {  // .x [expr] - turn on debugging
+				// TODO .x should be an operator or variable 
+				printf("xray on\n");
+				PF_LVL=2;
 				continue;
 			} else
 				item=get(parent,item);
 			PF("decoded string identifier for %s\n",sfromx(item));DUMP(item);
 			if(IS_EXC(item)) return left!=0 && CALLABLE(left)?left:item;
-		} else if(tag==tname) {
+		} else if(tag==tname) { 
 			PF("non-string name encountered");
 			item=get(parent,item);
 			RETURN_IF_EXC(item);
+		} else if(IS_t(item) && AS_t(item,0)==Ti(x)) {
+			printf("xray on\n");
+			PF_LVL=2;
+			continue;
 		}
 		
 		PF("before grand switch (left,item), xused=%d:\n", xused);
@@ -2534,10 +2549,11 @@ void evalfile(VP ctx,const char* fn) {
 	PF("evalfile executing\n"); DUMP(acc);
 	parse=parsestr(sfromx(acc));
 	append(ctx,parse);
-	PFW(({
+	//PFW(({
 	res=apply(ctx,0); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
-	}));
+	// }));
 	// PF("evalfile done\n"); DUMP(ctx); DUMP(res);
+	ctx=curtail(ctx);
 	printf("%s\n",repr(res));
 	// exit(1); fall through to repl
 }
@@ -2573,7 +2589,7 @@ int main(int argc, char* argv[]) {
 	// net();
 	if(argc == 2) evalfile(ctx,argv[1]);
 	else tests();
-	repl();
+	repl(ctx);
 	exit(1);
 }
 /*
