@@ -911,6 +911,10 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				PF("created set projection\n");
 				DUMP(left);
 				continue;
+			} else if(item->n == 4 && ch == 'l' 
+						  && AS_c(item,1)=='o' && AS_c(item,2)=='a' && AS_c(item,3)=='d') {
+				PF("performing load");
+				item=proj(2,&loadin,0,parent);
 			} else if(item->n == 4 && ch == 's' 
 						  && AS_c(item,1)=='e' && AS_c(item,2)=='l' && AS_c(item,3)=='f') {
 				PF("using self");
@@ -2592,14 +2596,9 @@ VP loadin(VP fn,VP ctx) {
 	VP res,parse,acc = fileget(fn);
 	parse=parsestr(sfromx(acc));
 	append(ctx,parse);
-	//PFW(({
 	res=apply(ctx,0); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
-	// }));
-	// PF("evalfile done\n"); DUMP(ctx); DUMP(res);
 	ctx=curtail(ctx);
 	return res;
-	// exit(1); fall through to repl
-
 }
 void tests() {
 	int i;
