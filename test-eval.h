@@ -85,4 +85,4 @@
 			)
 		), "teic1");
 	//DUMP(parsestr("// test"));
-	//parsestr("// test\nx:\"Hello!\"\ntil 1024");
+	//parsestr("// test\nx:\"Hello!\"\ncount 1024");

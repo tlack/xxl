@@ -31,6 +31,10 @@ static pthread_t THR[MAXTHR]={0};
 #include "accessors.h"
 #include "vary.h"
 
+#ifdef STDLIBSHAREDLIB
+#include <dlfcn.h>
+#endif
+
 /*
 char* repr_1(VP x,char* s,size_t sz) {
 	APF(sz,"[ unary func = %p ],",x);
@@ -44,6 +48,7 @@ char* repr_2(VP x,char* s,size_t sz) {
 char* repr0(VP x,char* s,size_t sz) {
 	type_info_t t;
 	if(x==NULL) { APF(sz,"/*null*/",0); return s; }
+	if(x->t < 0 || x->t > MAX_TYPE) { APF(sz,"/*unknown*/",0); return s; }
 	t=typeinfo(x->t);
 	if(0 && DEBUG) {
 		APF(sz," /*%p %s tag=%d#%s itemsz=%d n=%d rc=%d*/ ",x,t.name,
@@ -89,8 +94,8 @@ char* repr_c(VP x,char* s,size_t sz) {
 	for(;i<n;i++){
 		ch = AS_c(x,i);
 		if(ch=='"') APF(sz,"\\", 0);
-		if(ch=='\n') APF(sz,"\\n", 0);
-		if(ch=='\r') APF(sz,"\\r", 0);
+		else if(ch=='\n') APF(sz,"\\n", 0);
+		else if(ch=='\r') APF(sz,"\\r", 0);
 		else APF(sz,"%c",ch);
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
@@ -126,13 +131,14 @@ char* repr_x(VP x,char* s,size_t sz) {
 char* repr_d(VP x,char* s,size_t sz) {
 	int i, n;
 	VP k=KEYS(x),v=VALS(x);
+	if(!sz)return;
 	if (!k || !v) { APF(sz,"[null]",0); return s; }
 	APF(sz,"[",0);
 	n=k->n;
 	for(i=0;i<n;i++) {
-		repr0(apply(k,xi(i)), s, sz);
+		repr0(apply(k,xi(i)), s, sz-1);
 		APF(sz,":",0);
-		repr0(apply(v,xi(i)), s, sz);
+		repr0(apply(v,xi(i)), s, sz-2);
 		if(i!=n-1)
 			APF(sz,", ",0);
 	}
@@ -141,8 +147,7 @@ char* repr_d(VP x,char* s,size_t sz) {
 }
 char* repr_p(VP x,char* s,size_t sz) {
 	Proj p = EL(x,Proj,0);
-	ASSERT(1,"repr_p");
-	APF(sz,"'projection(%p,%d,%p,",x,p.type,p.type==1?p.f1:p.f2);
+	APF(sz,"'projection(%p,%d,",x,p.type);
 	if(p.left!=NULL) 
 		repr0(p.left, s, sz);
 	else
@@ -241,7 +246,7 @@ VP xrealloc(VP x,I32 newn) {
 			MEM_REALLOCS++;
 		}
 		// PF("realloc new ptr = %p\n", newp);
-		if(newp==NULL) perror("realloc");
+		if(newp==NULL) PERR("realloc");
 		x->dyn=newp;
 		x->cap=newn;
 		x->sz=newsz;
@@ -348,6 +353,7 @@ VP append(VP x,VP y) {
 		// PF("afterward:\n"); DUMP(x);
 	} else {
 		buf_t dest;
+		PF("append disaster\n");DUMP(info(x));DUMP(x);DUMP(info(y));DUMP(y);
 		dest = BUF(x) + (x->n*x->itemsz);
 		x=xrealloc(x,x->n + y->n);
 		memmove(ELsz(x,x->itemsz,x->n),BUF(y),y->sz);
@@ -387,7 +393,7 @@ VP amend(VP x,VP y) {
 	PF("amend returning\n");DUMP(x);
 	return x;
 }
-static inline VP assign(VP x,VP k,VP val) {
+inline VP assign(VP x,VP k,VP val) {
 	// PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
 	if (LIST(k) && k->n) {
 		int i=0;VP res=x;
@@ -421,7 +427,7 @@ static inline VP assigns(VP x,const char* key,VP val) {
 	return assign(x,xfroms(key),val);
 }
 VP behead(VP x) {
-	PF("behead\n");DUMP(x);
+	// PF("behead\n");DUMP(x);
 	return drop_(x,1);
 }
 int _flat(VP x) { // returns 1 if vector, or a list composed of vectors (and not other lists)
@@ -444,7 +450,7 @@ VP flatten(VP x) {
 	} else return xl0();
 }
 VP curtail(VP x) {
-	PF("curtail\n");DUMP(x);
+	// PF("curtail\n");DUMP(x);
 	return drop_(x,-1);
 }
 VP dict(VP x,VP y) {
@@ -491,8 +497,7 @@ VP drop_(VP x,int i) {
 	int st, end;
 	if(i<0) { st = 0; end=x->n+i; }
 	else { st = i; end=x->n; }
-	PF("drop_(,%d) %d %d %d\n", i, x->n, st, end);
-	DUMP(x);
+	// PF("drop_(,%d) %d %d %d\n", i, x->n, st, end); DUMP(x);
 	res=ALLOC_LIKE_SZ(x,end-st);
 	// DUMP(info(res));
 	if(end-st > 0) {
@@ -504,7 +509,7 @@ VP drop_(VP x,int i) {
 VP drop(VP x,VP y) {
 	VP res=0;
 	int typerr=-1;
-	PF("drop args\n"); DUMP(x); DUMP(y);
+	// PF("drop args\n"); DUMP(x); DUMP(y);
 	IF_RET(!NUM(y) || !SCALAR(y), EXC(Tt(type),"drop y arg must be single numeric",x,y));	
 	VARY_EL(y, 0, ({ return drop_(x,_x); }), typerr);
 	return res;
@@ -546,7 +551,8 @@ VP join(VP x,VP y) {
 VP last(VP x) {
 	VP res=ALLOC_LIKE_SZ(x,1);
 	if(x->n==0) return res;
-	res=appendbuf(res,ELi(x,x->n-1),1);
+	if(CONTAINER(x)) return xref(ELl(x,x->n-1));
+	else res=appendbuf(res,ELi(x,x->n-1),1);
 	return res;
 }
 static inline VP list(VP x) { // convert x to general list
@@ -577,7 +583,7 @@ VP reverse(VP x) {
 	return acc;
 }
 VP shift_(VP x,int i) {
-	PF("shift_ %d\n",i);DUMP(x);
+	// PF("shift_ %d\n",i);DUMP(x);
 	int n=x->n;
 	if(i<0) 
 		return join(take_(x,i%n),drop_(x,i%n));
@@ -623,8 +629,8 @@ VP splice(VP x,VP idx,VP replace) {
 	return acc;
 }
 VP split(VP x,VP tok) {
-	PF("split");DUMP(x);DUMP(tok);
-	VP tmp=0,tmp2=0; int locs[1024],typerr=-1;
+	PF("split\n");DUMP(x);DUMP(tok);
+	VP tmp=0,tmp2=0; int typerr=-1;
 
 	// special case for empty or null tok.. split vector into list
 	if(tok->n==0) {
@@ -639,17 +645,23 @@ VP split(VP x,VP tok) {
 		IF_RET(typerr>-1, EXC(Tt(type),"can't split that type", x, tok));
 		PF("split returning\n");DUMP(tmp);
 		return tmp;
-	}
-
-	if(x->t == tok->t && tok->n==1) {
-		int i=0,j=0,last=0;
+	} else if(x->t == tok->t) {
+		PF("splitting\n");
+		int j,i=0,last=0,tokn=tok->n;
 		VP rest=x,acc=0;
 		for(;i<x->n;i++) {
-			if (_equalm(x,i,tok,0)) {
-				if(!acc)acc=xlsz(x->n/1);
-				acc=append(acc,take_(rest,i-last));
-				rest=drop_(rest,i+1-last);
-				last=i+1;
+			PF("i%d\n", i);
+			for(j=0;j < tokn;j++) {
+				PF("j%d\n", i, j);
+				if (!_equalm(x,i+j,tok,j)) 
+					break;
+				if(j==tokn-1) {
+					// we made it!
+					if(!acc)acc=xlsz(x->n/1);
+					acc=append(acc,take_(rest,i-last));
+					rest=drop_(rest,i+(tokn)-last);
+					last=i+(tokn);
+				}
 			}
 		}
 		if(acc){ acc=append(acc,rest); return acc; }
@@ -706,6 +718,9 @@ int _equal(const VP x,const VP y) {
 	} else
 		return 0;
 }
+VP equal(const VP x,const VP y) {
+	return xb(_equal(x,y));
+}
 int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
 	// PF("findbuf\n");DUMP(x);
 	if(LISTDICT(x)) { ITERV(x,{ 
@@ -722,8 +737,10 @@ int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
 int _find1(VP x,VP y) {        // returns index or -1 on not found
 	// probably the most common, core call in the code. worth trying to optimize.
 	// PF("_find1\n",x,y); DUMP(x); DUMP(y);
-	ASSERT(LIST(x) || (x->t==y->t && y->n==1), "_find1(): x must be list, or types must match with right scalar");
-	if(LISTDICT(x)) { ITERV(x,{ 
+	ASSERT(LISTDICT(x) || (x->t==y->t && y->n==1), "_find1(): x must be list, or types must match with right scalar");
+	if(UNLIKELY(DICT(x))) {
+		return _find1(KEYS(x),y);
+	} if(LIST(x)) { ITERV(x,{ 
 		VP xx; xx=ELl(x,_i);
 		// PF("_find1 %d\n",_i); DUMP(xx);
 		if(xx!=NULL) 
@@ -786,6 +803,12 @@ VP info(VP x) {
 	res=assign(res,Tt(memptr),xi((int)BUF(x)));
 	return res;
 }
+VP type(VP x) {
+	if(x==0 || x->t<0 || x->t>MAX_TYPE) return Tt(null);
+	type_info_t t;
+	t=typeinfo(x->t);
+	return xt(_tagnums(t.name));
+}
 VP deal(VP range,VP amt) {
 	PF("deal\n");DUMP(range);DUMP(amt);
 	IF_EXC(!NUM(range),Tt(type),"deal: left arg must be numeric", range, amt);
@@ -808,14 +831,23 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	PF("applyexpr (code, xarg, yarg):\n");DUMP(code);DUMP(xarg);DUMP(yarg);
 	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
 	if(!LIST(code))return code;
-	char ch; int i, tag, tcom, texc, tlam, traw, tname, tstr, tws, xused=0, yused=0; 
+	char ch; 
+	int i, tag, tcom, texc, tlam, traw, tname, tstr, tws, savepf=PF_LVL, xused=0, yused=0; 
 	VP left,item;
-	clock_t st=0;
 	left=xarg; if(!yarg) yused=1;
 	tcom=Ti(comment); texc=Ti(exception); tlam=Ti(lambda); 
 	traw=Ti(raw); tname=Ti(name); tstr=Ti(string); tws=Ti(ws);
 
 	if(SIMPLE(code)) return code;
+	if(LIST(code) && code->tag==tlam && code->n == 2) {
+		int arity=LAMBDAARITY(code);
+		if(arity==1 && xarg==0)
+			return proj(-1,parent,xarg,yarg);
+		if(arity==2 && (xarg==0||yarg==0))
+			return proj(-2,parent,xarg,yarg);
+		code=ELl(code,0);
+	}
+	
 	if(!LIST(code)) code=list(code);
 	PFIN();
 	for(i=0;i<code->n;i++) {
@@ -837,31 +869,40 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				if(j!=parent->n-1 || !LIST(this))
 					append(newctx,clone(ELl(parent,j)));
 			}
-			append(newctx,entags(ELl(item,0),"")); // second item of lambda is arity; ignore for now
+			append(newctx,item); // second item of lambda is arity; ignore for now
 			item=newctx;
 			PF("created new lambda context item=\n");DUMP(item);
 		} else if (tag==Ti(listexpr) || tag==Ti(expr)) {
 			PF("applying subexpression\n");
 			PFIN();
-			item=applyexpr(parent,item,0,0);
+			item=applyexpr(parent,item,xarg,yarg);
 			PFOUT();
 			RETURN_IF_EXC(item);
 			if(tag==Ti(listexpr)&&!CONTAINER(item)) item=list(item);
 			PF("subexpression came back with");DUMP(item);
-		} else 
-		// if(LIKELY(IS_c(item)) && tag != tstr) {
-		if(LIKELY(IS_c(item)) && tag != tstr) {
+		} else if(LIKELY(IS_c(item)) && tag != tstr) {
 			ch = AS_c(item,0);
 			if(ch==';') { // end of expr; remove left/x
 				left=0; xused=1;
 				continue;
 			} 
 			PF("much ado about\n");DUMP(item);
-			if(item->n==1 && ch=='x')
-				item=xarg;
-			else if(item->n==1 && ch=='y' && yarg!=0) {
-				PF("picking up y arg\n");DUMP(yarg);
-				item=yarg;
+			if(item->n==1 && ch=='x') {
+				if (LIKELY(xarg!=0)) 
+					item=xarg;
+				else
+					return proj(_arity(parent)*-1, parent, xarg, yarg);
+			} else if(item->n==1 && ch=='y') {
+				if (LIKELY(yarg!=0)) {
+					PF("picking up y arg\n");DUMP(yarg);
+					item=yarg;
+				} else {
+					// should return a projection here, but right now there is no way
+					// to return a projection to a context
+					// item=EXC(Tt(undef),"undefined y",xarg,yarg);
+					// this exception in item is further handled below
+					return proj(-2,parent,xarg,yarg);
+				}
 			}
 			else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
 				left=proj(2,&set,xln(2,parent,left),0);
@@ -870,13 +911,17 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				PF("created set projection\n");
 				DUMP(left);
 				continue;
-			} else if(item->n==2 && ch=='.' && AS_c(item,1)=='t') {
-				printf("timer on\n");
-				st=clock();
-				continue;
+			} else if(item->n == 4 && ch == 'l' 
+						  && AS_c(item,1)=='o' && AS_c(item,2)=='a' && AS_c(item,3)=='d') {
+				PF("performing load");
+				item=proj(2,&loadin,0,parent);
+			} else if(item->n == 4 && ch == 's' 
+						  && AS_c(item,1)=='e' && AS_c(item,2)=='l' && AS_c(item,3)=='f') {
+				PF("using self");
+				item=clone(parent);
 			} else
 				item=get(parent,item);
-			PF("decoded string identifier\n");DUMP(item);
+			PF("decoded string identifier for %s\n",sfromx(item));DUMP(item);
 			if(IS_EXC(item)) return left!=0 && CALLABLE(left)?left:item;
 		} else if(tag==tname) {
 			PF("non-string name encountered");
@@ -884,19 +929,28 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			RETURN_IF_EXC(item);
 		}
 		
-		PF("before grand switch, xused=%d:\n", xused);
+		PF("before grand switch (left,item), xused=%d:\n", xused);
 		DUMP(left);
+		if(left!=0) PF("left arity=%d\n", _arity(left)); 
 		DUMP(item);
 
-		if(left!=0 && CALLABLE(left)) {
+		if(left!=0 && CALLABLE(left) && _arity(left)>0) {
 			// they seem to be trying to call a unary function, though it's on the
 			// left - NB. possibly shady
 			//
-			// if you pass a projection as the xargument, we should NOT immediately pass
-			// the next value to it, even though it appears as "left". xused acts
-			// as a gate for that "are we still possibly needing the passed-in (left) value?"
+			// note about IS_x use here: contexts are often passed around as values,
+			// and this behavior is overriden to not support them in the left
+			// position. this came about while testing ". get 'zebra" because "." is
+			// a context which is callable and get is a verb which is (obviously)
+			// callable. 
+			//
+			// regarding the first position in an expression: if you pass a
+			// projection as the xargument, we should NOT immediately pass the next
+			// value to it, even though it appears as "left". xused acts as a gate
+			// for that "are we still possibly needing the passed-in (left) value?"
 			// logic to not allow this behavior in first position inside expression
 			Proj p;
+			PF("applying dangling left callable\n");
 			left=apply(left,item);
 			RETURN_IF_EXC(left);
 			if(IS_p(left)) {
@@ -913,7 +967,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			left=item;
 		} else {
 			if(left) {
-				PF("applyexpr calling apply\n");DUMP(item);DUMP(left);
+				PF("applyexpr calling apply(item,left)\n");DUMP(item);DUMP(left);
 				xused=1;
 				PFIN();
 				left=apply(item,left);
@@ -930,23 +984,55 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	PFOUT();
 	PF("applyexpr returning\n");
 	DUMP(left);
-	if(st!=0) {
-		clock_t en;
-		en = clock();
-		printf("time=%0.4f\n", ((double)(en-st)) / CLOCKS_PER_SEC); 
-	}
 	return left;
 }
-VP applyctx(VP x,VP y) {
+static inline int _arity(VP x) {
+	int a=0;
+	if(!CALLABLE(x)) return 0;
+	if(CONTAINER(x)) {
+		if (x->n >= 2 && x->tag==Ti(lambda)) 
+			return LAMBDAARITY(x); // second item in lambda is arity
+		else {
+			int i;
+			for(i=0; i<x->n;i++) 
+				a+=_arity(ELl(x,i));
+			return a;
+		}
+	}
+	switch (x->t) {
+		CASE(T_1,a+=1);
+		CASE(T_2,a+=2);
+		CASE(T_p,{ Proj p = AS_p(x,0); a+=MAX(abs(p.type) - (p.left!=0?1:0) - (p.right!=0?1:0), 0); });
+	}
+	return a;
+}
+static inline VP arity(VP x) {
+	PF("arity%d\n", x);
+	return xi(_arity(x));
+}
+VP applyctx(VP ctx,VP x,VP y) {
+	if(!IS_x(ctx)) return EXC(Tt(type),"context not a context",x,y);
+	int a=_arity(ctx);
+	if(a > 0) {
+		if(a == 2 && (x==0 || y==0))
+			return proj(a*-1, ctx, x, y);
+		if(a == 1 && (x==0 && y==0))
+			return proj(a*-1, ctx, x, y);
+	}
 	// structure of a context. like a general list conforming to:
-	// first item: code. list of projections or values. evaluated left to right.
-	// second item: parent context. used to resolve unidentifiable symbols
-	// third item: parent's parent
-	// .. and so on
-	// checked in order from top to bottom with apply()
-	if(!IS_x(x)) return EXC(Tt(type),"context not a context",x,y);
-	int i;VP this,res=NULL;
-	PF("applyctx\n");DUMP(x);DUMP(y);
+	// first: root context
+	// second: nested context
+	// third: ...
+	// last: list of projections or lambda
+	int i,tlam=Ti(lambda);
+	VP code,res=NULL;
+	PF("applyctx\n");DUMP(ctx);DUMP(x);DUMP(y);
+	code=ELl(ctx,ctx->n-1);
+	if(LIST(code))
+		res=applyexpr(ctx,code,x,y);
+	PF("applyctx returning\n"); DUMP(res);
+	return res;
+	/*
 	for(i=x->n-1;i>=0;i--) {
 		this=ELl(x,i);
 		PF("applyctx #%d\n", i);
@@ -960,12 +1046,14 @@ VP applyctx(VP x,VP y) {
 		// this may not be what we want in the long run.
 		if(res==NULL || (LIST(res) && res->n == 0))
 			res=apply(this,y);
-		PF("applyctx apply result was\n");DUMP(res);
+		PF("callctx apply result was\n");DUMP(res);
 		if(!LIST(res) || res->n > 0) {
-			PF("applyctx returning\n"); DUMP(res); 
+			PF("callctx returning\n"); DUMP(res); 
 			return res;
 		}
 	}
+	*/
+
 	return EXC(Tt(undef),"undefined in applyctx",x,y);
 }
 VP apply(VP x,VP y) {
@@ -979,50 +1067,55 @@ VP apply(VP x,VP y) {
 			 // if we have no args, set y as left, and return x
 		// if its monadic
 			// if we have one arg already, call x[left], and then apply result with y
-			// i think this is right..
-		// PF("apply proj\n");DUMP(x);
+		PF("apply proj\n");DUMP(x);DUMP(y);
 		Proj* p; p=(Proj*)ELi(x,0);
-		// if(!p->left) p->left=y; else if (!p->right) p->right=y;
-		// DUMP(p->left); DUMP(p->right);
-		if(p->type==1) {
+		// this logic needs a simplification and rethink
+		if(p->type < 0) {
+			int a=p->type*-1;
+			if(!p->left && y)
+				p->left=y;
+			else if (a==2 && !p->right && y) 
+				p->right=y;
+			return applyctx(p->ctx, p->left, p->right);
+		} else if(p->type==1) {
 			if (p->left) // not sure if this will actually happen - seems illogical
 				return (*p->f1)(p->left);
 			else
 				return (*p->f1)(y);
-		}
-		if(p->type==2) {
+		} else if(p->type==2) {
 			PF("proj2\n"); 
 			PFIN();
-			if(p->left && p->right)
-				y=(*p->f2)(p->left,p->right);
-			else if(y && p->left)
-				y=(*p->f2)(p->left, y);
-			else if (y && p->right)
-				y=(*p->f2)(y,p->right);
-			else if (y) 
-				y=proj(2,p->f2,y,0);
-			else
-				y=x;
-			PFOUT(); PF("proj2 done\n"); DUMP(y);
+			if(p->left && p->right) y=(*p->f2)(p->left,p->right);
+			else if(y && p->left) y=(*p->f2)(p->left, y);
+			else if(y && p->right) y=(*p->f2)(y,p->right);
+			else if(y) y=proj(2,p->f2,y,0);
+			else y=x;
+			PFOUT(); PF("proj2 done\n");DUMP(y);
 			return y;
 		}
 		return xp(*p);
 	}
 	if(IS_1(x)) {
-		PF("apply 1\n");DUMP(x);DUMP(y);
+		// PF("apply 1\n");DUMP(x);DUMP(y);
 		unaryFunc* f; f=AS_1(x,0); return (*f)(y);
 	}
 	if(IS_2(x)) {
 		res=proj(2,AS_2(x,0),y,0);
-		PF("apply f2 returning\n");DUMP(res);
+		// PF("apply f2 returning\n");DUMP(res);
 		return res;
 	}
-	if(!CALLABLE(x) && UNLIKELY(LIST(y))) { // indexing at depth - never done for callable types 1, 2, and p (but we do use it for x)
+	if(!CALLABLE(x) && UNLIKELY(LIST(y))) { 
+		// indexing at depth - never done for callable types 1, 2, and p (but we do
+		// use it for x).  we should think about when applying with a list really
+		// means apply-at-depth. it would seem to make sense to have a list of
+		// operations and a list of values and apply them to each but any kind of
+		// logic likes this leads to ambiguity when the thing on the left is a
+		// function that takes a general list as an argument (pretty common).
+		// perhaps apply-at-depth should be a different operator, or only work when
+		// using the @ form of apply (f@x rather than f x)
 		PF("indexing at depth\n");
 		DUMP(x);
-		DUMP(info(x));
 		DUMP(y);
-		DUMP(info(y));
 		res=x;
 		for(;i<y->n;i++) {
 			res=apply(res,ELl(y,i));
@@ -1034,7 +1127,7 @@ VP apply(VP x,VP y) {
 	}
 	if(IS_x(x)) {
 		// PF("apply ctx\n");DUMP(x);DUMP(y);
-		return applyctx(x,y);
+		return applyctx(x,y,0);
 	}
 	// TODO apply() is called most often in XXL; maybe worth transforming this if cascade into a case?	
 	if(DICT(x)) {
@@ -1066,18 +1159,13 @@ VP apply(VP x,VP y) {
 		}
 		if(res->n==0) return xl0(); else return apply(v,res);
 	}
-	if(NUM(y)) {
-		// index a value with an integer 
+	if(NUM(y)) { // index a value with an integer 
 		if(y->n==1 && LIST(x)) {
-			// special case for generic lists:
-			// if you index with one item, return just that item
-			// generally you would receive a list back
-			// this may potentially become painful later on 
+			// special case for generic lists: if you index with one item, return
+			// just that item generally you would receive a list back this may
+			// potentially become painful later on 
 			i = AS_i(y,0); 
-			IF_RET(i>=x->n, ({
-				EXC(Tt(index),"index out of range",x,y);	
-			}));
-
+			IF_RET(i>=x->n, ({ EXC(Tt(index),"index out of range",x,y);	}));
 			VP tmp = ELl(x,i); xref(tmp); return tmp;
 		} else {
 			res=xalloc(x->t,y->n);
@@ -1106,10 +1194,8 @@ VP deep(VP obj,VP f) {
 	FOR(0,obj->n,({
 		// PF("deep %d\n", _i);
 		subobj=ELl(obj,_i);
-		if(LIST(subobj))
-			subobj=deep(subobj,f);
-		else
-			subobj=apply(f,subobj);
+		if(LIST(subobj)) subobj=deep(subobj,f);
+		else subobj=apply(f,subobj);
 		// append(acc,subobj);
 		EL(acc,VP,_i) = subobj; // this may not be safe, but append() is overriden for dicts, so we cant simply append the list
 	}));
@@ -1195,14 +1281,13 @@ VP wide(VP obj,VP f) {
 
 	if(!CONTAINER(obj)) return apply(f, obj);
 
-	PF("wide top level\n");DUMP(obj);
+	// PF("wide top level\n");DUMP(obj);
 	acc=apply(f,obj);
 	if(CONTAINER(acc)) {
 		for(i=0;i<acc->n;i++) {
-			PF("wide #%d\n",i);
-			PFIN();
+			//PF("wide #%d\n",i);PFIN();
 			EL(acc,VP,i)=wide(AS_l(acc,i),f);
-			PFOUT();
+			//PFOUT();
 		}
 	}
 	return acc;
@@ -1243,12 +1328,12 @@ VP any(VP x) {
 	if(LIST(x)) return deep(x,x1(&any));
 	return xb(_any(x));
 }
-static inline VP divv(VP x,VP y) {
+static inline VP divv(VP x,VP y) { 
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
 	PF("div");DUMP(x);DUMP(y);DUMP(info(acc));
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"div argument should be simple types",x,0);
 	VARY_EACHBOTH(x,y,({
-		if(LIKELY(x->t > y->t)) { _x=_x/_y; appendbuf(acc,(buf_t)&_x,1); }
+		if(LIKELY(x->t > y->t)) { _x=_y/_x; appendbuf(acc,(buf_t)&_x,1); }
 		else { _y=_y/_x; appendbuf(acc,(buf_t)&_y,1); }
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}),typerr);
@@ -1332,6 +1417,20 @@ VP max(VP x) {
 	}),typerr); // no need to check typerr due to SIMPLE check above
 	res->n=1;
 	return res;
+}
+VP minus(VP x,VP y) {
+	int typerr=-1;
+	// PF("minus\n");DUMP(x);DUMP(y);
+	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "minus args should be simple types", x, y); 
+	VP acc=ALLOC_BEST(x,y);
+	VARY_EACHBOTH(x,y,({
+		if(LIKELY(x->t > y->t)) { _x=_x-_y; appendbuf(acc,(buf_t)&_x,1); }
+		else { _y=_y-_x; appendbuf(acc,(buf_t)&_y,1); }
+		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
+	}),typerr);
+	IF_EXC(typerr > -1, Tt(type), "minus arg wrong type", x, y);
+	// PF("minus result\n"); DUMP(acc);
+	return acc;
 }
 VP mod(VP x,VP y) {
 	// TODO mod probably *doesnt* need type promotion
@@ -1421,11 +1520,17 @@ static inline VP str2num(VP x) {
 }
 VP sum(VP x) {
 	PF("sum");DUMP(x);
-	I64 val=0;int i,typerr=-1;
+	I128 val=0;int out,typerr=-1;
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"sum argument should be simple types",x,0);
 	VARY_EACH(x,({ val += _x; }),typerr);
 	IF_EXC(typerr > -1, Tt(type), "sum arg wrong type", x, 0);
-	return xj(val);
+	out=BEST_NUM_FIT(val);
+	switch(out) {
+		CASE(T_b,return xb(val));
+		CASE(T_i,return xi(val));
+		CASE(T_j,return xj(val));
+		default: return xo(val);
+	}
 }
 VP sums(VP x) {
 	PF("sums\n");DUMP(x);
@@ -1436,13 +1541,13 @@ VP sums(VP x) {
 	PF("sums result\n"); DUMP(acc);
 	return acc;
 }
-VP til(VP x) {
+VP count(VP x) {
 	VP acc=0;int i;int typerr=-1;
-	PF("til\n"); DUMP(x);
+	PF("count\n"); DUMP(x);
 	VARY_EL_NOFLOAT(x, 0, 
 		{ __typeof__(_x) i; acc=xalloc(x->t,MAX(_x,1)); acc->n=_x; for(i=0;i<_x;i++) { EL(acc,__typeof__(i),i)=i; } }, 
 		typerr);
-	IF_RET(typerr>-1, EXC(Tt(type), "til arg must be numeric", x, 0));
+	IF_RET(typerr>-1, EXC(Tt(type), "count arg must be numeric", x, 0));
 	DUMP(acc);
 	return acc;
 }
@@ -1475,25 +1580,70 @@ VP xor(VP x,VP y) {
 
 // MANIPULATING LISTS AND VECTORS (misc):
 
+VP key(VP x) {
+	if(DICT(x)) return ELl(x,0);
+	if(IS_x(x)){ // locals for context
+		int i;VP item;
+		for(i=x->n-1;i>=0;i--) 
+			if(DICT(ELl(x,i)))
+				return ELl(ELl(x,i),0);
+		return xd0();
+	}
+	if(SIMPLE(x)) return count(xi(x->n));
+	return EXC(Tt(type),"key can't operate on that type",x,0);
+}
+
+VP val(VP x) {
+	if(DICT(x)) return ELl(x,1);
+	return EXC(Tt(type),"val can't operate on that type",x,0);
+}
+
+inline VP _getmodular(VP x,VP y) {
+	ASSERT((DICT(x)||IS_x(x))&&LIST(y),"_getmodular");
+	PF("_getmodular");DUMP(y);
+	VP rootscope;
+	if(DICT(x))
+		rootscope=x;
+	else {
+	 	rootscope=KEYS(x);
+		if(!DICT(rootscope)) return 0;
+	}
+	VP tag=ELl(y,0);
+	VP res=apply(rootscope,tag); // need a fast-path dict lookup
+	if(LIST(res) && res->n==0) return 0;
+	res=apply(res,Tt(get));
+	if(LIST(res) && res->n==0) return 0;
+	return apply(res,ELl(y,1));
+}
+
 VP get(VP x,VP y) {
+	// get is used to resolve names in callctx(). x is context, y is thing to
+	// look up. scans tree of scopes/closures to get value. in k/q, get is
+	// overriden to do special things with files and other handles as well.
 	// TODO get support nesting
-	int i,j; VP res;
+	int xn=x->n,yn=y->n,i,j;VP res;
 	PF("get\n");DUMP(y);
+	if((DICT(x)||IS_x(x)) && LIST(y) && yn >= 2 && IS_t(ELl(y,0))) {
+		res=_getmodular(x,y);
+		if(res!=0) return res;
+	}
 	if(IS_x(x)) {
 		if(LIKELY(IS_c(y) || (LIST(y) && IS_c(ELl(y,0))))) 
 			y=str2tag(y);
 		DUMP(y);
-		if(IS_t(y) && y->n > 1 && AS_t(y,0)==0) { // empty first element = start from root
+		if(IS_t(y) && AS_t(y,0)==Ti(.)) {
+			return clone(curtail(x)); // clone(KEYS(x));
+		} else if(IS_t(y) && yn > 1 && AS_t(y,0)==0) { // empty first element = start from root
 			PF("get starting from root\n");
 			i=0;y=list(behead(y));
-			for(;i<x->n;i++) {
+			for(;i<xn;i++) {
 				PF("get #%d\n", i);
 				if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
 				res=apply(ELl(x,i),y);
 				if(!LIST(res) || res->n > 0) return res;
 			}
 		} else {
-			i=x->n-1;
+			i=xn-1;
 			for(;i>=0;i--) {
 				PF("get #%d\n", i);
 				if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
@@ -1539,7 +1689,7 @@ VP set(VP x,VP y) {
 				if(LIST(dest) || CALLABLE(dest)) // skip code bodies
 					continue;
 				if(DICT(dest)) {
-					PF("set assigning..\n");
+					PF("set assigning in #%d\n",i);DUMP(dest);
 					dest=assign(dest,y,val);
 					PF("set in %p\n",dest);
 					DUMP(dest);
@@ -1618,16 +1768,17 @@ VP proj(int type, void* func, VP left, VP right) {
 	Proj p;
 	VP pv=xpsz(1);
 	p.type=type;
-	if(type==1) {
-		p.f1=func; p.left=left; p.right=0;
-	} else {
-		p.f2=func; p.left=left; p.right=right;
-	}
+	if(type<0) 
+		p.ctx=func;
+	else if(type==1) 
+		p.f1=func; 
+	else
+		p.f2=func;
+	p.left=left; p.right=right;
 	EL(pv,Proj,0)=p;
 	pv->n=1;
 	return pv;
 }
-
 
 // TAG STUFF:
 
@@ -1702,29 +1853,27 @@ VP bracketjoin(VP x,VP y) {
 	// otherwise 0
 	// useful for matching patterns involving more than one entity
 	int i,on=0,typerr=-1; VP c,ret,acc,y0,y1,mx;
-	PF("bracketjoin\n");DUMP(x);DUMP(y);
+	// PF("bracketjoin\n");DUMP(x);DUMP(y);
 	IF_EXC(!LIST(y)||y->n!=2,Tt(type),"bracketjoin y must be 2-arg list",x,y);
 	y0=ELl(y,0); y1=ELl(y,1);
 	IF_EXC(y0->t != y1->t,Tt(type),"bracketjoin y items must be same type",x,y);
 	acc=plus(y0, times(xi(-1),y1));
-	DUMP(acc);
 	acc=sums(acc);
-	PF("bracket sums\n");DUMP(acc);
+	// PF("bracket sums\n");DUMP(acc);
 	mx=max(acc);
-	PF("bracket max\n");DUMP(mx);
-	PF("bracket x\n");DUMP(x);
+	// PF("bracket max\n");DUMP(mx);
+	// PF("bracket x\n");DUMP(x);
 	ret=take(xi(0),xi(y0->n));
 	if(EL(mx,CTYPE_b,0)==0) { PF("bracketjoin no coverage\n"); DUMP(acc); return ret; }
 	c=ELl(partgroups(condense(and(x,matcheasy(acc,mx)))),0);
 	DUMP(c);
 	if(c->n) {
 		c=append(c,plus(max(c),xi(1)));
-		PF("bracket append next\n");
-		DUMP(c);
+		// PF("bracket append next\n"); DUMP(c);
 	}
 	ret=assign(ret,c,xi(1));
 	// acc=pick(x,matcheasy(acc,mx));
-	PF("bracket acc after pick");DUMP(ret);
+	// PF("bracket acc after pick");DUMP(ret);
 	return ret;
 	acc = ALLOC_LIKE_SZ(x,y0->n);
 	VARY_EACHRIGHT(x,y0,({
@@ -1737,7 +1886,7 @@ VP bracketjoin(VP x,VP y) {
 	IF_EXC(typerr>-1,Tt(type),"bracketjoin couldnt work with those types",x,y);
 	acc->n=y0->n;
 	mx=max(acc);
-	PF("bracketjoin max\n");DUMP(mx);
+ 	// PF("bracketjoin max\n");DUMP(mx);
 	acc=matcheasy(acc,mx);
 	PF("bracketjoin return\n");DUMP(acc);
 	return acc;
@@ -1745,10 +1894,8 @@ VP bracketjoin(VP x,VP y) {
 VP consecutivejoin(VP x, VP y) {
 	// returns x[n] if y[0][n]==1 && y[1][n+1]==1 && .. else 0
 	int j,n=y->n, typerr=-1, on=0; VP acc,tmp;
-	PF("consecutivejoin\n"); DUMP(x); DUMP(y);
-	
+	//PF("consecutivejoin\n"); DUMP(x); DUMP(y);
 	if(!LIST(y)) return and(x,y);
-
 	IF_EXC(!LIST(y)||y->n<1,Tt(type),"consecutivejoin y must be list of simple types",x,y);
 	VP y0=ELl(y,0);
 	for(j=0; tmp=ELl(y,j), j<n; j++) 
@@ -1772,7 +1919,7 @@ VP consecutivejoin(VP x, VP y) {
 VP signaljoin(VP x,VP y) {
 	// could be implemented as +over and more selection but this should be faster
 	int typerr=-1, on=0; VP acc;
-	PF("signaljoin\n");DUMP(x);DUMP(y);
+	// PF("signaljoin\n");DUMP(x);DUMP(y);
 	acc = ALLOC_LIKE_SZ(x,y->n);
 	if(SCALAR(x)) { // TODO signaljoin() should use take to duplicate scalar args.. but take be broke
 		VARY_EACHRIGHT(x,y, ({
@@ -1796,13 +1943,13 @@ VP signaljoin(VP x,VP y) {
 // MATCHING
 
 VP nest(VP x,VP y) {
-	VP p1,p2,open,close,opens,closes,where,rep,out;
+	VP p1,p2,open,close,opens,closes,where,rep,out,base;
 	PF("NEST\n");DUMP(x);DUMP(y);
 	//if(!LIST(x) || x->n < 2) return x;
 	if(x->n<2)return x;
 	p1=proj(2,&matcheasy,x,0);
 	p2=proj(2,&matcheasy,x,0);
-	open=apply(y,xi(0)); close=apply(y,xi(1));
+	open=apply(y,XI0); close=apply(y,XI1);
 	if(!LIST(x) && x->t != open->t) return x;
 	// if(LIST(open) && x->t != AS_l(open,0)->t) return x;
 	if(_equal(open,close)) {
@@ -1816,7 +1963,10 @@ VP nest(VP x,VP y) {
 				EL(opens,VP,0)=and(AS_l(opens,0),shift_(not(esc),-1));
 				PF("new escaped opens\n");
 			}	
-			opens=signaljoin(xb(1),AS_l(opens,0));
+			if(open->tag) base=matchtag(x,xt(open->tag));
+			else base=xb(1);
+			opens=signaljoin(base,AS_l(opens,0));
+			xfree(base);
 			PF("after signaljoin\n");DUMP(opens);
 			out=partgroups(condense(opens));
 			if(out->n) {
@@ -1847,7 +1997,11 @@ VP nest(VP x,VP y) {
 		closes=consecutivejoin(xb(1),closes);
 		if(close->n > 1)
 			closes=shift_(closes, (close->n-1)*-1);
-		out=bracketjoin(xb(1), xln(2,consecutivejoin(xb(1),opens),closes)); 
+		if(open->tag) base=matchtag(x,xt(open->tag));
+		else base=xb(1);
+		out=bracketjoin(xb(1), xln(2,consecutivejoin(base,opens),closes)); 
+		xfree(base);
+		DUMP(base);
 		DUMP(out);
 		where=condense(out);
 	}
@@ -1872,246 +2026,6 @@ VP nest(VP x,VP y) {
 	} else { out = x; }
 	PF("nest returning\n"); DUMP(out);
 	return out;
-}
-
-static inline void matchanyof_(const VP obj,const VP pat,const int max_match,int* n_matched,int* matchidx) {
-	int i=0,j=0;VP item,rule,tmp=xi(0);
-	int submatches;
-	int submatchidx[1024];
-	for(;i<obj->n;j++) {
-		for(;i<pat->n;i++) {
-			EL(tmp,int,0)=i;
-			item=apply(obj,tmp);
-			rule=apply(obj,tmp);
-			xfree(item);
-		}
-	}
-}
-
-static inline int match_(const VP obj_,int ostart, const VP pat_, int pstart, 
-		const int max_match,const int max_fails, 
-		int* n_matched,int* matchidx) {
-	// abandon all hope, ye who enter here
-	int anyof=_tagnums("anyof"),exact=_tagnums("exact"),greedy=_tagnums("greedy"),start=_tagnums("start"),
-			not=_tagnums("not");
-	int matchopt;
-	int io, ip;
-	int done,found;
-	VP obj,pat,item=NULL,rule=NULL,iov,ipv;
-	int submatches;
-	int submatchidx[1024];
-	int i,tag;
-	int gotmatch;
-	int io_save;
-
-	#define MATCHOPT(tag) ({ \
-		if(tag != 0 && \
-			 (tag==anyof||tag==exact||tag==greedy||tag==start\
-			  ||tag==not)) { \
-			PF("adopting matchopt %d %s\n", tag, tagnames(tag)); \
-			matchopt = tag; \
-			tag = 0; \
-		} }) 
-
-	pat=pat_; obj=obj_;
-	tag=pat->tag;
-
-	PF("### MATCH_ ostart=%d pstart=%d mm=%d nm=%d, obj and pat:\n",ostart,pstart,max_match,*n_matched);
-	DUMP(obj);DUMP(pat);
-	//DUMPRAW(matchidx,max_match);
-
-	matchopt=0;
-	MATCHOPT(tag);
-	if(ENLISTED(pat)) {
-		PF("picked up enlisted pat, grabbed \n");
-		pat=ELl(pat,0);
-		MATCHOPT(pat->tag);
-		DUMP(pat);
-	}
-	if(matchopt==exact&&obj->n!=pat->n) {
-		gotmatch=0;
-		PF("exact match sizes don't match"); goto fin;
-	}
-	io=ostart; ip=pstart; iov=xi(io); ipv=xi(ip);
-	done=0; found=0; gotmatch=0;
-	if(tag != 0 && tag != obj->tag) {
-		gotmatch=0;
-		PF("tag mismatch at top level p=%d, o=%d\n", pat->tag, obj->tag); found=0; goto fin;
-	}
-	if(pat->n==0) { 
-		PF("empty pat means success\n");
-		gotmatch++;
-		matchidx[*n_matched]=ostart;
-		(*n_matched)=(*n_matched)+1;
-		goto fin;
-	}
-	while (!done && gotmatch < max_match) {
-		found=0;
-		EL(iov,int,0)=io; EL(ipv,int,0)=ip;
-		if(item)xfree(item); if(rule)xfree(rule);
-		item=apply(obj, iov); rule=apply(pat, ipv); found=0;
-		PF("((( Match loop top. type=%s obj=%d pat=%d: \n",tagnames(matchopt),io,ip);
-		DUMP(item);DUMP(rule);
-
-		if(LIST(rule)) { 
-			PF("Attempting submatch due to rule being a list..\n"); DUMP(item); DUMP(rule);
-			PFIN();
-			submatches=*n_matched;
-			memcpy(submatchidx, matchidx, sizeof(submatchidx)/sizeof(int));
-			match_(obj,io,rule,0,sizeof(submatchidx)/sizeof(int),0,&submatches,matchidx);
-			PFOUT();
-			if(submatches - *n_matched > 0) {
-				PF("Got %d submatches for obj=%d pat=%d\n",submatches,io,ip);found=1;
-				io=io + (submatches - *n_matched) -1;
-				PF("!!!! NEW IO %d\n", io);
-				*n_matched=submatches-1;
-				DUMP(item);
-				DUMP(rule);
-			}
-			goto done;
-		}
-
-		if(IS_t(rule)) {
-			if((AS_t(rule,0) != item->tag && AS_t(rule,0) != obj->tag) ||
-				 (rule->tag != 0 && item->tag != rule->tag)) {
-				PF("tag mismatch rule=%d, item=%d\n", rule->tag, item->tag); 
-				found=0; goto done;
-			}
-			PF("))) Tag rule seemed to match; continuing..\n");
-			ip++;
-			continue;
-		}
-		// Tags used as arguments in match expressions match the type of the object
-		// TODO rethink tag matching - seems ambiguous
-		if(!IS_t(rule) && item->t != rule->t) {
-			PF("Type mismatch rule=%d, item=%d\n", rule->t, item->t); found=0; goto done;
-		}
-		if(!IS_t(rule) && rule->n==0) { 
-			PF("Empty rule = found\n"); found=1; goto done;
-		} // empty rules are just type/tag checks
-		if(_equal(item,rule)) {
-			if(matchopt == not || rule->tag == not) {
-				PF("Match_ equal, but NOT mode = not found\n"); found=0; goto done;
-			} else {
-				PF("Match_ equal = found\n"); found=1; goto done;
-			}
-		} else {
-			if(matchopt == not || rule->tag == not) {
-				PF("Match NOT equal, but NOT mode = found\n"); found=1; goto done;
-			}
-		}
-
-		done:
-		if(found) {
-			gotmatch++;
-			PF("+++ FOUND! result #%d, io=%d, ip=%d..\n", *n_matched, io, ip);
-			DUMP(item);
-			DUMP(rule);
-			found=0;
-			for(i=0;i<*n_matched;i++) {
-				if (matchidx[i]==io) found=1;
-			}
-			if (!found)matchidx[*n_matched]=io;
-			found=1;
-			*n_matched=*n_matched+1;
-			if(matchopt==anyof) {
-				io++;
-				ip++;
-			} else if (matchopt==exact) {
-				io++;
-				ip++;
-			} else if (matchopt==greedy) {
-
-				if (IS_t(rule) && rule->n==1 && ip==0) {
-					// even if we're doing a greedy match, if the first element
-					// is a tag, we only want to match the tags of subsequent
-					// elements.. so move beyond it even if greedy
-					PF("greedy submatch for empty tag == tag match, continue..\n");
-					ip++;
-					continue;
-				}
-
-				PF(">> greedy submatch on obj %d/%d\n", io, obj->n);
-				PFIN();
-				// if(rule->tag == 0) rule=tagv("start",rule);
-				io++;
-				io_save=io;
-				while (io < obj->n && (submatches=match_(obj, io, rule, 0, max_match, 1, n_matched, matchidx))) {
-					io+=submatches;
-					gotmatch+=submatches;
-					io_save+=submatches;
-					PFOUT();
-					PF(">> greedy advancing to %d/%d, nm=%d, sm=%d, ", io, obj->n, *n_matched, submatches);
-					PF("so far: ");
-					PFIN();
-				}
-				if(gotmatch==0) {
-					io=io_save;
-					PF("<< no submatches, decreasing io to %d\n", io);
-				}
-				PFOUT();
-				ip++;
-				PF("<< inner greedy done at io=%d, increase ip=%d\n", io, ip);
-			} else if (matchopt==start) {
-				io++;
-				ip++;
-			} else {
-				io++;
-				// special case for scalar patterns: try to match all items against it
-				if(pat->n > 1) 
-					ip++;
-			}
-		} else {
-			PF("--- not found! obj=%d pat=%d (result pos #%d)\n", io, ip, *n_matched);
-			if(matchopt==anyof) {
-				ip++;
-				if(ip==pat->n) {
-					PF("restarting anyof on next obj, resetting ip\n");
-					io++;
-					ip=0;
-				}
-			} else if(max_fails>=1) {
-				goto fin;
-			} else if (matchopt==exact) {
-				goto fin;
-			} else if (matchopt==greedy) {
-				io++;
-				if(gotmatch) ip++; // if we've already seen a match, and we don't match this time, try next rule
-			} else if (matchopt==start) {
-				goto fin;
-			} else {
-				io++;
-			}
-		}
-		if(ip>=pat->n||io>=obj->n) done=1;
-		PF("done=%d\n",done);
-		PF("))) Match loop end.. done=%d, type=%s, found=%d, obj=%d/%d, pat=%d/%d\n", 
-			done, tagnames(matchopt), found, io, obj->n, ip, pat->n);
-	}
-
-	fin:
-	if(item)xfree(item); if(rule)xfree(rule);
-	PF("done in match_ with %d matches ", *n_matched);
-	if(PF_LVL) { FOR(0,(*n_matched),printf("%d ",matchidx[_i])); printf("\n"); }
-	return gotmatch;
-}
-int matchpass(VP obj,VP pat) { 
-	// degenerate version of match() when we dont care about pass/fail, not results
-	int n_matches=0;
-	int matchidx[1024]={0};
-	match_(obj,0,pat,0,sizeof(matchidx)/sizeof(int),0,&n_matches,&matchidx);
-	return n_matches;
-}
-VP match(VP obj,VP pat) {
-	int n_matches=0;
-	int matchidx[1024];
-	VP acc;
-	match_(obj,0,pat,0,sizeof(matchidx)/sizeof(int),0,&n_matches,&matchidx);
-	acc=xisz(n_matches); // TODO match() limited to 4bil items due to int as idx
-	if(n_matches)
-		appendbuf(acc,(buf_t)&matchidx,n_matches);
-	PF("match() obj, pat, and result:\n"); DUMP(obj); DUMP(pat); DUMP(acc);
-	return acc;
 }
 VP matchany(VP obj,VP pat) {
 	IF_EXC(!SIMPLE(obj) && !LIST(obj),Tt(type),"matchany only works with simple or list types in x",obj,pat);
@@ -2206,6 +2120,7 @@ VP matchexec(VP obj,VP pats) {
 }
 VP matchtag(VP obj,VP pat) {
 	IF_EXC(!SIMPLE(obj) && !LIST(obj),Tt(type),"matchtag only works with numeric or string types in x",obj,pat);
+	IF_EXC(!IS_t(pat), Tt(type), "matchtag y must be tag",obj,pat);
 	int j,n=obj->n,typerr=-1;VP item, acc;
 	PF("matchtag\n"); DUMP(obj); DUMP(pat);
 	acc=xbsz(n); // TODO matcheasy() should be smarter about initial buffer size
@@ -2312,9 +2227,12 @@ VP parsename(VP x) {
 			return str2tag(res);
 		} else {
 			PF("parsename non-tag\n");
-			res=split(res,xc('.')); // very fast if not found
-			DUMP(res);
-			res->tag=Ti(name);
+			if(res->n==1 && AS_c(res,0)=='.')
+				return entags(Tt(.),"name");
+			else {
+				res=split(res,xc('.')); // very fast if not found
+				res->tag=Ti(name);
+			}
 		}
 	}
 	return res;
@@ -2327,12 +2245,12 @@ VP parsenum(VP x) {
 	} else return res;
 }
 VP parselambda(VP x) {
-	int i,arity=1,typerr=-1,traw=Ti(raw); VP this;
+	int i,arity=1,typerr=-1,tname=Ti(name),traw=Ti(raw); VP this;
 	PF("parselambda\n");DUMP(x);
 	x=list(x);
 	for(i=0;i<x->n;i++) {
-		this=ELl(x,i);
-		if(IS_c(this) && this->tag==traw && AS_c(this,0)=='y') { 
+		this=ELl(x,i); // not alloced, no need to free
+		if(IS_c(this) && this->tag==tname && AS_c(this,0)=='y') { 
 			arity=2;break;
 		}
 	};
@@ -2378,8 +2296,6 @@ VP parsestrlit(VP x) {
 		PF("flattenin\n");DUMP(res);
 		res=flatten(res);
 		DUMP(res);
-		// if(PF_LVL) sleep(5);
-	// sleep(2);
 		return res;
 	} else {
 		PF("parsestrlit not interested in\n");
@@ -2397,9 +2313,9 @@ VP parsestr(const char* str) {
 		append(acc,entags(xc('\n'),"raw"));
 	ctx=mkbarectx();
 	pats=xln(3,
-		proj(2,&nest,0,xln(4, xfroms("//"), xfroms("\n"), xfroms(""), Tt(comment))),
-		proj(2,&nest,0,xln(4, xfroms("/*"), xfroms("*/"), xfroms(""), Tt(comment))),
-		proj(2,&nest,0,xln(5, xfroms("\""), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit)))
+		proj(2,&nest,0,xln(5, entags(xfroms("\""),"raw"), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit))),
+		proj(2,&nest,0,xln(4, entags(xfroms("//"),"raw"), xfroms("\n"), xfroms(""), Tt(comment))),
+		proj(2,&nest,0,xln(4, entags(xfroms("/*"),"raw"), xfroms("*/"), xfroms(""), Tt(comment)))
 	);
 	ctx=append(ctx,pats);
 	acc=exhaust(acc,ctx);
@@ -2420,7 +2336,6 @@ VP parsestr(const char* str) {
 	append(pats,ELl(lex,1));
 	xfree(lex);
 	t1=matchexec(acc,pats);
-
 	xfree(pats);
 	xfree(acc);
 	//xfree(ctx);
@@ -2431,14 +2346,15 @@ VP parsestr(const char* str) {
 	// its faster to scan a flat list)
 	ctx=mkbarectx();
 	pats=xln(3,
-		proj(2,&nest,0,xln(5, xfroms("{"), xfroms("}"), xfroms(""), Tt(lambda), x1(&parselambda))),
-		proj(2,&nest,0,xln(5, xfroms("("), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr))),
-		proj(2,&nest,0,xln(5, xfroms("["), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)))
+		proj(2,&nest,0,xln(5, entags(xfroms("{"),"raw"), xfroms("}"), xfroms(""), Tt(lambda), x1(&parselambda))),
+		proj(2,&nest,0,xln(5, entags(xfroms("("),"raw"), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr))),
+		proj(2,&nest,0,xln(5, entags(xfroms("["),"raw"), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)))
 	);
 	t2=t1;
 	for(i=0;i<pats->n;i++) {
 		PF("parsestr exhausting %d\n", i);
 		t2=exhaust(t2,proj(2,&wide,0,ELl(pats,i)));
+		// t2=exhaust(t2,ELl(pats,i)); // wide doesnt seem needed here after tag fixes
 	}
 	return t2;
 }
@@ -2449,6 +2365,7 @@ VP parse(VP x) {
 
 // STANDARD LIBRARY
 
+#ifdef STDLIBFILE
 VP fileget(VP fn) {
 	#define READFILEBLK 1024 * 64
 	char buf[READFILEBLK]; int r=0,fd=0;
@@ -2473,6 +2390,46 @@ VP fileset(VP str,VP fn) {
 	close(fd);
 	return str;
 }
+#endif
+
+#ifdef STDLIBSHAREDLIB
+VP sharedlibget(VP fn) {
+	if(!IS_c(fn)) return EXC(Tt(type),".sharedlib.get requires a filename string as argument",fn,0);
+	const char* fns=sfromx(fn);
+	void* fp;
+	fp=dlopen(fns,RTLD_LAZY);
+	if(fp==NULL) { 
+		printf("dlerr:%s\n",dlerror());
+		return EXC(Tt(open),".sharedlib.get could not open shared library",fn,0);
+	}
+	void* indexp;
+	indexp=dlsym(fp,"XXL_INDEX");
+	if(indexp==NULL) return EXC(Tt(read),".sharedlib.get could not read index",fn,0);
+	// PF_LVL=10;
+	struct xxl_index_t* idx;
+	idx=indexp;
+	int i=0;
+	VP contents=xd0();
+	while(idx[i].arity != 0) {
+		void* itemp;
+		// printf("%s %d\n", idx[0].name, idx[0].arity);
+		itemp=dlsym(fp,idx[i].implfunc);
+		if(itemp==NULL) { xfree(contents); return EXC(Tt(read),".sharedlib.get could not read item",fn,0); }
+		// printf("ptr=%p\n", itemp);
+		if(idx[i].arity == 1)
+			contents=assign(contents,xt(_tagnums(idx[0].name)),x1(itemp));
+		else
+			contents=assign(contents,xt(_tagnums(idx[0].name)),x2(itemp));
+		idx++;
+	}
+	DUMP(contents);
+	return contents;
+}
+VP sharedlibset(VP fn,VP funcs) {
+	return EXC(Tt(nyi),".sharedlib.set nyi",fn,funcs);
+}
+#endif 
+
 
 // Threading
 void thr_start() {
@@ -2486,12 +2443,10 @@ void thr_start() {
 void* thr_run0(void* VPctx) {
 	#ifndef THREAD
 	#else
-	VP ctx=VPctx;
-	PFW(({
+	VP ctx=clone(VPctx);
 	printf("thr_run %s\n", reprA(ctx));
-	ctx=apply(ctx,xl0());
-	DUMP(ctx);
-	}));
+	ctx=apply(ctx,0);
+	printf("thr_run0 done\n"); DUMP(ctx);
 	pthread_exit(NULL);
 	#endif
 	return 0;
@@ -2502,7 +2457,7 @@ void thr_run(VP ctx) {
 	#else
 	pthread_attr_t a; pthread_attr_init(&a); pthread_attr_setdetachstate(&a, PTHREAD_CREATE_JOINABLE);
 	// nthr=sysconf(_SC_NPROCESSORS_ONLN);if(nthr<2)nthr=2;
-	WITHLOCK(thr,pthread_create(&THR[NTHR++], &a, &thr_run0, ctx));
+	WITHLOCK(thr,if(pthread_create(&THR[NTHR++], &a, &thr_run0, ctx)!=0)PERR("pthread_create"));
 	#endif
 	return;
 }
@@ -2537,9 +2492,6 @@ void test_deal_speed() {
 void test_eval() {
 	#include"test-eval.h"
 }
-void test_match() {
-	#include"test-match.h"
-}
 void test_json() {
 	VP mask, jsrc, res; char str[256]={0};
 	strncpy(str,"[[\"abc\",5,[\"def\"],6,[7,[8,9]]]]",256);
@@ -2565,8 +2517,8 @@ void test_proj() {
 	VP a,b,c,n;
 	printf("TEST_PROJ\n");
 	n=xi(1024*1024);
-	//a=proj(1,&til,n,0);
-	a=x1(&til);
+	//a=proj(1,&count,n,0);
+	a=x1(&count);
 	b=apply(a,n);
 	PF("b\n");DUMP(b);
 	c=apply(proj(1,&sum,b,0),0);
@@ -2581,8 +2533,8 @@ void test_proj_thr0(void* _) {
 	for (i=0;i<1024;i++) {
 		printf("TEST_PROJ %d\n", pthread_self());
 		n=xi(1024*1024);
-		//a=proj(1,&til,n,0);
-		a=x1(&til);
+		//a=proj(1,&count,n,0);
+		a=x1(&count);
 		b=apply(a,n);
 		PF("b\n");DUMP(b);
 		c=apply(proj(1,&sum,b,0),0);
@@ -2617,7 +2569,7 @@ VP evalin(VP tree,VP ctx) {
 		ctx=xxn(2,ctx,tree);
 	else
 		append(ctx,tree);
-	return applyctx(ctx,0); 
+	return applyctx(ctx,0,0); 
 }
 VP evalstrin(const char* str, VP ctx) {
 	VP r;
@@ -2628,23 +2580,25 @@ VP evalstrin(const char* str, VP ctx) {
 	return r;
 }
 void evalfile(VP ctx,const char* fn) {
-	#define EFBLK 65535
-	int fd,r;char buf[EFBLK];VP acc=xcsz(1024),res;
-	fd=open(fn,O_RDONLY);
-	if(fd<0)return perror("evalfile open");
-	do {
-		r=read(fd,buf,EFBLK);
-		if(r<0)perror("evalfile read");
-		else appendbuf(acc,(buf_t)buf,r);
-	} while (r==EFBLK);
-	PFW({
+	VP res,parse,acc = fileget(xfroms(fn));
 	PF("evalfile executing\n"); DUMP(acc);
-	append(ctx,parsestr(sfromx(acc)));
-	res=apply(ctx,xl0()); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
-	PF("evalfile done"); DUMP(res);
-	});
+	parse=parsestr(sfromx(acc));
+	append(ctx,parse);
+	//PFW(({
+	res=apply(ctx,0); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
+	// }));
+	// PF("evalfile done\n"); DUMP(ctx); DUMP(res);
+	ctx=curtail(ctx);
 	printf("%s\n",repr(res));
 	// exit(1); fall through to repl
+}
+VP loadin(VP fn,VP ctx) {
+	VP res,parse,acc = fileget(fn);
+	parse=parsestr(sfromx(acc));
+	append(ctx,parse);
+	res=apply(ctx,0); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
+	ctx=curtail(ctx);
+	return res;
 }
 void tests() {
 	int i;
@@ -2655,7 +2609,6 @@ void tests() {
 		// xprofile_start();
 		printf("TESTS START\n");
 		test_basics();
-		test_match();
 		test_nest();
 		// test_json();
 		test_ctx();
@@ -2679,11 +2632,15 @@ int main(int argc, char* argv[]) {
 	// net();
 	if(argc == 2) evalfile(ctx,argv[1]);
 	else tests();
-	repl();
+	repl(ctx);
 	exit(1);
 }
 /*
 	
+	TODO diff: (1,2,3,4)diff(1,2,55) = [['set,2,55],['del,3]] (plus an easy way to map that diff to funcs to perform)
+	TODO set PF_LVL from code via 'xray' or 'trace' vals
+	TODO mailboxes
+	TODO some kind of backing store for contexts cant stand losing my work
 	TODO decide operator for typeof
 	TODO decide operator for tagof
 	TODO decide operator for applytag

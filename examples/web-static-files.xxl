@@ -1,0 +1,17 @@
+"./html/" as 'root;
+{
+	y as 'callback;
+	x .net.bind {
+		['calling, x, callback] show;
+		x callback as 'result;
+		['result,result] show;
+		result type='char ifelse(result,{
+			"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n",
+			"Server: xxl v0.0\r\n\r\n",
+			(result flat)
+		})
+	};
+	'ok
+} as 'b;
+['bind:b] as '.web;
+

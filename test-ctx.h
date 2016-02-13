@@ -31,7 +31,7 @@
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
 	ctx=mkworkspace(); // simple unary function application
-	tmp1=xl(proj(1,&til,0,0));
+	tmp1=xl(proj(1,&count,0,0));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(4));
 	DUMP(tmp2);
@@ -39,7 +39,7 @@
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
 	ctx=mkworkspace(); // try applying an index to a function result
-	tmp1=xln(2,proj(1,&til,0,0),xi(2));
+	tmp1=xln(2,proj(1,&count,0,0),xi(2));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(5));
 	DUMP(tmp2);
@@ -47,7 +47,7 @@
 	xfree(ctx); xfree(tmp1); xfree(tmp2);
 
 	ctx=mkworkspace(); // subexpression
-	tmp1=xln(2,proj(2,&plus,xi(2),0),proj(1,&til,0,0));
+	tmp1=xln(2,proj(2,&plus,xi(2),0),proj(1,&count,0,0));
 	append(ctx,tmp1);
 	tmp2=apply(ctx,xi(4));
 	DUMP(tmp2);
@@ -189,23 +189,28 @@
 	append(ctx,parsestr("5 {x*y} x"));
 	tmp1=apply(ctx,xi(2));
 	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xi(10)),"test parsestr 16b");
+	ASSERT(_equal(tmp1,xi(10)),"test parsestr y in func body");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
-	append(ctx,parsestr("{til}"));
+	append(ctx,parsestr("{count}"));
 	tmp1=apply(ctx,xi(3));
 	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xin(3,0,1,2)),"test parsestr 17");
+	ASSERT(_equal(tmp1,xin(3,0,1,2)),"test parsestr count in func body");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
-	append(ctx,parsestr("til+2 each {til}"));
+	append(ctx,parsestr("count+2 each {count}"));
 	tmp1=apply(ctx,xi(3));
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,xln(3,xin(2,0,1),xin(3,0,1,2),xin(4,0,1,2,3))),"test parsestr 18");
 	xfree(ctx);xfree(tmp1);
 
+	/*
+	 * this test should probably never have passed
+	 * it doesnt make sense to resolve 'y' as a variable from scope
+	 * think of the chaos that could cause when you intend a projection and you
+	 * get a parent scope's ctx value y! i'm disabling this for now
 	ctx=mkworkspace();
 	tmp1=xd0();
 	assign(tmp1,Tt(y),xi(7));
@@ -215,6 +220,7 @@
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,xi(27)),"test parsestr 19");
 	xfree(ctx);xfree(tmp1);
+	*/
 
 	ctx=mkworkspace();
 	tmp1=xd0();
@@ -372,7 +378,12 @@
 	xfree(ctx);xfree(tmp1);xfree(tmp2);
 
 	ctx=mkworkspace();
-	append(ctx,parsestr(";{x*y}as 'z;z 7 6")); // without the semicolon the system tries to use xl0 as x.. helpfully
+	append(ctx,parsestr(";{x*y}as 'z;7 z 6")); // without the semicolon the system tries to use xl0 as x.. helpfully
+	// note: last part above used to read 'z 7 6' but the interpreter was getting
+	// confused by the context (z) sometimes being treated as data and sometimes
+	// as invokable. the correct syntax to use with z here is 7 z 6, so i've
+	// updated it as such. this convenience feature has created a lot of
+	// annoyance.
 	tmp1=apply(ctx,xl0());
 	ASSERT(_equal(tmp1,xi(42)),"test y projection");
 	xfree(ctx);xfree(tmp1);
@@ -395,10 +406,29 @@
 	ASSERT(_equal(tmp1,xcn(7,'a','"','b','"','c',13,10)),"parse quoted string");
 	xfree(ctx);xfree(tmp1);
 
-	PFW({
 	ctx=mkworkspace();
 	append(ctx,parsestr("\"\""));
 	tmp1=apply(ctx,0);
 	ASSERT(_equal(tmp1,xc0()),"parse empty quoted string");
-	});
+
+	tmp1=parsestr("{x*3}"); // returns lambda and repr of auto-included \n; only care about former
+	DUMP(tmp1);
+	ASSERT(LIST(tmp1),"test lambda internals 0");
+	tmp2=ELl(tmp1,0);
+	DUMP(tmp2);
+	ASSERT(LIST(tmp2) && tmp2->tag==Ti(lambda) && tmp2->n==2 && _equal(ELl(tmp2,1),xi(1)),"test lambda internals 0");
+	xfree(ctx);xfree(tmp1);
+	DUMP(ctx);DUMP(tmp1);
+
+	tmp1=parsestr("/*{1}*/");
+	DUMP(tmp1);
+	ASSERT(LIST(tmp1) && ELl(tmp1,0)->tag==Ti(comment) && ELl(tmp1,1)->tag==Ti(ws),"lambda in comment");
+	xfree(tmp1);
+
+	tmp1=parsestr("{/*a*/}");
+	DUMP(tmp1);
+	ASSERT(LIST(tmp1) && ELl(tmp1,0)->tag==Ti(lambda) 
+									  && ELl(ELl(ELl(tmp1,0),0),0)->tag==Ti(comment)
+									  && ELl(tmp1,1)->tag==Ti(ws),"comment in lambda");
+	xfree(tmp1);
 

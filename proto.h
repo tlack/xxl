@@ -7,10 +7,12 @@ VP amend(VP x,VP y);
 VP and(VP x,VP y);
 VP any(VP x);
 VP apply(VP x,VP y);
-VP applyctx(VP x,VP y);
+VP applyctx(VP ctx,VP x,VP y);
 VP append(VP x,VP y);
 VP appendbuf(VP x,buf_t buf,size_t nelem);
-static VP assign(VP x,VP k,VP val);
+static inline int _arity(VP x);
+static inline VP arity(VP x);
+VP assign(VP x,VP k,VP val);
 VP behead(VP x); // everything except the first element
 VP cast(VP x,VP y);
 VP capacity(VP x);
@@ -41,19 +43,22 @@ VP last(VP x);
 VP len(VP x); 
 VP lesser(VP x,VP y); 
 VP list2vec(VP obj);
+VP loadin(VP fn,VP ctx);
 VP match(VP obj,VP pat);
 VP matcheasy(VP obj,VP pat);
 VP matchtag(VP obj,VP pat);
 int matchpass(VP obj,VP pat);
 VP proj(int type, void* func, VP left, VP right);
 VP mkworkspace();
+VP minus(VP x,VP y);
 VP mod(VP x,VP y);
 VP not(VP x);
 VP over(VP x,VP y);
 VP or(VP x,VP y);
 VP parse(VP x);
 VP parsestr(const char* str);
-void repl();
+VP plus(VP x,VP y);
+void repl(VP ctx);
 VP repr(VP x);
 char* repr0(VP x,char* s,size_t len);
 char* reprA(VP x);
@@ -67,6 +72,8 @@ VP show(VP x);
 VP split(VP x,VP tok);
 static inline VP str2num(VP x);
 static inline VP str2tag(VP str); // turns string, or list of strings, into tag vector
+VP sum(VP x);
+VP sums(VP x);
 static inline VP tagname(I32 tag);
 /*static inline */
 VP tagv(const char* name, VP x);
@@ -78,12 +85,14 @@ int _tagnums(const char* name);
 void thr_run(VP ctx);
 static type_info_t typeinfo(type_t n); 
 static type_info_t typechar(char c);
+VP type(VP x);
 VP wide(VP obj,VP f);
 VP xalloc(type_t t,I32 initn);
 VP xfree(VP x);
 VP xfroms(const char* str);
 VP xor(VP x,VP y);
 VP xrealloc(VP x,I32 newn);
+VP xref(VP x);
 
 #ifdef STDLIBNET
 // from net.c
@@ -95,5 +104,10 @@ VP netloop(VP xsock,VP cb);
 // stdlib
 VP fileget(VP fn);
 VP fileset(VP str,VP fn);
+#endif
+
+#ifdef STDLIBSHAREDLIB
+VP sharedlibget(VP fn);
+VP sharedlibset(VP fn,VP funs);
 #endif
 

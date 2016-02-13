@@ -247,3 +247,8 @@ static inline VP xxan(VP a, int nargs,...) { va_list args; int i; VP x; a=xreall
 	for(i=0;i<nargs;i++){ x=va_arg(args,VP);
 	EL(a,VP,(a->n)+i)=x; }\
 	a->n+=nargs; return a; }
+
+
+static int MAX_TYPE = 12;
+
+
