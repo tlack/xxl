@@ -39,7 +39,7 @@ void repl(VP ctx) {
 		t2=parsestr(line);
 		in=append(in,t2);
 		// DUMP(t2);
-		PF("APPENDING!!\n");
+		// PF("APPENDING!!\n");
 		append(ctx,t2);
 		t3=applyctx(ctx,0,0);
 		ctx=curtail(ctx);

@@ -921,7 +921,7 @@ static inline VP applyexpr(VP parent,VP code,const VP xarg,const VP yarg) {
 				item=clone(parent);
 			} else
 				item=get(parent,item);
-			PF("decoded string identifier for %s\n",sfromx(item));DUMP(item);
+			PF("decoded string identifier\n");DUMP(item);
 			if(IS_EXC(item)) return left!=0 && CALLABLE(left)?left:item;
 		} else if(tag==tname) {
 			PF("non-string name encountered");
@@ -1007,8 +1007,10 @@ static inline int _arity(const VP x) {
 	return a;
 }
 static inline VP arity(const VP x) {
-	PF("arity%d\n", x);
-	return xi(_arity(x));
+	int i=_arity(x);
+	PF("arity = %d\n",i);DUMP(x);
+	VP res=xi(i);
+	return res;
 }
 VP applyctx(VP ctx,const VP x,const VP y) {
 	if(!IS_x(ctx)) return EXC(Tt(type),"context not a context",x,y);
@@ -1429,12 +1431,12 @@ VP max(VP x) {
 }
 VP minus(VP x,VP y) {
 	int typerr=-1;
-	// PF("minus\n");DUMP(x);DUMP(y);
+	PF("minus\n");DUMP(x);DUMP(y);
 	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "minus args should be simple types", x, y); 
 	VP acc=ALLOC_BEST(x,y);
 	VARY_EACHBOTH(x,y,({
 		if(LIKELY(x->t > y->t)) { _x=_x-_y; appendbuf(acc,(buf_t)&_x,1); }
-		else { _y=_y-_x; appendbuf(acc,(buf_t)&_y,1); }
+		else { _y=_x-_y; appendbuf(acc,(buf_t)&_y,1); }
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}),typerr);
 	IF_EXC(typerr > -1, Tt(type), "minus arg wrong type", x, y);
@@ -1626,10 +1628,15 @@ inline VP _getmodular(VP x,VP y) {
 }
 
 VP get(VP x,VP y) {
-	// get is used to resolve names in callctx(). x is context, y is thing to
-	// look up. scans tree of scopes/closures to get value. in k/q, get is
+	// get is used to resolve names in applyctx(). x is context, y is thing to
+	// look up. scans tree of scopes/closures to get value. 
+	//
+	// in k/q, get is
 	// overriden to do special things with files and other handles as well.
-	// TODO get support nesting
+	// 
+	// in our case, if you pass in ['tag,arg] on the right, it will look up
+	// 'tag in the root scope, and then try to call its "get" member. 
+	// see _getmodular()
 	int xn=x->n,yn=y->n,i,j;VP res;
 	PF("get\n");DUMP(y);
 	if((DICT(x)||IS_x(x)) && LIST(y) && yn >= 2 && IS_t(ELl(y,0))) {
@@ -2605,6 +2612,7 @@ void evalfile(VP ctx,const char* fn) {
 }
 VP loadin(VP fn,VP ctx) {
 	VP res,parse,acc = fileget(fn);
+	RETURN_IF_EXC(acc);
 	parse=parsestr(sfromx(acc));
 	append(ctx,parse);
 	res=apply(ctx,0); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
