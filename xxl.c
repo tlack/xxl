@@ -1295,18 +1295,26 @@ VP wide(VP obj,VP f) {
 
 // MATHY STUFF:
 
-VP and(VP x,VP y) {
+VP abss(const VP x) {
+	if(!SIMPLE(x)) return EXC(Tt(type),"abs only supports simple types",x,0);
+	VP acc=ALLOC_LIKE(x); int typerr=-1;
+	VARY_EACH(x,({ _x=abs(_x); appendbuf(acc,(buf_t)&_x, 1); }),typerr);
+	if(typerr!=-1) return EXC(Tt(type),"abs type not valid",x,0);
+	return acc;
+}
+VP and(const VP x,const VP y) {
 	int typerr=-1;
 	VP acc;
-	// PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
+	PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "and arguments should be same length", x, y);	
-	if(x->t == y->t) acc=xalloc(x->t, x->n);
+	if(SIMPLE(x) && SIMPLE(y)) acc=ALLOC_BEST(x,y);
 	else acc=xlsz(x->n);
+	PF("and acc\n");DUMP(acc);
 	VARY_EACHBOTH(x,y,({ 
 		if (_x < _y) appendbuf(acc, (buf_t)&_x, 1); 
 		else appendbuf(acc, (buf_t)&_y, 1); }), typerr);
 	IF_EXC(typerr != -1, Tt(type), "and arg type not valid", x, y);
-	// PF("and result\n"); DUMP(acc);
+	PF("and result\n"); DUMP(acc);
 	return acc;
 }
 int _any(VP x) {

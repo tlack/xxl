@@ -1,7 +1,7 @@
 // prototypes
 
 // from xxl.c
-int _find(VP x,VP y);
+VP abss(VP x);
 int _any(VP x);
 VP amend(VP x,VP y);
 VP and(VP x,VP y);
