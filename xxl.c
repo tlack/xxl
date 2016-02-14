@@ -2123,22 +2123,28 @@ VP matchexec(VP obj,VP pats) {
 	DUMP(obj);
 	return obj;
 }
-VP matchtag(VP obj,VP pat) {
-	IF_EXC(!SIMPLE(obj) && !LIST(obj),Tt(type),"matchtag only works with numeric or string types in x",obj,pat);
+VP matchtag(const VP obj,const VP pat) {
+	IF_EXC(!SIMPLE(obj) && !LISTDICT(obj),Tt(type),"matchtag only works with simple types or lists",obj,pat);
 	IF_EXC(!IS_t(pat), Tt(type), "matchtag y must be tag",obj,pat);
-	int j,n=obj->n,typerr=-1;VP item, acc;
+	int j,n,typerr=-1;VP searchobj, item, acc;
 	PF("matchtag\n"); DUMP(obj); DUMP(pat);
+
+	if(DICT(obj)) searchobj=VALS(obj);
+	else searchobj=obj;
+
+	n=searchobj->n;
+
 	acc=xbsz(n); // TODO matcheasy() should be smarter about initial buffer size
 	acc->n=n;
-	if(LIST(obj)) {
+	if(LIST(searchobj)) {
 		FOR(0,n,({ 
-			if(AS_t(pat,0) == ELl(obj,_i)->tag) 
+			if(AS_t(pat,0) == ELl(searchobj,_i)->tag) 
 				EL(acc,CTYPE_b,_i)=1; }));
 	} else {
-		VARY_EACHLEFT(obj, pat, ({
-			if(AS_t(pat,0) == obj->tag) EL(acc,CTYPE_b,_i) = 1;
+		VARY_EACHLEFT(searchobj, pat, ({
+			if(AS_t(pat,0) == searchobj->tag) EL(acc,CTYPE_b,_i) = 1;
 		}), typerr);
-		IF_EXC(typerr>-1, Tt(type), "matchtag could not match those types",obj,pat);
+		IF_EXC(typerr>-1, Tt(type), "matchtag could not match those types",searchobj,pat);
 	}
 	PF("matchtag result\n"); DUMP(acc);
 	return acc;
