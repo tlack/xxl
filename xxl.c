@@ -1860,49 +1860,45 @@ VP bracketjoin(VP x,VP y) {
 	//  turned off by y[1][n]=1
 	// otherwise 0
 	// useful for matching patterns involving more than one entity
-	int i,on=0,typerr=-1; VP c,ret,acc,y0,y1,mx;
+	int i,ctr=0,maxx=0,on=0,typerr=-1; VP y0,y1,res,emptyset;
 	// PF("bracketjoin\n");DUMP(x);DUMP(y);
-	IF_EXC(!LIST(y)||y->n!=2,Tt(type),"bracketjoin y must be 2-arg list",x,y);
+	if(!LIST(y) || y->n!=2) return EXC(Tt(type),"bracketjoin y must be 2-arg list",x,y);
 	y0=ELl(y,0); y1=ELl(y,1);
-	IF_EXC(y0->t != y1->t,Tt(type),"bracketjoin y items must be same type",x,y);
-	acc=plus(y0, times(xi(-1),y1));
-	acc=sums(acc);
-	// PF("bracket sums\n");DUMP(acc);
-	mx=max(acc);
-	// PF("bracket max\n");DUMP(mx);
-	// PF("bracket x\n");DUMP(x);
-	ret=take(xi(0),xi(y0->n));
-	if(EL(mx,CTYPE_b,0)==0) { PF("bracketjoin no coverage\n"); DUMP(acc); return ret; }
-	c=ELl(partgroups(condense(and(x,matcheasy(acc,mx)))),0);
-	DUMP(c);
+	if(y0->t != y1->t) return EXC(Tt(type),"bracketjoin y items must be same type",x,y);
+	// find the most tightly nested group by counting nesting depth
+	for(i=0;i<y0->n;i++) {
+		if(EL(y0,CTYPE_b,i)==1)
+			ctr++;
+		if(ctr>maxx) maxx=ctr;
+		if(EL(y1,CTYPE_b,i)==1) ctr=MAX(0,ctr-1);
+	}
+	emptyset=take(XI0,xi(y0->n));
+	if(maxx==0) { return emptyset; } // no nestable pairs
+	ctr=0; res=xbsz(x->n); CTYPE_b b0=0,b1=1;
+	for(i=0;i<y0->n;i++) {
+		if(EL(y0,CTYPE_b,i)==1) ctr++;
+		if(EL(y1,CTYPE_b,i)==1) ctr=MAX(0,ctr-1);
+		PF("%d %d %d\n", i, ctr, maxx);
+		if(ctr==maxx) {
+			appendbuf(res,(buf_t)&EL(x,CTYPE_b,i%x->n),1);
+		} else
+			appendbuf(res,(buf_t)&b0,1);
+	}
+	// PF("after scanning for maxx\n"); DUMP(res);
+	VP c=ELl(partgroups(condense(res)),0);
+	// PF("partgroups result\n"); DUMP(c);
 	if(c->n) {
 		c=append(c,plus(max(c),xi(1)));
 		// PF("bracket append next\n"); DUMP(c);
 	}
-	ret=assign(ret,c,xi(1));
-	// acc=pick(x,matcheasy(acc,mx));
-	// PF("bracket acc after pick");DUMP(ret);
-	return ret;
-	acc = ALLOC_LIKE_SZ(x,y0->n);
-	VARY_EACHRIGHT(x,y0,({
-		if(_y == 1) on++;
-		if(on) EL(acc,typeof(_x),_j)=EL(x,typeof(_x),_j % x->n);
-		else EL(acc,typeof(_x),_j)=0;
-		// NB. the off channel affects the *next element*, not this one - maybe not right logic
-		if(_j < y1->n && EL(y1,typeof(_y),_j)==1) on--;
-	}),typerr);
-	IF_EXC(typerr>-1,Tt(type),"bracketjoin couldnt work with those types",x,y);
-	acc->n=y0->n;
-	mx=max(acc);
- 	// PF("bracketjoin max\n");DUMP(mx);
-	acc=matcheasy(acc,mx);
-	PF("bracketjoin return\n");DUMP(acc);
-	return acc;
+	res=assign(take(XI0,xi(y0->n)),c,xi(1));
+	// PF("bracketjoin returning\n");DUMP(res);
+	return res;
 }
 VP consecutivejoin(VP x, VP y) {
 	// returns x[n] if y[0][n]==1 && y[1][n+1]==1 && .. else 0
 	int j,n=y->n, typerr=-1, on=0; VP acc,tmp;
-	//PF("consecutivejoin\n"); DUMP(x); DUMP(y);
+	// PF("consecutivejoin\n"); DUMP(x); DUMP(y);
 	if(!LIST(y)) return and(x,y);
 	IF_EXC(!LIST(y)||y->n<1,Tt(type),"consecutivejoin y must be list of simple types",x,y);
 	VP y0=ELl(y,0);

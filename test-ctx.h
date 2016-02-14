@@ -432,3 +432,12 @@
 									  && ELl(tmp1,1)->tag==Ti(ws),"comment in lambda");
 	xfree(tmp1);
 
+VP a,b,c;
+c=mkworkspace();
+b=parsestr("\n//x\n");
+ASSERT(b->n==2 && ELl(b,0)->tag==Ti(ws) && ELl(b,1)->tag==Ti(comment) && ELl(b,1)->n==4,"comment after newline");
+xfree(c);xfree(b);
+c=mkworkspace();
+b=parsestr("\n//x\n\n//y");
+ASSERT(b->n==4 && ELl(b,0)->tag==Ti(ws) && ELl(b,1)->tag==Ti(comment) && ELl(b,1)->n==4,"comment after newline part deux");
+xfree(c);xfree(b);
