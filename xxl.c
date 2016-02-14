@@ -107,7 +107,7 @@ char* repr_c(VP x,char* s,size_t sz) {
 	APF(sz,"\"",0);
 	for(;i<n;i++){
 		ch = AS_c(x,i);
-		if(ch=='"') APF(sz,"\\", 0);
+		if(ch=='"') APF(sz,"\\\"", 0);
 		else if(ch=='\n') APF(sz,"\\n", 0);
 		else if(ch=='\r') APF(sz,"\\r", 0);
 		else APF(sz,"%c",ch);
@@ -136,7 +136,7 @@ char* repr_x(VP x,char* s,size_t sz) {
 		a = ELl(x,i);
 		if(IS_d(a)) {
 			APF(sz,"'scope",0);
-			repr0(KEYS(a),s,sz);
+			//repr0(KEYS(a),s,sz);
 		} else
 			repr0(a,s,sz);
 		if(i!=x->n-1)
@@ -664,13 +664,10 @@ VP split(VP x,VP tok) {
 		PF("split returning\n");DUMP(tmp);
 		return tmp;
 	} else if(x->t == tok->t) {
-		PF("splitting\n");
 		int j,i=0,last=0,tokn=tok->n;
 		VP rest=x,acc=0;
 		for(;i<x->n;i++) {
-			PF("i%d\n", i);
 			for(j=0;j < tokn;j++) {
-				PF("j%d\n", i, j);
 				if (!_equalm(x,i+j,tok,j)) 
 					break;
 				if(j==tokn-1) {
@@ -767,7 +764,7 @@ int _find1(VP x,VP y) {        // returns index or -1 on not found
 	else {
 		ITERV(x,{ IF_RET(memcmp(ELi(x,_i),ELi(y,0),x->itemsz)==0,_i); });
 	}
-	return -1;
+	return -1;    // The code of this function reminds me of Armenia, or some war torn place
 }
 VP find1(VP x,VP y) {
 	return xi(_find1(x,y));
@@ -846,7 +843,9 @@ VP deal(VP range,VP amt) {
 // APPLICATION, ITERATION AND ADVERBS
 
 static inline VP applyexpr(VP parent,VP code,const VP xarg,const VP yarg) {
+	// PF_LVL++;
 	PF("applyexpr (code, xarg, yarg):\n");DUMP(code);DUMP(xarg);DUMP(yarg);
+	// PF_LVL--;
 	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
 	if(!LIST(code))return code;
 	char ch; 
@@ -1224,14 +1223,20 @@ VP deep(const VP obj,const VP f) {
 	PF("deep returning\n");DUMP(acc);
 	return acc;
 }
+static inline VP eachdict(const VP obj,const VP fun) {
+	return dict(KEYS(obj),each(VALS(obj),fun));
+}
 static inline VP each(const VP obj,const VP fun) { 
 	// each returns a list if the first returned value is the same as obj's type
 	// and has one item
-	VP tmp, res, acc=NULL; int n=obj->n;
+	VP tmp, res, acc=NULL; 
+	if(DICT(obj)) return eachdict(obj,fun);	
+	int n=obj->n;
 	// PF("each\n");DUMP(obj);DUMP(fun);
 	FOR(0,n,({ 
 		// PF("each #%d\n",n);
 		tmp=apply(obj, xi(_i)); res=apply(fun,tmp); 
+		if(res==0) continue; // no idea lol
 		// delay creating return type until we know what this func produces
 		if (!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
 		else if (!LIST(acc) && res->t != acc->t) 
@@ -1843,6 +1848,8 @@ static inline VP entag(VP x,VP t) {
 		x->tag=_tagnum(t);
 	else if (IS_i(t))
 		x->tag=AS_i(t,0);
+	else if (IS_t(t))
+		x->tag=AS_t(t,0);
 	return x;
 }
 static inline VP entags(VP x,const char* name) {
@@ -1904,7 +1911,7 @@ VP bracketjoin(VP x,VP y) {
 	for(i=0;i<y0->n;i++) {
 		if(EL(y0,CTYPE_b,i)==1) ctr++;
 		if(EL(y1,CTYPE_b,i)==1) ctr=MAX(0,ctr-1);
-		PF("%d %d %d\n", i, ctr, maxx);
+		// PF("%d %d %d\n", i, ctr, maxx);
 		if(ctr==maxx) {
 			appendbuf(res,(buf_t)&EL(x,CTYPE_b,i%x->n),1);
 		} else
@@ -2088,7 +2095,7 @@ VP matchany(VP obj,VP pat) {
 VP matcheasy(VP obj,VP pat) {
 	IF_EXC(!SIMPLE(obj) && !LIST(obj),Tt(type),"matcheasy only works with numeric or string types in x",obj,pat);
 	int j,n=obj->n,typerr=-1;VP item, acc;
-	PF("matcheasy\n"); DUMP(obj); DUMP(pat);
+	// PF("matcheasy\n"); DUMP(obj); DUMP(pat);
 	acc=xbsz(n); // TODO matcheasy() should be smarter about initial buffer size
 	acc->n=n;
 
@@ -2281,11 +2288,13 @@ VP parsenum(VP x) {
 	} else return res;
 }
 VP parselambda(VP x) {
-	int i,arity=1,typerr=-1,tname=Ti(name),traw=Ti(raw); VP this;
+	int i,arity=0,typerr=-1,tname=Ti(name),traw=Ti(raw); VP this;
 	PF("parselambda\n");DUMP(x);
 	x=list(x);
 	for(i=0;i<x->n;i++) {
 		this=ELl(x,i); // not alloced, no need to free
+		if(IS_c(this) && this->tag==tname && AS_c(this,0)=='x') 
+			arity=1;
 		if(IS_c(this) && this->tag==tname && AS_c(this,0)=='y') { 
 			arity=2;break;
 		}

@@ -44,13 +44,16 @@ void repl(VP ctx) {
 		t3=applyctx(ctx,0,0);
 		ctx=curtail(ctx);
 		en=clock();
-		printf("(%0.04f sec)\ninputs@%d: %s\n", ((double)(en-st)/CLOCKS_PER_SEC), i, line);
-		if(!IS_EXC(t3)) {
+		printf("(%0.04f sec)\ninputs@%d: %s", ((double)(en-st)/CLOCKS_PER_SEC), i, line);
+		if(t3==NULL) {
+			out=append(out,xl0());
+			printf("null\n");
+		} else if(!IS_EXC(t3)) {
 			out=append(out,t3);
-			printf("outputs@%d: %s\n", i, sfromx(repr(t3)));
+			printf("outputs@%d:\n%s\n", i, sfromx(repr(t3)));
 		} else {
-			printf("Oops. Exception: %s\n", sfromx(repr(t3)));
 			out=append(out,Tt(exception));
+			printf("Oops. Exception: %s\n", sfromx(repr(t3)));
 		}
 		i++;
 	}
