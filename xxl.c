@@ -45,10 +45,19 @@ char* repr_2(VP x,char* s,size_t sz) {
 	return s;
 }
 */
+/* very much not thread safe */
+#define REPR_SEEN_MAX 1024
+VP REPR_SEEN[REPR_SEEN_MAX]={0};
 char* repr0(VP x,char* s,size_t sz) {
 	type_info_t t;
+	int i;
 	if(x==NULL) { APF(sz,"/*null*/",0); return s; }
 	if(x->t < 0 || x->t > MAX_TYPE) { APF(sz,"/*unknown*/",0); return s; }
+	for(i=0; i<REPR_SEEN_MAX; i++) {
+		if(REPR_SEEN[i] == x) {
+			APF(sz,"/*cycle*/",0); return s;
+		}
+	}
 	t=typeinfo(x->t);
 	if(0 && DEBUG) {
 		APF(sz," /*%p %s tag=%d#%s itemsz=%d n=%d rc=%d*/ ",x,t.name,
@@ -60,9 +69,15 @@ char* repr0(VP x,char* s,size_t sz) {
 	if(t.repr) (*(t.repr)(x,s,sz));
 	if(x->tag!=0)
 		APF(sz, ")", 0);
+	for(i=0; i<REPR_SEEN_MAX; i++) {
+		if(REPR_SEEN[i] == 0) {
+			REPR_SEEN[i] = x; break;
+		}
+	}
 	return s;
 }
 char* reprA(VP x) {
+	memset(REPR_SEEN,0,REPR_SEEN_MAX*sizeof(VP));
 	#define BS 1024*10
 	char* s = calloc(1,BS);
 	s = repr0(x,s,BS);
@@ -78,12 +93,11 @@ char* repr_l(VP x,char* s,size_t sz) {
 	APF(sz,"[",0);
 	for(i=0;i<n;i++){
 		a = ELl(x,i);
-		repr0(a,s,sz);
-		if(i!=n-1)
-			// APF(sz,",\n",0);
-			APF(sz,", ",0);
-			// APF(sz,", ",0);
-		// repr0(*(EL(x,VP*,i)),s,sz);
+		if (a) {
+			repr0(a,s,sz);
+			if(i!=n-1)
+				APF(sz,", ",0);
+		}
 	}
 	APF(sz,"]",0);
 	return s;
@@ -120,9 +134,13 @@ char* repr_x(VP x,char* s,size_t sz) {
 	APF(sz,"'ctx[",0);
 	for(i=0;i<x->n;i++){
 		a = ELl(x,i);
-		repr0(a,s,sz);
+		if(IS_d(a)) {
+			APF(sz,"'scope",0);
+			repr0(KEYS(a),s,sz);
+		} else
+			repr0(a,s,sz);
 		if(i!=x->n-1)
-			APF(sz,", ",0);
+			APF(sz,",\n",0);
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
 	APF(sz,"]",0);
@@ -261,7 +279,7 @@ VP xfree(VP x) {
 	//PF("xfree(%p)\n",x);DUMP(x);//DUMP(info(x));
 	x->rc--; 
 	if(x->rc==0){
-		if(LISTDICT(x))
+		if(CONTAINER(x))
 			ITERV(x,xfree(ELl(x,_i)));
 		if(MEM_W) {
 			MEM_FREED_SZ+=sizeof(struct V) + x->sz;
@@ -353,7 +371,7 @@ VP append(VP x,VP y) {
 		// PF("afterward:\n"); DUMP(x);
 	} else {
 		buf_t dest;
-		PF("append disaster\n");DUMP(info(x));DUMP(x);DUMP(info(y));DUMP(y);
+		// PF("append disaster\n");DUMP(info(x));DUMP(x);DUMP(info(y));DUMP(y);
 		dest = BUF(x) + (x->n*x->itemsz);
 		x=xrealloc(x,x->n + y->n);
 		memmove(ELsz(x,x->itemsz,x->n),BUF(y),y->sz);
