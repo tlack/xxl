@@ -8,7 +8,7 @@ I8 PF_ON=0;
 I8 PF_LVL=0;
 VP TAGS=NULL;
 
-#define GOBBLERSZ 50
+#define GOBBLERSZ 30
 static VP MEM_RECENT[GOBBLERSZ] = {0};
 static I8 MEM_W=0; //watching memory?
 #define N_MEM_PTRS 1024
@@ -713,7 +713,8 @@ static inline int _equalm(const VP x,const int xi,const VP y,const int yi) {
 	if(memcmp(ELi(x,xi),ELi(y,yi),x->itemsz)==0) return 1;
 	else return 0;
 }	
-int _equal(const VP x,const VP y) {
+inline int _equal(const VP x,const VP y) {
+	// this is the most common call in the code
 	// TODO _equal() needs to handle comparison tolerance and type conversion
 	// TODO _equal should use the new VARY_*() macros, except for general lists
 	//PF("_equal\n"); DUMP(x); DUMP(y);
@@ -736,7 +737,7 @@ int _equal(const VP x,const VP y) {
 VP equal(const VP x,const VP y) {
 	return xb(_equal(x,y));
 }
-int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
+inline int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
 	// PF("findbuf\n");DUMP(x);
 	if(LISTDICT(x)) { ITERV(x,{ 
 		// PF("findbuf trying list\n"); DUMP(ELl(x,_i));
@@ -749,19 +750,28 @@ int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
 	}
 	return -1;
 }
-int _find1(VP x,VP y) {        // returns index or -1 on not found
+inline int _find1(const VP x,const VP y) {        // returns index or -1 on not found
 	// probably the most common, core call in the code. worth trying to optimize.
 	// PF("_find1\n",x,y); DUMP(x); DUMP(y);
 	ASSERT(LISTDICT(x) || (x->t==y->t && y->n==1), "_find1(): x must be list, or types must match with right scalar");
-	if(UNLIKELY(DICT(x))) {
-		return _find1(KEYS(x),y);
-	} if(LIST(x)) { ITERV(x,{ 
-		VP xx; xx=ELl(x,_i);
-		// PF("_find1 %d\n",_i); DUMP(xx);
-		if(xx!=NULL) 
-			IF_RET(_equal(xx,y)==1,_i);
-	}); }
-	else {
+
+	VP scan;
+
+	if(UNLIKELY(DICT(x))) 
+		scan=KEYS(x);
+	else
+		scan=x;
+	
+	if(LIST(scan)) {
+		int i, sn=scan->n, yn=y->n, yt=y->t;
+		VP item;
+		for(i=0;i<sn;i++) {
+			item=ELl(scan,i);
+			if(item && item->t == yt && item->n == yn) 
+				if (_equal(item,y)==1) return i;
+		}
+		return -1;
+	} else {
 		ITERV(x,{ IF_RET(memcmp(ELi(x,_i),ELi(y,0),x->itemsz)==0,_i); });
 	}
 	return -1;    // The code of this function reminds me of Armenia, or some war torn place
