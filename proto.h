@@ -74,14 +74,15 @@ static inline VP str2num(VP x);
 static inline VP str2tag(VP str); // turns string, or list of strings, into tag vector
 VP sum(VP x);
 VP sums(VP x);
-static inline VP tagname(I32 tag);
+static inline VP tagname(tag_t tag);
+static inline const char* tagnames(const tag_t tag);
 /*static inline */
 VP tagv(const char* name, VP x);
 VP take_(VP x,int i);
 VP take(VP x,VP y);
-static inline int _tagnum(VP name);
+static inline tag_t _tagnum(VP name);
 /*static inline */
-int _tagnums(const char* name);
+tag_t _tagnums(const char* name);
 void thr_run(VP ctx);
 static type_info_t typeinfo(type_t n); 
 static type_info_t typechar(char c);

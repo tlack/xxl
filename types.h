@@ -2,7 +2,7 @@
 
 static type_info_t TYPES[] = { 
 { 0, 'l', sizeof(VP), "list", &repr_l },
-{ 1, 't', sizeof(int), "tag", &repr_t },
+{ 1, 't', sizeof(tag_t), "tag", &repr_t },
 { 2, 'c', sizeof(char), "char", &repr_c },
 { 3, 'b', sizeof(int8_t), "byte", &repr_b },
 { 4, 'i', sizeof(int), "int", &repr_i },

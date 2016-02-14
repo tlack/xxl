@@ -6,7 +6,6 @@
 VP XI0=0; VP XI1=0; // set in init() 
 I8 PF_ON=0;
 I8 PF_LVL=0;
-VP TAGS=NULL;
 
 #define GOBBLERSZ 30
 static VP MEM_RECENT[GOBBLERSZ] = {0};
@@ -767,7 +766,8 @@ inline int _find1(const VP x,const VP y) {        // returns index or -1 on not 
 		VP item;
 		for(i=0;i<sn;i++) {
 			item=ELl(scan,i);
-			if(item && item->t == yt && item->n == yn) 
+			if(item && ( (item->t == yt && item->n == yn) ||
+									 LIST(item) && ELl(item,0)->t == yt ))
 				if (_equal(item,y)==1) return i;
 		}
 		return -1;
@@ -857,16 +857,19 @@ static inline VP applyexpr(VP parent,VP code,const VP xarg,const VP yarg) {
 	PF("applyexpr (code, xarg, yarg):\n");DUMP(code);DUMP(xarg);DUMP(yarg);
 	// PF_LVL--;
 	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
-	if(!LIST(code))return code;
+	if(SIMPLE(code) || !LIST(code)) return code;
+
 	char ch; 
-	int i, tag, tcom, texc, tlam, traw, tname, tstr, tws, xused=0, yused=0; 
+	int i, xused=0, yused=0; 
+	tag_t tag, tcom, texc, tlam, traw, tname, tstr, tws;
 	VP left,item;
 	left=xarg; if(!yarg) yused=1;
 	tcom=Ti(comment); texc=Ti(exception); tlam=Ti(lambda); 
 	traw=Ti(raw); tname=Ti(name); tstr=Ti(string); tws=Ti(ws);
 
-	if(SIMPLE(code)) return code;
+	PF("tag %s %lld vs %lld, n %d\n", tagnames(code->tag), code->tag, tlam, code->n);
 	if(LIST(code) && code->tag==tlam && code->n == 2) {
+		PF("unpacking lambda\n");
 		int arity=LAMBDAARITY(code);
 		if(arity==1 && xarg==0)
 			return proj(-1,parent,xarg,yarg);
@@ -1133,7 +1136,7 @@ VP apply(VP x,VP y) {
 		// PF("apply f2 returning\n");DUMP(res);
 		return res;
 	}
-	if(!CALLABLE(x) && UNLIKELY(LIST(y))) { 
+	if(!CALLABLE(x) && UNLIKELY(LIST(y) && !SCALAR(y))) { 
 		// indexing at depth - never done for callable types 1, 2, and p (but we do
 		// use it for x).  we should think about when applying with a list really
 		// means apply-at-depth. it would seem to make sense to have a list of
@@ -1866,28 +1869,28 @@ static inline VP entags(VP x,const char* name) {
 	x->tag=_tagnums(name);
 	return x;
 }
-static inline VP tagname(const I32 tag) {
-	VP res;
-	if(TAGS==NULL) { TAGS=xl0();TAGS->rc=INT_MAX; }
-	if(tag>=TAGS->n) return xfroms("unknown");
-	res = ELl(TAGS,tag);
-	return res;
+static inline VP tagname(const tag_t tag) {
+	char buf[256]={0};
+	memcpy(buf,&tag,sizeof(tag));
+	return xfroms(buf);
 }
-static inline const char* tagnames(const I32 tag) {
-	return sfromx(tagname(tag));
+static inline const char* tagnames(const tag_t tag) {
+	char* buf = malloc(256);
+	memcpy(buf,&tag,sizeof(tag));
+	return buf;
 }
-static inline int _tagnum(const VP s) {
+static inline tag_t _tagnum(const VP s) {
 	int i; VP ss=0;
-	WITHLOCK(tag, {
-		ss=s;ss->tag=0;
-		if(TAGS==NULL) { TAGS=xl0();TAGS->rc=INT_MAX;upsert(TAGS,xfroms("")); PF("new tags\n"); DUMP(TAGS); }
-		i=_upsertidx(TAGS,s);
-	});
+	tag_t res=0;
+
+	ASSERT(IS_c(s),"_tagnum(): non-string argument");
+	memcpy(&res,BUF(s),MIN(s->n,sizeof(res)));
+	return res;
 	return i;
 }
 /* static inline  */
-int _tagnums(const char* name) {
-	int t;VP s;
+tag_t _tagnums(const char* name) {
+	tag_t t;VP s;
 	//printf("_tagnums %s\n",name);
 	//printf("tagnums free\n");
 	// DUMP(TAGS);

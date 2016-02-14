@@ -4,7 +4,7 @@ m.types = [
   // type#, type code, english name, c type, var args type, formatter, 
 	// has repr, (has cast belongs here XXX)
 	[0, "l", "list", "VP", "VP", "%p",true,"0"],
-	[1, "t", "tag", "int", "int", "%d",true,"INT_MAX"],
+	[1, "t", "tag", "tag_t", "long long", "%llld",true,"LONG_LONG_MAX"],
 	[2, "c", "char", "char", "int","%c", true,"SCHAR_MAX"],
 	[3, "b", "byte","int8_t", "int", "%d", false,"SCHAR_MAX"],
 	[4, "i", "int", "int", "int","%d",false,"INT_MAX"],

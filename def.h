@@ -27,7 +27,10 @@
 	({ __typeof__ (a) _a = (a); \
 		 __typeof__ (b) _b = (b); \
 		 _a > _b ? _a : _b; })
-
+#define MIN(a,b) \
+	({ __typeof__ (a) _a = (a); \
+		 __typeof__ (b) _b = (b); \
+		 _a < _b ? _a : _b; })
 #define ABS(a) ( (a)<0 ? -1*(a) : (a) )
 #define CASE(a,b) case (a): b; break
 #define FOR(st,en,stmt) ({ int _i;for(_i=(st);_i<(en);_i++)stmt; })
@@ -144,8 +147,10 @@
 TYD(I8,unsigned char); TYD(I32,int); TYD(I64,__int64_t); TYD(I128,__int128_t);
 TYD(type_t,I8); TYD(buf_t,I8*);
 
+TYD(tag_t,I128);
+
 /* Structure for most values. 'st' and 'dyn' static and dynamic storage for data */
-struct V { type_t t; I32 tag; I32 n; I32 cap; I32 itemsz; I32 sz; I32 rc; I8 alloc; buf_t next; union { I8 st[32]; buf_t dyn;};};
+struct V { type_t t; tag_t tag; I32 n; I32 cap; I32 itemsz; I32 sz; I32 rc; I8 alloc; buf_t next; union { I8 st[32]; buf_t dyn;};};
 typedef struct V* VP; /* value pointer */
 
 typedef VP (unaryFunc)(VP x);
