@@ -827,12 +827,12 @@ VP deal(VP range,VP amt) {
 
 // APPLICATION, ITERATION AND ADVERBS
 
-static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
+static inline VP applyexpr(VP parent,VP code,const VP xarg,const VP yarg) {
 	PF("applyexpr (code, xarg, yarg):\n");DUMP(code);DUMP(xarg);DUMP(yarg);
 	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
 	if(!LIST(code))return code;
 	char ch; 
-	int i, tag, tcom, texc, tlam, traw, tname, tstr, tws, savepf=PF_LVL, xused=0, yused=0; 
+	int i, tag, tcom, texc, tlam, traw, tname, tstr, tws, xused=0, yused=0; 
 	VP left,item;
 	left=xarg; if(!yarg) yused=1;
 	tcom=Ti(comment); texc=Ti(exception); tlam=Ti(lambda); 
@@ -986,7 +986,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	DUMP(left);
 	return left;
 }
-static inline int _arity(VP x) {
+static inline int _arity(const VP x) {
 	int a=0;
 	if(!CALLABLE(x)) return 0;
 	if(CONTAINER(x)) {
@@ -1006,11 +1006,11 @@ static inline int _arity(VP x) {
 	}
 	return a;
 }
-static inline VP arity(VP x) {
+static inline VP arity(const VP x) {
 	PF("arity%d\n", x);
 	return xi(_arity(x));
 }
-VP applyctx(VP ctx,VP x,VP y) {
+VP applyctx(VP ctx,const VP x,const VP y) {
 	if(!IS_x(ctx)) return EXC(Tt(type),"context not a context",x,y);
 	int a=_arity(ctx);
 	if(a > 0) {
@@ -1177,7 +1177,7 @@ VP apply(VP x,VP y) {
 	}
 	return EXC(Tt(apply),"apply failure",x,y);
 }
-VP deep(VP obj,VP f) {
+VP deep(const VP obj,const VP f) {
 	// TODO perhaps deep() should throw an error with non-list args - calls each() now
 	int i;
 	PF("deep\n");DUMP(info(obj));DUMP(obj);DUMP(f);
@@ -1204,7 +1204,7 @@ VP deep(VP obj,VP f) {
 	PF("deep returning\n");DUMP(acc);
 	return acc;
 }
-static inline VP each(VP obj,VP fun) { 
+static inline VP each(const VP obj,const VP fun) { 
 	// each returns a list if the first returned value is the same as obj's type
 	// and has one item
 	VP tmp, res, acc=NULL; int n=obj->n;
@@ -1225,7 +1225,7 @@ static inline VP eachprior(VP obj,VP fun) {
 	ASSERT(1,"eachprior nyi");
 	return (VP)0;
 }
-VP exhaust(VP x,VP y) {
+VP exhaust(const VP x,const VP y) {
 	int i;
 	PF("+++EXHAUST\n");DUMP(x);DUMP(y);
 	IF_RET(CALLABLE(x), EXC(Tt(type),"exhaust y must be func or projection",x,y));
@@ -1245,7 +1245,7 @@ VP exhaust(VP x,VP y) {
 	}
 	return EXC(Tt(exhausted),"exhaust hit stack limit",x,last);
 }
-VP over(VP x,VP y) {
+VP over(const VP x,const VP y) {
 	PF("over\n");DUMP(x);DUMP(y);
 	IF_RET(!CALLABLE(y), EXC(Tt(type),"over y must be func or projection",x,y));
 	IF_RET(x->n==0, xalloc(x->t, 0));
@@ -1257,7 +1257,7 @@ VP over(VP x,VP y) {
 	}));
 	return last;
 }
-VP scan(VP x,VP y) { // always returns a list
+VP scan(const VP x,const VP y) { // always returns a list
 	PF("scan\n");DUMP(x);DUMP(y);
 	IF_RET(!CALLABLE(y), EXC(Tt(type),"scan y must be func or projection",x,y));
 	IF_RET(x->n==0, xalloc(x->t, 0));
@@ -1275,7 +1275,7 @@ VP scan(VP x,VP y) { // always returns a list
 	PF("scan result\n");DUMP(acc);
 	return acc;
 }
-VP wide(VP obj,VP f) {
+VP wide(const VP obj,const VP f) {
 	int i; VP acc;
 	PF("wide\n");DUMP(info(obj));DUMP(obj);DUMP(f);
 
@@ -1416,6 +1416,7 @@ VP min(VP x) {
 }
 VP max(VP x) { 
 	// TODO implement max() as loop instead of over - used in parsing
+	// PF("max\n");DUMP(x);
 	if (!SIMPLE(x)) return over(x, x2(&or));
 	if(x->n==1)return x;
 	VP res=ALLOC_LIKE_SZ(x,1); int typerr=-1;
