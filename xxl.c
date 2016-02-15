@@ -75,7 +75,7 @@ char* repr0(VP x,char* s,size_t sz) {
 	IN_OUTPUT_HANDLER++;
 
 	if(x->tag!=0) 
-		APF(sz, "'%s(", sfromx(tagname(x->tag)));
+		APF(sz, "'%s(", tagnames(x->tag));
 	if(t.repr) (*(t.repr)(x,s,sz));
 	if(x->tag!=0)
 		APF(sz, ")", 0);
@@ -151,11 +151,11 @@ char* repr_l(VP x,char* s,size_t sz) {
 	return s;
 }
 char* repr_t(VP x,char* s,size_t sz) {
-	int i=0,n=x->n,tag;
+	int i=0,n=x->n;tag_t tag;
 	if(n>1) APF(sz,"(",0);
 	for(;i<n;i++){
 		tag = AS_t(x,i);
-		APF(sz,"'%s",sfromx(tagname(tag)));
+		APF(sz,"'%s",tagnames(tag));
 		if(i!=n-1)
 			APF(sz,",",0);
 		// repr0(*(EL(x,VP*,i)),s,sz);
