@@ -1377,7 +1377,7 @@ static inline VP eachdict(const VP obj,const VP fun) {
 	if(!vals) return 0;
 	return dict(KEYS(obj),vals);
 }
-static inline VP each(const VP obj,const VP fun) { 
+VP each(const VP obj,const VP fun) { 
 	// each returns a list if the first returned value is the same as obj's type
 	// and has one item
 	VP tmp, res, acc=NULL; 
