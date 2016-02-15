@@ -32,6 +32,7 @@ void repl(VP ctx) {
 		if(strncmp(line,"clear\n",1024)==0) {
 			each(in,x1(&xfree)); in->n=0;
 			each(out,x1(&xfree)); out->n=0;
+			printf("\n\n----------------------------------------------\n\n"); // for text logs/scrollback
 			printf("\033[2J\033[;H\033[0m");
 			continue;
 		}
