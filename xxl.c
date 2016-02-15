@@ -1840,7 +1840,7 @@ VP get(VP x,VP y) {
 				item=ELl(x,i);
 				DUMP(item);
 				if(DICT(item)) {
-					if(res=DICT_FIND(item,y)) return res;
+					if((res=DICT_FIND(item,y))) return res;
 				} else {
 					if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
 					res=apply(ELl(x,i),y);

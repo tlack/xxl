@@ -29,6 +29,12 @@ void repl(VP ctx) {
 			 strncmp(line,"exit\n",1024)==0 ||
 			 strncmp(line,"quit\n",1024)==0)
 			exit(1);
+		if(strncmp(line,"clear\n",1024)==0) {
+			each(in,x1(&xfree)); in->n=0;
+			each(out,x1(&xfree)); out->n=0;
+			printf("\033[32m");
+			continue;
+		}
 		if(strncmp(line,"memwatch\n",1024)==0) {
 			if(MEM_WATCH) printf("memwatch off\n"),MEM_WATCH=0; 
 			else printf("memwatch on\n"),MEM_WATCH=1;
