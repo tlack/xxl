@@ -935,6 +935,8 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	if(!use_existing_left) {
 		left=ELl(curframe,4);
 	} else {
+		PF("using existing left\n");DUMP(left);
+		if(left!=0 && UNLIKELY(IS_EXC(left))) { MAYBE_RETURN(left); }
 		use_existing_left=0;
 	}
 	return_to=AS_i(ELl(curframe,6),0);
@@ -964,6 +966,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 
 		if (use_existing_item) {
 			PF("using existing item\n"); DUMP(item);
+			if(item!=0 && UNLIKELY(IS_EXC(item))) { MAYBE_RETURN(item); }
 			tag=item->tag;
 			use_existing_item=0;
 			goto grandswitch;
@@ -1808,7 +1811,7 @@ VP get(VP x,VP y) {
 	// in our case, if you pass in ['tag,arg] on the right, it will look up
 	// 'tag in the root scope, and then try to call its "get" member. 
 	// see _getmodular()
-	int xn=x->n,yn=y->n,i,j;VP res;
+	int xn=x->n,yn=y->n,i,j;VP item,res;
 	PF("get\n");DUMP(y);
 	if((DICT(x)||IS_x(x)) && LIST(y) && yn >= 2 && IS_t(ELl(y,0))) {
 		res=_getmodular(x,y);

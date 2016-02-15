@@ -413,7 +413,6 @@
 
 	tmp1=parsestr("{x*3}"); // returns lambda and repr of auto-included \n; only care about former
 	DUMP(tmp1);
-	ASSERT(LIST(tmp1),"test lambda internals 0");
 	tmp2=ELl(tmp1,0);
 	DUMP(tmp2);
 	ASSERT(LIST(tmp2) && tmp2->tag==Ti(lambda) && tmp2->n==2 && _equal(ELl(tmp2,1),xi(1)),"test lambda internals 0");
