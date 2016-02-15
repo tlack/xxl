@@ -7,13 +7,14 @@ VP XI0=0; VP XI1=0; // set in init()
 I8 PF_ON=0;
 I8 PF_LVL=0;
 
-#define GOBBLERSZ 30
-static VP MEM_RECENT[GOBBLERSZ] = {0};
+#define N_RETAINS 30
+#define RETAIN_MAX 1024
+static VP MEM_RETAIN[N_RETAINS] = {0};
 static I8 MEM_W=0; //watching memory?
 #define N_MEM_PTRS 1024
 static VP MEM_PTRS[N_MEM_PTRS]={0};
 static I32 MEM_ALLOC_SZ=0,MEM_FREED_SZ=0;
-static I32 MEM_ALLOCS=0, MEM_REALLOCS=0, MEM_FREES=0, MEM_GOBBLES=0;
+static I32 MEM_ALLOCS=0, MEM_REALLOCS=0, MEM_FREES=0, MEM_RETAINED=0;
 
 #ifdef THREAD
 static pthread_mutex_t mutmem=PTHREAD_MUTEX_INITIALIZER;
@@ -194,23 +195,22 @@ static inline type_info_t typechar(char c) {
 	ITER(TYPES,sizeof(TYPES),{ IF_RET(_x.c==c,_x); }); 
 	return (type_info_t){0}; }
 
-VP xalloc(type_t t,I32 initn) {
+inline VP xalloc(const type_t t,const I32 initn) {
 	VP a; int g,i,itemsz,sz; 
-	initn = initn < 4 ? 4 : initn;
-	itemsz = typeinfo(t).sz; sz=itemsz*initn;
+	int finaln = initn < 4 ? 4 : initn;
+	itemsz = typeinfo(t).sz; sz=itemsz*finaln;
 	//PF("%d\n",sz);
 	a=NULL;g=0;
-	if (GOBBLERSZ > 0) {
+	if (sz < RETAIN_MAX && N_RETAINS > 0) {
 		WITHLOCK(mem, {
-			FOR(0,GOBBLERSZ,({
-				if(MEM_RECENT[_i]!=0 && 
-					 ((VP)MEM_RECENT[_i])->sz > sz &&  // TODO xalloc gobbler should bracket sizes
-					 ((VP)MEM_RECENT[_i])->sz < (sz * 20)) {
-					a=MEM_RECENT[_i];
-					MEM_RECENT[_i]=0;
-					MEM_GOBBLES++;
+			FOR(0,N_RETAINS,({
+				if(MEM_RETAIN[_i]!=0 && 
+					 ((VP)MEM_RETAIN[_i])->sz > sz) { // TODO xalloc gobbler should bracket sizes
+					a=MEM_RETAIN[_i];
+					MEM_RETAIN[_i]=0;
+					MEM_RETAINED++;
 					g=_i;
-					memset(BUF(a),0,a->sz);
+					memset(a,0,sizeof(struct V)+a->sz);
 					break;
 				}
 			}));
@@ -220,7 +220,7 @@ VP xalloc(type_t t,I32 initn) {
 		a = calloc(sizeof(struct V)+sz,1);
 	if (MEM_W) {
 		WITHLOCK(mem, {
-			MEMPF("%salloc %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",(g==1?"GOBBLED! ":""),t,a,sizeof(struct V)+sz,initn,itemsz,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
+			MEMPF("%salloc %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",(g==1?"GOBBLED! ":""),t,a,sizeof(struct V)+sz,finaln,itemsz,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
 			MEM_ALLOC_SZ += sizeof(struct V)+sz;
 			MEM_ALLOCS++;
 			for(i=0;i<N_MEM_PTRS;i++) {
@@ -229,7 +229,7 @@ VP xalloc(type_t t,I32 initn) {
 			}
 		});
 	}
-	a->t=t;a->tag=0;a->n=0;a->rc=1;a->cap=initn;a->sz=sz;a->itemsz=itemsz;
+	a->t=t;a->tag=0;a->n=0;a->rc=1;a->cap=finaln;a->sz=sz;a->itemsz=itemsz;
 	return a;
 }
 VP xprofile_start() {
@@ -241,7 +241,7 @@ VP xprofile_end() {
 	VP ctx;
 	VP res; 
 	MEM_W=0;
-	printf("allocs: %d (%d), gobbles: %d, reallocs: %d, frees: %d\n", MEM_ALLOC_SZ, MEM_ALLOCS, MEM_GOBBLES, MEM_REALLOCS, MEM_FREES);
+	printf("allocs: %d (%d), gobbles: %d, reallocs: %d, frees: %d\n", MEM_ALLOC_SZ, MEM_ALLOCS, MEM_RETAINED, MEM_REALLOCS, MEM_FREES);
 	for(i=0;i<N_MEM_PTRS;i++)
 		if(MEM_PTRS[i]!=0) {
 			printf("freeing mem ptr\n");
@@ -281,10 +281,10 @@ VP xrealloc(VP x,I32 newn) {
 }
 VP xfree(VP x) {
 	int i;
-	if(x==NULL)return x;
+	if(UNLIKELY(x==NULL)) return x;
 	//PF("xfree(%p)\n",x);DUMP(x);//DUMP(info(x));
 	x->rc--; 
-	if(x->rc==0){
+	if(LIKELY(x->rc==0)) {
 		if(CONTAINER(x))
 			ITERV(x,xfree(ELl(x,_i)));
 		if(MEM_W) {
@@ -292,14 +292,16 @@ VP xfree(VP x) {
 			MEM_FREES+=1;
 			MEMPF("free %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",x->t,x,x->sz,x->itemsz,x->cap,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
 		}
-		if (GOBBLERSZ > 0) {
-			for(i=0;i<GOBBLERSZ;i++)
-				if(MEM_RECENT[i]==0) {
-					MEM_RECENT[i]=x;
+		if (x->alloc == 0 && x->sz < RETAIN_MAX && N_RETAINS > 0) {
+			for(i=0;i<N_RETAINS;i++)
+				if(MEM_RETAIN[i]==x || MEM_RETAIN[i]==0) {
+					MEM_RETAIN[i]=x;
 					return x;
 				}
 		}
 		//PF("xfree(%p) really dropping type=%d n=%d alloc=%d\n",x,x->t,x->n,x->alloc);
+		//free(x);
+		//if(x->alloc && x->dyn) free(x->dyn);
 	} return x; }
 VP xref(VP x) { if(MEM_W){MEMPF("ref %p\n",x);} x->rc++; return x; }
 VP xfroms(const char* str) {  // character value from string - strlen helper
@@ -859,10 +861,8 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
 	if(SIMPLE(code) || !LIST(code)) return code;
 
-	char ch; 
-	int i; 
-	VP left,item;
-	left=xarg; 
+	char ch; int i; 
+	VP left=xarg,item=0;
 	tag_t tag, tcom=Ti(comment), texc=Ti(exception), texpr=Ti(expr), tlam=Ti(lambda), 
 				tlistexpr=Ti(listexpr), tname=Ti(name), traw=Ti(raw), tstr=Ti(string), tws=Ti(ws);
 
