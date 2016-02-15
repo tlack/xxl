@@ -52,9 +52,11 @@ char* repr0(VP x,char* s,size_t sz) {
 	int i;
 	if(x==NULL) { APF(sz,"/*null*/",0); return s; }
 	if(x->t < 0 || x->t > MAX_TYPE) { APF(sz,"/*unknown*/",0); return s; }
-	for(i=0; i<REPR_SEEN_MAX; i++) {
-		if(REPR_SEEN[i] == x) {
-			APF(sz,"/*cycle*/",0); return s;
+	if(!SIMPLE(x)) {
+		for(i=0; i<REPR_SEEN_MAX; i++) {
+			if(REPR_SEEN[i] == x) {
+				APF(sz,"/*cycle*/",0); return s;
+			}
 		}
 	}
 	t=typeinfo(x->t);
@@ -68,9 +70,11 @@ char* repr0(VP x,char* s,size_t sz) {
 	if(t.repr) (*(t.repr)(x,s,sz));
 	if(x->tag!=0)
 		APF(sz, ")", 0);
-	for(i=0; i<REPR_SEEN_MAX; i++) {
-		if(REPR_SEEN[i] == 0) {
-			REPR_SEEN[i] = x; break;
+	if(!SIMPLE(x)) {
+		for(i=0; i<REPR_SEEN_MAX; i++) {
+			if(REPR_SEEN[i] == 0) {
+				REPR_SEEN[i] = x; break;
+			}
 		}
 	}
 	return s;
@@ -87,20 +91,6 @@ VP repr(VP x) {
 	char* s = reprA(x);
 	return xfroms(s);
 }
-char* repr_l(VP x,char* s,size_t sz) {
-	int i=0, n=x->n;VP a;
-	APF(sz,"[",0);
-	for(i=0;i<n;i++){
-		a = ELl(x,i);
-		if (a) {
-			repr0(a,s,sz);
-			if(i!=n-1)
-				APF(sz,", ",0);
-		}
-	}
-	APF(sz,"]",0);
-	return s;
-}
 char* repr_c(VP x,char* s,size_t sz) {
 	int i=0,n=x->n,ch;
 	APF(sz,"\"",0);
@@ -113,6 +103,39 @@ char* repr_c(VP x,char* s,size_t sz) {
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
 	APF(sz,"\"",0);
+	return s;
+}
+char* repr_d(VP x,char* s,size_t sz) {
+	int i, n;
+	VP k=KEYS(x),v=VALS(x);
+	// if(!sz) return s;
+	if (!k || !v) { APF(sz,"[null]",0); return s; }
+	APF(sz,"[",0);
+	n=k->n;
+	for(i=0;i<n;i++) {
+		repr0(apply(k,xi(i)), s, sz-1);
+		APF(sz,":",0);
+		repr0(apply(v,xi(i)), s, sz-2);
+		if(i!=n-1)
+			APF(sz,", ",0);
+	}
+	APF(sz,"]",0);
+	return s;
+}
+char* repr_l(VP x,char* s,size_t sz) {
+	int i=0, n=x->n;VP a;
+	APF(sz,"[",0);
+	for(i=0;i<n;i++){
+		a = ELl(x,i);
+		if (a==0) {
+			APF(sz,"/*null*/",0);
+		} else {
+			repr0(a,s,sz);
+		}
+		if(i!=n-1)
+			APF(sz,", ",0);
+	}
+	APF(sz,"]",0);
 	return s;
 }
 char* repr_t(VP x,char* s,size_t sz) {
@@ -128,40 +151,6 @@ char* repr_t(VP x,char* s,size_t sz) {
 	if(n>1) APF(sz,")",0);
 	return s;
 }
-char* repr_x(VP x,char* s,size_t sz) {
-	int i;VP a;
-	APF(sz,"'ctx[",0);
-	for(i=0;i<x->n;i++){
-		a = ELl(x,i);
-		if(IS_d(a)) {
-			APF(sz,"'scope",0);
-			//repr0(KEYS(a),s,sz);
-		} else
-			repr0(a,s,sz);
-		if(i!=x->n-1)
-			APF(sz,",\n",0);
-		// repr0(*(EL(x,VP*,i)),s,sz);
-	}
-	APF(sz,"]",0);
-	return s;
-}
-char* repr_d(VP x,char* s,size_t sz) {
-	int i, n;
-	VP k=KEYS(x),v=VALS(x);
-	if(!sz)return;
-	if (!k || !v) { APF(sz,"[null]",0); return s; }
-	APF(sz,"[",0);
-	n=k->n;
-	for(i=0;i<n;i++) {
-		repr0(apply(k,xi(i)), s, sz-1);
-		APF(sz,":",0);
-		repr0(apply(v,xi(i)), s, sz-2);
-		if(i!=n-1)
-			APF(sz,", ",0);
-	}
-	APF(sz,"]",0);
-	return s;
-}
 char* repr_p(VP x,char* s,size_t sz) {
 	Proj p = EL(x,Proj,0);
 	APF(sz,"'projection(%p,%d,",x,p.type);
@@ -175,6 +164,24 @@ char* repr_p(VP x,char* s,size_t sz) {
 	else
 		APF(sz,"()",0);
 	APF(sz,")",0);
+	return s;
+}
+char* repr_x(VP x,char* s,size_t sz) {
+	int i;VP a;
+	APF(sz,"'ctx[",0);
+	for(i=0;i<x->n;i++){
+		a = ELl(x,i);
+		if(!a) APF(sz,"/*null*/",0);
+		else if(IS_d(a)) {
+			APF(sz,"'scope",0);
+			//repr0(KEYS(a),s,sz);
+		} else
+			repr0(a,s,sz);
+		if(i!=x->n-1)
+			APF(sz,",",0);
+		// repr0(*(EL(x,VP*,i)),s,sz);
+	}
+	APF(sz,"]",0);
 	return s;
 }
 #include "repr.h"
@@ -753,17 +760,11 @@ inline int _find1(const VP x,const VP y) {        // returns index or -1 on not 
 	// probably the most common, core call in the code. worth trying to optimize.
 	// PF("_find1\n",x,y); DUMP(x); DUMP(y);
 	ASSERT(LISTDICT(x) || (x->t==y->t && y->n==1), "_find1(): x must be list, or types must match with right scalar");
-
 	VP scan;
-
-	if(UNLIKELY(DICT(x))) 
-		scan=KEYS(x);
-	else
-		scan=x;
-	
+	if(UNLIKELY(DICT(x))) scan=KEYS(x);
+	else scan=x;
 	if(LIST(scan)) {
-		int i, sn=scan->n, yn=y->n, yt=y->t;
-		VP item;
+		int i, sn=scan->n, yn=y->n, yt=y->t; VP item;
 		for(i=0;i<sn;i++) {
 			item=ELl(scan,i);
 			if(item && ( (item->t == yt && item->n == yn) ||
@@ -771,9 +772,8 @@ inline int _find1(const VP x,const VP y) {        // returns index or -1 on not 
 				if (_equal(item,y)==1) return i;
 		}
 		return -1;
-	} else {
+	} else 
 		ITERV(x,{ IF_RET(memcmp(ELi(x,_i),ELi(y,0),x->itemsz)==0,_i); });
-	}
 	return -1;    // The code of this function reminds me of Armenia, or some war torn place
 }
 VP find1(VP x,VP y) {
@@ -852,7 +852,7 @@ VP deal(VP range,VP amt) {
 
 // APPLICATION, ITERATION AND ADVERBS
 
-static inline VP applyexpr(VP parent,VP code,const VP xarg,const VP yarg) {
+static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	// PF_LVL++;
 	PF("applyexpr (code, xarg, yarg):\n");DUMP(code);DUMP(xarg);DUMP(yarg);
 	// PF_LVL--;
@@ -860,36 +860,110 @@ static inline VP applyexpr(VP parent,VP code,const VP xarg,const VP yarg) {
 	if(SIMPLE(code) || !LIST(code)) return code;
 
 	char ch; 
-	int i, xused=0, yused=0; 
-	tag_t tag, tcom, texc, tlam, traw, tname, tstr, tws;
+	int i; 
 	VP left,item;
-	left=xarg; if(!yarg) yused=1;
-	tcom=Ti(comment); texc=Ti(exception); tlam=Ti(lambda); 
-	traw=Ti(raw); tname=Ti(name); tstr=Ti(string); tws=Ti(ws);
+	left=xarg; 
+	tag_t tag, tcom=Ti(comment), texc=Ti(exception), texpr=Ti(expr), tlam=Ti(lambda), 
+				tlistexpr=Ti(listexpr), tname=Ti(name), traw=Ti(raw), tstr=Ti(string), tws=Ti(ws);
 
-	PF("tag %s %lld vs %lld, n %d\n", tagnames(code->tag), code->tag, tlam, code->n);
+	VP curframe,restore_left=0,stack=xl0();
+	int stack_i=-1, start_i=0, use_existing_item=0, use_existing_left=0, return_expr_type=0, return_to=0;
+	stack=append(stack,xln(9,parent,code,xarg,yarg,left,XI0,xi(-1),xi(0),left));
+
+	#define MAYBE_RETURN(value) \
+		if (return_to!=-1) { \
+			PF("applyexpr returning to frame %d\n",return_to); \
+			DUMP(value); \
+			if(return_expr_type==1) { \
+				PF("setting left in caller frame..\n"); \
+				use_existing_left=1; \
+				left=value; \
+			} else if (return_expr_type==2) { \
+				PF("setting item and left in caller frame..\n"); \
+				DUMP(value); DUMP(restore_left); \
+				use_existing_left=1; \
+				use_existing_item=1; \
+				if(code->tag==tlistexpr && !LISTDICT(value))  \
+					item=list(value); \
+				else item=value; \
+				left=restore_left; \
+			} \
+			xfree(curframe); \
+			EL(stack,VP,stack_i)=0; \
+			stack_i=return_to; \
+			start_i=AS_i(ELl(curframe,5),0); \
+			goto applyexprtop; \
+		} else { \
+			PF("applyexpr actually returning\n"); \
+			DUMP(value); \
+			xfree(stack); \
+			return value; \
+		} 
+
+	applyexprtop:
+
+	if (stack_i==-1) {
+		stack_i=stack->n-1;
+		PF("applyexpr picking fresh stack_i=%d of %d\n", stack_i, stack->n-1);
+	} else {
+		PF("applyexpr returning to stack #%d, i%d.. left/item:\n", stack_i, start_i);
+		DUMP(left);
+		DUMP(item);
+	}
+	curframe=ELl(stack,stack_i);
+	DUMP(curframe);
+
+	parent=ELl(curframe,0);
+	code=ELl(curframe,1);
+	xarg=ELl(curframe,2);
+	yarg=ELl(curframe,3);
+	if (!use_existing_item && !use_existing_left)
+		start_i=0;	
+	if(!use_existing_left) {
+		left=ELl(curframe,4);
+	} else {
+		use_existing_left=0;
+	}
+	return_to=AS_i(ELl(curframe,6),0);
+	return_expr_type=AS_i(ELl(curframe,7),0);
+	restore_left=ELl(curframe,8);
+
+	if(SIMPLE(code)) { MAYBE_RETURN(code); }
+
 	if(LIST(code) && code->tag==tlam && code->n == 2) {
 		PF("unpacking lambda\n");
 		int arity=LAMBDAARITY(code);
-		if(arity==1 && xarg==0)
-			return proj(-1,parent,xarg,yarg);
-		if(arity==2 && (xarg==0||yarg==0))
-			return proj(-2,parent,xarg,yarg);
+		if(arity==1 && xarg==0) {
+			item=proj(-1,parent,xarg,yarg);
+			MAYBE_RETURN(item);
+		} 
+		if(arity==2 && (xarg==0||yarg==0)) {
+			item=proj(-2,parent,xarg,yarg);
+			MAYBE_RETURN(item);
+		}
 		code=ELl(code,0);
 	}
 	
-	if(!LIST(code)) code=list(code);
-	PFIN();
-	for(i=0;i<code->n;i++) {
-		PF("applyexpr #%d/%d, consumed=%d/%d\n",i,code->n-1,xused,yused);
+	for(i=start_i;i<code->n;i++) {
+		PF("applyexpr #%d/%d\n",i,code->n-1);
+		DUMP(code);
 		DUMP(left);
-		item = ELl(code,i);
+
+		if (use_existing_item) {
+			PF("using existing item\n"); DUMP(item);
+			tag=item->tag;
+			use_existing_item=0;
+			goto grandswitch;
+		} else {
+			PF("picking up item from code %d\n", i); DUMP(code);
+		}
+
+		item=ELl(code,i);
 		tag=item->tag;
 		DUMP(item);
 		// consider storing these skip conditions in an array
 		if(tag==tws) continue;
 		if(tag==tcom) continue;
-
 		if(tag==tlam) { // create a context for lambdas
 			VP newctx,this; int j;
 			newctx=xx0();
@@ -902,26 +976,36 @@ static inline VP applyexpr(VP parent,VP code,const VP xarg,const VP yarg) {
 			append(newctx,item); // second item of lambda is arity; ignore for now
 			item=newctx;
 			PF("created new lambda context item=\n");DUMP(item);
-		} else if (tag==Ti(listexpr) || tag==Ti(expr)) {
-			PF("applying subexpression\n");
+		} else if (tag==texpr || tag==tlistexpr) {
+			if (! SIMPLE(item)) {
+				PF("applying subexpression\n");
+				VP newframe = xln(9,parent,item,left,yarg,(VP)0,xi(i),xi(stack_i),xi(2),left);
+				PF("trying stack hack for expression (not lambda)\n");
+				DUMP(newframe);
+				stack=append(stack,newframe);
+				stack_i=-1;
+				goto applyexprtop;
+			}
+			/*
 			PFIN();
 			item=applyexpr(parent,item,xarg,yarg);
 			PFOUT();
-			RETURN_IF_EXC(item);
+			if(item->tag==texc) { MAYBE_RETURN(item); }
 			if(tag==Ti(listexpr)&&!CONTAINER(item)) item=list(item);
 			PF("subexpression came back with");DUMP(item);
+			*/
 		} else if(LIKELY(IS_c(item)) && tag != tstr) {
 			ch = AS_c(item,0);
 			if(ch==';') { // end of expr; remove left/x
-				left=0; xused=1;
-				continue;
+				left=0; continue;
 			} 
 			PF("much ado about\n");DUMP(item);
 			if(item->n==1 && ch=='x') {
 				if (LIKELY(xarg!=0)) 
 					item=xarg;
-				else
-					return proj(_arity(parent)*-1, parent, xarg, yarg);
+				else {
+					MAYBE_RETURN(proj(_arity(parent)*-1, parent, xarg, yarg));
+				}
 			} else if(item->n==1 && ch=='y') {
 				if (LIKELY(yarg!=0)) {
 					PF("picking up y arg\n");DUMP(yarg);
@@ -931,7 +1015,7 @@ static inline VP applyexpr(VP parent,VP code,const VP xarg,const VP yarg) {
 					// to return a projection to a context
 					// item=EXC(Tt(undef),"undefined y",xarg,yarg);
 					// this exception in item is further handled below
-					return proj(-2,parent,xarg,yarg);
+					MAYBE_RETURN(proj(-2,parent,xarg,yarg));
 				}
 			}
 			else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
@@ -942,24 +1026,26 @@ static inline VP applyexpr(VP parent,VP code,const VP xarg,const VP yarg) {
 				DUMP(left);
 				continue;
 			} else if(item->n == 4 && ch == 'l' 
-						  && AS_c(item,1)=='o' && AS_c(item,2)=='a' && AS_c(item,3)=='d') {
+							&& AS_c(item,1)=='o' && AS_c(item,2)=='a' && AS_c(item,3)=='d') {
 				PF("performing load");
 				item=proj(2,&loadin,0,parent);
 			} else if(item->n == 4 && ch == 's' 
-						  && AS_c(item,1)=='e' && AS_c(item,2)=='l' && AS_c(item,3)=='f') {
+							&& AS_c(item,1)=='e' && AS_c(item,2)=='l' && AS_c(item,3)=='f') {
 				PF("using self");
 				item=clone(parent);
 			} else
 				item=get(parent,item);
 			PF("decoded string identifier\n");DUMP(item);
-			if(IS_EXC(item)) return left!=0 && CALLABLE(left)?left:item;
+			if(IS_EXC(item)) { MAYBE_RETURN(left!=0 && CALLABLE(left)?left:item); }
 		} else if(tag==tname) {
 			PF("non-string name encountered");
 			item=get(parent,item);
 			RETURN_IF_EXC(item);
 		}
 		
-		PF("before grand switch (left,item), xused=%d:\n", xused);
+		grandswitch:
+
+		PF("before grand switch (left,item)\n");
 		DUMP(left);
 		if(left!=0) PF("left arity=%d\n", _arity(left)); 
 		DUMP(item);
@@ -982,39 +1068,47 @@ static inline VP applyexpr(VP parent,VP code,const VP xarg,const VP yarg) {
 			Proj p;
 			PF("applying dangling left callable\n");
 			left=apply(left,item);
-			RETURN_IF_EXC(left);
+			if(left == 0 || left->tag==texc) { MAYBE_RETURN(left); }
 			if(IS_p(left)) {
 				p=AS_p(left,0);
-				if(!yused && p.type==2 && (!p.left || !p.right)) {
+				if(yarg && p.type==2 && (!p.left || !p.right)) {
 					PF("applyexpr consuming y:\n");DUMP(yarg);
 					left=apply(left,yarg);
-					yused=1;
 				}
 			}
+		} else if (0 && !CALLABLE(item) && (left!=0 && IS_t(left))) {
+			PF("applying tag\n");
+			left=entag(item,left);
 		} else if(!CALLABLE(item) && (left!=0 && !CALLABLE(left))) {
 			PF("applyexpr adopting left =\n");DUMP(item);
-			xused=1;
 			left=item;
 		} else {
 			if(left) {
 				PF("applyexpr calling apply(item,left)\n");DUMP(item);DUMP(left);
-				xused=1;
-				PFIN();
-				left=apply(item,left);
-				RETURN_IF_EXC(left);
-				PFOUT();
-				if(left->tag==texc) return left;
+				if(IS_x(item)) {
+					VP newframe = xln(9,item,ELl(item,item->n-1),left,(VP)0,left,xi(i+1),xi(stack_i),XI1,left);
+					PF("trying stack hack\n");
+					DUMP(newframe);
+					stack=append(stack,newframe);
+					stack_i=-1;
+					goto applyexprtop;
+				} else {
+					PFIN();
+					left=apply(item,left);
+					PFOUT();
+				}
+				if(left == 0 || left->tag==texc) { MAYBE_RETURN(left); }
 				PF("applyexpr apply returned\n");DUMP(left);
 			} else {
 				PF("no left, so continuing with item..\n");
 				left=item;
 			}
 		}
+		PF("bottom\n");
 	}
-	PFOUT();
-	PF("applyexpr returning\n");
+	PF("applyexpr done\n");
 	DUMP(left);
-	return left;
+	MAYBE_RETURN(left);
 }
 static inline int _arity(const VP x) {
 	int a=0;
@@ -1092,7 +1186,7 @@ VP apply(VP x,VP y) {
 	// this function is everything.
 	VP res=NULL;int i=0,typerr=-1;
 	// PF("apply\n");DUMP(x);DUMP(y);
-	if(x->tag==_tagnums("exception"))return x;
+	if(x->tag==Ti(exception))return x;
 	if(IS_p(x)) { 
 		// if its dyadic
 		   // if we have one arg, add y, and call - return result
@@ -1174,8 +1268,7 @@ VP apply(VP x,VP y) {
 		} else {
 			ITERV(y,{ 
 				int idx;
-				PF("searching %d\n",_i);
-				DUMP(y); DUMP(k);
+				// PF("searching %d\n",_i); DUMP(y); DUMP(k);
 				if(LIST(y)) idx = _find1(k,ELl(y,_i));
 				else idx = _findbuf(k,ELi(y,_i));
 				if(idx>-1) {
@@ -1209,6 +1302,31 @@ VP apply(VP x,VP y) {
 	}
 	return EXC(Tt(apply),"apply failure",x,y);
 }
+VP deepinplace(const VP obj,const VP f) {
+	// TODO perhaps deep() should throw an error with non-list args - calls each() now
+	int i;
+	// PF("deep\n");DUMP(info(obj));DUMP(obj);DUMP(f);
+	VP acc,subobj;
+	if(!CONTAINER(obj)) return each(obj,f);
+	if(_flat(obj)) {
+		// PF("deep flat\n");
+		acc=apply(f,obj);
+		if(obj->tag) acc->tag=obj->tag;
+		return acc;
+	}
+	PFIN();
+	FOR(0,obj->n,({
+		// PF("deep %d\n", _i);
+		subobj=ELl(obj,_i);
+		if(LIST(subobj)) subobj=deepinplace(subobj,f);
+		else subobj=apply(f,subobj);
+		// append(acc,subobj);
+		EL(obj,VP,_i) = subobj; // this may not be safe, but append() is overriden for dicts, so we cant simply append the list
+	}));
+	PFOUT();
+	PF("deep returning\n");DUMP(obj);
+	return obj;
+}
 VP deep(const VP obj,const VP f) {
 	// TODO perhaps deep() should throw an error with non-list args - calls each() now
 	int i;
@@ -1233,11 +1351,15 @@ VP deep(const VP obj,const VP f) {
 	}));
 	acc->n=obj->n;
 	PFOUT();
-	PF("deep returning\n");DUMP(acc);
+	// PF("deep returning\n");DUMP(acc);
 	return acc;
 }
 static inline VP eachdict(const VP obj,const VP fun) {
-	return dict(KEYS(obj),each(VALS(obj),fun));
+	if(KEYS(obj)->n==0) return 0;
+	if(VALS(obj)->n==0) return 0;
+	VP vals=each(VALS(obj),fun);
+	if(!vals) return 0;
+	return dict(KEYS(obj),vals);
 }
 static inline VP each(const VP obj,const VP fun) { 
 	// each returns a list if the first returned value is the same as obj's type
@@ -1684,7 +1806,8 @@ VP get(VP x,VP y) {
 			y=str2tag(y);
 		DUMP(y);
 		if(IS_t(y) && AS_t(y,0)==Ti(.)) {
-			return clone(curtail(x)); // clone(KEYS(x));
+			//return clone(curtail(x)); // clone(KEYS(x));
+			return curtail(x);
 		} else if(IS_t(y) && yn > 1 && AS_t(y,0)==0) { // empty first element = start from root
 			PF("get starting from root\n");
 			i=0;y=list(behead(y));
@@ -1886,15 +2009,15 @@ static inline tag_t _tagnum(const VP s) {
 	ASSERT(IS_c(s),"_tagnum(): non-string argument");
 	memcpy(&res,BUF(s),MIN(s->n,sizeof(res)));
 	return res;
-	return i;
 }
 /* static inline  */
-tag_t _tagnums(const char* name) {
-	tag_t t;VP s;
+inline tag_t _tagnums(const char* name) {
 	//printf("_tagnums %s\n",name);
 	//printf("tagnums free\n");
 	// DUMP(TAGS);
-	s=xfroms(name); t=_tagnum(s); xfree(s); return t;
+	tag_t res=0;
+	memcpy(&res,name,MIN(strlen(name),sizeof(res)));
+	return res;
 }
 
 // JOINS (so to speak)
