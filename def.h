@@ -130,7 +130,7 @@
 	if(0) printf("exception: %s\n", sfromx(repr(exc))); \
 	exc; }) 
 #define IF_EXC(cond,type,msg,x,y) if((cond)) return EXC(type,msg,x,y)
-#define IS_EXC(x) ((x)->tag==Ti(exception))
+#define IS_EXC(x) (x==0 || (x)->tag==Ti(exception))
 // TODO if_exc doesnt give us a chance to free memory :-/
 #define RETURN_IF_EXC(x) if(x==0 || IS_EXC(x)) return x;
 
