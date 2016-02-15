@@ -1,3 +1,7 @@
+// TODO transcripts ("test.txt" log)
+// TODO .xxlrc
+// TODO clear memory
+// TODO turn off inputs/outputs
 #include "def.h"
 #include "proto.h"
 #include "accessors.h"
