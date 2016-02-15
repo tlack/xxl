@@ -61,11 +61,12 @@
 #define APF(sz,fmt,...) ({ snprintf(s+strlen(s),sz-strlen(s),fmt,__VA_ARGS__); s; })
 #define ASSERT(cond,txt) ({ if (!(cond)) { printf("ASSERT: %s\n", txt); raise(SIGABRT); exit(1); } })
 #define P0(fmt,x) ({ typeof(x) xx=x; char* s=malloc(1024);snprintf(fmt,1024,xx); xx; })
-#define PF(...) (DEBUG && PF_LVL && ({ FOR(0,PF_LVL,printf("  ")); printf(__VA_ARGS__);}))
+#define _PF(...) ({ FOR(0,PF_LVL,printf("  ")); printf(__VA_ARGS__);})
+#define PF(...) (DEBUG && PF_LVL && _PF(__VA_ARGS__))
 #define PFIN() (DEBUG && PF_LVL > 0 && PF_LVL++)
 #define PFOUT() (DEBUG && PF_LVL > 0 && PF_LVL--)
 #define PFW(stmt) ({ int opf=PF_LVL; PF_LVL++; PFIN(); stmt; PFOUT(); PF_LVL=opf; })
-#define MEMPF(...) (DEBUG && MEM_W && PF(__VA_ARGS__))
+#define MEMPF(...) (MEM_WATCH && IN_OUTPUT_HANDLER==0 && _PF(__VA_ARGS__))
 #if DEBUG 
 	#define DUMP(x) ({ if (PF_LVL) { char* s = reprA(x); PF("%s\n", s); free(s); } x; })
 	#define DUMPRAW(x,sz) ({ printf("%p ",x); FOR(0,sz,printf("%d ",x[_i])); printf("\n"); x; })
@@ -173,4 +174,10 @@ struct xxl_index_t {
 #endif
 
 // GLOBALS FROM xxl.c
-extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; extern VP TAGS;
+extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; 
+#ifdef THREAD
+extern __thread I8 IN_OUTPUT_HANDLER; 
+#else
+extern I8 IN_OUTPUT_HANDLER;
+#endif
+extern I8 MEM_WATCH;

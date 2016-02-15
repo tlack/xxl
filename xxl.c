@@ -6,11 +6,16 @@
 VP XI0=0; VP XI1=0; // set in init() 
 I8 PF_ON=0;
 I8 PF_LVL=0;
+#ifdef THREAD
+__thread I8 IN_OUTPUT_HANDLER=0;
+#else
+I8 IN_OUTPUT_HANDLER=0;
+#endif
 
 #define N_RETAINS 30
 #define RETAIN_MAX 1024
 static VP MEM_RETAIN[N_RETAINS] = {0};
-static I8 MEM_W=0; //watching memory?
+I8 MEM_WATCH=0; //watching memory?
 #define N_MEM_PTRS 1024
 static VP MEM_PTRS[N_MEM_PTRS]={0};
 static I32 MEM_ALLOC_SZ=0,MEM_FREED_SZ=0;
@@ -66,6 +71,9 @@ char* repr0(VP x,char* s,size_t sz) {
 			x->tag,(x->tag!=0 ? sfromx(tagname(x->tag)) : ""),
 			x->itemsz,x->n,x->rc);
 	}
+
+	IN_OUTPUT_HANDLER++;
+
 	if(x->tag!=0) 
 		APF(sz, "'%s(", sfromx(tagname(x->tag)));
 	if(t.repr) (*(t.repr)(x,s,sz));
@@ -78,6 +86,9 @@ char* repr0(VP x,char* s,size_t sz) {
 			}
 		}
 	}
+
+	IN_OUTPUT_HANDLER--;
+
 	return s;
 }
 char* reprA(VP x) {
@@ -218,7 +229,7 @@ inline VP xalloc(const type_t t,const I32 initn) {
 	} 
 	if(a==NULL)
 		a = calloc(sizeof(struct V)+sz,1);
-	if (MEM_W) {
+	if (MEM_WATCH) {
 		WITHLOCK(mem, {
 			MEMPF("%salloc %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",(g==1?"GOBBLED! ":""),t,a,sizeof(struct V)+sz,finaln,itemsz,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
 			MEM_ALLOC_SZ += sizeof(struct V)+sz;
@@ -233,14 +244,14 @@ inline VP xalloc(const type_t t,const I32 initn) {
 	return a;
 }
 VP xprofile_start() {
-	MEM_W=1;
+	MEM_WATCH=1;
 	return xl0();
 }
 VP xprofile_end() {
 	int i;
 	VP ctx;
 	VP res; 
-	MEM_W=0;
+	MEM_WATCH=0;
 	printf("allocs: %d (%d), gobbles: %d, reallocs: %d, frees: %d\n", MEM_ALLOC_SZ, MEM_ALLOCS, MEM_RETAINED, MEM_REALLOCS, MEM_FREES);
 	for(i=0;i<N_MEM_PTRS;i++)
 		if(MEM_PTRS[i]!=0) {
@@ -264,7 +275,7 @@ VP xrealloc(VP x,I32 newn) {
 			newp = calloc(newsz,1);
 			memmove(newp,BUF(x),x->sz);
 		}
-		if(MEM_W) {
+		if(MEM_WATCH) {
 			// MEMPF("realloc %d %p -> %d\n", x->t, x, newsz);
 			MEM_ALLOC_SZ += newsz;
 			MEM_REALLOCS++;
@@ -287,7 +298,7 @@ VP xfree(VP x) {
 	if(LIKELY(x->rc==0)) {
 		if(CONTAINER(x))
 			ITERV(x,xfree(ELl(x,_i)));
-		if(MEM_W) {
+		if(MEM_WATCH) {
 			MEM_FREED_SZ+=sizeof(struct V) + x->sz;
 			MEM_FREES+=1;
 			MEMPF("free %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",x->t,x,x->sz,x->itemsz,x->cap,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
@@ -303,7 +314,7 @@ VP xfree(VP x) {
 		//free(x);
 		//if(x->alloc && x->dyn) free(x->dyn);
 	} return x; }
-VP xref(VP x) { if(MEM_W){MEMPF("ref %p\n",x);} x->rc++; return x; }
+VP xref(VP x) { if(MEM_WATCH){MEMPF("ref %p\n",x);} x->rc++; return x; }
 VP xfroms(const char* str) {  // character value from string - strlen helper
 	size_t len = strlen(str); type_info_t t = typechar('c');
 	VP a = xalloc(t.t,len); memcpy(BUF(a),str,len); a->n=len; return a; }
@@ -2800,7 +2811,7 @@ void tests() {
 		printf("TESTS PASSED\n");
 		// test_proj_thr();
 		// xprofile_end();
-		if(MEM_W) {
+		if(MEM_WATCH) {
 			PF("alloced = %llu, freed = %llu\n", MEM_ALLOC_SZ, MEM_FREED_SZ);
 		}
 	}

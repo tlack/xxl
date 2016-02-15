@@ -25,14 +25,14 @@ void repl(VP ctx) {
 			 strncmp(line,"exit\n",1024)==0 ||
 			 strncmp(line,"quit\n",1024)==0)
 			exit(1);
+		if(strncmp(line,"memwatch\n",1024)==0) {
+			if(MEM_WATCH) printf("memwatch off\n"),MEM_WATCH=0; 
+			else printf("memwatch on\n"),MEM_WATCH=1;
+			continue;
+		}
 		if(strncmp(line,"xray\n",1024)==0) {
-			if(PF_LVL) {
-				printf("xray off\n");
-				PF_LVL=0; 
-			} else {
-				printf("xray on\n");
-				PF_LVL=1;
-			}
+			if(PF_LVL) printf("xray off\n"),PF_LVL=0; 
+			else printf("xray on\n"),PF_LVL=1;
 			continue;
 		}
 		st=clock();
