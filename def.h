@@ -99,6 +99,7 @@
 #define KEYS(v) (ELl(v,0))                               // keys for dict v
 #define VALS(v) (ELl(v,1))                               // values for dict v
 
+#define DICT_FIND(x,y) ({ int i = _find1(KEYS(x),y); i==-1?0:ELl(VALS(x),i); })
 // is this member of a context (gen list) a body of code? 
 #define LAMBDAISH(ctxmem) (LIST(ctxmem)&&(CALLABLE(ELl(ctxmem,0))||(ctxmem)->tag==Ti(lambda))) 
 // is this member a dictionary of scope definitions (resolvable identifiers)
