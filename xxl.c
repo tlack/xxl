@@ -1453,7 +1453,7 @@ VP scan(const VP x,const VP y) { // always returns a list
 }
 VP wide(const VP obj,const VP f) {
 	int i; VP acc;
-	PF("wide\n");DUMP(info(obj));DUMP(obj);DUMP(f);
+	PF("wide\n");DUMP(obj);DUMP(f);
 
 	if(!CONTAINER(obj)) return apply(f, obj);
 
@@ -1514,7 +1514,7 @@ VP any(VP x) {
 }
 static inline VP divv(VP x,VP y) { 
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
-	PF("div");DUMP(x);DUMP(y);DUMP(info(acc));
+	// PF("div");DUMP(x);DUMP(y);DUMP(acc);
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"div argument should be simple types",x,0);
 	VARY_EACHBOTH(x,y,({
 		if(LIKELY(x->t > y->t)) { _x=_y/_x; appendbuf(acc,(buf_t)&_x,1); }
@@ -1738,7 +1738,7 @@ VP count(VP x) {
 }
 static inline VP times(VP x,VP y) {
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
-	PF("times");DUMP(x);DUMP(y);DUMP(info(acc));
+	// PF("times");DUMP(x);DUMP(y);DUMP(info(acc));
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"times argument should be simple types",x,0);
 	VARY_EACHBOTH(x,y,({
 		if(LIKELY(x->t > y->t)) { _x=_x*_y; appendbuf(acc,(buf_t)&_x,1); }
@@ -2376,7 +2376,7 @@ VP list2vec(VP obj) {
 	// list will be returned when rejected for massaging.
 	int i, t=0;
 	VP acc,this;
-	PF("list2vec\n"); DUMP(obj);
+	// PF("list2vec\n"); DUMP(obj);
 	if(!LIST(obj)) return obj;
 	if(!obj->n) return obj;
 	acc=ALLOC_LIKE(ELl(obj,0));
@@ -2391,7 +2391,7 @@ VP list2vec(VP obj) {
 		else append(acc,this); 
 		if(this->tag) t=this->tag;
 	}));
-	PF("list2vec result\n"); DUMP(acc); DUMP(info(acc));
+	PF("list2vec result\n"); DUMP(acc); 
 	return acc;
 }
 VP labelitems(VP label,VP items) {
