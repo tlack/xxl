@@ -323,23 +323,24 @@ const char* sfromx(VP x) {
 	if(x==NULL)return "null";
 	return (char*)BUF(x); }
 
-VP clone(VP obj) { 
+inline VP clone(const VP obj) { 
 	// TODO keep a counter of clone events for performance reasons - these represent a concrete
 	// loss over mutable systems
 	// PF("clone\n");DUMP(obj);
-	if(CONTAINER(obj)) return deep(obj,x1(&clone));
-	int i;VP res=ALLOC_LIKE(obj);
-	for(i=0;i<obj->n;i++) {
-		// PF("cloning %d\n", i);
-		res=appendbuf(res,ELi(obj,i),1);
-	}
+	int i, objn=obj->n; VP res=ALLOC_LIKE(obj);
+	if(CONTAINER(obj)) {
+		res->n=objn;
+		for(i=0;i<objn;i++) 
+			EL(res,VP,i)=clone(ELl(obj,i));
+	} else 
+		res=appendbuf(res,BUF(obj),objn);
 	// PF("clone returning\n");DUMP(res);
 	return res;
 }
 
 // RUNTIME 
 
-VP appendbuf(VP x,buf_t buf,size_t nelem) {
+inline VP appendbuf(VP x,const buf_t buf,const size_t nelem) {
 	int newn;buf_t dest;
 	//PF("appendbuf %d\n", nelem);DUMP(x);
 	newn = x->n+nelem;
@@ -1833,9 +1834,15 @@ VP get(VP x,VP y) {
 			i=xn-1;
 			for(;i>=0;i--) {
 				PF("get #%d\n", i);
-				if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
-				res=apply(ELl(x,i),y);
-				if(!LIST(res) || res->n > 0) return res;
+				item=ELl(x,i);
+				DUMP(item);
+				if(DICT(item)) {
+					if(res=DICT_FIND(item,y)) return res;
+				} else {
+					if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
+					res=apply(ELl(x,i),y);
+					if(!LIST(res) || res->n > 0) return res;
+				}
 			}
 		}
 		return EXC(Tt(undef),"undefined",y,x);
