@@ -1965,12 +1965,9 @@ VP proj(int type, void* func, VP left, VP right) {
 	Proj p;
 	VP pv=xpsz(1);
 	p.type=type;
-	if(type<0) 
-		p.ctx=func;
-	else if(type==1) 
-		p.f1=func; 
-	else
-		p.f2=func;
+	if(type<0) p.ctx=func;
+	else if(type==1) p.f1=func; 
+	else p.f2=func;
 	p.left=left; p.right=right;
 	EL(pv,Proj,0)=p;
 	pv->n=1;
