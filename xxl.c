@@ -2714,62 +2714,10 @@ void test_nest() {
 	#include"test-nest.h"
 	xfree(a);xfree(b);xfree(c);
 }
-void test_proj() {
-	VP a,b,c,n;
-	printf("TEST_PROJ\n");
-	n=xi(1024*1024);
-	//a=proj(1,&count,n,0);
-	a=x1(&count);
-	b=apply(a,n);
-	PF("b\n");DUMP(b);
-	c=apply(proj(1,&sum,b,0),0);
-	PF("result\n");DUMP(c);
-	//printf("%lld\n", AS_o(c,0));
-	xfree(a);xfree(b);xfree(c);xfree(n);
-	//DUMP(c);
-}
-void test_proj_thr0(void* _) {
-	/*
-	VP a,b,c,n; int i;
-	for (i=0;i<1024;i++) {
-		printf("TEST_PROJ %d\n", pthread_self());
-		n=xi(1024*1024);
-		//a=proj(1,&count,n,0);
-		a=x1(&count);
-		b=apply(a,n);
-		PF("b\n");DUMP(b);
-		c=apply(proj(1,&sum,b,0),0);
-		PF("result\n");DUMP(c);
-		printf("%lld\n", AS_o(c,0));
-		xfree(a);xfree(b);xfree(c);xfree(n);
-	}
-	return;
-	*/
-}
-void test_proj_thr() {
-	int n = 2, i; void* status;
-	/*
-	pthread_attr_t a;
-	pthread_t thr[n];
-	pthread_attr_init(&a);
-	pthread_attr_setdetachstate(&a, PTHREAD_CREATE_JOINABLE);
-	for(i=0;i<n;i++) {
-		pthread_create(&thr[i], &a, test_proj_thr0, NULL);
-	}
-	for(i=0; i<n; i++) {
-		pthread_join(&thr[i], &status);
-	}
-	thr_start();
-	for(i=0;i<n;i++) thr_run(test_proj_thr0);
-	thr_wait();
-	*/
-}
 VP evalin(VP tree,VP ctx) {
 	if(IS_c(tree)) return evalstrin(sfromx(tree),ctx);
-	if(!IS_x(ctx))
-		ctx=xxn(2,ctx,tree);
-	else
-		append(ctx,tree);
+	if(!IS_x(ctx)) ctx=xxn(2,ctx,tree);
+	else append(ctx,tree);
 	return applyctx(ctx,0,0); 
 }
 VP evalstrin(const char* str, VP ctx) {
@@ -2785,13 +2733,9 @@ void evalfile(VP ctx,const char* fn) {
 	PF("evalfile executing\n"); DUMP(acc);
 	parse=parsestr(sfromx(acc));
 	append(ctx,parse);
-	//PFW(({
 	res=apply(ctx,0); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
-	// }));
-	// PF("evalfile done\n"); DUMP(ctx); DUMP(res);
 	ctx=curtail(ctx);
 	printf("%s\n",repr(res));
-	// exit(1); fall through to repl
 }
 VP loadin(VP fn,VP ctx) {
 	VP res,parse,acc = fileget(fn);
@@ -2805,20 +2749,14 @@ VP loadin(VP fn,VP ctx) {
 void tests() {
 	int i;
 	VP a,b,c;
-	// xprofile_start();
-	
 	if (DEBUG) {
-		// xprofile_start();
 		printf("TESTS START\n");
 		test_basics();
 		test_nest();
-		// test_json();
 		test_ctx();
 		test_eval();
 		test_logic();
 		printf("TESTS PASSED\n");
-		// test_proj_thr();
-		// xprofile_end();
 		if(MEM_WATCH) {
 			PF("alloced = %llu, freed = %llu\n", MEM_ALLOC_SZ, MEM_FREED_SZ);
 		}
@@ -2837,15 +2775,12 @@ int main(int argc, char* argv[]) {
 	repl(ctx);
 	exit(1);
 }
-/*
-	
+/*	
 	TODO diff: (1,2,3,4)diff(1,2,55) = [['set,2,55],['del,3]] (plus an easy way to map that diff to funcs to perform)
-	TODO set PF_LVL from code via 'xray' or 'trace' vals
 	TODO mailboxes
 	TODO some kind of backing store for contexts cant stand losing my work
 	TODO decide operator for typeof
 	TODO decide operator for tagof
 	TODO decide operator for applytag
 	TODO can we auto-parallelize some loops?
-
 */ 
