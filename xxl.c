@@ -497,15 +497,15 @@ VP dict(VP x,VP y) {
 	if(DICT(x)) {
 		if(DICT(y)) {
 			ASSERT(LIST(KEYS(x)) && LIST(VALS(x)),"dict() x keys or vals not list");
-			FOR(0,x->n,({ assign(y,ELl(KEYS(x),_i),ELl(VALS(x),_i)); }));
-			return y;
+			int n = KEYS(y)->n;
+			FOR(0,n,({ assign(x,DICT_key_n(y,_i),DICT_val_n(y,_i)); }));
+			return x;
 		} 
 		if(KEYS(x)->n > VALS(x)->n) { // dangling dictionary detection
 			append(VALS(x),y);
 		} else {
 			if(LIST(y) && y->n==2) {
-				append(KEYS(x),first(y));
-				append(VALS(x),last(y));
+				append(KEYS(x),first(y)); append(VALS(x),last(y));
 			} else {
 				append(KEYS(x),y);
 			}
@@ -909,8 +909,8 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			goto applyexprtop; \
 		} else { \
 			PF("applyexpr actually returning\n"); \
-			DUMP(value); \
-			xfree(stack); \
+			if(value==0) { PF("null\n"); } \
+			else DUMP(value); \
 			return value; \
 		} 
 

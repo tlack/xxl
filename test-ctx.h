@@ -378,6 +378,16 @@
 	xfree(ctx);xfree(tmp1);xfree(tmp2);
 
 	ctx=mkworkspace();
+	append(ctx,parsestr("['q:1,'w:2] as 'd;d,['w:5]"));
+	PFW(({
+	tmp1=apply(ctx,xi(3));
+	}));
+	tmp2=evalstrin("['q:1, 'w:5]", ctx);
+	DUMP(tmp1);DUMP(tmp2);
+	ASSERT(_equal(tmp1,tmp2),"test join dict literal");
+	xfree(ctx);xfree(tmp1);xfree(tmp2);
+
+	ctx=mkworkspace();
 	append(ctx,parsestr(";{x*y}as 'z;7 z 6")); // without the semicolon the system tries to use xl0 as x.. helpfully
 	// note: last part above used to read 'z 7 6' but the interpreter was getting
 	// confused by the context (z) sometimes being treated as data and sometimes
