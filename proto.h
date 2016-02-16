@@ -75,6 +75,7 @@ static inline VP str2num(VP x);
 static inline VP str2tag(VP str); // turns string, or list of strings, into tag vector
 VP sum(VP x);
 VP sums(VP x);
+VP sys(VP x);
 static inline VP tagname(tag_t tag);
 static inline const char* tagnames(const tag_t tag);
 /*static inline */

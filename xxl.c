@@ -1915,6 +1915,16 @@ VP set(VP x,VP y) {
 	return xl0();
 }
 
+VP sys(VP x) {
+	PF("sys\n");DUMP(x);
+	if(XXL_SYS) {
+		DUMP(XXL_SYS);
+		if(EMPTYLIST(x)) return clone(XXL_SYS); 
+		else return DICT_find(XXL_SYS,x);
+	}
+	return (VP)0;
+}
+
 VP partgroups(VP x) { 
 	// separate 1 3 4 5 7 8 -> [1, 3 4 5, 7 8]; always returns a list, even with one item
 	VP acc,tmp;int n=0,typerr=-1;
@@ -2780,6 +2790,8 @@ void tests() {
 }
 void init(){
 	XI0=xi(0); XI1=xi(1);
+	XXL_SYS=xd0();
+	XXL_SYS=assign(XXL_SYS,Tt(compiler),xfroms(XXL_COMPILE));
 	thr_start();
 }
 int main(int argc, char* argv[]) {
