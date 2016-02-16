@@ -50,6 +50,9 @@
 	res=assign(res,Tt(deep),x2(&deep));
 	res=assign(res,Tt(drop),x2(&drop));
 	res=assign(res,Tt(each),x2(&each));
+	res=assign(res,Tt(::),x2(&each));
+	res=assign(res,Tt(eachboth),x2(&eachboth));
+	res=assign(res,xt(_tagnums(":>")),x2(&eachboth));
 	res=assign(res,Tt(evalin),x2(&evalin));
 	res=assign(res,Tt(get),x2(&get));
 	res=assign(res,Tt(iftrue),x2(&iftrue));

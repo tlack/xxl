@@ -26,6 +26,7 @@ static inline VP divv(VP x,VP y);
 VP drop_(VP x,int i);
 VP drop(VP x,VP y);
 VP each(VP obj,VP fun);
+VP eachboth(VP obj,VP fun);
 static inline VP entag(VP x,VP t);
 static inline VP entags(VP x,const char* name);
 static inline int _equalm(const VP x,const int xi,const VP y,const int yi);

@@ -1420,6 +1420,27 @@ VP each(const VP obj,const VP fun) {
 	// PF("each returning\n");DUMP(acc);
 	return acc;
 }
+VP eachboth(const VP obj,const VP fun) { 
+	if(!LIST(obj) || obj->n != 2) return EXC(Tt(type),"eachboth x must be [left,right]",obj,fun);
+	VP tmpl, tmpr, res, acc=NULL, left=ELl(obj,0), right=ELl(obj,1);
+	int n=left->n;
+	if(right->n != n) return EXC(Tt(type),"eachboth x must be same-length items",obj,fun);
+	// PF("each\n");DUMP(obj);DUMP(fun);
+	FOR(0,n,({ 
+		// PF("each #%d\n",n);
+		tmpl=apply(left, xi(_i)); 
+		tmpr=apply(right, xi(_i)); 
+		res=apply2(fun,tmpl,tmpr); 
+		if(res==0) continue; // no idea lol
+		// delay creating return type until we know what this func produces
+		if (!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
+		else if (!LIST(acc) && res->t != acc->t) 
+			acc = xl(acc);
+		xfree(tmpl); xfree(tmpr);
+		append(acc,res); }));
+	// PF("each returning\n");DUMP(acc);
+	return acc;
+}
 static inline VP eachprior(VP obj,VP fun) {
 	ASSERT(1,"eachprior nyi");
 	return (VP)0;
