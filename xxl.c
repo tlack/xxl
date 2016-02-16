@@ -1,27 +1,37 @@
-/* macros and helpers, function prototypes */
-#include "def.h"
-#include "proto.h"
+// XXL - a minimalistic programming language
+// (C) Copyright 2016 Thomas Lackner; 3 clause BSD-L
 
-// globals
-VP XI0=0; VP XI1=0; // set in init() 
-I8 PF_ON=0;
-I8 PF_LVL=0;
+#include "compile.h"                   // make xxl aware of its own compilation settings
+#include "def.h"                       // helper macros and main type defs
+#include "proto.h"                     // prototypes
+#include "accessors.h"
+#include "vary.h"
+
+#ifdef STDLIBSHAREDLIB
+#include <dlfcn.h>
+#endif
+
+// GLOBALS (dangggerous)
+
+VP XI0=0, XI1=0, XXL_SYS=0;            // set in init() 
+I8 PF_ON=0; I8 PF_LVL=0;               // controls debugging output on/off/nesting depth
 #ifdef THREAD
-__thread I8 IN_OUTPUT_HANDLER=0;
+__thread I8 IN_OUTPUT_HANDLER=0;       // used to prevent some debugging info while debugging
 #else
 I8 IN_OUTPUT_HANDLER=0;
 #endif
 
 #define N_RETAINS 30
 #define RETAIN_MAX 1024
-static VP MEM_RETAIN[N_RETAINS] = {0};
-I8 MEM_WATCH=0; //watching memory?
+static VP MEM_RETAIN[N_RETAINS] = {0}; // retain buffer to reuse VP pointers we recently freed
+
+I8 MEM_WATCH=0;                        // monitor/report on memory use (see 'memwatch' in repl)
 #define N_MEM_PTRS 1024
 static VP MEM_PTRS[N_MEM_PTRS]={0};
 static I32 MEM_ALLOC_SZ=0,MEM_FREED_SZ=0;
 static I32 MEM_ALLOCS=0, MEM_REALLOCS=0, MEM_FREES=0, MEM_RETAINED=0;
 
-#ifdef THREAD
+#ifdef THREAD                          // in threaded scenarios we carefully lock some actions
 static pthread_mutex_t mutmem=PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t muttag=PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mutthr=PTHREAD_MUTEX_INITIALIZER;
@@ -31,13 +41,6 @@ static pthread_t THR[MAXTHR]={0};
 #define WITHLOCK(name,code) ({ pthread_mutex_lock(&mut##name); code; pthread_mutex_unlock(&mut##name); })
 #else
 #define WITHLOCK(name,code) ({ code; })
-#endif
-
-#include "accessors.h"
-#include "vary.h"
-
-#ifdef STDLIBSHAREDLIB
-#include <dlfcn.h>
 #endif
 
 /*
@@ -207,7 +210,7 @@ static inline type_info_t typechar(const char c) {
 	ITER(TYPES,sizeof(TYPES),{ IF_RET(_x.c==c,_x); }); 
 	return (type_info_t){0}; }
 
-inline VP xalloc(const type_t t,const I32 initn) {
+VP xalloc(const type_t t,const I32 initn) {
 	VP a; int g,i,itemsz,sz; 
 	int finaln = initn < 4 ? 4 : initn;
 	itemsz = typeinfo(t).sz; sz=itemsz*finaln;
@@ -323,7 +326,7 @@ const char* sfromx(VP x) {
 	if(x==NULL)return "null";
 	return (char*)BUF(x); }
 
-inline VP clone(const VP obj) { 
+VP clone(const VP obj) { 
 	// TODO keep a counter of clone events for performance reasons - these represent a concrete
 	// loss over mutable systems
 	// PF("clone\n");DUMP(obj);
@@ -1697,7 +1700,7 @@ VP plus(VP x,VP y) {
 }
 static inline VP str2num(VP x) {
 	// TODO optimize str2int
-	double d; I128 buf=0;char* s=sfromx(flatten(x));
+	double d; I128 buf=0; const char* s=sfromx(flatten(x));
 	PF("str2num %s\n",s);DUMP(x);
 	IF_EXC(!IS_c(x),Tt(type),"str2int arg should be char vector",x,0);
 	if(strchr(s,'.')!=0 && (d=strtod(s,NULL))!=0) {

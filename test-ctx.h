@@ -112,7 +112,7 @@
 	append(ctx,parsestr("2,4 over +"));
 	tmp1=apply(ctx,xi(1));
 	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xi(6)),"test parsestr 6");
+	ASSERT(_equal(tmp1,xi(6)),"test parsestr 6b");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
