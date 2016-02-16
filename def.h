@@ -101,7 +101,7 @@
 
 #define DICT_find(x,y) ({ int i = _find1(KEYS(x),y); i==-1?0:ELl(VALS(x),i); })
 #define DICT_key_n(x,y) (ELl(KEYS(x),y))
-#define DICT_val_n(x,y) (ELl(KEYS(x),y))
+#define DICT_val_n(x,y) (ELl(VALS(x),y))
 
 // is this member of a context (gen list) a body of code? 
 #define LAMBDAISH(ctxmem) (LIST(ctxmem)&&(CALLABLE(ELl(ctxmem,0))||(ctxmem)->tag==Ti(lambda))) 
