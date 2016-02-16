@@ -125,9 +125,9 @@ char* repr_d(VP x,char* s,size_t sz) {
 	APF(sz,"[",0);
 	n=k->n;
 	for(i=0;i<n;i++) {
-		repr0(apply(k,xi(i)), s, sz-1);
+		repr0(DICT_key_n(x,i), s, sz-1);
 		APF(sz,":",0);
-		repr0(apply(v,xi(i)), s, sz-2);
+		repr0(DICT_val_n(x,i), s, sz-2);
 		if(i!=n-1)
 			APF(sz,", ",0);
 	}
@@ -1840,7 +1840,7 @@ VP get(VP x,VP y) {
 				item=ELl(x,i);
 				DUMP(item);
 				if(DICT(item)) {
-					if((res=DICT_FIND(item,y))) return res;
+					if((res=DICT_find(item,y))) return res;
 				} else {
 					if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
 					res=apply(ELl(x,i),y);
