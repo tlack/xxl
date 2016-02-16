@@ -598,6 +598,7 @@ VP last(VP x) {
 	return res;
 }
 static inline VP list(VP x) { // convert x to general list
+	if(x==0) return xl0();
 	if(LIST(x))return x;
 	return split(x,xi0());
 }
@@ -899,7 +900,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				DUMP(value); DUMP(restore_left); \
 				use_existing_left=1; \
 				use_existing_item=1; \
-				if(code->tag==tlistexpr && !LISTDICT(value))  \
+				if(code->tag==tlistexpr && !(value && DICT(value))) \
 					item=list(value); \
 				else item=value; \
 				left=restore_left; \
@@ -969,9 +970,9 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 
 		if (use_existing_item) {
 			PF("using existing item\n"); DUMP(item);
-			if(item!=0 && UNLIKELY(IS_EXC(item))) { MAYBE_RETURN(item); }
-			tag=item->tag;
 			use_existing_item=0;
+			if(item==0) continue;
+			if(UNLIKELY(IS_EXC(item))) { MAYBE_RETURN(item); }
 			goto grandswitch;
 		} else {
 			PF("picking up item from code %d\n", i); DUMP(code);
@@ -1069,7 +1070,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 		if(left!=0) PF("left arity=%d\n", _arity(left)); 
 		DUMP(item);
 
-		if(left!=0 && (left->tag==Ti(proj) || CALLABLE(left) && _arity(left)>0)) {
+		if(left!=0 && (left->tag==Ti(proj) || (CALLABLE(left) && _arity(left)>0))) {
 			// they seem to be trying to call a unary function, though it's on the
 			// left - NB. possibly shady
 			//
@@ -1108,7 +1109,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 		} else {
 			if(left) {
 				if (_arity(left)==2) {
-					left=xln(2,left,item)->tag=Ti(proj);
+					left=xln(2,left,item); left->tag=Ti(proj);
 				} else {
 					PF("applyexpr calling apply(item,left)\n");DUMP(item);DUMP(left);
 					if(IS_x(item)) {
