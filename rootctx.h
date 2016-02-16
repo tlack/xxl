@@ -81,6 +81,13 @@
 	xfree(d);
 	#endif
 
+	#ifdef STDLIBSHELL
+	d=xd0();
+	d=assign(d,Tt(get),x1(&shellget));
+	res=assign(res,Tt(shell),d);
+	xfree(d);
+	#endif
+
 	#ifdef STDLIBNET
 	d=xd0();
 	d=assign(d,Tt(bind),x2(&netbind));

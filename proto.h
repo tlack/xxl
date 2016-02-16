@@ -114,3 +114,6 @@ VP sharedlibget(VP fn);
 VP sharedlibset(VP fn,VP funs);
 #endif
 
+#ifdef STDLIBSHELL
+VP shellget(VP cmd);
+#endif

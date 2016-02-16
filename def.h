@@ -139,6 +139,7 @@
 #define RETURN_IF_EXC(x) if(x==0 || IS_EXC(x)) return x;
 
 // misc
+#define IOBLOCKSZ 10*1024
 #define MAXSTACK 2048
 #define LIKELY(x)       __builtin_expect((x),1)
 #define UNLIKELY(x)     __builtin_expect((x),0)

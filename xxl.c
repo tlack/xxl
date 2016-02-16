@@ -142,11 +142,8 @@ char* repr_l(VP x,char* s,size_t sz) {
 	APF(sz,"[",0);
 	for(i=0;i<n;i++){
 		a = ELl(x,i);
-		if (a==0) {
-			APF(sz,"/*null*/",0);
-		} else {
-			repr0(a,s,sz);
-		}
+		if (a==NULL) APF(sz,"/*null*/",0); 
+		else repr0(a,s,sz);
 		if(i!=n-1)
 			APF(sz,", ",0);
 	}
@@ -2660,6 +2657,20 @@ VP sharedlibset(VP fn,VP funcs) {
 	return EXC(Tt(nyi),".sharedlib.set nyi",fn,funcs);
 }
 #endif 
+
+#ifdef STDLIBSHELL 
+VP shellget(VP cmd) {
+	if(!IS_c(cmd)) return EXC(Tt(type),".shell.get requires command arg as a string",cmd,0);
+	char buf[IOBLOCKSZ]={0}; size_t r; const char* cmds=sfromx(cmd); 
+	FILE* fp=popen(cmds,"r");
+	if(fp==NULL) return EXC(Tt(popen),"popen failed",cmd,0);
+	VP acc=xcsz(IOBLOCKSZ);
+	while(fgets(buf,IOBLOCKSZ-1,fp)!=NULL)
+		appendbuf(acc,(buf_t)buf,strlen(buf));
+	fclose(fp);
+	return acc;
+}
+#endif
 
 
 // Threading
