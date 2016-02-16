@@ -58,6 +58,7 @@ VP not(VP x);
 VP over(VP x,VP y);
 VP or(VP x,VP y);
 VP parse(VP x);
+VP parseloopoper(VP x);
 VP parsestr(const char* str);
 VP plus(VP x,VP y);
 void repl(VP ctx);

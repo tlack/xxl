@@ -13,7 +13,8 @@
 
 // GLOBALS (dangggerous)
 
-VP XI0=0, XI1=0, XXL_SYS=0;            // set in init() 
+// commonly used "static" values, set in init()
+VP XB0=NULL,XB1=NULL,XI0=NULL,XI1=NULL,XXL_SYS=NULL; 
 I8 PF_ON=0; I8 PF_LVL=0;               // controls debugging output on/off/nesting depth
 #ifdef THREAD
 __thread I8 IN_OUTPUT_HANDLER=0;       // used to prevent some debugging info while debugging
@@ -574,15 +575,12 @@ VP join(VP x,VP y) {
 	if(!CONTAINER(x) && x->tag==0 && x->t==y->t) {
 		PF("join2\n");
 		res=ALLOC_LIKE_SZ(x, n);
-		appendbuf(res, BUF(x), x->n);
-		appendbuf(res, BUF(y), y->n);
+		appendbuf(res, BUF(x), x->n); appendbuf(res, BUF(y), y->n);
 	} else {
 		PF("join3\n");
-		if(DICT(x))
-			return dict(x,y);
-		else if(LIST(x) && (!LIST(y) || y->n==1)) {
-			res=append(x,y);
-		} else {
+		if(DICT(x)) return dict(x,y);
+		else if(LIST(x) && !LIST(y)) res=append(x,y);
+		else {
 			PF("join4\n");
 			res=xlsz(2);
 			res=append(res,x);
@@ -968,7 +966,6 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	
 	for(i=start_i;i<code->n;i++) {
 		PF("applyexpr #%d/%d\n",i,code->n-1);
-		DUMP(left);
 		if (use_existing_item) {
 			PF("using existing item\n"); DUMP(item);
 			use_existing_item=0;
@@ -976,9 +973,10 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			if(UNLIKELY(IS_EXC(item))) { MAYBE_RETURN(item); }
 			goto evalexpr;
 		} else {
-			PF("picking up item from code %d\n", i); DUMP(code);
+			PF("picking up item from code %d\n", i); 
 		}
 		item=ELl(code,i);
+		PF("item=\n");DUMP(item);
 
 		consideritem:
 
@@ -1018,6 +1016,8 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				item->tag=(tag_t)0;
 				if(IS_c(item))
 					goto consideritem;
+				else if(tag==tlistexpr)
+					item=list(item);
 			}
 		} else if(LIKELY(IS_c(item)) && tag != tstr) {
 			ch = AS_c(item,0);
@@ -2293,8 +2293,9 @@ VP nest(VP x,VP y) {
 		// like-typed vector. but that's not what we want here, because the
 		// thing we're inserting is a "child" of this position, so we want to
 		// ensure we always splice in a list
-		PF("nest x");
+		PF("nest x\n");
 		out=splice(split(x,xi0()),where,rep);
+		if(x->tag) out->tag=x->tag;
 		PF("nest out\n");DUMP(out);
 		if(!LIST(out)) out=xl(out);
 	} else { out = x; }
@@ -2306,7 +2307,7 @@ VP matchany(VP obj,VP pat) {
 	// IF_EXC(!SIMPLE(pat),Tt(type),"matchany only works with simple types in y",obj,pat);
 	IF_EXC(SIMPLE(obj) && obj->t != pat->t, Tt(type),"matchany only works with matching simple types",obj,pat);
 	int j,n=obj->n,typerr=-1;VP item, acc;
-	PF("matchany\n"); DUMP(obj); DUMP(pat);
+	// PF("matchany\n"); DUMP(obj); DUMP(pat);
 	acc=xbsz(n); 
 	acc->n=n;
 	if(LIST(obj)) {
@@ -2335,15 +2336,11 @@ VP matcheasy(VP obj,VP pat) {
 	// PF("matcheasy\n"); DUMP(obj); DUMP(pat);
 	acc=xbsz(n); // TODO matcheasy() should be smarter about initial buffer size
 	acc->n=n;
-
-	if(CALLABLE(pat)) {
-		PF("matcheasy callable\n");
-		return each(obj, pat);
-	}
-
+	if(CALLABLE(pat)) return each(obj, pat);
 	if(LIST(obj)) {
 		FOR(0,n,({ 
-			if((pat->tag == 0 || pat->tag==obj->tag) && _equal(ELl(obj,_i),pat)) 
+			VP item = ELl(obj,_i);
+			if((pat->tag == 0 || pat->tag==item->tag) && _equal(item,pat)) 
 				EL(acc,CTYPE_b,_i)=1; }));
 	} else {
 		VARY_EACHLEFT(obj, pat, ({
@@ -2569,9 +2566,8 @@ VP parsestrlit(VP x) {
 					}
 				} else  
 					res=append(res,el);
-			} else {
+			} else 
 				res=append(res,el);
-			}
 		}
 		// due to the looping logic, we would wind up with an empty list - we want an empty list with an empty string! :)
 		if(res->n==0) res=append(res,xc0()); 
@@ -2584,6 +2580,36 @@ VP parsestrlit(VP x) {
 		DUMP(x);
 		return x;
 	}
+}
+VP parseloopoper(VP x) {
+	PF("parseloopoper\n");DUMP(x);
+	VP st=xfroms(":"), en=xfroms(":\\/<>',");
+	st->tag=Ti(raw); en->tag=Ti(raw);
+	VP tmp1=matcheasy(x,st); 
+	// PF("parseloopoper tmp1\n");DUMP(tmp1);
+	if (!_any(tmp1)) { xfree(st); xfree(en); xfree(tmp1); return x; }
+	VP tmp2=matchany(x,en);
+	// PF("parseloopoper tmp2\n");DUMP(tmp2);
+	if (!_any(tmp2)) { xfree(st); xfree(en); xfree(tmp1); xfree(tmp2); return x; }
+	VP tmp3=xln(2,tmp2,tmp1);
+	VP join=consecutivejoin(XB1,tmp3);
+	if(_any(join)) {
+		int diff=0, j=0; VP idx,rep,indices=partgroups(condense(join));
+		for (; j<indices->n; j++) {  // probably needs an abstraction
+			idx = plus(ELl(indices, j), xi(diff));
+			idx = append(idx, plus(idx,XI1));
+			rep = list2vec(apply(x, idx));
+			rep->tag = Ti(oper);
+			// PF("parsemulticharoper"); DUMP(rep);
+			x=splice(x, idx, rep);
+			diff += 1 - idx->n;
+			xfree(idx);
+			xfree(rep);
+		}
+		xfree(indices); 
+	}
+	xfree(st); xfree(en); xfree(tmp1); xfree(tmp2); xfree(tmp3); xfree(join);
+	return x;
 }
 VP parsestr(const char* str) {
 	VP ctx,lex,pats,acc,t1,t2;size_t l=strlen(str);int i;
@@ -2622,6 +2648,8 @@ VP parsestr(const char* str) {
 	xfree(acc);
 	//xfree(ctx);
 	PF("matchexec results\n");DUMP(t1);
+
+	t1=parseloopoper(t1);
 
 	// we only form expression trees after basic parsing - this saves us from
 	// having to do a bunch of deep manipulations earlier in this routine (i.e.,
@@ -2878,6 +2906,7 @@ void tests() {
 	}
 }
 void init(){
+	XB0=xb(0); XB1=xb(1);
 	XI0=xi(0); XI1=xi(1);
 	XXL_SYS=xd0();
 	XXL_SYS=assign(XXL_SYS,Tt(srcpath),xfroms(XXL_SRCPATH));
