@@ -1066,7 +1066,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 		if(left!=0) PF("left arity=%d\n", _arity(left)); 
 		DUMP(item);
 
-		if(left!=0 && CALLABLE(left) && _arity(left)>0) {
+		if(left!=0 && (left->tag==Ti(proj) || CALLABLE(left) && _arity(left)>0)) {
 			// they seem to be trying to call a unary function, though it's on the
 			// left - NB. possibly shady
 			//
@@ -1083,7 +1083,11 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			// logic to not allow this behavior in first position inside expression
 			Proj p;
 			PF("applying dangling left callable\n");
-			left=apply(left,item);
+			DUMP(left);
+			if(left->tag==Ti(proj)) 
+				left=apply2(ELl(left,1),ELl(left,0),item);
+			else
+				left=apply(left,item);
 			if(left == 0 || left->tag==texc) { MAYBE_RETURN(left); }
 			if(IS_p(left)) {
 				p=AS_p(left,0);
@@ -1100,20 +1104,24 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			left=item;
 		} else {
 			if(left) {
-				PF("applyexpr calling apply(item,left)\n");DUMP(item);DUMP(left);
-				if(IS_x(item)) {
-					VP newframe = xln(9,item,ELl(item,item->n-1),left,(VP)0,left,xi(i+1),xi(stack_i),XI1,left);
-					PF("trying stack hack\n");
-					DUMP(newframe);
-					stack=append(stack,newframe);
-					stack_i=-1;
-					goto applyexprtop;
+				if (_arity(left)==2) {
+					left=xln(2,left,item)->tag=Ti(proj);
 				} else {
-					PFIN();
-					left=apply(item,left);
-					PFOUT();
+					PF("applyexpr calling apply(item,left)\n");DUMP(item);DUMP(left);
+					if(IS_x(item)) {
+						VP newframe = xln(9,item,ELl(item,item->n-1),left,(VP)0,left,xi(i+1),xi(stack_i),XI1,left);
+						PF("trying stack hack\n");
+						DUMP(newframe);
+						stack=append(stack,newframe);
+						stack_i=-1;
+						goto applyexprtop;
+					} else {
+						PFIN();
+						left=apply(item,left);
+						PFOUT();
+					}
+					if(left == 0 || left->tag==texc) { MAYBE_RETURN(left); }
 				}
-				if(left == 0 || left->tag==texc) { MAYBE_RETURN(left); }
 				PF("applyexpr apply returned\n");DUMP(left);
 			} else {
 				PF("no left, so continuing with item..\n");
@@ -1317,6 +1325,14 @@ VP apply(VP x,VP y) {
 		}
 	}
 	return EXC(Tt(apply),"apply failure",x,y);
+}
+VP apply2(const VP f,const VP x,const VP y) {
+	if(IS_2(f) && x && y)
+		return AS_2(f,0)(x,y);
+	else if(IS_x(f))
+		return applyctx(f,x,y);
+	else
+		return apply(apply(f,x),y);
 }
 VP deepinplace(const VP obj,const VP f) {
 	// TODO perhaps deep() should throw an error with non-list args - calls each() now

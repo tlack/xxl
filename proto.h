@@ -7,6 +7,7 @@ VP amend(VP x,VP y);
 VP and(VP x,VP y);
 VP any(VP x);
 VP apply(VP x,VP y);
+VP apply2(const VP f,const VP x,const VP y);
 VP applyctx(VP ctx,VP x,VP y);
 VP append(VP x,VP y);
 VP appendbuf(VP x,buf_t buf,size_t nelem);
