@@ -71,6 +71,7 @@ VP shift_(VP x,int i);
 VP shift(VP x,VP y);
 VP show(VP x);
 VP split(VP x,VP tok);
+VP str(VP x);
 static inline VP str2num(VP x);
 static inline VP str2tag(VP str); // turns string, or list of strings, into tag vector
 VP sum(VP x);

@@ -1916,10 +1916,37 @@ VP set(VP x,VP y) {
 	return xl0();
 }
 
+VP numelem2base(VP num,int i,int base) {
+	PF("numelem2base %d %d", i, base);DUMP(num);
+	if(IS_f(num)) {
+		char buf[20];
+		snprintf(buf,20,"%0.04f",num);
+		return xfroms(buf);
+	}
+	int typerr=-1; I8 buf; I128 rem; 	
+	VARY_EL_NOFLOAT(num,i,({ rem = _x; }),typerr);
+	VP res=xcsz(5);
+	do {
+		PF("%lld\n", rem);
+		buf='0' + (rem % base);
+		appendbuf(res,&buf,1);
+		rem = rem / base;
+	} while (rem>0);
+	DUMP(res);
+	return reverse(res);
+}
+
+VP str(VP x) {
+	PF("str\n");DUMP(x);
+	if(IS_c(x)) return x;
+	if(IS_t(x)) return tagname(AS_t(x,0));
+	if(NUM(x)) return str(numelem2base(x,0,10));
+	return EXC(Tt(type),"str only works with simple types",x,NULL);
+}
+
 VP sys(VP x) {
 	PF("sys\n");DUMP(x);
 	if(XXL_SYS) {
-		DUMP(XXL_SYS);
 		if(EMPTYLIST(x)) return clone(XXL_SYS); 
 		else return DICT_find(XXL_SYS,x);
 	}

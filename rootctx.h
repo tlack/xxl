@@ -17,6 +17,7 @@
 	res=assign(res,Tt(repr),x1(&repr));
 	res=assign(res,Tt(rev),x1(&reverse));
 	res=assign(res,Tt(show),x1(&show));
+	res=assign(res,Tt(str),x1(&str));
 	res=assign(res,Tt(sum),x1(&sum));
 	res=assign(res,Tt(sums),x1(&sums));
 	res=assign(res,Tt(sys),x1(&sys));
