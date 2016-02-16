@@ -2595,17 +2595,16 @@ VP parse(VP x) {
 
 #ifdef STDLIBFILE
 VP fileget(VP fn) {
-	#define READFILEBLK 1024 * 64
-	char buf[READFILEBLK]; int r=0,fd=0;
+	char buf[IOBLOCKSZ]; size_t r=0; int fd=0;
 	if(!IS_c(fn)) return EXC(Tt(type),"readfile filename must be string",fn,0);
 	fd=open(sfromx(fn),O_RDONLY);
 	if(fd<0) return EXC(Tt(open),"could not open file for reading",fn,0);
-	VP acc=xcsz(2048);
+	VP acc=xcsz(IOBLOCKSZ);
 	do {
-		r=read(fd,buf,READFILEBLK);
+		r=read(fd,buf,IOBLOCKSZ);
 		if(r<0) { xfree(acc); close(fd); return EXC(Tt(read),"could not read from file",fn,0); }
 		else appendbuf(acc,(buf_t)buf,r);
-	} while (r==READFILEBLK);
+	} while (r==IOBLOCKSZ);
 	close(fd);
 	return acc;
 }
@@ -2779,12 +2778,13 @@ void evalfile(VP ctx,const char* fn) {
 	printf("%s\n",repr(res));
 }
 VP loadin(VP fn,VP ctx) {
-	VP res,parse,acc = fileget(fn);
+	VP subctx,res,parse,acc = fileget(fn);
 	RETURN_IF_EXC(acc);
+	subctx=clone(ctx);
 	parse=parsestr(sfromx(acc));
-	append(ctx,parse);
-	res=apply(ctx,0); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
-	ctx=curtail(ctx);
+	append(subctx,parse);
+	res=apply(subctx,0);
+	xfree(subctx);
 	return res;
 }
 void tests() {
@@ -2806,7 +2806,10 @@ void tests() {
 void init(){
 	XI0=xi(0); XI1=xi(1);
 	XXL_SYS=xd0();
-	XXL_SYS=assign(XXL_SYS,Tt(compiler),xfroms(XXL_COMPILE));
+	XXL_SYS=assign(XXL_SYS,Tt(compobj),xfroms(XXL_COMPILEOBJ));
+	XXL_SYS=assign(XXL_SYS,Tt(compshared),xfroms(XXL_COMPILESHARED));
+	XXL_SYS=assign(XXL_SYS,Tt(buildobj),xfroms(XXL_BUILDOBJ));
+	XXL_SYS=assign(XXL_SYS,Tt(buildshared),xfroms(XXL_BUILDSHARED));
 	thr_start();
 }
 int main(int argc, char* argv[]) {
