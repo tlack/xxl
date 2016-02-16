@@ -1,12 +1,13 @@
 // prototypes
 
 // from xxl.c
-int _find(VP x,VP y);
+VP abss(VP x);
 int _any(VP x);
 VP amend(VP x,VP y);
 VP and(VP x,VP y);
 VP any(VP x);
 VP apply(VP x,VP y);
+VP apply2(const VP f,const VP x,const VP y);
 VP applyctx(VP ctx,VP x,VP y);
 VP append(VP x,VP y);
 VP appendbuf(VP x,buf_t buf,size_t nelem);
@@ -24,7 +25,7 @@ VP dict(VP x,VP y);
 static inline VP divv(VP x,VP y);
 VP drop_(VP x,int i);
 VP drop(VP x,VP y);
-static inline VP each(VP obj,VP fun);
+VP each(VP obj,VP fun);
 static inline VP entag(VP x,VP t);
 static inline VP entags(VP x,const char* name);
 static inline int _equalm(const VP x,const int xi,const VP y,const int yi);
@@ -74,14 +75,16 @@ static inline VP str2num(VP x);
 static inline VP str2tag(VP str); // turns string, or list of strings, into tag vector
 VP sum(VP x);
 VP sums(VP x);
-static inline VP tagname(I32 tag);
+VP sys(VP x);
+static inline VP tagname(tag_t tag);
+static inline const char* tagnames(const tag_t tag);
 /*static inline */
 VP tagv(const char* name, VP x);
 VP take_(VP x,int i);
 VP take(VP x,VP y);
-static inline int _tagnum(VP name);
+static inline tag_t _tagnum(VP name);
 /*static inline */
-int _tagnums(const char* name);
+tag_t _tagnums(const char* name);
 void thr_run(VP ctx);
 static type_info_t typeinfo(type_t n); 
 static type_info_t typechar(char c);

@@ -1,3 +1,7 @@
+// TODO transcripts ("test.txt" log)
+// TODO .xxlrc
+// TODO clear memory
+// TODO turn off inputs/outputs
 #include "def.h"
 #include "proto.h"
 #include "accessors.h"
@@ -25,32 +29,42 @@ void repl(VP ctx) {
 			 strncmp(line,"exit\n",1024)==0 ||
 			 strncmp(line,"quit\n",1024)==0)
 			exit(1);
+		if(strncmp(line,"clear\n",1024)==0) {
+			each(in,x1(&xfree)); in->n=0;
+			each(out,x1(&xfree)); out->n=0;
+			printf("\n\n----------------------------------------------\n\n"); // for text logs/scrollback
+			printf("\033[2J\033[;H\033[0m");
+			continue;
+		}
+		if(strncmp(line,"memwatch\n",1024)==0) {
+			if(MEM_WATCH) printf("memwatch off\n"),MEM_WATCH=0; 
+			else printf("memwatch on\n"),MEM_WATCH=1;
+			continue;
+		}
 		if(strncmp(line,"xray\n",1024)==0) {
-			if(PF_LVL) {
-				printf("xray off\n");
-				PF_LVL=0; 
-			} else {
-				printf("xray on\n");
-				PF_LVL=1;
-			}
+			if(PF_LVL) printf("xray off\n"),PF_LVL=0; 
+			else printf("xray on\n"),PF_LVL=1;
 			continue;
 		}
 		st=clock();
 		t2=parsestr(line);
 		in=append(in,t2);
 		// DUMP(t2);
-		PF("APPENDING!!\n");
+		// PF("APPENDING!!\n");
 		append(ctx,t2);
 		t3=applyctx(ctx,0,0);
 		ctx=curtail(ctx);
 		en=clock();
-		printf("(%0.04f sec)\ninputs@%d: %s\n", ((double)(en-st)/CLOCKS_PER_SEC), i, line);
-		if(!IS_EXC(t3)) {
+		printf("(%0.04f sec)\ninputs@%d: %s", ((double)(en-st)/CLOCKS_PER_SEC), i, line);
+		if(t3==NULL) {
+			out=append(out,xl0());
+			printf("null\n");
+		} else if(!IS_EXC(t3)) {
 			out=append(out,t3);
-			printf("outputs@%d: %s\n", i, sfromx(repr(t3)));
+			printf("outputs@%d:\n%s\n", i, sfromx(repr(t3)));
 		} else {
-			printf("Oops. Exception: %s\n", sfromx(repr(t3)));
 			out=append(out,Tt(exception));
+			printf("Oops. Exception: %s\n", sfromx(repr(t3)));
 		}
 		i++;
 	}

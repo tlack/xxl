@@ -78,3 +78,8 @@ b=evalstrin("543 as 'zebra; . get 'zebra",c);
 ASSERT(IS_i(b) && AS_i(b,0) == 543,"test . get");
 xfree(c);xfree(b);
 
+c=mkworkspace();
+b=evalstrin("['abc:100,'xyz:999]each{-1}",c);
+a=evalstrin("['abc:99,'xyz:998]",c);
+ASSERT(_equal(repr(b),repr(a)),"dict each");
+

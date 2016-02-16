@@ -27,7 +27,10 @@
 	({ __typeof__ (a) _a = (a); \
 		 __typeof__ (b) _b = (b); \
 		 _a > _b ? _a : _b; })
-
+#define MIN(a,b) \
+	({ __typeof__ (a) _a = (a); \
+		 __typeof__ (b) _b = (b); \
+		 _a < _b ? _a : _b; })
 #define ABS(a) ( (a)<0 ? -1*(a) : (a) )
 #define CASE(a,b) case (a): b; break
 #define FOR(st,en,stmt) ({ int _i;for(_i=(st);_i<(en);_i++)stmt; })
@@ -58,13 +61,14 @@
 #define APF(sz,fmt,...) ({ snprintf(s+strlen(s),sz-strlen(s),fmt,__VA_ARGS__); s; })
 #define ASSERT(cond,txt) ({ if (!(cond)) { printf("ASSERT: %s\n", txt); raise(SIGABRT); exit(1); } })
 #define P0(fmt,x) ({ typeof(x) xx=x; char* s=malloc(1024);snprintf(fmt,1024,xx); xx; })
-#define PF(...) (DEBUG && PF_LVL && ({ FOR(0,PF_LVL,printf("  ")); printf(__VA_ARGS__);}))
+#define _PF(...) ({ FOR(0,PF_LVL,printf("  ")); printf(__VA_ARGS__);})
+#define PF(...) (DEBUG && PF_LVL && _PF(__VA_ARGS__))
 #define PFIN() (DEBUG && PF_LVL > 0 && PF_LVL++)
 #define PFOUT() (DEBUG && PF_LVL > 0 && PF_LVL--)
 #define PFW(stmt) ({ int opf=PF_LVL; PF_LVL++; PFIN(); stmt; PFOUT(); PF_LVL=opf; })
-#define MEMPF(...) (DEBUG && MEM_W && PF(__VA_ARGS__))
+#define MEMPF(...) (MEM_WATCH && IN_OUTPUT_HANDLER==0 && _PF(__VA_ARGS__))
 #if DEBUG 
-	#define DUMP(x) ({ char* s = reprA(x); PF("%s\n", s); free(s); x; })
+	#define DUMP(x) ({ if (PF_LVL) { char* s = reprA(x); PF("%s\n", s); free(s); } x; })
 	#define DUMPRAW(x,sz) ({ printf("%p ",x); FOR(0,sz,printf("%d ",x[_i])); printf("\n"); x; })
 #else
 	#define DUMP(x) ({})
@@ -88,12 +92,17 @@
 #define COMPARABLE(v) (NUM(v) || IS_c(v))
 #define LIST(v) ((v)->t==0)                              // is v a general list type?
 #define ENLISTED(v) (LIST(v)&&SCALAR(v))                 // is v a single item inside a list?
+#define EMPTYLIST(v) (LIST(v)&&v->n==0)                  // empty list
 #define DICT(v) (IS_d(v))                                // is v a dictionary?
 #define LISTDICT(v) (IS_l(v)||IS_d(v))                   // is v a list or dictionary?
 #define CONTAINER(v) (IS_l(v)||IS_d(v)||IS_x(v))         // is v any kind of container? (i.e., non-vec but has children)
 #define CALLABLE(v) (IS_1(v)||IS_2(v)||IS_p(v)||IS_x(v)) // callable types - represent funcs or contexts
 #define KEYS(v) (ELl(v,0))                               // keys for dict v
 #define VALS(v) (ELl(v,1))                               // values for dict v
+
+#define DICT_find(x,y) ({ int i = _find1(KEYS(x),y); i==-1?0:ELl(VALS(x),i); })
+#define DICT_key_n(x,y) (ELl(KEYS(x),y))
+#define DICT_val_n(x,y) (ELl(VALS(x),y))
 
 // is this member of a context (gen list) a body of code? 
 #define LAMBDAISH(ctxmem) (LIST(ctxmem)&&(CALLABLE(ELl(ctxmem,0))||(ctxmem)->tag==Ti(lambda))) 
@@ -125,7 +134,7 @@
 	if(0) printf("exception: %s\n", sfromx(repr(exc))); \
 	exc; }) 
 #define IF_EXC(cond,type,msg,x,y) if((cond)) return EXC(type,msg,x,y)
-#define IS_EXC(x) ((x)->tag==Ti(exception))
+#define IS_EXC(x) (x==0 || (x)->tag==Ti(exception))
 // TODO if_exc doesnt give us a chance to free memory :-/
 #define RETURN_IF_EXC(x) if(x==0 || IS_EXC(x)) return x;
 
@@ -144,8 +153,10 @@
 TYD(I8,unsigned char); TYD(I32,int); TYD(I64,__int64_t); TYD(I128,__int128_t);
 TYD(type_t,I8); TYD(buf_t,I8*);
 
+TYD(tag_t,I128);
+
 /* Structure for most values. 'st' and 'dyn' static and dynamic storage for data */
-struct V { type_t t; I32 tag; I32 n; I32 cap; I32 itemsz; I32 sz; I32 rc; I8 alloc; buf_t next; union { I8 st[32]; buf_t dyn;};};
+struct V { type_t t; tag_t tag; I32 n; I32 cap; I32 itemsz; I32 sz; I32 rc; I8 alloc; buf_t next; union { I8 st[32]; buf_t dyn;};};
 typedef struct V* VP; /* value pointer */
 
 typedef VP (unaryFunc)(VP x);
@@ -168,4 +179,10 @@ struct xxl_index_t {
 #endif
 
 // GLOBALS FROM xxl.c
-extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; extern VP TAGS;
+extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; 
+#ifdef THREAD
+extern __thread I8 IN_OUTPUT_HANDLER; 
+#else
+extern I8 IN_OUTPUT_HANDLER;
+#endif
+extern I8 MEM_WATCH;

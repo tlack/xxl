@@ -112,7 +112,7 @@
 	append(ctx,parsestr("2,4 over +"));
 	tmp1=apply(ctx,xi(1));
 	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xi(6)),"test parsestr 6");
+	ASSERT(_equal(tmp1,xi(6)),"test parsestr 6b");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
@@ -413,7 +413,6 @@
 
 	tmp1=parsestr("{x*3}"); // returns lambda and repr of auto-included \n; only care about former
 	DUMP(tmp1);
-	ASSERT(LIST(tmp1),"test lambda internals 0");
 	tmp2=ELl(tmp1,0);
 	DUMP(tmp2);
 	ASSERT(LIST(tmp2) && tmp2->tag==Ti(lambda) && tmp2->n==2 && _equal(ELl(tmp2,1),xi(1)),"test lambda internals 0");
@@ -432,3 +431,12 @@
 									  && ELl(tmp1,1)->tag==Ti(ws),"comment in lambda");
 	xfree(tmp1);
 
+VP a,b,c;
+c=mkworkspace();
+b=parsestr("\n//x\n");
+ASSERT(b->n==2 && ELl(b,0)->tag==Ti(ws) && ELl(b,1)->tag==Ti(comment) && ELl(b,1)->n==4,"comment after newline");
+xfree(c);xfree(b);
+c=mkworkspace();
+b=parsestr("\n//x\n\n//y");
+ASSERT(b->n==4 && ELl(b,0)->tag==Ti(ws) && ELl(b,1)->tag==Ti(comment) && ELl(b,1)->n==4,"comment after newline part deux");
+xfree(c);xfree(b);

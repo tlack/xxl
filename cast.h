@@ -14,49 +14,49 @@ int tagf2=Ti(f2);
 int tagproj=Ti(proj);
 int tagctx=Ti(ctx);
 if(x->t==1&&(typenum==1||typetag==tagtag)) { // tag -> tag 
-  int from;int to; res=xalloc(1,x->n); 
+  tag_t from;tag_t to; res=xalloc(1,x->n); 
   FOR(0,x->n,{from=AS_t(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
 if(x->t==1&&(typenum==2||typetag==tagchar)) { // tag -> char 
-  int from;char to; res=xalloc(2,x->n); 
+  tag_t from;char to; res=xalloc(2,x->n); 
   FOR(0,x->n,{from=AS_t(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
 if(x->t==1&&(typenum==3||typetag==tagbyte)) { // tag -> byte 
-  int from;int8_t to; res=xalloc(3,x->n); 
+  tag_t from;int8_t to; res=xalloc(3,x->n); 
   FOR(0,x->n,{from=AS_t(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
 if(x->t==1&&(typenum==4||typetag==tagint)) { // tag -> int 
-  int from;int to; res=xalloc(4,x->n); 
+  tag_t from;int to; res=xalloc(4,x->n); 
   FOR(0,x->n,{from=AS_t(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
 if(x->t==1&&(typenum==5||typetag==taglong)) { // tag -> long 
-  int from;__int64_t to; res=xalloc(5,x->n); 
+  tag_t from;__int64_t to; res=xalloc(5,x->n); 
   FOR(0,x->n,{from=AS_t(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
 if(x->t==1&&(typenum==6||typetag==tagocto)) { // tag -> octo 
-  int from;__int128_t to; res=xalloc(6,x->n); 
+  tag_t from;__int128_t to; res=xalloc(6,x->n); 
   FOR(0,x->n,{from=AS_t(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
 if(x->t==1&&(typenum==7||typetag==tagfloat)) { // tag -> float 
-  int from;double to; res=xalloc(7,x->n); 
+  tag_t from;double to; res=xalloc(7,x->n); 
   FOR(0,x->n,{from=AS_t(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
 if(x->t==2&&(typenum==1||typetag==tagtag)) { // char -> tag 
-  char from;int to; res=xalloc(1,x->n); 
+  char from;tag_t to; res=xalloc(1,x->n); 
   FOR(0,x->n,{from=AS_c(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
@@ -98,7 +98,7 @@ if(x->t==2&&(typenum==7||typetag==tagfloat)) { // char -> float
     appendbuf(res,(buf_t)&to,1); }); }
 
 if(x->t==3&&(typenum==1||typetag==tagtag)) { // byte -> tag 
-  int8_t from;int to; res=xalloc(1,x->n); 
+  int8_t from;tag_t to; res=xalloc(1,x->n); 
   FOR(0,x->n,{from=AS_b(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
@@ -140,7 +140,7 @@ if(x->t==3&&(typenum==7||typetag==tagfloat)) { // byte -> float
     appendbuf(res,(buf_t)&to,1); }); }
 
 if(x->t==4&&(typenum==1||typetag==tagtag)) { // int -> tag 
-  int from;int to; res=xalloc(1,x->n); 
+  int from;tag_t to; res=xalloc(1,x->n); 
   FOR(0,x->n,{from=AS_i(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
@@ -182,7 +182,7 @@ if(x->t==4&&(typenum==7||typetag==tagfloat)) { // int -> float
     appendbuf(res,(buf_t)&to,1); }); }
 
 if(x->t==5&&(typenum==1||typetag==tagtag)) { // long -> tag 
-  __int64_t from;int to; res=xalloc(1,x->n); 
+  __int64_t from;tag_t to; res=xalloc(1,x->n); 
   FOR(0,x->n,{from=AS_j(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
@@ -224,7 +224,7 @@ if(x->t==5&&(typenum==7||typetag==tagfloat)) { // long -> float
     appendbuf(res,(buf_t)&to,1); }); }
 
 if(x->t==6&&(typenum==1||typetag==tagtag)) { // octo -> tag 
-  __int128_t from;int to; res=xalloc(1,x->n); 
+  __int128_t from;tag_t to; res=xalloc(1,x->n); 
   FOR(0,x->n,{from=AS_o(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
@@ -266,7 +266,7 @@ if(x->t==6&&(typenum==7||typetag==tagfloat)) { // octo -> float
     appendbuf(res,(buf_t)&to,1); }); }
 
 if(x->t==7&&(typenum==1||typetag==tagtag)) { // float -> tag 
-  double from;int to; res=xalloc(1,x->n); 
+  double from;tag_t to; res=xalloc(1,x->n); 
   FOR(0,x->n,{from=AS_f(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }

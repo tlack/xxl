@@ -8,7 +8,7 @@
 #define VARY_EL(x,i,stmt,failvar) ({ \
 	if(x->t==0){/*cant vary list*/ failvar=0;}\
 	if(x->t==1){/*tag*/\
-		int _x=AS_t(x,i);\
+		tag_t _x=AS_t(x,i);\
 		stmt;}\
 	if(x->t==2){/*char*/\
 		char _x=AS_c(x,i);\
@@ -39,7 +39,7 @@
 #define VARY_EL_NOFLOAT(x,i,stmt,failvar) ({ \
 	if(x->t==0){/*cant vary list*/ failvar=0;}\
 	if(x->t==1){/*tag*/\
-		int _x=AS_t(x,i);\
+		tag_t _x=AS_t(x,i);\
 		stmt;}\
 	if(x->t==2){/*char*/\
 		char _x=AS_c(x,i);\
@@ -72,7 +72,7 @@
 	if(_xt==11){/*cant vary proj*/ failvar=11; }\
 	if(_xt==12){/*cant vary ctx*/ failvar=12; }\
 	if(_xt==1){/*tag*/ \
-		int _x,_xtmp=0;\
+		tag_t _x,_xtmp=0;\
 		while (_i < _xn) { _x=AS_t(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
 	}\
 	if(_xt==2){/*char*/ \
@@ -110,7 +110,7 @@
 	if(_xt==11){/*cant vary proj*/ failvar=11; }\
 	if(_xt==12){/*cant vary ctx*/ failvar=12; }\
 	if(_xt==1){/*tag*/ \
-		int _x,_xtmp=0;\
+		tag_t _x,_xtmp=0;\
 		while (_i < _xn) { _x=AS_t(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
 	}\
 	if(_xt==2){/*char*/ \
@@ -146,7 +146,7 @@
 		while (_i < _xn) { _x=AS_l(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
 	}\
 	if(_xt==1){/*tag*/ \
-		int _x,_xtmp=0;\
+		tag_t _x,_xtmp=0;\
 		while (_i < _xn) { _x=AS_t(x,_i); /* printf("%d {{5}}\n", _i, _x); */ stmt; _i++; }\
 	}\
 	if(_xt==2){/*char*/ \
@@ -182,42 +182,42 @@
 	if(_xt==11||_yt==11){/*cant vary proj*/ failvar=11; }\
 	if(_xt==12||_yt==12){/*cant vary ctx*/ failvar=12; }\
 	if(_xt==1&&_yt==1){/*tag x tag*/ \
-		int _x,_xtmp=0; int _y,_ytmp;\
+		tag_t _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==2){/*tag x char*/ \
-		int _x,_xtmp=0; char _y,_ytmp;\
+		tag_t _x,_xtmp=0; char _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_c(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==3){/*tag x byte*/ \
-		int _x,_xtmp=0; int8_t _y,_ytmp;\
+		tag_t _x,_xtmp=0; int8_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_b(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==4){/*tag x int*/ \
-		int _x,_xtmp=0; int _y,_ytmp;\
+		tag_t _x,_xtmp=0; int _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_i(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==5){/*tag x long*/ \
-		int _x,_xtmp=0; __int64_t _y,_ytmp;\
+		tag_t _x,_xtmp=0; __int64_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_j(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==6){/*tag x octo*/ \
-		int _x,_xtmp=0; __int128_t _y,_ytmp;\
+		tag_t _x,_xtmp=0; __int128_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_o(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==7){/*tag x float*/ \
-		int _x,_xtmp=0; double _y,_ytmp;\
+		tag_t _x,_xtmp=0; double _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_f(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==2&&_yt==1){/*char x tag*/ \
-		char _x,_xtmp=0; int _y,_ytmp;\
+		char _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_c(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -252,7 +252,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==3&&_yt==1){/*byte x tag*/ \
-		int8_t _x,_xtmp=0; int _y,_ytmp;\
+		int8_t _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_b(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -287,7 +287,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==4&&_yt==1){/*int x tag*/ \
-		int _x,_xtmp=0; int _y,_ytmp;\
+		int _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_i(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -322,7 +322,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==5&&_yt==1){/*long x tag*/ \
-		__int64_t _x,_xtmp=0; int _y,_ytmp;\
+		__int64_t _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_j(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -357,7 +357,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==6&&_yt==1){/*octo x tag*/ \
-		__int128_t _x,_xtmp=0; int _y,_ytmp;\
+		__int128_t _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_o(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -392,7 +392,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==7&&_yt==1){/*float x tag*/ \
-		double _x,_xtmp=0; int _y,_ytmp;\
+		double _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_f(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -435,37 +435,37 @@
 	if(_xt==11||_yt==11){/*cant vary proj*/ failvar=11; }\
 	if(_xt==12||_yt==12){/*cant vary ctx*/ failvar=12; }\
 	if(_xt==1&&_yt==1){/*tag x tag*/ \
-		int _x,_xtmp=0; int _y,_ytmp;\
+		tag_t _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==2){/*tag x char*/ \
-		int _x,_xtmp=0; char _y,_ytmp;\
+		tag_t _x,_xtmp=0; char _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_c(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==3){/*tag x byte*/ \
-		int _x,_xtmp=0; int8_t _y,_ytmp;\
+		tag_t _x,_xtmp=0; int8_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_b(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==4){/*tag x int*/ \
-		int _x,_xtmp=0; int _y,_ytmp;\
+		tag_t _x,_xtmp=0; int _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_i(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==5){/*tag x long*/ \
-		int _x,_xtmp=0; __int64_t _y,_ytmp;\
+		tag_t _x,_xtmp=0; __int64_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_j(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==6){/*tag x octo*/ \
-		int _x,_xtmp=0; __int128_t _y,_ytmp;\
+		tag_t _x,_xtmp=0; __int128_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_o(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==2&&_yt==1){/*char x tag*/ \
-		char _x,_xtmp=0; int _y,_ytmp;\
+		char _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_c(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -495,7 +495,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==3&&_yt==1){/*byte x tag*/ \
-		int8_t _x,_xtmp=0; int _y,_ytmp;\
+		int8_t _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_b(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -525,7 +525,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==4&&_yt==1){/*int x tag*/ \
-		int _x,_xtmp=0; int _y,_ytmp;\
+		int _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_i(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -555,7 +555,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==5&&_yt==1){/*long x tag*/ \
-		__int64_t _x,_xtmp=0; int _y,_ytmp;\
+		__int64_t _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_j(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -585,7 +585,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==6&&_yt==1){/*octo x tag*/ \
-		__int128_t _x,_xtmp=0; int _y,_ytmp;\
+		__int128_t _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_o(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -623,7 +623,7 @@
 	if(_xt==11||_yt==11){/*cant vary proj*/ failvar=11; }\
 	if(_xt==12||_yt==12){/*cant vary ctx*/ failvar=12; }\
 	if(_xt==0&&_yt==1){/*list x tag*/ \
-		VP _x,_xtmp=0; int _y,_ytmp;\
+		VP _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_l(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -658,42 +658,42 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==1){/*tag x tag*/ \
-		int _x,_xtmp=0; int _y,_ytmp;\
+		tag_t _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==2){/*tag x char*/ \
-		int _x,_xtmp=0; char _y,_ytmp;\
+		tag_t _x,_xtmp=0; char _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_c(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==3){/*tag x byte*/ \
-		int _x,_xtmp=0; int8_t _y,_ytmp;\
+		tag_t _x,_xtmp=0; int8_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_b(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==4){/*tag x int*/ \
-		int _x,_xtmp=0; int _y,_ytmp;\
+		tag_t _x,_xtmp=0; int _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_i(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==5){/*tag x long*/ \
-		int _x,_xtmp=0; __int64_t _y,_ytmp;\
+		tag_t _x,_xtmp=0; __int64_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_j(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==6){/*tag x octo*/ \
-		int _x,_xtmp=0; __int128_t _y,_ytmp;\
+		tag_t _x,_xtmp=0; __int128_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_o(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==1&&_yt==7){/*tag x float*/ \
-		int _x,_xtmp=0; double _y,_ytmp;\
+		tag_t _x,_xtmp=0; double _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_t(x,_i%_xn); _y=AS_f(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==2&&_yt==1){/*char x tag*/ \
-		char _x,_xtmp=0; int _y,_ytmp;\
+		char _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_c(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -728,7 +728,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==3&&_yt==1){/*byte x tag*/ \
-		int8_t _x,_xtmp=0; int _y,_ytmp;\
+		int8_t _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_b(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -763,7 +763,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==4&&_yt==1){/*int x tag*/ \
-		int _x,_xtmp=0; int _y,_ytmp;\
+		int _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_i(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -798,7 +798,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==5&&_yt==1){/*long x tag*/ \
-		__int64_t _x,_xtmp=0; int _y,_ytmp;\
+		__int64_t _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_j(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -833,7 +833,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==6&&_yt==1){/*octo x tag*/ \
-		__int128_t _x,_xtmp=0; int _y,_ytmp;\
+		__int128_t _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_o(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -868,7 +868,7 @@
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
 	if(_xt==7&&_yt==1){/*float x tag*/ \
-		double _x,_xtmp=0; int _y,_ytmp;\
+		double _x,_xtmp=0; tag_t _y,_ytmp;\
 		while (_i<_xn && _j<_yn) { _x=AS_f(x,_i%_xn); _y=AS_t(y,_j%_yn); stmt; \
 		if(!SCALAR(x)) {_i++;}  _j++; }\
 	}\
@@ -912,35 +912,35 @@
 	if(_xt==11||_yt==11){/*cant vary proj*/ failvar=11; }\
 	if(_xt==12||_yt==12){/*cant vary ctx*/ failvar=12; }\
 	if(_xt==1&&_yt==1){/*tag x tag*/ \
-		int _x;int _y; _y=AS_t(y,0);\
+		tag_t _x;tag_t _y; _y=AS_t(y,0);\
 		while (_i < _xn) { _x=AS_t(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==1&&_yt==2){/*tag x char*/ \
-		int _x;char _y; _y=AS_c(y,0);\
+		tag_t _x;char _y; _y=AS_c(y,0);\
 		while (_i < _xn) { _x=AS_t(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==1&&_yt==3){/*tag x byte*/ \
-		int _x;int8_t _y; _y=AS_b(y,0);\
+		tag_t _x;int8_t _y; _y=AS_b(y,0);\
 		while (_i < _xn) { _x=AS_t(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==1&&_yt==4){/*tag x int*/ \
-		int _x;int _y; _y=AS_i(y,0);\
+		tag_t _x;int _y; _y=AS_i(y,0);\
 		while (_i < _xn) { _x=AS_t(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==1&&_yt==5){/*tag x long*/ \
-		int _x;__int64_t _y; _y=AS_j(y,0);\
+		tag_t _x;__int64_t _y; _y=AS_j(y,0);\
 		while (_i < _xn) { _x=AS_t(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==1&&_yt==6){/*tag x octo*/ \
-		int _x;__int128_t _y; _y=AS_o(y,0);\
+		tag_t _x;__int128_t _y; _y=AS_o(y,0);\
 		while (_i < _xn) { _x=AS_t(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==1&&_yt==7){/*tag x float*/ \
-		int _x;double _y; _y=AS_f(y,0);\
+		tag_t _x;double _y; _y=AS_f(y,0);\
 		while (_i < _xn) { _x=AS_t(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==2&&_yt==1){/*char x tag*/ \
-		char _x;int _y; _y=AS_t(y,0);\
+		char _x;tag_t _y; _y=AS_t(y,0);\
 		while (_i < _xn) { _x=AS_c(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==2&&_yt==2){/*char x char*/ \
@@ -968,7 +968,7 @@
 		while (_i < _xn) { _x=AS_c(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==3&&_yt==1){/*byte x tag*/ \
-		int8_t _x;int _y; _y=AS_t(y,0);\
+		int8_t _x;tag_t _y; _y=AS_t(y,0);\
 		while (_i < _xn) { _x=AS_b(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==3&&_yt==2){/*byte x char*/ \
@@ -996,7 +996,7 @@
 		while (_i < _xn) { _x=AS_b(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==4&&_yt==1){/*int x tag*/ \
-		int _x;int _y; _y=AS_t(y,0);\
+		int _x;tag_t _y; _y=AS_t(y,0);\
 		while (_i < _xn) { _x=AS_i(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==4&&_yt==2){/*int x char*/ \
@@ -1024,7 +1024,7 @@
 		while (_i < _xn) { _x=AS_i(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==5&&_yt==1){/*long x tag*/ \
-		__int64_t _x;int _y; _y=AS_t(y,0);\
+		__int64_t _x;tag_t _y; _y=AS_t(y,0);\
 		while (_i < _xn) { _x=AS_j(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==5&&_yt==2){/*long x char*/ \
@@ -1052,7 +1052,7 @@
 		while (_i < _xn) { _x=AS_j(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==6&&_yt==1){/*octo x tag*/ \
-		__int128_t _x;int _y; _y=AS_t(y,0);\
+		__int128_t _x;tag_t _y; _y=AS_t(y,0);\
 		while (_i < _xn) { _x=AS_o(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==6&&_yt==2){/*octo x char*/ \
@@ -1080,7 +1080,7 @@
 		while (_i < _xn) { _x=AS_o(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==7&&_yt==1){/*float x tag*/ \
-		double _x;int _y; _y=AS_t(y,0);\
+		double _x;tag_t _y; _y=AS_t(y,0);\
 		while (_i < _xn) { _x=AS_f(x,_i); stmt; _i++; }\
 	}\
 	if(_xt==7&&_yt==2){/*float x char*/ \
@@ -1117,35 +1117,35 @@
 	if(_xt==11||_yt==11){/*cant vary proj*/ failvar=11; }\
 	if(_xt==12||_yt==12){/*cant vary ctx*/ failvar=12; }\
 	if(_xt==1&&_yt==1){/*tag x tag*/ \
-		int _x;int _y; _x=AS_t(x,0);\
+		tag_t _x;tag_t _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==1&&_yt==2){/*tag x char*/ \
-		int _x;char _y; _x=AS_t(x,0);\
+		tag_t _x;char _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_c(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==1&&_yt==3){/*tag x byte*/ \
-		int _x;int8_t _y; _x=AS_t(x,0);\
+		tag_t _x;int8_t _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_b(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==1&&_yt==4){/*tag x int*/ \
-		int _x;int _y; _x=AS_t(x,0);\
+		tag_t _x;int _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_i(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==1&&_yt==5){/*tag x long*/ \
-		int _x;__int64_t _y; _x=AS_t(x,0);\
+		tag_t _x;__int64_t _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_j(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==1&&_yt==6){/*tag x octo*/ \
-		int _x;__int128_t _y; _x=AS_t(x,0);\
+		tag_t _x;__int128_t _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_o(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==1&&_yt==7){/*tag x float*/ \
-		int _x;double _y; _x=AS_t(x,0);\
+		tag_t _x;double _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_f(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==2&&_yt==1){/*char x tag*/ \
-		char _x;int _y; _x=AS_c(x,0);\
+		char _x;tag_t _y; _x=AS_c(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==2&&_yt==2){/*char x char*/ \
@@ -1173,7 +1173,7 @@
 		while (_j < _yn) { _y=AS_f(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==3&&_yt==1){/*byte x tag*/ \
-		int8_t _x;int _y; _x=AS_b(x,0);\
+		int8_t _x;tag_t _y; _x=AS_b(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==3&&_yt==2){/*byte x char*/ \
@@ -1201,7 +1201,7 @@
 		while (_j < _yn) { _y=AS_f(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==4&&_yt==1){/*int x tag*/ \
-		int _x;int _y; _x=AS_i(x,0);\
+		int _x;tag_t _y; _x=AS_i(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==4&&_yt==2){/*int x char*/ \
@@ -1229,7 +1229,7 @@
 		while (_j < _yn) { _y=AS_f(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==5&&_yt==1){/*long x tag*/ \
-		__int64_t _x;int _y; _x=AS_j(x,0);\
+		__int64_t _x;tag_t _y; _x=AS_j(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==5&&_yt==2){/*long x char*/ \
@@ -1257,7 +1257,7 @@
 		while (_j < _yn) { _y=AS_f(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==6&&_yt==1){/*octo x tag*/ \
-		__int128_t _x;int _y; _x=AS_o(x,0);\
+		__int128_t _x;tag_t _y; _x=AS_o(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==6&&_yt==2){/*octo x char*/ \
@@ -1285,7 +1285,7 @@
 		while (_j < _yn) { _y=AS_f(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==7&&_yt==1){/*float x tag*/ \
-		double _x;int _y; _x=AS_f(x,0);\
+		double _x;tag_t _y; _x=AS_f(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==7&&_yt==2){/*float x char*/ \
@@ -1323,31 +1323,31 @@
 	if(_xt==11||_yt==11){/*cant vary proj*/ failvar=11; }\
 	if(_xt==12||_yt==12){/*cant vary ctx*/ failvar=12; }\
 	if(_xt==1&&_yt==1){/*tag x tag*/ \
-		int _x;int _y; _x=AS_t(x,0);\
+		tag_t _x;tag_t _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==1&&_yt==2){/*tag x char*/ \
-		int _x;char _y; _x=AS_t(x,0);\
+		tag_t _x;char _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_c(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==1&&_yt==3){/*tag x byte*/ \
-		int _x;int8_t _y; _x=AS_t(x,0);\
+		tag_t _x;int8_t _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_b(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==1&&_yt==4){/*tag x int*/ \
-		int _x;int _y; _x=AS_t(x,0);\
+		tag_t _x;int _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_i(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==1&&_yt==5){/*tag x long*/ \
-		int _x;__int64_t _y; _x=AS_t(x,0);\
+		tag_t _x;__int64_t _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_j(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==1&&_yt==6){/*tag x octo*/ \
-		int _x;__int128_t _y; _x=AS_t(x,0);\
+		tag_t _x;__int128_t _y; _x=AS_t(x,0);\
 		while (_j < _yn) { _y=AS_o(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==2&&_yt==1){/*char x tag*/ \
-		char _x;int _y; _x=AS_c(x,0);\
+		char _x;tag_t _y; _x=AS_c(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==2&&_yt==2){/*char x char*/ \
@@ -1371,7 +1371,7 @@
 		while (_j < _yn) { _y=AS_o(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==3&&_yt==1){/*byte x tag*/ \
-		int8_t _x;int _y; _x=AS_b(x,0);\
+		int8_t _x;tag_t _y; _x=AS_b(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==3&&_yt==2){/*byte x char*/ \
@@ -1395,7 +1395,7 @@
 		while (_j < _yn) { _y=AS_o(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==4&&_yt==1){/*int x tag*/ \
-		int _x;int _y; _x=AS_i(x,0);\
+		int _x;tag_t _y; _x=AS_i(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==4&&_yt==2){/*int x char*/ \
@@ -1419,7 +1419,7 @@
 		while (_j < _yn) { _y=AS_o(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==5&&_yt==1){/*long x tag*/ \
-		__int64_t _x;int _y; _x=AS_j(x,0);\
+		__int64_t _x;tag_t _y; _x=AS_j(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==5&&_yt==2){/*long x char*/ \
@@ -1443,7 +1443,7 @@
 		while (_j < _yn) { _y=AS_o(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==6&&_yt==1){/*octo x tag*/ \
-		__int128_t _x;int _y; _x=AS_o(x,0);\
+		__int128_t _x;tag_t _y; _x=AS_o(x,0);\
 		while (_j < _yn) { _y=AS_t(y,_j); stmt; _j++; }\
 	}\
 	if(_xt==6&&_yt==2){/*octo x char*/ \

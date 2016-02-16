@@ -19,24 +19,24 @@ static inline VP xlan(VP a, int nargs,...) { va_list args; int i; VP x; a=xreall
 	for(i=0;i<nargs;i++){ x=va_arg(args,VP);
 	EL(a,VP,(a->n)+i)=x; }\
 	a->n+=nargs; return a; }
-/* accessors for type #1 or t (tag) implemented as int */
-#define MAX_t INT_MAX
-#define CTYPE_t int
+/* accessors for type #1 or t (tag) implemented as tag_t */
+#define MAX_t LONG_LONG_MAX
+#define CTYPE_t tag_t
 #define T_t 1
 #define IS_t(v) ( (v)->t==1 )
 #define AS_t(v,n) ({ \
 	ASSERT(IS_t(v)==1, "AS_t: type not t");\
-	int __x=EL(v,int,n); __x; })
-static inline VP xt(int x) { VP a; a=xalloc(1,1); EL(a,int,0)=x; a->n=1; return a; }
+	tag_t __x=EL(v,tag_t,n); __x; })
+static inline VP xt(tag_t x) { VP a; a=xalloc(1,1); EL(a,tag_t,0)=x; a->n=1; return a; }
 static inline VP xt0() { VP a=xalloc(1,1); return a; }
 static inline VP xtsz(sz) { VP a=xalloc(1,sz); return a; }
-static inline VP xta(VP a, int x) { a=xrealloc(a,a->n++);EL(a,int,a->n-1)=x; return a; }
-static inline VP xtn(int nargs,...) { VP a; va_list args; int i; int x; a=xalloc(1,nargs); a->n=nargs; va_start(args,nargs);\
-	for(i=0;i<nargs;i++){ x=va_arg(args,int); EL(a,int,i)=x; }\
+static inline VP xta(VP a, tag_t x) { a=xrealloc(a,a->n++);EL(a,tag_t,a->n-1)=x; return a; }
+static inline VP xtn(int nargs,...) { VP a; va_list args; int i; long long x; a=xalloc(1,nargs); a->n=nargs; va_start(args,nargs);\
+	for(i=0;i<nargs;i++){ x=va_arg(args,long long); EL(a,tag_t,i)=x; }\
 	return a; }
-static inline VP xtan(VP a, int nargs,...) { va_list args; int i; int x; a=xrealloc(a,a->n+nargs); va_start(args,nargs);\
-	for(i=0;i<nargs;i++){ x=va_arg(args,int);
-	EL(a,int,(a->n)+i)=x; }\
+static inline VP xtan(VP a, int nargs,...) { va_list args; int i; tag_t x; a=xrealloc(a,a->n+nargs); va_start(args,nargs);\
+	for(i=0;i<nargs;i++){ x=va_arg(args,long long);
+	EL(a,tag_t,(a->n)+i)=x; }\
 	a->n+=nargs; return a; }
 /* accessors for type #2 or c (char) implemented as char */
 #define MAX_c SCHAR_MAX
