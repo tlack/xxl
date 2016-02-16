@@ -639,7 +639,9 @@ VP shift(VP x,VP y) {
 	return (VP)0;
 }
 VP show(VP x) {
-	char* p = reprA(x);
+	char* p;
+	if(IS_c(x)) p = sfromx(x);
+	else p = reprA(x);
 	printf("%s\n",p);
 	free(p);
 	return x;
