@@ -71,6 +71,9 @@ b=evalstrin(". get['file,\"def.h\"]",c);
 DUMP(b);
 ASSERT(IS_c(b)&&b->n>5000,"stdlib modular get def.h");
 xfree(c);xfree(b);
+c=mkworkspace();
+b=evalstrin("[\"a\",\"b\",\".x\"] .file.path",c);
+ASSERT(_equal(b,xfroms("a/b.x")),".file.path");
 #endif
 
 c=mkworkspace();

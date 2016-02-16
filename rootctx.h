@@ -69,6 +69,7 @@
 	#ifdef STDLIBFILE
 	d=xd0();
 	d=assign(d,Tt(get),x1(&fileget));
+	d=assign(d,Tt(path),x1(&filepath));
 	d=assign(d,Tt(set),x2(&fileset));
 	res=assign(res,Tt(file),d);
 	xfree(d);

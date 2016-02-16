@@ -2624,27 +2624,46 @@ VP parse(VP x) {
 
 #ifdef STDLIBFILE
 VP fileget(VP fn) {
-	char buf[IOBLOCKSZ]; size_t r=0; int fd=0;
-	if(!IS_c(fn)) return EXC(Tt(type),"readfile filename must be string",fn,0);
-	fd=open(sfromx(fn),O_RDONLY);
-	if(fd<0) return EXC(Tt(open),"could not open file for reading",fn,0);
+	char buf[IOBLOCKSZ]; VP fname; size_t r=0; int fd=0;
+	fname=fn;
+	if(!IS_c(fname)) fname=filepath(fn);
+	if(!IS_c(fname)) return EXC(Tt(type),"readfile filename must be string or pathlist",fn,0);
+	fd=open(sfromx(fname),O_RDONLY);
+	if(fd<0) return EXC(Tt(open),"could not open file for reading",fname,0);
 	VP acc=xcsz(IOBLOCKSZ);
 	do {
 		r=read(fd,buf,IOBLOCKSZ);
-		if(r<0) { xfree(acc); close(fd); return EXC(Tt(read),"could not read from file",fn,0); }
+		if(r<0) { xfree(acc); close(fd); return EXC(Tt(read),"could not read from file",fname,0); }
 		else appendbuf(acc,(buf_t)buf,r);
 	} while (r==IOBLOCKSZ);
 	close(fd);
 	return acc;
 }
 VP fileset(VP str,VP fn) {
+	VP fname=fn;
+	if(!IS_c(fname)) fname=filepath(fn);
+	if(!IS_c(fname)) return EXC(Tt(type),"writefile filename must be string or pathlist",fn,0);
 	if(!IS_c(str)) return EXC(Tt(type),"writefile only deals writes strings right now",str,fn);
-	if(!IS_c(fn)) return EXC(Tt(type),"writefile filename must be string",str,fn);
-	int fd=open(sfromx(fn),O_WRONLY);
-	if(fd<0) return EXC(Tt(open),"could not open file for writing",str,fn);
-	if(write(fd,ELb(str,0),str->n)<str->n) return EXC(Tt(write),"could not write file contents",str,fn);
+	int fd=open(sfromx(fname),O_WRONLY);
+	if(fd<0) return EXC(Tt(open),"could not open file for writing",str,fname);
+	if(write(fd,ELb(str,0),str->n)<str->n) return EXC(Tt(write),"could not write file contents",str,fname);
 	close(fd);
 	return str;
+}
+VP filepath(VP pathlist) {
+	if(IS_c(pathlist)) return pathlist;
+	if(!LIST(pathlist)) return EXC(Tt(type),"pathlist only works with lists of strings",pathlist,NULL);
+	VP item,sep=xfroms("/"),acc=xcsz(64); int i,pn=pathlist->n;
+	for(i=0;i<pn;i++){
+		item=ELl(pathlist,i);
+		if(!IS_c(item)) item=str(item); // try to convert to string, but still bomb: 
+		if(!IS_c(item)) return EXC(Tt(type),"pathlist only works with lists of strings",pathlist,NULL);
+		if(i!=0 && AS_c(item,0)!='.') appendbuf(acc,BUF(sep),sep->n);
+		appendbuf(acc,BUF(item),item->n);
+	}
+	xfree(sep);
+	PF("filepath returning\n");DUMP(acc);
+	return acc;
 }
 #endif
 
