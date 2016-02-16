@@ -86,3 +86,8 @@ b=evalstrin("['abc:100,'xyz:999]each{-1}",c);
 a=evalstrin("['abc:99,'xyz:998]",c);
 ASSERT(_equal(repr(b),repr(a)),"dict each");
 
+
+c=mkworkspace();
+b=evalstrin("7 as 'p;[[p]]",c);
+ASSERT(_equal(b,xi(7)),"nested simple listexpr");
+

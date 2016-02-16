@@ -475,16 +475,22 @@ int _flat(VP x) { // returns 1 if vector, or a list composed of vectors (and not
 	else return 0; // lists are never flat
 }
 VP flatten(VP x) {
-	int i,t=-1;VP res=0;
+	int i,t=-1;VP item,res=NULL;
+	PF("flatten\n");DUMP(x);
 	if(!LIST(x))return x;
 	if(x->n) {
-		t=ELl(x,0)->t; res=ALLOC_LIKE(ELl(x,0));
 		for(i=0;i<x->n;i++) {
-			if(ELl(x,i)->t!=t) {
+			item=ELl(x,i);
+			if(LIST(item)) item=flatten(item);
+			if(!res) {
+				t=item->t; res=ALLOC_LIKE(item);
+			} else if(item->t!=t) {
+				PF("gave up on");DUMP(item);
 				xfree(res); return x;
-			} else
-				append(res,ELl(x,i));
+			}
+			res=append(res,item);
 		}
+		PF("flatten returning\n");DUMP(res);
 		return res;
 	} else return xl0();
 }
@@ -643,7 +649,7 @@ VP show(VP x) {
 	if(IS_c(x)) p = sfromx(x);
 	else p = reprA(x);
 	printf("%s\n",p);
-	free(p);
+	if(!IS_c(x)) free(p);
 	return x;
 }
 VP splice(VP x,VP idx,VP replace) {
@@ -905,13 +911,13 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				left=restore_left; \
 			} \
 			xfree(curframe); \
-			EL(stack,VP,stack_i)=0; \
+			EL(stack,VP,stack_i)=NULL; \
 			stack_i=return_to; \
 			start_i=AS_i(ELl(curframe,5),0); \
 			goto applyexprtop; \
 		} else { \
 			PF("applyexpr actually returning\n"); \
-			if(value==0) { PF("null\n"); } \
+			if(value==NULL) { PF("null\n"); } \
 			else DUMP(value); \
 			return value; \
 		} 
@@ -952,34 +958,31 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 		PF("unpacking lambda\n");
 		int arity=LAMBDAARITY(code);
 		if(arity==1 && xarg==0) {
-			item=proj(-1,parent,xarg,yarg);
-			MAYBE_RETURN(item);
+			item=proj(-1,parent,xarg,yarg); MAYBE_RETURN(item);
 		} 
 		if(arity==2 && (xarg==0||yarg==0)) {
-			item=proj(-2,parent,xarg,yarg);
-			MAYBE_RETURN(item);
+			item=proj(-2,parent,xarg,yarg); MAYBE_RETURN(item);
 		}
 		code=ELl(code,0);
 	}
 	
 	for(i=start_i;i<code->n;i++) {
 		PF("applyexpr #%d/%d\n",i,code->n-1);
-		DUMP(code);
 		DUMP(left);
-
 		if (use_existing_item) {
 			PF("using existing item\n"); DUMP(item);
 			use_existing_item=0;
 			if(item==0) continue;
 			if(UNLIKELY(IS_EXC(item))) { MAYBE_RETURN(item); }
-			goto grandswitch;
+			goto evalexpr;
 		} else {
 			PF("picking up item from code %d\n", i); DUMP(code);
 		}
-
 		item=ELl(code,i);
+
+		consideritem:
+
 		tag=item->tag;
-		DUMP(item);
 		// consider storing these skip conditions in an array
 		if(tag==tws) continue;
 		if(tag==tcom) continue;
@@ -989,35 +992,37 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			item=list(item);
 			for(j=0;j<parent->n;j++) {
 				this=ELl(parent,j);
-				if(j!=parent->n-1 || !LIST(this))
-					append(newctx,clone(ELl(parent,j)));
+				if(j!=parent->n-1 || !LIST(this)) append(newctx,clone(ELl(parent,j)));
 			}
 			append(newctx,item); // second item of lambda is arity; ignore for now
 			item=newctx;
 			PF("created new lambda context item=\n");DUMP(item);
 		} else if (tag==texpr || tag==tlistexpr) {
-			if (! SIMPLE(item)) {
+			// we've reached a paren expr or list expr that we must resolve before considering
+			// what to do with this term of the parse tree. many expressions are simple and
+			// don't require complex evaluation.. but some do require recursion
+			if (!SIMPLE(item)) {
 				PF("applying subexpression\n");
 				VP newframe = xln(9,parent,item,left,yarg,(VP)0,xi(i),xi(stack_i),xi(2),left);
-				PF("trying stack hack for expression (not lambda)\n");
+				PF("trying stack hack for expression (expr/listexpr)\n");
 				DUMP(newframe);
 				stack=append(stack,newframe);
 				stack_i=-1;
 				goto applyexprtop;
+			} else {
+				// so we've come across a simple expression like `listexpr[2]. normally we'd just
+				// move right along instead of recursing. however, this thing MAY be a name (string), and
+				// because of the way the parser works, the parse tree may look like simply
+				// "'listexpr("p")" with the 'name part stripped out. so let's reconsider item when
+				// we reach this case so that we can resolve the name in the scope
+				item->tag=(tag_t)0;
+				if(IS_c(item))
+					goto consideritem;
 			}
-			/*
-			PFIN();
-			item=applyexpr(parent,item,xarg,yarg);
-			PFOUT();
-			if(item->tag==texc) { MAYBE_RETURN(item); }
-			if(tag==Ti(listexpr)&&!CONTAINER(item)) item=list(item);
-			PF("subexpression came back with");DUMP(item);
-			*/
 		} else if(LIKELY(IS_c(item)) && tag != tstr) {
 			ch = AS_c(item,0);
-			if(ch==';') { // end of expr; remove left/x
-				left=0; continue;
-			} 
+			// end of expr; cleanse expression
+			if(ch==';') { left=NULL; continue; }
 			PF("much ado about\n");DUMP(item);
 			if(item->n==1 && ch=='x') {
 				if (LIKELY(xarg!=0)) 
@@ -1038,7 +1043,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				}
 			}
 			else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
-				left=proj(2,&set,xln(2,parent,left),0);
+				left=proj(2,&set,xln(2,parent,left),NULL);
 				left->tag=Ti(setproj);
 				xfree(left);
 				PF("created set projection\n");
@@ -1055,19 +1060,18 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			} else
 				item=get(parent,item);
 			PF("decoded string identifier\n");DUMP(item);
-			if(IS_EXC(item)) { MAYBE_RETURN(left!=0 && CALLABLE(left)?left:item); }
+			if(IS_EXC(item)) { MAYBE_RETURN(left!=NULL && CALLABLE(left)?left:item); }
 		} else if(tag==tname) {
 			PF("non-string name encountered");
 			item=get(parent,item);
 			RETURN_IF_EXC(item);
 		}
 		
-		grandswitch:
+		evalexpr:
 
-		PF("before grand switch (left,item)\n");
-		DUMP(left);
-		if(left!=0) PF("left arity=%d\n", _arity(left)); 
-		DUMP(item);
+		PF("before evalexpr (left,item):\n");
+		DUMP(left); DUMP(item);
+		if(left!=NULL) PF("left arity=%d\n", _arity(left)); 
 
 		if(left!=0 && (left->tag==Ti(proj) || (CALLABLE(left) && _arity(left)>0))) {
 			// they seem to be trying to call a unary function, though it's on the
@@ -1123,7 +1127,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 						left=apply(item,left);
 						PFOUT();
 					}
-					if(left == 0 || left->tag==texc) { MAYBE_RETURN(left); }
+					if(IS_EXC(left)) { MAYBE_RETURN(left); }
 				}
 				PF("applyexpr apply returned\n");DUMP(left);
 			} else {
@@ -1854,15 +1858,16 @@ VP get(VP x,VP y) {
 			}
 		} else {
 			i=xn-1;
+			if(SIMPLE(y) && yn>1) y=list(y); // support depth queries with scalars like thing.item
 			for(;i>=0;i--) {
 				PF("get #%d\n", i);
 				item=ELl(x,i);
 				DUMP(item);
-				if(DICT(item)) {
+				if(SIMPLE(y) && DICT(item)) {
 					if((res=DICT_find(item,y))) return res;
 				} else {
-					if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
-					res=apply(ELl(x,i),y);
+					if(LIST(item)) continue; // skip code bodies - maybe should use tags for this?
+					res=apply(item,y);
 					if(!LIST(res) || res->n > 0) return res;
 				}
 			}
