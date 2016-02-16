@@ -91,3 +91,23 @@ c=mkworkspace();
 b=evalstrin("7 as 'p;[[p]]",c);
 ASSERT(_equal(b,xi(7)),"nested simple listexpr");
 
+c=mkworkspace();
+b=evalstrin("[1,2,3],[9,8,7] eachb +",c);
+ASSERT(_equal(b,xin(3,10,10,10)),"eachboth");
+
+c=mkworkspace();
+b=evalstrin("[1,2,3],[9,8,7] >: +",c);
+ASSERT(_equal(b,xin(3,10,10,10)),"eachboth short");
+
+c=mkworkspace();
+b=evalstrin("[1,2,3],[3] \\: +",c);
+ASSERT(_equal(b,xin(3,4,5,6)),"eachleft short");
+
+c=mkworkspace();
+b=evalstrin("[3],[1,2,3] /: +",c);
+ASSERT(_equal(b,xin(3,4,5,6)),"eachright short");
+
+c=mkworkspace();
+b=evalstrin("2,3,4 :: (*2)",c);
+ASSERT(_equal(b,xin(3,4,6,8)),"each as ::");
+

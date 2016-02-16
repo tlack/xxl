@@ -1422,27 +1422,48 @@ VP each(const VP obj,const VP fun) {
 }
 VP eachboth(const VP obj,const VP fun) { 
 	if(!LIST(obj) || obj->n != 2) return EXC(Tt(type),"eachboth x must be [left,right]",obj,fun);
-	VP tmpl, tmpr, res, acc=NULL, left=ELl(obj,0), right=ELl(obj,1);
-	int n=left->n;
+	VP tmpl, tmpr, res, acc=NULL, left=ELl(obj,0), right=ELl(obj,1); int n=left->n;
 	if(right->n != n) return EXC(Tt(type),"eachboth x must be same-length items",obj,fun);
-	// PF("each\n");DUMP(obj);DUMP(fun);
 	FOR(0,n,({ 
-		// PF("each #%d\n",n);
-		tmpl=apply(left, xi(_i)); 
-		tmpr=apply(right, xi(_i)); 
-		res=apply2(fun,tmpl,tmpr); 
+		tmpl=apply(left, xi(_i)); tmpr=apply(right, xi(_i)); res=apply2(fun,tmpl,tmpr); 
 		if(res==0) continue; // no idea lol
 		// delay creating return type until we know what this func produces
 		if (!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
-		else if (!LIST(acc) && res->t != acc->t) 
-			acc = xl(acc);
-		xfree(tmpl); xfree(tmpr);
-		append(acc,res); }));
-	// PF("each returning\n");DUMP(acc);
+		else if (!LIST(acc) && res->t != acc->t) acc = xl(acc);
+		xfree(tmpl); xfree(tmpr); append(acc,res); }));
 	return acc;
 }
-static inline VP eachprior(VP obj,VP fun) {
-	ASSERT(1,"eachprior nyi");
+VP eachleft(const VP obj,const VP fun) { 
+	if(!LIST(obj) || obj->n != 2) return EXC(Tt(type),"eachleft x must be [left,right]",obj,fun);
+	VP tmpl, res, acc=NULL, left=ELl(obj,0), right=ELl(obj,1); int n=left->n;
+	// it can be a little finnicky with , to build a list composed of a list and
+	// a vector, because right now [1,2,3],4 is [1,2,3,4] not [[1,2,3],[4]] -
+	// which is usually quite helpful, but not in this case:
+	if (ENLISTED(right)) right=ELl(right,0);  
+	FOR(0,n,({ 
+		tmpl=apply(left, xi(_i)); res=apply2(fun,tmpl,right); 
+		if(res==NULL) continue;
+		// delay creating return type until we know what this func produces
+		if (!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
+		else if (!LIST(acc) && res->t != acc->t) acc = xl(acc);
+		xfree(tmpl); append(acc,res); }));
+	return acc;
+}
+VP eachright(const VP obj,const VP fun) { 
+	if(!LIST(obj) || obj->n != 2) return EXC(Tt(type),"eachright x must be [left,right]",obj,fun);
+	VP tmpr, res, acc=NULL, left=ELl(obj,0), right=ELl(obj,1); int n=right->n;
+	if (ENLISTED(left)) left=ELl(left,0);  
+	FOR(0,n,({ 
+		tmpr=apply(right, xi(_i)); res=apply2(fun,left,tmpr);
+		if(res==NULL) continue;
+		// delay creating return type until we know what this func produces
+		if (!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
+		else if (!LIST(acc) && res->t != acc->t)  acc = xl(acc);
+		xfree(tmpr); append(acc,res); }));
+	return acc;
+}
+static inline VP eachpair(VP obj,VP fun) {
+	ASSERT(1,"eachpair nyi");
 	return (VP)0;
 }
 VP exhaust(const VP x,const VP y) {
