@@ -39,6 +39,7 @@ if which rlwrap >/dev/null; then
 	RUN="rlwrap $RUN"
 fi
 
+SRCPATH=`pwd`
 COMPILE="$CC $DEFS $WARN $LIBS $ARCH $STDLIB "
 COMPILEOBJ="$COMPILE -c "
 COMPILESHARED="$COMPILE -fPIC -shared "
@@ -53,7 +54,9 @@ if [ "x$BUILDH" = "xyes" ]; then
 	$NODE repr.js > repr.h 
 fi
 
-echo "#define XXL_COMPILEOBJ \"$COMPILEOBJ\"" > compile.h
+echo "" > compile.h
+echo "#define XXL_SRCPATH \"$SRCPATH\"" >> compile.h
+echo "#define XXL_COMPILEOBJ \"$COMPILEOBJ\"" >> compile.h
 echo "#define XXL_COMPILESHARED \"$COMPILESHARED\"" >> compile.h
 echo "#define XXL_BUILDOBJ \"$BUILDOBJ\"" >> compile.h
 echo "#define XXL_BUILDSHARED \"$COMPILESHARED\"" >> compile.h
