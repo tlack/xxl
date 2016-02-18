@@ -1,9 +1,12 @@
+// NETWORKING
+
 #include "def.h"
 #include "proto.h"
 #include "accessors.h"
 #include "vary.h"
 
-// NETWORK
+#ifdef STDLIBNET
+
 size_t netr(int sock,void* b,size_t maxl) {
 	return read(sock,b,maxl);
 }
@@ -95,3 +98,6 @@ VP netbind(VP opts,VP cb) {
 	DUMP(cb);
 	return opts;
 }
+
+#endif
+

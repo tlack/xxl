@@ -70,8 +70,11 @@ $COMPILEOBJ \
 $COMPILEOBJ \
 	net.c 2>&1 \
 	&& \
+$COMPILEOBJ \
+	stdlib.c 2>&1 \
+	&& \
 $BUILDOBJ xxl \
-	xxl.o repl.o net.o 2>&1 \
+	xxl.o repl.o net.o stdlib.o 2>&1 \
 	&& \
 clear && $RUN
 
