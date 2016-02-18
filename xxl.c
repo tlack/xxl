@@ -14,13 +14,11 @@
 // GLOBALS (dangggerous)
 
 // commonly used "static" values, set in init()
-VP XB0=NULL,XB1=NULL,XI0=NULL,XI1=NULL,XXL_SYS=NULL; 
+VP XB0=NULL,XB1=NULL,XI0=NULL,XI1=NULL;
+THREADLOCAL VP XXL_SYS=NULL; 
+
 I8 PF_ON=0; I8 PF_LVL=0;               // controls debugging output on/off/nesting depth
-#ifdef THREAD
-__thread I8 IN_OUTPUT_HANDLER=0;       // used to prevent some debugging info while debugging
-#else
-I8 IN_OUTPUT_HANDLER=0;
-#endif
+THREADLOCAL I8 IN_OUTPUT_HANDLER=0;       // used to prevent some debugging info while debugging
 
 #define N_RETAINS 30
 #define RETAIN_MAX 1024
@@ -745,7 +743,7 @@ inline int _equal(const VP x,const VP y) {
 	// this is the most common call in the code
 	// TODO _equal() needs to handle comparison tolerance and type conversion
 	// TODO _equal should use the new VARY_*() macros, except for general lists
-	//PF("_equal\n"); DUMP(x); DUMP(y);
+	// PF("_equal\n"); DUMP(x); DUMP(y);
 	// if the list is a container for one item, we probably want to match the inner one
 	VP a=x,b=y;
 	if(LIST(a) && SCALAR(a)) a=ELl(a,0);

@@ -179,11 +179,13 @@ struct xxl_index_t {
 };
 #endif
 
+#ifdef THREAD
+#define THREADLOCAL __thread
+#else
+#define THREADLOCAL
+#endif
+
 // GLOBALS FROM xxl.c
 extern VP XB0; extern VP XB1; extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; 
-#ifdef THREAD
-extern __thread I8 IN_OUTPUT_HANDLER; 
-#else
-extern I8 IN_OUTPUT_HANDLER;
-#endif
+extern THREADLOCAL I8 IN_OUTPUT_HANDLER; 
 extern I8 MEM_WATCH;
