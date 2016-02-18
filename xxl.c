@@ -42,19 +42,10 @@ static pthread_t THR[MAXTHR]={0};
 #define WITHLOCK(name,code) ({ code; })
 #endif
 
-/*
-char* repr_1(VP x,char* s,size_t sz) {
-	APF(sz,"[ unary func = %p ],",x);
-	return s;
-}
-char* repr_2(VP x,char* s,size_t sz) {
-	APF(sz,"[ binary func = %p ],",x);
-	return s;
-}
-*/
-/* very much not thread safe */
+// REPRESENTATION
+
 #define REPR_SEEN_MAX 1024
-VP REPR_SEEN[REPR_SEEN_MAX]={0};
+THREADLOCAL VP REPR_SEEN[REPR_SEEN_MAX]={0};
 char* repr0(VP x,char* s,size_t sz) {
 	type_info_t t;
 	int i;
@@ -198,6 +189,8 @@ char* repr_x(VP x,char* s,size_t sz) {
 #include "repr.h"
 #include "types.h"
 
+// LOW LEVEL
+
 static inline type_info_t typeinfo(const type_t n) { 
 	if(n <= MAX_TYPE) return TYPES[n];
 	else return (type_info_t){0}; 
@@ -321,7 +314,42 @@ VP xfroms(const char* str) {  // character value from string - strlen helper
 const char* sfromx(VP x) { 
 	if(x==NULL)return "null";
 	return (char*)BUF(x); }
-
+static inline int _equalm(const VP x,const int xi,const VP y,const int yi) {
+	// PF("comparing %p to %p\n", ELi(x,xi), ELi(y,yi));
+	// PF("_equalm\n"); DUMP(x); DUMP(y);
+	if(ENLISTED(x)) { PF("equalm descend x");
+		return _equalm(ELl(x,xi),0,y,yi);
+	}
+	if(ENLISTED(y)) { PF("equalm descend y");
+		return _equalm(x,xi,ELl(y,yi),0);
+	}
+	if(memcmp(ELi(x,xi),ELi(y,yi),x->itemsz)==0) return 1;
+	else return 0;
+}	
+inline int _equal(const VP x,const VP y) {
+	// this is the most common call in the code
+	// TODO _equal() needs to handle comparison tolerance and type conversion
+	// TODO _equal should use the new VARY_*() macros, except for general lists
+	// PF("_equal\n"); DUMP(x); DUMP(y);
+	// if the list is a container for one item, we probably want to match the inner one
+	VP a=x,b=y;
+	if(LIST(a) && SCALAR(a)) a=ELl(a,0);
+	if(LIST(b) && SCALAR(b)) b=ELl(b,0);
+	IF_RET(a->n != b->n, 0);
+	if(CONTAINER(a) && CONTAINER(b)) { ITERV(a,{ IF_RET(_equal(ELl(a,_i),ELl(b,_i))==0, 0); }); return 1; }
+	if(a->t == b->t) {
+		return memcmp(BUF(a),BUF(b),a->itemsz*a->n)==0;
+	} else if (COMPARABLE(a)&&COMPARABLE(b)) {
+		int typerr=-1;
+		VARY_EACHBOTH(a,b,({ if (_x != _y) return 0; }),typerr);
+		if(typerr>-1) return 0;
+		else return 1;
+	} else
+		return 0;
+}
+VP equal(const VP x,const VP y) {
+	return xb(_equal(x,y));
+}
 VP clone(const VP obj) { 
 	// TODO keep a counter of clone events for performance reasons - these represent a concrete
 	// loss over mutable systems
@@ -360,34 +388,25 @@ VP append(VP x,VP y) {
 		VP k=KEYS(x),v=VALS(x),y1,y2; int i;
 		y1=ELl(y,0);
 		y2=ELl(y,1);
-		// tough decisions
-		// PF("append dict\n");DUMP(x);DUMP(k);DUMP(v);
-		if(k==NULL) { // create dict
-			if(0 && SCALAR(y1)) {
+		if(k==NULL) {                      // create dict
+			if(0 && SCALAR(y1)) 
 				k=ALLOC_LIKE_SZ(y1, 4);
-			} else {
+			else 
 				k=xl0();
-			}
 			v=xl0(); xref(k);xref(v); EL(x,VP,0)=k; EL(x,VP,1)=v;
-			x->n=2;
-			// PF("dict kv %p %p\n", k, v); DUMP(k); DUMP(v);
-			i=-1;
-		} else 
-			i=_find1(k,y1);
+			x->n=2; i=-1;                    // not found so insert below
+		} else i=_find1(k,y1);
 		if(i==-1) {
 			xref(y1); xref(y2); EL(x,VP,0)=append(k,y1); EL(x,VP,1)=append(v,y2);
 		} else {
-			xref(y2);
-			ELl(v,i)=y2;
+			xref(y2); ELl(v,i)=y2;
 		}
 		return x;
 	}
 	if(CONTAINER(x)) { 
 		// PF("append %p to list %p\n", y, x); DUMP(x);
-		x=xrealloc(x,x->n+1);
-		xref(y);
-		EL(x,VP,x->n)=y;
-		x->n++;
+		x=xrealloc(x,x->n+1); xref(y);
+		EL(x,VP,x->n)=y; x->n++;
 		// PF("afterward:\n"); DUMP(x);
 	} else {
 		buf_t dest;
@@ -742,42 +761,6 @@ VP take(const VP x,const VP y) {
 	IF_RET(!NUM(y) ||!SCALAR(y), EXC(Tt(type),"take x arg must be single numeric",x,y));	
 	VARY_EL(y, 0, ({ return take_(x,_x); }), typerr);
 	return (VP)0;
-}
-static inline int _equalm(const VP x,const int xi,const VP y,const int yi) {
-	// PF("comparing %p to %p\n", ELi(x,xi), ELi(y,yi));
-	// PF("_equalm\n"); DUMP(x); DUMP(y);
-	if(ENLISTED(x)) { PF("equalm descend x");
-		return _equalm(ELl(x,xi),0,y,yi);
-	}
-	if(ENLISTED(y)) { PF("equalm descend y");
-		return _equalm(x,xi,ELl(y,yi),0);
-	}
-	if(memcmp(ELi(x,xi),ELi(y,yi),x->itemsz)==0) return 1;
-	else return 0;
-}	
-inline int _equal(const VP x,const VP y) {
-	// this is the most common call in the code
-	// TODO _equal() needs to handle comparison tolerance and type conversion
-	// TODO _equal should use the new VARY_*() macros, except for general lists
-	// PF("_equal\n"); DUMP(x); DUMP(y);
-	// if the list is a container for one item, we probably want to match the inner one
-	VP a=x,b=y;
-	if(LIST(a) && SCALAR(a)) a=ELl(a,0);
-	if(LIST(b) && SCALAR(b)) b=ELl(b,0);
-	IF_RET(a->n != b->n, 0);
-	if(CONTAINER(a) && CONTAINER(b)) { ITERV(a,{ IF_RET(_equal(ELl(a,_i),ELl(b,_i))==0, 0); }); return 1; }
-	if(a->t == b->t) {
-		return memcmp(BUF(a),BUF(b),a->itemsz*a->n)==0;
-	} else if (COMPARABLE(a)&&COMPARABLE(b)) {
-		int typerr=-1;
-		VARY_EACHBOTH(a,b,({ if (_x != _y) return 0; }),typerr);
-		if(typerr>-1) return 0;
-		else return 1;
-	} else
-		return 0;
-}
-VP equal(const VP x,const VP y) {
-	return xb(_equal(x,y));
 }
 inline int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
 	// PF("findbuf\n");DUMP(x);

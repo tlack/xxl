@@ -379,9 +379,7 @@
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("['q:1,'w:2] as 'd;d,['w:5]"));
-	PFW(({
 	tmp1=apply(ctx,xi(3));
-	}));
 	tmp2=evalstrin("['q:1, 'w:5]", ctx);
 	DUMP(tmp1);DUMP(tmp2);
 	ASSERT(_equal(tmp1,tmp2),"test join dict literal");

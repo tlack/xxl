@@ -1,10 +1,10 @@
-BUILDH="yes"
+BUILDH="no"
 CC="gcc"
 NODE="node" # often 'nodejs'
 ARCH="-m64"
 LIBS="-pthread "
-DEBUG=""
-DEBUG="-DDEBUG -g"  # comment out for silence
+DEBUG="-pg"
+DEBUG="-DDEBUG -g -pg -ggdb3"  # comment out for silence
 OPT=""
 # OPT="-O3"
 DEFS="-DTHREAD $DEBUG $OPT"
