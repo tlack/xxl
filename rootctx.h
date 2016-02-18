@@ -41,6 +41,7 @@
 	res=assign(res,Tt(^),x2(&xor));
 	res=assign(res,xt(_tagnums("<")),x2(&lesser));
 	res=assign(res,xt(_tagnums(">")),x2(&greater));
+	res=assign(res,Tt(amend),x2(&amend));
 	res=assign(res,Tt(!),x2(&amend));
 	res=assign(res,Tt(@),x2(&apply));
 	res=assign(res,Tt(:),x2(&dict)); // gcc gets confused by Tt(,) - thinks its two empty args

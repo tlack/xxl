@@ -425,11 +425,20 @@ int _upsertidx(VP x,VP y) {
 	if(idx>-1) return idx;
 	append(x,y); return x->n-1;
 }
+VP amend_dict_dict(VP x,VP y) {
+	// NB. amend supports callbacks as values but we
+	// arent going to do that here - possibly needs rethink
+	VP k=KEYS(y), v=VALS(y);
+	int i=0, kn=k->n, vn=v->n;
+	for(; i<kn; i++) x=assign(x,ELl(k,i),ELl(v,i));
+	return x;
+}
 VP amend(VP x,VP y) {
 	PF("amend\n");DUMP(x);DUMP(y);
 	// TODO amend should create a new structure rather than modifying one in-place
-	if(!SIMPLE(x) && !CONTAINER(x))return EXC(Tt(type),"amend x must be a simple or container type",x,y);
-	if(!CONTAINER(y) || y->n!=2)return EXC(Tt(type),"amend y should be [indices,replacements]",x,y);
+	if(!SIMPLE(x) && !CONTAINER(x)) return EXC(Tt(type),"amend x must be a simple or container type",x,y);
+	if(DICT(x) && DICT(y)) return amend_dict_dict(x,y);
+	if(!CONTAINER(y) || y->n!=2) return EXC(Tt(type),"amend y should be [indices,replacements]",x,y);
 	VP idx=ELl(y,0), val=ELl(y,1), acc=ALLOC_LIKE_SZ(x, idx->n), idxi, idxv, tmp=0; int i,fail=-1;
 	if(CALLABLE(idx)) idx=condense(matcheasy(x,idx));
 	for(i=0;i<idx->n;i++) { 
@@ -937,6 +946,13 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	code=ELl(curframe,1);
 	xarg=ELl(curframe,2);
 	yarg=ELl(curframe,3);
+	return_to=AS_i(ELl(curframe,6),0);
+	return_expr_type=AS_i(ELl(curframe,7),0);
+	restore_left=ELl(curframe,8);
+	// we have to unpack the return_to stuff first, because
+	// we use MAYBE_RETURN to immediately return exceptions
+	// when adopting a left value from another frame, and 
+	// MAYBE_RETURN needs to consider return_to*
 	if (!use_existing_item && !use_existing_left)
 		start_i=0;	
 	if(!use_existing_left) {
@@ -946,9 +962,6 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 		if(left!=0 && UNLIKELY(IS_EXC(left))) { MAYBE_RETURN(left); }
 		use_existing_left=0;
 	}
-	return_to=AS_i(ELl(curframe,6),0);
-	return_expr_type=AS_i(ELl(curframe,7),0);
-	restore_left=ELl(curframe,8);
 
 	if(SIMPLE(code)) { MAYBE_RETURN(code); }
 
