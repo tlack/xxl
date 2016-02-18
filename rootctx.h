@@ -16,6 +16,9 @@
 	res=assign(res,Tt(parse),x1(&parse));
 	res=assign(res,Tt(repr),x1(&repr));
 	res=assign(res,Tt(rev),x1(&reverse));
+	#ifdef DEBUG
+	res=assign(res,Tt(selftest),x1(&selftest));
+	#endif
 	res=assign(res,Tt(show),x1(&show));
 	res=assign(res,Tt(str),x1(&str));
 	res=assign(res,Tt(sum),x1(&sum));

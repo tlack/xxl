@@ -72,6 +72,7 @@ char* repr0(VP x,char* s,size_t len);
 char* reprA(VP x);
 VP reverse(VP x);
 VP rootctx();
+VP selftest(VP x);
 VP set(VP x,VP y);
 const char* sfromx(VP x);
 VP shift_(VP x,int i);

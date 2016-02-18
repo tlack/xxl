@@ -2980,7 +2980,7 @@ VP loadin(VP fn,VP ctx) {
 	xfree(subctx);
 	return res;
 }
-void tests() {
+VP selftest(VP dummy) {
 	int i;
 	VP a,b,c;
 	if (DEBUG) {
@@ -2995,6 +2995,7 @@ void tests() {
 			PF("alloced = %llu, freed = %llu\n", MEM_ALLOC_SZ, MEM_FREED_SZ);
 		}
 	}
+	return 0;
 }
 void init(){
 	XB0=xb(0); XB1=xb(1);
@@ -3019,7 +3020,7 @@ void args(VP ctx, int argc, char* argv[]) {
 			a=append(a,item);
 		}
 		set(xln(2,ctx,a),Tt(argv));
-	} else tests();
+	} else selftest(NULL);
 }
 int main(int argc, char* argv[]) {
 	init();
