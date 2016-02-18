@@ -856,17 +856,24 @@ VP type(VP x) {
 }
 VP deal(VP range,VP amt) {
 	PF("deal\n");DUMP(range);DUMP(amt);
-	IF_EXC(!NUM(range),Tt(type),"deal: left arg must be numeric", range, amt);
-	IF_EXC(!NUM(range),Tt(type),"deal: single right arg must be numeric", range, amt);
-	IF_EXC(!SCALAR(range) || !SCALAR(amt), Tt(nyi), "deal: both args must be scalar", range, amt);
+	IF_EXC(!LIST(range) && !NUM(range),Tt(type),"deal: left arg must be numeric", range, amt);
+	IF_EXC(!IS_i(amt) || !SCALAR(amt),Tt(type),"deal: single right arg must be int", range, amt);
 
 	int typerr=-1;
-	VP acc=0;
-	VARY_EL(amt,0,({ typeof(_x)amt=_x; acc=ALLOC_LIKE_SZ(range,_x); // TODO rethink deal in terms of more types
-		VARY_EL_NOFLOAT(range,0,({
-			FOR(0,amt,({ EL(acc,typeof(_x),_i)=rand()%_x; }));
-			acc->n=amt;
-		}),typerr);}),typerr);
+	VP acc=NULL;
+
+	if(LIST(range)) {
+		int i, rn=range->n, amtt=AS_i(amt,0); acc=xlsz(AS_i(amt,0));
+		for(i=0; i<amtt; i++)
+			acc=append(acc,ELl(range,rand()%rn));
+		return acc;
+	} else {
+		VARY_EL(amt, 0, ({ typeof(_x)amt=_x; acc=ALLOC_LIKE_SZ(range,_x); // TODO rethink deal in terms of more types
+			VARY_EL_NOFLOAT(range, 0, ({
+				FOR(0, amt, ({ EL(acc, typeof(_x), _i)=rand()%_x; }));
+				acc->n=amt;
+			}), typerr);}), typerr);
+	}
 	return acc;
 }
 
