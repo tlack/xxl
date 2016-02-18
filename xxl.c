@@ -1259,7 +1259,7 @@ VP apply(VP x,VP y) {
 		// PF("apply f2 returning\n");DUMP(res);
 		return res;
 	}
-	if(!CALLABLE(x) && UNLIKELY(LIST(y) && !SCALAR(y))) { 
+	if(!CALLABLE(x) && UNLIKELY(y && LIST(y) && !SCALAR(y))) { 
 		// indexing at depth - never done for callable types 1, 2, and p (but we do
 		// use it for x).  we should think about when applying with a list really
 		// means apply-at-depth. it would seem to make sense to have a list of
@@ -1284,6 +1284,7 @@ VP apply(VP x,VP y) {
 		// PF("apply ctx\n");DUMP(x);DUMP(y);
 		return applyctx(x,y,0);
 	}
+	if(!y) return NULL; // this is the first point where we require y to be non-null, i believe;
 	// TODO apply() is called most often in XXL; maybe worth transforming this if cascade into a case?	
 	if(DICT(x)) {
 		VP k=KEYS(x),v=VALS(x);I8 found;
