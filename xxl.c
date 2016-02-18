@@ -2271,6 +2271,9 @@ VP signaljoin(VP x,VP y) {
 
 VP nest(VP x,VP y) {
 	VP p1,p2,open,close,opens,closes,where,rep,out,base;
+
+	renest:
+
 	PF("NEST\n");DUMP(x);DUMP(y);
 	//if(!LIST(x) || x->n < 2) return x;
 	if(x->n<2)return x;
@@ -2351,6 +2354,8 @@ VP nest(VP x,VP y) {
 		if(x->tag) out->tag=x->tag;
 		PF("nest out\n");DUMP(out);
 		if(!LIST(out)) out=xl(out);
+		x=out;
+		goto renest;
 	} else { out = x; }
 	PF("nest returning\n"); DUMP(out);
 	return out;
@@ -2598,22 +2603,23 @@ VP parselambda(VP x) {
 }
 VP parsestrlit(VP x) {
 	int i,arity=1,typerr=-1,traw=Ti(raw);
-	PF("PARSESTRLIT!!!\n");DUMP(x);
+	// PF("PARSESTRLIT!!!\n");DUMP(x);
 	if(LIST(x) && IS_c(AS_l(x,0)) && AS_c(AS_l(x,0),0)=='"') {
 		VP res=xlsz(x->n), el, next; int ch,nextch,last;
 		last=x->n-1;
 		for(i=0;i<x->n;i++) {
-			PF("parsestrlit #%d/%d\n",i,last);
+			// PF("parsestrlit #%d/%d\n",i,last);
 			el=AS_l(x,i);
+			if(!el) continue;
 			DUMP(el);
 			if(IS_c(el)) {
 				ch=AS_c(el,0);
-				PF("parselit ch=%c\n",ch);
+				// PF("parselit ch=%c\n",ch);
 				if ((i==0 || i==last) && ch=='"')
 					continue; // skip start/end quotes
 				if (i<last &&
 				    (ch=AS_c(el,0))=='\\') {
-					PF("investigating %d\n",i+1);
+					// PF("investigating %d\n",i+1);
 					next=AS_l(x,i+1);
 					if(IS_c(next) && next->n) {
 						nextch=AS_c(next,0);
@@ -2630,9 +2636,9 @@ VP parsestrlit(VP x) {
 		}
 		// due to the looping logic, we would wind up with an empty list - we want an empty list with an empty string! :)
 		if(res->n==0) res=append(res,xc0()); 
-		PF("flattenin\n");DUMP(res);
+		// PF("flattenin\n");DUMP(res);
 		res=flatten(res);
-		DUMP(res);
+		// DUMP(res);
 		return res;
 	} else {
 		PF("parsestrlit not interested in\n");
@@ -2724,7 +2730,8 @@ VP parsestr(const char* str) {
 		PF("parsestr exhausting %d\n", i);
 		//t2=exhaust(t2,proj(2,&wide,0,ELl(pats,i)));
 		//t2=exhaust(t2,ELl(pats,i)); // wide doesnt seem needed here after tag fixes
-		t2=wide(t2,proj(2,&exhaust,0,ELl(pats,i)));
+		//t2=wide(t2,proj(2,&exhaust,0,ELl(pats,i)));
+		t2=wide(t2,ELl(pats,i));
 	}
 	return t2;
 }
