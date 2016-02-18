@@ -24,6 +24,7 @@
 	res=assign(res,Tt(type),x1(&type));
 	res=assign(res,Tt(val),x1(&val));
 	res=assign(res,Tt(ver),xi(0));
+	res=assign(res,Tt(xray),x1(&xray));
 
 	// infix/binary operators
 	res=assign(res,Tt(=),x2(&equal));

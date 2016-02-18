@@ -20,6 +20,7 @@ VP capacity(VP x);
 VP clone(VP obj);
 VP condense(VP x);
 VP curtail(VP x); // everything except the last element
+VP deal(VP x,VP y);
 VP deep(VP obj,VP f);
 VP dict(VP x,VP y);
 static inline VP divv(VP x,VP y);
@@ -36,6 +37,7 @@ VP evalstrin(const char* str,VP ctx);
 VP evalin(VP str,VP ctx);
 int _find1(VP x,VP y);
 VP first(VP x);
+VP flatten(VP x);
 VP get(VP x,VP y);
 VP greater(VP x,VP y); 
 VP info(VP x);
@@ -100,6 +102,7 @@ VP xfree(VP x);
 VP xfroms(const char* str);
 VP xor(VP x,VP y);
 VP xrealloc(VP x,I32 newn);
+VP xray(VP x);
 VP xref(VP x);
 
 #ifdef STDLIBNET

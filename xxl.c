@@ -2075,6 +2075,16 @@ VP proj(int type, void* func, VP left, VP right) {
 	pv->n=1;
 	return pv;
 }
+VP xray(VP x) {
+	PF("xray\n");DUMP(x);
+	if(!_any(x)) {
+		PF_LVL=0;
+		return Tt(xrayoff);
+	} else {
+		PF_LVL=2;
+		return Tt(xrayon);
+	}
+}
 
 // TAG STUFF:
 
