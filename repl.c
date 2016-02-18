@@ -7,6 +7,10 @@
 #include "accessors.h"
 #include "vary.h"
 
+void banner() {
+	printf("XXL %s by @tlack; http://github.com/tlack/xxl/\n",XXLVER);
+}
+
 void repl(VP ctx) {
 	VP in,out,t1,t2,t3;
 	char line[1024];
@@ -19,10 +23,11 @@ void repl(VP ctx) {
 	assign(ELl(ctx,1),Tt(outputs),out);
 
 	i=0;
+	banner();
 	for(;;) {
 		// printf("xxl@%s> ", sfromx(get(ctx,t1)));
 		//PF_LVL=2;
-		printf("xxl %d>",i);
+		printf("% 4d. ",i);
 		fgets(line, sizeof(line), stdin);
 		if(strncmp(line,"\n",1024)==0) continue;
 		if(strncmp(line,"\\\\\n",1024)==0 ||
