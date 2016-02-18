@@ -73,7 +73,7 @@ $COMPILEOBJ \
 $BUILDOBJ xxl \
 	xxl.o repl.o net.o 2>&1 \
 	&& \
-$RUN
+clear && $RUN
 
 
 
