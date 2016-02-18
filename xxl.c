@@ -468,30 +468,28 @@ VP behead(VP x) {
 	// PF("behead\n");DUMP(x);
 	return drop_(x,1);
 }
-int _flat(VP x) { // returns 1 if vector, or a list composed of vectors (and not other lists)
-	// PF("flat\n");DUMP(x);
-	if(!CONTAINER(x)) return 1;
-	else return 0; // lists are never flat
-}
-VP flatten(VP x) {
-	int i,t=-1;VP item,res=NULL;
-	PF("flatten\n");DUMP(x);
-	if(!LIST(x))return x;
-	if(x->n) {
-		for(i=0;i<x->n;i++) {
-			item=ELl(x,i);
-			if(LIST(item)) item=flatten(item);
-			if(!res) {
-				t=item->t; res=ALLOC_LIKE(item);
-			} else if(item->t!=t) {
-				PF("gave up on");DUMP(item);
-				xfree(res); return x;
-			}
-			res=append(res,item);
+VP catenate(VP x,VP y) {
+	VP res=0;
+	PF("join\n");DUMP(x);DUMP(y);
+	int n = x->n + y->n;
+	if(!CONTAINER(x) && x->tag==0 && x->t==y->t) {
+		PF("join2\n");
+		res=ALLOC_LIKE_SZ(x, n);
+		appendbuf(res, BUF(x), x->n); appendbuf(res, BUF(y), y->n);
+	} else {
+		PF("join3\n");
+		if(DICT(x)) return dict(x,y);
+		else if(LIST(x) && !LIST(y)) res=append(x,y);
+		else {
+			PF("join4\n");
+			res=xlsz(2);
+			res=append(res,x);
+			res=append(res,y);
 		}
-		PF("flatten returning\n");DUMP(res);
-		return res;
-	} else return xl0();
+	}
+	//res=list2vec(res);
+	PF("join result");DUMP(res);
+	return res;
 }
 VP curtail(VP x) {
 	// PF("curtail\n");DUMP(x);
@@ -563,31 +561,33 @@ VP first(VP x) {
 	if(CONTAINER(x)) return xref(ELl(x,0));
 	else { i=xi(0); r=apply(x,i); xfree(i); return r; }
 }
+int _flat(VP x) { // returns 1 if vector, or a list composed of vectors (and not other lists)
+	// PF("flat\n");DUMP(x);
+	if(!CONTAINER(x)) return 1;
+	else return 0; // lists are never flat
+}
+VP flatten(VP x) {
+	int i,t=-1;VP item,res=NULL;
+	PF("flatten\n");DUMP(x);
+	if(!LIST(x))return x;
+	if(x->n) {
+		for(i=0;i<x->n;i++) {
+			item=ELl(x,i);
+			if(LIST(item)) item=flatten(item);
+			if(!res) {
+				t=item->t; res=ALLOC_LIKE(item);
+			} else if(item->t!=t) {
+				PF("gave up on");DUMP(item);
+				xfree(res); return x;
+			}
+			res=append(res,item);
+		}
+		PF("flatten returning\n");DUMP(res);
+		return res;
+	} else return xl0();
+}
 VP identity(VP x) {
 	return x;
-}
-VP catenate(VP x,VP y) {
-	VP res=0;
-	PF("join\n");DUMP(x);DUMP(y);
-	int n = x->n + y->n;
-	if(!CONTAINER(x) && x->tag==0 && x->t==y->t) {
-		PF("join2\n");
-		res=ALLOC_LIKE_SZ(x, n);
-		appendbuf(res, BUF(x), x->n); appendbuf(res, BUF(y), y->n);
-	} else {
-		PF("join3\n");
-		if(DICT(x)) return dict(x,y);
-		else if(LIST(x) && !LIST(y)) res=append(x,y);
-		else {
-			PF("join4\n");
-			res=xlsz(2);
-			res=append(res,x);
-			res=append(res,y);
-		}
-	}
-	//res=list2vec(res);
-	PF("join result");DUMP(res);
-	return res;
 }
 VP last(VP x) {
 	VP res=ALLOC_LIKE_SZ(x,1);
