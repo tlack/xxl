@@ -45,6 +45,7 @@ VP info(VP x);
 VP iftrue(VP x,VP y);
 VP ifelse(VP x,VP y);
 VP itemsz(VP x);
+VP join(VP list,VP sep);
 VP last(VP x);
 VP len(VP x); 
 VP lesser(VP x,VP y); 

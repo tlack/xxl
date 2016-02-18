@@ -589,6 +589,21 @@ VP flatten(VP x) {
 VP identity(VP x) {
 	return x;
 }
+VP join(VP list,VP sep) {
+	VP acc=NULL,x,t1; int i;
+	if(list->n==0 || SCALAR(list)) return list;
+	for(i=0;i<list->n-1;i++) {
+		t1=xi(i); x=apply(list,t1);
+		if(!acc) acc=ALLOC_LIKE(x);
+		acc=catenate(acc,x);
+		acc=catenate(acc,sep);
+		xfree(t1);xfree(x);
+	}
+	t1=xi(i); x=apply(list,t1);
+	acc=catenate(acc,x);
+	xfree(t1); xfree(x);
+	return acc;
+}
 VP last(VP x) {
 	VP res=ALLOC_LIKE_SZ(x,1);
 	if(x->n==0) return res;

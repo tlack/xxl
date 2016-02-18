@@ -293,3 +293,9 @@
 	ASSERT(_equal(b,xln(2,Tt(q),Tt(w))),"key0");
 	ASSERT(_equal(key(xin(3,5,6,7)),xin(3,0,1,2)),"key1");
 
+	a=xin(2,1,2); b=join(a,xi(3));
+	ASSERT(_equal(b,xin(3,1,3,2)),"join 0");
+	a=xi(1); b=join(a,xi(3));
+	ASSERT(_equal(b,xi(1)),"join 1");
+	a=xln(3,xfroms("a"),xfroms("b"),xfroms("c")); b=join(a,xfroms("/"));
+	ASSERT(_equal(b,xfroms("a/b/c")),"join 2");
