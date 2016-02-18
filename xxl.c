@@ -2712,16 +2712,12 @@ VP fileget(VP fn) {
 	close(fd);
 	return acc;
 }
-VP fileset(VP str,VP fn) {
-	VP fname=fn;
-	if(!IS_c(fname)) fname=filepath(fn);
-	if(!IS_c(fname)) return EXC(Tt(type),"writefile filename must be string or pathlist",fn,0);
-	if(!IS_c(str)) return EXC(Tt(type),"writefile only deals writes strings right now",str,fn);
-	int fd=open(sfromx(fname),O_WRONLY);
-	if(fd<0) return EXC(Tt(open),"could not open file for writing",str,fname);
-	if(write(fd,ELb(str,0),str->n)<str->n) return EXC(Tt(write),"could not write file contents",str,fname);
-	close(fd);
-	return str;
+VP filecwd(VP dummy) {
+	char cwd[1024];
+	if(getcwd(cwd,sizeof(cwd))!=NULL) 
+		return xfroms(cwd);
+	else
+		return EXC(Tt(open),"couldnt get current working directory",0,0);	
 }
 VP filepath(VP pathlist) {
 	if(IS_c(pathlist)) return pathlist;
@@ -2737,6 +2733,17 @@ VP filepath(VP pathlist) {
 	xfree(sep);
 	PF("filepath returning\n");DUMP(acc);
 	return acc;
+}
+VP fileset(VP str,VP fn) {
+	VP fname=fn;
+	if(!IS_c(fname)) fname=filepath(fn);
+	if(!IS_c(fname)) return EXC(Tt(type),"writefile filename must be string or pathlist",fn,0);
+	if(!IS_c(str)) return EXC(Tt(type),"writefile only deals writes strings right now",str,fn);
+	int fd=open(sfromx(fname),O_WRONLY);
+	if(fd<0) return EXC(Tt(open),"could not open file for writing",str,fname);
+	if(write(fd,ELb(str,0),str->n)<str->n) return EXC(Tt(write),"could not write file contents",str,fname);
+	close(fd);
+	return str;
 }
 #endif
 
@@ -2894,17 +2901,22 @@ void evalfile(VP ctx,const char* fn) {
 	PF("evalfile executing\n"); DUMP(acc);
 	parse=parsestr(sfromx(acc));
 	append(ctx,parse);
-	res=apply(ctx,0); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
+	res=apply(ctx,NULL); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
 	ctx=curtail(ctx);
 	printf("%s\n",repr(res));
 }
 VP loadin(VP fn,VP ctx) {
+	char cwd[1024];
 	VP subctx,res,parse,acc = fileget(fn);
 	RETURN_IF_EXC(acc);
 	subctx=clone(ctx);
+	if(getcwd(cwd,sizeof(cwd))!=NULL) {
+		VP tmp=xln(2,subctx,xfroms(cwd));
+		subctx=set(tmp,Tt(dir));
+	}
 	parse=parsestr(sfromx(acc));
 	append(subctx,parse);
-	res=apply(subctx,0);
+	res=apply(subctx,NULL);
 	xfree(subctx);
 	return res;
 }

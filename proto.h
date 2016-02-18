@@ -111,6 +111,7 @@ VP netloop(VP xsock,VP cb);
 #ifdef STDLIBFILE
 // stdlib
 VP fileget(VP fn);
+VP filecwd(VP dummy);
 VP filepath(VP pathlist);
 VP fileset(VP str,VP fn);
 #endif
