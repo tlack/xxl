@@ -1327,7 +1327,7 @@ VP apply(VP x,VP y) {
 		if(res->n==0) {
 			if(x->next!=0) res=apply((VP)x->next, res);
 		}
-		if(res->n==0) return xl0(); else return apply(v,res);
+		if(res->n==0) return NULL; else return apply(v,res);
 	}
 	if(NUM(y)) { // index a value with an integer 
 		if(y->n==1 && LIST(x)) {
@@ -1910,7 +1910,7 @@ VP get(VP x,VP y) {
 				PF("get #%d\n", i);
 				if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
 				res=apply(ELl(x,i),y);
-				if(!LIST(res) || res->n > 0) return res;
+				if(res!=NULL) return res;
 			}
 		} else {
 			i=xn-1;
@@ -1924,7 +1924,7 @@ VP get(VP x,VP y) {
 				} else {
 					if(LIST(item)) continue; // skip code bodies - maybe should use tags for this?
 					res=apply(item,y);
-					if(!LIST(res) || res->n > 0) return res;
+					if(res!=NULL) return res;
 				}
 			}
 		}

@@ -174,7 +174,7 @@
 	xfree(c);
 
 	c=apply(a,xln(1,xfroms("")));
-	ASSERT(c->n==0,"apply empty search");
+	ASSERT(c==NULL,"apply empty search");
 	DUMP(c);
 	xfree(c);
 	xfree(a);
