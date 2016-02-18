@@ -2909,9 +2909,11 @@ void test_nest() {
 }
 VP evalin(VP tree,VP ctx) {
 	if(IS_c(tree)) return evalstrin(sfromx(tree),ctx);
-	if(!IS_x(ctx)) ctx=xxn(2,ctx,tree);
-	else append(ctx,tree);
-	return applyctx(ctx,0,0); 
+	if(!IS_x(ctx)) ctx=xxn(2,ctx,tree);  // try to make context ouf of dict (hopefully) and parse tree
+	else append(ctx,tree);               // parse tree is last item of context (a list, basically)
+	VP res=applyctx(ctx,0,0); 
+	ctx=curtail(ctx);
+	return res;
 }
 VP evalstrin(const char* str, VP ctx) {
 	VP r;
@@ -2926,7 +2928,7 @@ void evalfile(VP ctx,const char* fn) {
 	PF("evalfile executing\n"); DUMP(acc);
 	parse=parsestr(sfromx(acc));
 	append(ctx,parse);
-	res=apply(ctx,NULL); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
+	res=applyctx(ctx,NULL,NULL); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
 	ctx=curtail(ctx);
 	printf("%s\n",repr(res));
 }
@@ -2937,11 +2939,11 @@ VP loadin(VP fn,VP ctx) {
 	subctx=clone(ctx);
 	if(getcwd(cwd,sizeof(cwd))!=NULL) {
 		VP tmp=xln(2,subctx,xfroms(cwd));
-		subctx=set(tmp,Tt(dir));
+		set(tmp,Tt(_dir)); // returns value, not context - dont save
 	}
 	parse=parsestr(sfromx(acc));
 	append(subctx,parse);
-	res=apply(subctx,NULL);
+	res=applyctx(subctx,NULL,NULL);
 	xfree(subctx);
 	return res;
 }
