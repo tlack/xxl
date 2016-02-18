@@ -2655,7 +2655,7 @@ VP parsestr(const char* str) {
 	append(pats,ELl(lex,0));
 	append(pats,x1(&parsenum));
 	xfree(lex);
-	lex=mklexer("'abcdefghijklmnopqrstuvwxyz.?","name");
+	lex=mklexer("'abcdefghijklmnopqrstuvwxyz_.?","name");
 	append(pats,ELl(lex,0));
 	append(pats,x1(&parsename));
 	xfree(lex);
