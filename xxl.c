@@ -2381,7 +2381,13 @@ VP matcheasy(VP obj,VP pat) {
 				EL(acc,CTYPE_b,_i)=1; }));
 	} else {
 		VARY_EACHLEFT(obj, pat, ({
-			if(_x == _y) EL(acc,CTYPE_b,_i) = 1;
+			if(_x == _y) {
+				j=0;
+				do {
+					EL(acc,CTYPE_b,_i+j) = 1;
+					j++;
+				} while (_i+j<n && j<_yn && _equalm(obj,_i+j,pat,j));
+			}
 		}), typerr);
 		IF_EXC(typerr>-1, Tt(type), "matcheasy could not match those types",obj,pat);
 	}
