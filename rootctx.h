@@ -68,7 +68,10 @@
 	res=assign(res,Tt(nest),x2(&nest));
 	res=assign(res,Tt(pick),x2(&pick));
 	res=assign(res,Tt(over),x2(&over));
+	res=assign(res,xt(_tagnums("':")),x2(&over));
 	res=assign(res,Tt(rot),x2(&shift));
+	res=assign(res,Tt(scan),x2(&scan));
+	res=assign(res,xt(_tagnums(",:")),x2(&scan));
 	res=assign(res,Tt(split),x2(&split));
 	res=assign(res,Tt(take),x2(&take));
 	res=assign(res,Tt(wide),x2(&wide));
