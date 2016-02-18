@@ -1,5 +1,6 @@
 #include <fcntl.h>
 #include <limits.h>
+#include <libgen.h>                    // dirname/basename
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>

@@ -74,6 +74,14 @@ xfree(c);xfree(b);
 c=mkworkspace();
 b=evalstrin("[\"a\",\"b\",\".x\"] .file.path",c);
 ASSERT(_equal(b,xfroms("a/b.x")),".file.path");
+c=mkworkspace();
+b=evalstrin("\"/a/b/c\" .file.basename",c);
+ASSERT(_equal(b,xfroms("c")),".file.basename");
+xfree(b);xfree(c);
+c=mkworkspace();
+b=evalstrin("\"/a/b/c\" .file.dirname",c);
+ASSERT(_equal(b,xfroms("/a/b")),".file.dirname");
+xfree(b);xfree(c);
 #endif
 
 c=mkworkspace();

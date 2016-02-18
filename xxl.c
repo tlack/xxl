@@ -2736,6 +2736,31 @@ VP parse(VP x) {
 // STANDARD LIBRARY
 
 #ifdef STDLIBFILE
+VP filebasename(VP fn) {
+	VP fname;
+	fname=fn;
+	if(!IS_c(fname)) fname=filepath(fn);
+	if(!IS_c(fname)) return EXC(Tt(type),"basename filename must be string or pathlist",fn,0);
+	VP res=xfroms(basename(sfromx(fname)));
+	xfree(fname);
+	return res;
+}
+VP filedirname(VP fn) {
+	VP fname;
+	fname=fn;
+	if(!IS_c(fname)) fname=filepath(fn);
+	if(!IS_c(fname)) return EXC(Tt(type),"dirname filename must be string or pathlist",fn,0);
+	VP res=xfroms(dirname(sfromx(fname)));
+	xfree(fname);
+	return res;
+}
+VP filecwd(VP dummy) {
+	char cwd[1024];
+	if(getcwd(cwd,sizeof(cwd))!=NULL) 
+		return xfroms(cwd);
+	else
+		return EXC(Tt(open),"couldnt get current working directory",0,0);	
+}
 VP fileget(VP fn) {
 	char buf[IOBLOCKSZ]; VP fname; size_t r=0; int fd=0;
 	fname=fn;
@@ -2751,13 +2776,6 @@ VP fileget(VP fn) {
 	} while (r==IOBLOCKSZ);
 	close(fd);
 	return acc;
-}
-VP filecwd(VP dummy) {
-	char cwd[1024];
-	if(getcwd(cwd,sizeof(cwd))!=NULL) 
-		return xfroms(cwd);
-	else
-		return EXC(Tt(open),"couldnt get current working directory",0,0);	
 }
 VP filepath(VP pathlist) {
 	if(IS_c(pathlist)) return pathlist;
