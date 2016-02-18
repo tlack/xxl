@@ -2977,10 +2977,13 @@ VP loadin(VP fn,VP ctx) {
 	VP subctx,res,parse,acc = fileget(fn);
 	RETURN_IF_EXC(acc);
 	subctx=clone(ctx);
-	if(getcwd(cwd,sizeof(cwd))!=NULL) {
-		VP tmp=xln(2,subctx,xfroms(cwd));
-		set(tmp,Tt(_dir)); // returns value, not context - dont save
-	}
+	
+	#ifdef STDLIBFILE
+	VP tmp=xln(2,subctx,filedirname(fn));
+	set(tmp,Tt(_dir)); // returns value, not context - dont save
+	xfree(tmp);
+	#endif
+
 	parse=parsestr(sfromx(acc));
 	append(subctx,parse);
 	res=applyctx(subctx,NULL,NULL);
