@@ -27,11 +27,15 @@ void repl(VP ctx) {
 	char line[1024];
 	int i;
 	clock_t st,en;
+
 	t1=xfroms("wkspc");
 	in=xl0();
 	assign(ELl(ctx,1),Tt(inputs),in);
 	out=xl0();
 	assign(ELl(ctx,1),Tt(outputs),out);
+	#ifdef STDLIBFILE
+	assign(ELl(ctx,1),Tt(_dir),filecwd(XI0));
+	#endif
 
 	i=0;
 	banner();
