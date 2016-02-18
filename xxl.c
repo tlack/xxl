@@ -2974,12 +2974,25 @@ void init(){
 	XXL_SYS=assign(XXL_SYS,Tt(buildshared),xfroms(XXL_BUILDSHARED));
 	thr_start();
 }
+void args(VP ctx, int argc, char* argv[]) {
+	if(argc > 1) {
+		int i; VP a=xlsz(argc); 
+		for(i=0; i<argc; i++) {
+			VP item=xfroms(argv[i]);
+			if(AS_c(item,0)=='-') 
+				show(evalin(show(join(xfroms("1 "),behead(item))),ctx));
+			else 
+				evalfile(ctx,argv[i]);
+			a=append(a,item);
+		}
+		set(xln(2,ctx,a),Tt(argv));
+	} else tests();
+}
 int main(int argc, char* argv[]) {
 	init();
 	VP ctx=mkworkspace();
+	args(ctx,argc,argv);
 	// net();
-	if(argc == 2) evalfile(ctx,argv[1]);
-	else tests();
 	repl(ctx);
 	exit(1);
 }
