@@ -17,6 +17,7 @@ VP assign(VP x,VP k,VP val);
 VP behead(VP x); // everything except the first element
 VP cast(VP x,VP y);
 VP capacity(VP x);
+VP catenate(VP x,VP y);
 VP clone(VP obj);
 VP condense(VP x);
 VP curtail(VP x); // everything except the last element
@@ -41,7 +42,6 @@ VP flatten(VP x);
 VP get(VP x,VP y);
 VP greater(VP x,VP y); 
 VP info(VP x);
-VP join(VP x,VP y);
 VP iftrue(VP x,VP y);
 VP ifelse(VP x,VP y);
 VP itemsz(VP x);

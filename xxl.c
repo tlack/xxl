@@ -566,7 +566,7 @@ VP first(VP x) {
 VP identity(VP x) {
 	return x;
 }
-VP join(VP x,VP y) {
+VP catenate(VP x,VP y) {
 	VP res=0;
 	PF("join\n");DUMP(x);DUMP(y);
 	int n = x->n + y->n;
@@ -628,9 +628,9 @@ VP shift_(VP x,int i) {
 	// PF("shift_ %d\n",i);DUMP(x);
 	int n=x->n;
 	if(i<0) 
-		return join(take_(x,i%n),drop_(x,i%n));
+		return catenate(take_(x,i%n),drop_(x,i%n));
 	else
-		return join(drop_(x,i%n),take_(x,i%n));
+		return catenate(drop_(x,i%n),take_(x,i%n));
 }
 VP shift(VP x,VP y) {
 	PF("shift\n");DUMP(x);DUMP(y);
@@ -668,7 +668,7 @@ VP splice(VP x,VP idx,VP replace) {
 		if (last < x->n)
 			acc=append(acc, drop_(x, last));
 		PF("splice calling over\n");DUMP(acc);
-		return over(acc, x2(&join));
+		return over(acc, x2(&catenate));
 	}
 	PF("splice returning\n"); DUMP(acc);
 	return acc;
@@ -2980,7 +2980,7 @@ void args(VP ctx, int argc, char* argv[]) {
 		for(i=0; i<argc; i++) {
 			VP item=xfroms(argv[i]);
 			if(AS_c(item,0)=='-') 
-				show(evalin(show(join(xfroms("1 "),behead(item))),ctx));
+				show(evalin(show(catenate(xfroms("1 "),behead(item))),ctx));
 			else 
 				evalfile(ctx,argv[i]);
 			a=append(a,item);

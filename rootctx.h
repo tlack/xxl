@@ -43,7 +43,7 @@
 	res=assign(res,Tt(:),x2(&dict)); // gcc gets confused by Tt(,) - thinks its two empty args
 	res=assign(res,Tt(?),x2(&find1));
 	res=assign(res,Tt(~),x2(&matcheasy));
-	res=assign(res,xt(_tagnums(",")),x2(&join)); // gcc gets confused by Tt(,) - thinks its two empty args
+	res=assign(res,xt(_tagnums(",")),x2(&catenate)); // gcc gets confused by Tt(,) - thinks its two empty args
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
 	res=assign(res,Tt(cast),x2(&cast));
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));

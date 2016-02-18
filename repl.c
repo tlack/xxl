@@ -18,7 +18,7 @@ void tip() {
 	tips=append(tips,xfroms("type 'memwatch' to see how your program allocates memory."));
 	tips=append(tips,xfroms("you can reference previous commands or program output like a regular variable. type 'inputs first' or 'outputs last' to see."));
 	VP tip=deal(tips,XI1);
-	show(flatten(join(join(before,tip),after)));
+	show(flatten(catenate(catenate(before,tip),after)));
 	xfree(tip);xfree(tips);xfree(after);xfree(before);
 }
 
