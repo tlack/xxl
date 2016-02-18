@@ -158,7 +158,14 @@ TYD(type_t,I8); TYD(buf_t,I8*);
 TYD(tag_t,I128);
 
 /* Structure for most values. 'st' and 'dyn' static and dynamic storage for data */
-struct V { type_t t; tag_t tag; I32 n; I32 cap; I32 itemsz; I32 sz; I32 rc; I8 alloc; buf_t next; union { I8 st[32]; buf_t dyn;};};
+struct V { 
+	type_t t; tag_t tag; 
+	I32 n; I32 cap; I32 itemsz; I32 sz; // cur number of items, capacity, size each, total sz
+	I32 rc;                             // ref count. starts at 1
+	unsigned int alloc:1;               // self-contained (st member) or has an allocated dynamic buffer (dyn)?
+	unsigned int _pad:7; 
+	buf_t next; 
+	union { I8 st[32]; buf_t dyn;};};
 typedef struct V* VP; /* value pointer */
 
 typedef VP (unaryFunc)(VP x);
