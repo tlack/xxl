@@ -2133,7 +2133,7 @@ static inline VP tagwrap(VP tag,VP x) {
 VP tagv(const char* name, VP x) {
 	return entags(xln(1,x),name);
 }
-static inline VP entag(VP x,VP t) {
+VP entag(VP x,VP t) {
 	if(IS_c(t))
 		x->tag=_tagnum(t);
 	else if (IS_i(t))
@@ -2142,7 +2142,7 @@ static inline VP entag(VP x,VP t) {
 		x->tag=AS_t(t,0);
 	return x;
 }
-static inline VP entags(VP x,const char* name) {
+VP entags(VP x,const char* name) {
 	x->tag=_tagnums(name);
 	return x;
 }

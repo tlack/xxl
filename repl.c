@@ -22,6 +22,17 @@ void tip() {
 	xfree(tip);xfree(tips);xfree(after);xfree(before);
 }
 
+void showexc(VP exc) {
+	int i; VP strs=xfroms("code\nmessage\nx\ny"), labels=split(strs,xc('\n'));
+	show(exc);
+	printf("Oops. Exception:\n");
+	for(i=0;i<exc->n;i++) {
+		printf("%s: ",sfromx(ELl(labels,i)));
+		show(ELl(exc,i));
+	}
+	xfree(labels); xfree(strs);
+}
+
 void repl(VP ctx) {
 	VP in,out,t1,t2,t3;
 	char line[1024];
@@ -94,7 +105,7 @@ void repl(VP ctx) {
 			printf("outputs@%d:\n%s\n", i, sfromx(repr(t3)));
 		} else {
 			out=append(out,Tt(exception));
-			printf("Oops. Exception: %s\n", sfromx(repr(t3)));
+			showexc(t3);
 		}
 		i++;
 	}
