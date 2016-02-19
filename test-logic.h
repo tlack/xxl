@@ -119,3 +119,11 @@ c=mkworkspace();
 b=evalstrin("2,3,4 :: (*2)",c);
 ASSERT(_equal(b,xin(3,4,6,8)),"each as ::");
 
+c=mkworkspace();
+b=evalstrin("\"hello\"!((1,2,5),\"x\")",c);
+ASSERT(_equal(b,xfroms("hxxlox")),"amend many indices one value");
+
+c=mkworkspace();
+b=evalstrin("[]!(1,\"jordache\")",c);
+ASSERT(_equal(repr(b),xfroms("[/*null*/, 'string(\"jordache\")]")),"amend empty list");
+

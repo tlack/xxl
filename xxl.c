@@ -311,6 +311,7 @@ const char* sfromx(VP x) {
 	if(x==NULL)return "null";
 	return (char*)BUF(x); }
 static inline int _equalm(const VP x,const int xi,const VP y,const int yi) {
+	if(x==NULL||y==NULL) return 0;
 	// PF("comparing %p to %p\n", ELi(x,xi), ELi(y,yi));
 	// PF("_equalm\n"); DUMP(x); DUMP(y);
 	if(ENLISTED(x)) { PF("equalm descend x");
@@ -328,6 +329,7 @@ inline int _equal(const VP x,const VP y) {
 	// TODO _equal should use the new VARY_*() macros, except for general lists
 	// PF("_equal\n"); DUMP(x); DUMP(y);
 	// if the list is a container for one item, we probably want to match the inner one
+	if(x==NULL||y==NULL) return 0;
 	VP a=x,b=y;
 	if(LIST(a) && SCALAR(a)) a=ELl(a,0);
 	if(LIST(b) && SCALAR(b)) b=ELl(b,0);
@@ -445,7 +447,9 @@ VP amend(VP x,VP y) {
 		idxi=xi(i); idxv=apply(idx,idxi); // TODO really need a fast 0 alloc version of apply(simple,int)!
 		if(UNLIKELY(CALLABLE(val))) tmp=apply(val,apply(x,idxv));
 		else {
-			if (SCALAR(val)) tmp=xref(val); 
+			// handle the case of assigning one vector (ie a string) to a given index
+			// or the case of assigning many indices to one value
+			if (SCALAR(idx) || SCALAR(val)) tmp=xref(val); 
 			else tmp=apply(val,idxv);
 		}
 		if(UNLIKELY(!CONTAINER(x) && tmp->t!=x->t))return EXC(Tt(value),"amend value type does not match x",x,tmp);
@@ -471,16 +475,25 @@ inline VP assign(VP x,VP k,VP val) {
 		return res;
 	}
 	if(DICT(x)) {
-		xref(k); xref(val);
-		return append(x,xln(2,k,val));
+		xref(k); xref(val); return append(x,xln(2,k,val));
 	} else if(SIMPLE(x) && NUM(k)) {
 		// PF("assign");DUMP(x);DUMP(k);DUMP(val);
+		if(val->n == 0) return EXC(Tt(value),"assignment with empty values not supported on simple types",x,val);
 		if(x->t != val->t) return EXC(Tt(type),"assign value and target types don't match",x,val);
-		int typerr=-1;
+		int typerr=-1, i=NUM_val(k);
+		if (i>=x->n) { xrealloc(x,i+1); x->n=i+1; }
 		VARY_EACHRIGHT_NOFLOAT(x,k,({
 			EL(x,typeof(_x),_y) = EL(val,typeof(_x),_y%val->n); // TODO assign should create new return value
 		}),typerr);
 		// PF("assign num returning");DUMP(x);
+		return x;
+	} else if(LIST(x) && NUM(k)) {
+		int i=NUM_val(k);
+		PF("%d\n",i);
+		if (i>=x->n) { xrealloc(x,i+1); x->n=i+1; }
+		if(i < x->n && ELl(x,i)) xfree(ELl(x,i));
+		EL(x,VP,i)=val;
+		DUMP(x);
 		return x;
 	}
 	return EXC(Tt(type),"assign: bad types",x,0);
@@ -597,6 +610,7 @@ VP flatten(VP x) {
 	if(x->n) {
 		for(i=0;i<x->n;i++) {
 			item=ELl(x,i);
+			if(item==NULL) continue;
 			if(LIST(item)) item=flatten(item);
 			if(!res) {
 				t=item->t; res=ALLOC_LIKE(item);
