@@ -1890,9 +1890,9 @@ VP _getmodular(VP x,VP y) {
 	}
 	VP tag=ELl(y,0);
 	VP res=apply(rootscope,tag); // need a fast-path dict lookup
-	if(LIST(res) && res->n==0) return 0;
+	if(res==NULL) return 0;
 	res=apply(res,Tt(get));
-	if(LIST(res) && res->n==0) return 0;
+	if(res==NULL) return 0;
 	return apply(res,ELl(y,1));
 }
 
