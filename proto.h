@@ -34,9 +34,11 @@ VP eachright(VP obj,VP fun);
 VP entag(VP x,VP t);
 VP entags(VP x,const char* name);
 static inline int _equalm(const VP x,const int xi,const VP y,const int yi);
+int _equal(const VP x,const VP y);
 VP evalstrin(const char* str,VP ctx);
 VP evalin(VP str,VP ctx);
 int _find1(VP x,VP y);
+int _findbuf(const VP x,const buf_t y); // returns index or -1 on not found
 VP first(VP x);
 VP flatten(VP x);
 VP get(VP x,VP y);

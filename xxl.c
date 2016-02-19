@@ -323,7 +323,7 @@ static inline int _equalm(const VP x,const int xi,const VP y,const int yi) {
 	if(memcmp(ELi(x,xi),ELi(y,yi),x->itemsz)==0) return 1;
 	else return 0;
 }	
-inline int _equal(const VP x,const VP y) {
+int _equal(const VP x,const VP y) {
 	// this is the most common call in the code
 	// TODO _equal() needs to handle comparison tolerance and type conversion
 	// TODO _equal should use the new VARY_*() macros, except for general lists
@@ -781,7 +781,7 @@ VP take(const VP x,const VP y) {
 	VARY_EL(y, 0, ({ return take_(x,_x); }), typerr);
 	return (VP)0;
 }
-inline int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
+int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
 	// PF("findbuf\n");DUMP(x);
 	if(LISTDICT(x)) { ITERV(x,{ 
 		// PF("findbuf trying list\n"); DUMP(ELl(x,_i));
@@ -1876,7 +1876,7 @@ VP val(VP x) {
 	return EXC(Tt(type),"val can't operate on that type",x,0);
 }
 
-inline VP _getmodular(VP x,VP y) {
+VP _getmodular(VP x,VP y) {
 	ASSERT((DICT(x)||IS_x(x))&&LIST(y),"_getmodular");
 	PF("_getmodular");DUMP(y);
 	VP rootscope;
