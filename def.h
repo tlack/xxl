@@ -1,5 +1,6 @@
 #include <fcntl.h>
 #include <limits.h>
+#include <libgen.h>                    // dirname/basename
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -16,8 +17,8 @@
 #include <pthread.h>
 #endif
 
+#define XXLVER "v0"
 #define TESTITERS 1
-
 #ifndef DEBUG
 #define DEBUG 0
 #endif
@@ -130,7 +131,7 @@
 #endif
 
 #define EXC(type,lbl,x,y) ({ \
-	VP exc; exc = tagv("exception",xln(4,type,xfroms(lbl),x,y));  \
+	VP exc; exc = entag(xln(4,type,xfroms(lbl),x,y),Tt(exception));  \
 	if(0) printf("exception: %s\n", sfromx(repr(exc))); \
 	exc; }) 
 #define IF_EXC(cond,type,msg,x,y) if((cond)) return EXC(type,msg,x,y)
@@ -139,6 +140,7 @@
 #define RETURN_IF_EXC(x) if(x==0 || IS_EXC(x)) return x;
 
 // misc
+#define IOBLOCKSZ 10*1024
 #define MAXSTACK 2048
 #define LIKELY(x)       __builtin_expect((x),1)
 #define UNLIKELY(x)     __builtin_expect((x),0)
@@ -156,7 +158,14 @@ TYD(type_t,I8); TYD(buf_t,I8*);
 TYD(tag_t,I128);
 
 /* Structure for most values. 'st' and 'dyn' static and dynamic storage for data */
-struct V { type_t t; tag_t tag; I32 n; I32 cap; I32 itemsz; I32 sz; I32 rc; I8 alloc; buf_t next; union { I8 st[32]; buf_t dyn;};};
+struct V { 
+	type_t t; tag_t tag; 
+	I32 n; I32 cap; I32 itemsz; I32 sz; // cur number of items, capacity, size each, total sz
+	I32 rc;                             // ref count. starts at 1
+	unsigned int alloc:1;               // self-contained (st member) or has an allocated dynamic buffer (dyn)?
+	unsigned int _pad:7; 
+	buf_t next; 
+	union { I8 st[32]; buf_t dyn;};};
 typedef struct V* VP; /* value pointer */
 
 typedef VP (unaryFunc)(VP x);
@@ -178,11 +187,13 @@ struct xxl_index_t {
 };
 #endif
 
-// GLOBALS FROM xxl.c
-extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; 
 #ifdef THREAD
-extern __thread I8 IN_OUTPUT_HANDLER; 
+#define THREADLOCAL __thread
 #else
-extern I8 IN_OUTPUT_HANDLER;
+#define THREADLOCAL
 #endif
+
+// GLOBALS FROM xxl.c
+extern VP XB0; extern VP XB1; extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; 
+extern THREADLOCAL I8 IN_OUTPUT_HANDLER; 
 extern I8 MEM_WATCH;

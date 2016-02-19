@@ -17,29 +17,37 @@ VP assign(VP x,VP k,VP val);
 VP behead(VP x); // everything except the first element
 VP cast(VP x,VP y);
 VP capacity(VP x);
+VP catenate(VP x,VP y);
 VP clone(VP obj);
 VP condense(VP x);
 VP curtail(VP x); // everything except the last element
+VP deal(VP x,VP y);
 VP deep(VP obj,VP f);
 VP dict(VP x,VP y);
 static inline VP divv(VP x,VP y);
 VP drop_(VP x,int i);
 VP drop(VP x,VP y);
 VP each(VP obj,VP fun);
-static inline VP entag(VP x,VP t);
-static inline VP entags(VP x,const char* name);
+VP eachboth(VP obj,VP fun);
+VP eachleft(VP obj,VP fun);
+VP eachright(VP obj,VP fun);
+VP entag(VP x,VP t);
+VP entags(VP x,const char* name);
 static inline int _equalm(const VP x,const int xi,const VP y,const int yi);
+int _equal(const VP x,const VP y);
 VP evalstrin(const char* str,VP ctx);
 VP evalin(VP str,VP ctx);
 int _find1(VP x,VP y);
+int _findbuf(const VP x,const buf_t y); // returns index or -1 on not found
 VP first(VP x);
+VP flatten(VP x);
 VP get(VP x,VP y);
 VP greater(VP x,VP y); 
 VP info(VP x);
-VP join(VP x,VP y);
 VP iftrue(VP x,VP y);
 VP ifelse(VP x,VP y);
 VP itemsz(VP x);
+VP join(VP list,VP sep);
 VP last(VP x);
 VP len(VP x); 
 VP lesser(VP x,VP y); 
@@ -57,6 +65,7 @@ VP not(VP x);
 VP over(VP x,VP y);
 VP or(VP x,VP y);
 VP parse(VP x);
+VP parseloopoper(VP x);
 VP parsestr(const char* str);
 VP plus(VP x,VP y);
 void repl(VP ctx);
@@ -65,12 +74,14 @@ char* repr0(VP x,char* s,size_t len);
 char* reprA(VP x);
 VP reverse(VP x);
 VP rootctx();
+VP selftest(VP x);
 VP set(VP x,VP y);
 const char* sfromx(VP x);
 VP shift_(VP x,int i);
 VP shift(VP x,VP y);
 VP show(VP x);
 VP split(VP x,VP tok);
+VP str(VP x);
 static inline VP str2num(VP x);
 static inline VP str2tag(VP str); // turns string, or list of strings, into tag vector
 VP sum(VP x);
@@ -95,6 +106,7 @@ VP xfree(VP x);
 VP xfroms(const char* str);
 VP xor(VP x,VP y);
 VP xrealloc(VP x,I32 newn);
+VP xray(VP x);
 VP xref(VP x);
 
 #ifdef STDLIBNET
@@ -105,7 +117,11 @@ VP netloop(VP xsock,VP cb);
 
 #ifdef STDLIBFILE
 // stdlib
+VP filebasename(VP fn);
+VP filedirname(VP fn);
+VP filecwd(VP dummy);
 VP fileget(VP fn);
+VP filepath(VP pathlist);
 VP fileset(VP str,VP fn);
 #endif
 
@@ -114,3 +130,6 @@ VP sharedlibget(VP fn);
 VP sharedlibset(VP fn,VP funs);
 #endif
 
+#ifdef STDLIBSHELL
+VP shellget(VP cmd);
+#endif

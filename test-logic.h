@@ -71,6 +71,17 @@ b=evalstrin(". get['file,\"def.h\"]",c);
 DUMP(b);
 ASSERT(IS_c(b)&&b->n>5000,"stdlib modular get def.h");
 xfree(c);xfree(b);
+c=mkworkspace();
+b=evalstrin("[\"a\",\"b\",\".x\"] .file.path",c);
+ASSERT(_equal(b,xfroms("a/b.x")),".file.path");
+c=mkworkspace();
+b=evalstrin("\"/a/b/c\" .file.basename",c);
+ASSERT(_equal(b,xfroms("c")),".file.basename");
+xfree(b);xfree(c);
+c=mkworkspace();
+b=evalstrin("\"/a/b/c\" .file.dirname",c);
+ASSERT(_equal(b,xfroms("/a/b")),".file.dirname");
+xfree(b);xfree(c);
 #endif
 
 c=mkworkspace();
@@ -82,4 +93,29 @@ c=mkworkspace();
 b=evalstrin("['abc:100,'xyz:999]each{-1}",c);
 a=evalstrin("['abc:99,'xyz:998]",c);
 ASSERT(_equal(repr(b),repr(a)),"dict each");
+
+
+c=mkworkspace();
+b=evalstrin("7 as 'p;[[p]]",c);
+ASSERT(_equal(b,xi(7)),"nested simple listexpr");
+
+c=mkworkspace();
+b=evalstrin("[1,2,3],[9,8,7] eachb +",c);
+ASSERT(_equal(b,xin(3,10,10,10)),"eachboth");
+
+c=mkworkspace();
+b=evalstrin("[1,2,3],[9,8,7] >: +",c);
+ASSERT(_equal(b,xin(3,10,10,10)),"eachboth short");
+
+c=mkworkspace();
+b=evalstrin("[1,2,3],[3] \\: +",c);
+ASSERT(_equal(b,xin(3,4,5,6)),"eachleft short");
+
+c=mkworkspace();
+b=evalstrin("[3],[1,2,3] /: +",c);
+ASSERT(_equal(b,xin(3,4,5,6)),"eachright short");
+
+c=mkworkspace();
+b=evalstrin("2,3,4 :: (*2)",c);
+ASSERT(_equal(b,xin(3,4,6,8)),"each as ::");
 

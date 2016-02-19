@@ -16,13 +16,18 @@
 	res=assign(res,Tt(parse),x1(&parse));
 	res=assign(res,Tt(repr),x1(&repr));
 	res=assign(res,Tt(rev),x1(&reverse));
+	#ifdef DEBUG
+	res=assign(res,Tt(selftest),x1(&selftest));
+	#endif
 	res=assign(res,Tt(show),x1(&show));
+	res=assign(res,Tt(str),x1(&str));
 	res=assign(res,Tt(sum),x1(&sum));
 	res=assign(res,Tt(sums),x1(&sums));
 	res=assign(res,Tt(sys),x1(&sys));
 	res=assign(res,Tt(type),x1(&type));
 	res=assign(res,Tt(val),x1(&val));
 	res=assign(res,Tt(ver),xi(0));
+	res=assign(res,Tt(xray),x1(&xray));
 
 	// infix/binary operators
 	res=assign(res,Tt(=),x2(&equal));
@@ -36,12 +41,13 @@
 	res=assign(res,Tt(^),x2(&xor));
 	res=assign(res,xt(_tagnums("<")),x2(&lesser));
 	res=assign(res,xt(_tagnums(">")),x2(&greater));
+	res=assign(res,Tt(amend),x2(&amend));
 	res=assign(res,Tt(!),x2(&amend));
 	res=assign(res,Tt(@),x2(&apply));
 	res=assign(res,Tt(:),x2(&dict)); // gcc gets confused by Tt(,) - thinks its two empty args
 	res=assign(res,Tt(?),x2(&find1));
 	res=assign(res,Tt(~),x2(&matcheasy));
-	res=assign(res,xt(_tagnums(",")),x2(&join)); // gcc gets confused by Tt(,) - thinks its two empty args
+	res=assign(res,xt(_tagnums(",")),x2(&catenate)); // gcc gets confused by Tt(,) - thinks its two empty args
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
 	res=assign(res,Tt(cast),x2(&cast));
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));
@@ -49,16 +55,28 @@
 	res=assign(res,Tt(deep),x2(&deep));
 	res=assign(res,Tt(drop),x2(&drop));
 	res=assign(res,Tt(each),x2(&each));
+	res=assign(res,Tt(eachb),x2(&eachboth));
+	res=assign(res,Tt(eachl),x2(&eachleft));
+	res=assign(res,Tt(eachr),x2(&eachright));
+	res=assign(res,Tt(::),x2(&each));
+	res=assign(res,xt(_tagnums(">:")),x2(&eachboth));
+	res=assign(res,xt(_tagnums("\\:")),x2(&eachleft));
+	res=assign(res,xt(_tagnums("/:")),x2(&eachright));
+	res=assign(res,xt(_tagnums("<:")),x2(&eachpair));
 	res=assign(res,Tt(evalin),x2(&evalin));
 	res=assign(res,Tt(get),x2(&get));
 	res=assign(res,Tt(iftrue),x2(&iftrue));
 	res=assign(res,Tt(ifelse),x2(&ifelse));
 	res=assign(res,Tt(in),x2(&matchany));
+	res=assign(res,Tt(join),x2(&join));
 	res=assign(res,Tt(loadin),x2(&loadin));
 	res=assign(res,Tt(nest),x2(&nest));
 	res=assign(res,Tt(pick),x2(&pick));
 	res=assign(res,Tt(over),x2(&over));
+	res=assign(res,xt(_tagnums("':")),x2(&over));
 	res=assign(res,Tt(rot),x2(&shift));
+	res=assign(res,Tt(scan),x2(&scan));
+	res=assign(res,xt(_tagnums(",:")),x2(&scan));
 	res=assign(res,Tt(split),x2(&split));
 	res=assign(res,Tt(take),x2(&take));
 	res=assign(res,Tt(wide),x2(&wide));
@@ -66,8 +84,14 @@
 	//stdlib
 	VP d;
 	#ifdef STDLIBFILE
+	// note: assigns 'cwd' in root too
 	d=xd0();
+	d=assign(d,Tt(basename),x1(&filebasename));
+	res=assign(res,Tt(cwd),x1(&filecwd));
+	d=assign(d,Tt(cwd),x1(&filecwd));
+	d=assign(d,Tt(dirname),x1(&filedirname));
 	d=assign(d,Tt(get),x1(&fileget));
+	d=assign(d,Tt(path),x1(&filepath));
 	d=assign(d,Tt(set),x2(&fileset));
 	res=assign(res,Tt(file),d);
 	xfree(d);
@@ -78,6 +102,13 @@
 	d=assign(d,Tt(get),x1(&sharedlibget));
 	d=assign(d,Tt(set),x2(&sharedlibset));
 	res=assign(res,Tt(sharedlib),d);
+	xfree(d);
+	#endif
+
+	#ifdef STDLIBSHELL
+	d=xd0();
+	d=assign(d,Tt(get),x1(&shellget));
+	res=assign(res,Tt(shell),d);
 	xfree(d);
 	#endif
 

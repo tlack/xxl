@@ -378,6 +378,14 @@
 	xfree(ctx);xfree(tmp1);xfree(tmp2);
 
 	ctx=mkworkspace();
+	append(ctx,parsestr("['q:1,'w:2] as 'd;d,['w:5]"));
+	tmp1=apply(ctx,xi(3));
+	tmp2=evalstrin("['q:1, 'w:5]", ctx);
+	DUMP(tmp1);DUMP(tmp2);
+	ASSERT(_equal(tmp1,tmp2),"test join dict literal");
+	xfree(ctx);xfree(tmp1);xfree(tmp2);
+
+	ctx=mkworkspace();
 	append(ctx,parsestr(";{x*y}as 'z;7 z 6")); // without the semicolon the system tries to use xl0 as x.. helpfully
 	// note: last part above used to read 'z 7 6' but the interpreter was getting
 	// confused by the context (z) sometimes being treated as data and sometimes
@@ -436,7 +444,21 @@ c=mkworkspace();
 b=parsestr("\n//x\n");
 ASSERT(b->n==2 && ELl(b,0)->tag==Ti(ws) && ELl(b,1)->tag==Ti(comment) && ELl(b,1)->n==4,"comment after newline");
 xfree(c);xfree(b);
+
 c=mkworkspace();
 b=parsestr("\n//x\n\n//y");
 ASSERT(b->n==4 && ELl(b,0)->tag==Ti(ws) && ELl(b,1)->tag==Ti(comment) && ELl(b,1)->n==4,"comment after newline part deux");
+xfree(c);xfree(b);
+
+c=mkworkspace();
+b=parsestr(":a::b::c:");
+DUMP(b);
+ASSERT(b->n==8 && 
+			 ELl(b,0)->tag==Ti(raw) && 
+			 ELl(b,1)->tag==Ti(name) && 
+			 ELl(b,2)->tag==Ti(oper) && 
+			 ELl(b,3)->tag==Ti(name) && 
+			 ELl(b,4)->tag==Ti(oper) && 
+			 ELl(b,5)->tag==Ti(name) && 
+			 ELl(b,6)->tag==Ti(raw), "long oper");
 xfree(c);xfree(b);

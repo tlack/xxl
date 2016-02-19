@@ -1,10 +1,10 @@
-BUILDH="yes"
+BUILDH="no"
 CC="gcc"
 NODE="node" # often 'nodejs'
 ARCH="-m64"
 LIBS="-pthread "
-DEBUG=""
-DEBUG="-DDEBUG -g"  # comment out for silence
+DEBUG="-pg"
+DEBUG="-DDEBUG -g -pg -ggdb3"  # comment out for silence
 OPT=""
 # OPT="-O3"
 DEFS="-DTHREAD $DEBUG $OPT"
@@ -12,7 +12,7 @@ WARN="-Wall -Wno-format-extra-args -Wno-unused-function -Wno-unused-value "
 WARN="$WARN -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format"
 
 # decide what goes into stdlib
-STDLIB="-DSTDLIBFILE -DSTDLIBNET -DSTDLIBSHAREDLIB"
+STDLIB="-DSTDLIBFILE -DSTDLIBNET -DSTDLIBSHAREDLIB -DSTDLIBSHELL "
 
 # command to use to run it - put testing args to binary for execution here
 RUN="./xxl $*"
@@ -39,6 +39,13 @@ if which rlwrap >/dev/null; then
 	RUN="rlwrap $RUN"
 fi
 
+SRCPATH=`pwd`
+COMPILE="$CC $DEFS $WARN $LIBS $ARCH $STDLIB "
+COMPILEOBJ="$COMPILE -c "
+COMPILESHARED="$COMPILE -fPIC -shared "
+BUILDOBJ="$COMPILE -o  "
+BUILDSHARED="$COMPILE -fPIC -shared -o "
+
 if [ "x$BUILDH" = "xyes" ]; then
 	$NODE accessors.js > accessors.h && \
 	$NODE vary.js > vary.h && \
@@ -47,21 +54,29 @@ if [ "x$BUILDH" = "xyes" ]; then
 	$NODE repr.js > repr.h 
 fi
 
-echo "#define XXL_COMPILE \"$CC $DEFS $WARN $LIBS $ARCH $STDLIB\"" > compile.h
+echo "" > compile.h
+echo "#define XXL_SRCPATH \"$SRCPATH\"" >> compile.h
+echo "#define XXL_COMPILEOBJ \"$COMPILEOBJ\"" >> compile.h
+echo "#define XXL_COMPILESHARED \"$COMPILESHARED\"" >> compile.h
+echo "#define XXL_BUILDOBJ \"$BUILDOBJ\"" >> compile.h
+echo "#define XXL_BUILDSHARED \"$COMPILESHARED\"" >> compile.h
 
-$CC $DEFS $WARN $LIBS $ARCH $STDLIB \
-	xxl.c -c 2>&1 \
+$COMPILEOBJ \
+	xxl.c 2>&1 \
 	&& \
-$CC $DEFS $WARN $LIBS $ARCH $STDLIB \
-	repl.c -c 2>&1 \
+$COMPILEOBJ \
+	repl.c 2>&1 \
 	&& \
-$CC $DEFS $WARN $LIBS $ARCH $STDLIB \
-	net.c -c 2>&1 \
+$COMPILEOBJ \
+	net.c 2>&1 \
 	&& \
-$CC $DEFS $WARN $LIBS $ARCH $STDLIB \
-	xxl.o repl.o net.o -o ./xxl 2>&1 \
+$COMPILEOBJ \
+	stdlib.c 2>&1 \
 	&& \
-$RUN
+$BUILDOBJ xxl \
+	xxl.o repl.o net.o stdlib.o 2>&1 \
+	&& \
+clear && $RUN
 
 
 
