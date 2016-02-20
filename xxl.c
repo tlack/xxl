@@ -1073,7 +1073,14 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 				left=proj(2,&set,xln(2,parent,left),NULL);
 				left->tag=Ti(setproj);
 				xfree(left);
-				PF("created set projection\n");
+				PF("created set projection (as)\n");
+				DUMP(left);
+				continue;
+			} else if(item->n==2 && ch=='i' && AS_c(item,1)=='s') {
+				left=proj(2,&set2,xln(2,parent,left),NULL);
+				left->tag=Ti(setproj);
+				xfree(left);
+				PF("created set projection (is)\n");
 				DUMP(left);
 				continue;
 			} else if(item->n == 4 && ch == 'l' 
@@ -1993,6 +2000,10 @@ VP set(VP x,VP y) {
 		return EXC(Tt(set),"could not set value in parent scope",x,y);
 	}
 	return xl0();
+}
+
+VP set2(VP x,VP y) {                   // exactly like set, but arguments are [[ctx,name],[value]]
+	VP acc=xln(2,ELl(x,0),y), res=set(acc,ELl(x,1)); xfree(acc); return res;
 }
 
 VP numelem2base(VP num,int i,int base) {

@@ -75,7 +75,8 @@ char* reprA(VP x);
 VP reverse(VP x);
 VP rootctx();
 VP selftest(VP x);
-VP set(VP x,VP y);
+VP set(VP x,VP y);                     // used for 'as'
+VP set2(VP x,VP y);                    // same as set, but input arg order switched (for 'is')
 const char* sfromx(VP x);
 VP shift_(VP x,int i);
 VP shift(VP x,VP y);
