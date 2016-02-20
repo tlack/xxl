@@ -53,7 +53,7 @@ example with 7, the result would be `(0,1,2,3,4,5,6i)`.
 dividing by zero is naughty and because anything can be divided by 1. Now we
 have `2,3,4,5,6i` built up as our argument to the next verb.
 
-`% 7 invokes the "mod" operator, returning the integer remainder of x divided
+`% 7` invokes the "mod" operator, returning the integer remainder of x divided
 by y. This part highlights an interesting and important detail of XXL that
 separates it many common programming languages: most simple operators, like the math
 functions `+ - / * % | &` can work with one or more numbers on both sides of
