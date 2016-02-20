@@ -125,6 +125,11 @@
 #define ALLOC_LIKE_SZ(x,sz) ({ VP new_ = xalloc(x->t,sz); if(UNLIKELY(x->tag))new_->tag=x->tag; new_; })
 #define ALLOC_BEST_FIT(val,sz) (xalloc(BEST_NUM_FIT(bval),sz))
 
+// does nothing for now, but as we ponder the switch to immutability, i thought it would be good
+// to mark parts of code that change their input arguments' values, so that we can have a good map
+// of the semantic and structural changes that immutability might require
+#define ARG_MUTATING(x) 
+
 #ifdef DEBUG
 	#define TRACELBL(x,lbl) ( (x)->tag=lbl, x )
 #else

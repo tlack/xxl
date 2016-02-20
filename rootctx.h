@@ -29,7 +29,8 @@
 	res=assign(res,Tt(ver),xi(0));
 	res=assign(res,Tt(xray),x1(&xray));
 
-	// infix/binary operators
+	// infix/binary verbs
+	// operators:
 	res=assign(res,Tt(=),x2(&equal));
 	res=assign(res,Tt(+),x2(&plus));
 	res=assign(res,Tt(-),x2(&minus));
@@ -41,13 +42,22 @@
 	res=assign(res,Tt(^),x2(&xor));
 	res=assign(res,xt(_tagnums("<")),x2(&lesser));
 	res=assign(res,xt(_tagnums(">")),x2(&greater));
-	res=assign(res,Tt(amend),x2(&amend));
 	res=assign(res,Tt(!),x2(&amend));
 	res=assign(res,Tt(@),x2(&apply));
-	res=assign(res,Tt(:),x2(&dict)); // gcc gets confused by Tt(,) - thinks its two empty args
+	res=assign(res,Tt(:),x2(&dict)); 
 	res=assign(res,Tt(?),x2(&find1));
 	res=assign(res,Tt(~),x2(&matcheasy));
-	res=assign(res,xt(_tagnums(",")),x2(&catenate)); // gcc gets confused by Tt(,) - thinks its two empty args
+	res=assign(res,xt(_tagnums(",")),x2(&catenate)); 
+	// looping operators:
+	res=assign(res,Tt(::),x2(&each));
+	res=assign(res,xt(_tagnums(">:")),x2(&eachboth));
+	res=assign(res,xt(_tagnums("\\:")),x2(&eachleft));
+	res=assign(res,xt(_tagnums("/:")),x2(&eachright));
+	res=assign(res,xt(_tagnums("<:")),x2(&eachpair));
+	res=assign(res,xt(_tagnums("':")),x2(&over));
+	res=assign(res,xt(_tagnums(",:")),x2(&scan));
+	// named verbs:
+	res=assign(res,Tt(amend),x2(&amend));
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
 	res=assign(res,Tt(cast),x2(&cast));
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));
@@ -58,11 +68,6 @@
 	res=assign(res,Tt(eachb),x2(&eachboth));
 	res=assign(res,Tt(eachl),x2(&eachleft));
 	res=assign(res,Tt(eachr),x2(&eachright));
-	res=assign(res,Tt(::),x2(&each));
-	res=assign(res,xt(_tagnums(">:")),x2(&eachboth));
-	res=assign(res,xt(_tagnums("\\:")),x2(&eachleft));
-	res=assign(res,xt(_tagnums("/:")),x2(&eachright));
-	res=assign(res,xt(_tagnums("<:")),x2(&eachpair));
 	res=assign(res,Tt(evalin),x2(&evalin));
 	res=assign(res,Tt(get),x2(&get));
 	res=assign(res,Tt(iftrue),x2(&iftrue));
@@ -73,10 +78,8 @@
 	res=assign(res,Tt(nest),x2(&nest));
 	res=assign(res,Tt(pick),x2(&pick));
 	res=assign(res,Tt(over),x2(&over));
-	res=assign(res,xt(_tagnums("':")),x2(&over));
 	res=assign(res,Tt(rot),x2(&shift));
 	res=assign(res,Tt(scan),x2(&scan));
-	res=assign(res,xt(_tagnums(",:")),x2(&scan));
 	res=assign(res,Tt(split),x2(&split));
 	res=assign(res,Tt(take),x2(&take));
 	res=assign(res,Tt(wide),x2(&wide));
@@ -96,7 +99,6 @@
 	res=assign(res,Tt(file),d);
 	xfree(d);
 	#endif
-
 	#ifdef STDLIBSHAREDLIB
 	d=xd0();
 	d=assign(d,Tt(get),x1(&sharedlibget));
@@ -104,14 +106,12 @@
 	res=assign(res,Tt(sharedlib),d);
 	xfree(d);
 	#endif
-
 	#ifdef STDLIBSHELL
 	d=xd0();
 	d=assign(d,Tt(get),x1(&shellget));
 	res=assign(res,Tt(shell),d);
 	xfree(d);
 	#endif
-
 	#ifdef STDLIBNET
 	d=xd0();
 	d=assign(d,Tt(bind),x2(&netbind));

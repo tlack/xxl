@@ -465,6 +465,7 @@ inline VP assign(VP x,VP k,VP val) {
 		int i=0;VP res=x;
 		for(;i<k->n-1;i++) {
 			PF("assign-at-depth %d\n",i);
+			ARG_MUTATING(x);
 			res=apply(res,ELl(k,i));
 			DUMP(res);
 			if(UNLIKELY(IS_EXC(res)) || res->n==0)
@@ -481,7 +482,8 @@ inline VP assign(VP x,VP k,VP val) {
 		if(val->n == 0) return EXC(Tt(value),"assignment with empty values not supported on simple types",x,val);
 		if(x->t != val->t) return EXC(Tt(type),"assign value and target types don't match",x,val);
 		int typerr=-1, i=NUM_val(k);
-		if (i>=x->n) { xrealloc(x,i+1); x->n=i+1; }
+		ARG_MUTATING(x);
+		if (i>=x->n) { xrealloc(x,i+1); x->n=i+1; } 
 		VARY_EACHRIGHT_NOFLOAT(x,k,({
 			EL(x,typeof(_x),_y) = EL(val,typeof(_x),_y%val->n); // TODO assign should create new return value
 		}),typerr);
@@ -490,6 +492,7 @@ inline VP assign(VP x,VP k,VP val) {
 	} else if(LIST(x) && NUM(k)) {
 		int i=NUM_val(k);
 		PF("%d\n",i);
+		ARG_MUTATING(x);
 		if (i>=x->n) { xrealloc(x,i+1); x->n=i+1; }
 		if(i < x->n && ELl(x,i)) xfree(ELl(x,i));
 		EL(x,VP,i)=val;
@@ -515,8 +518,8 @@ VP catenate(VP x,VP y) {
 		appendbuf(res, BUF(x), x->n); appendbuf(res, BUF(y), y->n);
 	} else {
 		PF("join3\n");
-		if(DICT(x)) return dict(x,y);
-		else if(LIST(x) && !LIST(y)) res=append(x,y);
+		if(DICT(x)) { ARG_MUTATING(x); return dict(x,y); }
+		else if(LIST(x) && !LIST(y)) { ARG_MUTATING(x); res=append(x,y); }
 		else {
 			PF("join4\n");
 			res=xlsz(2);
@@ -535,6 +538,7 @@ VP curtail(VP x) {
 VP dict(VP x,VP y) {
 	PF("dict\n");DUMP(x);DUMP(y);
 	if(DICT(x)) {
+		ARG_MUTATING(x);
 		if(DICT(y)) {
 			ASSERT(LIST(KEYS(x)) && LIST(VALS(x)),"dict() x keys or vals not list");
 			int n = KEYS(y)->n;
@@ -663,10 +667,9 @@ VP nullfun(VP x) {
 VP replaceleft(VP x,int n,VP replace) { // replace first i values with just 'replace'
 	int i;
 	ASSERT(LIST(x),"replaceleft arg must be list");
+	ARG_MUTATING(x);
 	for(i=0;i<n;i++) xfree(ELl(x,i));
-	if(n>1) {
-		memmove(ELi(x,1),ELi(x,n),x->itemsz*(x->n-n));
-	}
+	if(n>1) { memmove(ELi(x,1),ELi(x,n),x->itemsz*(x->n-n)); }
 	EL(x,VP,0)=replace;
 	x->n=x->n-i;
 	return x;
@@ -680,10 +683,8 @@ VP reverse(VP x) {
 VP shift_(VP x,int i) {
 	// PF("shift_ %d\n",i);DUMP(x);
 	int n=x->n;
-	if(i<0) 
-		return catenate(take_(x,i%n),drop_(x,i%n));
-	else
-		return catenate(drop_(x,i%n),take_(x,i%n));
+	if(i<0) return catenate(take_(x,i%n),drop_(x,i%n));
+	else return catenate(drop_(x,i%n),take_(x,i%n));
 }
 VP shift(VP x,VP y) {
 	PF("shift\n");DUMP(x);DUMP(y);
@@ -703,7 +704,7 @@ VP show(VP x) {
 	return x;
 }
 VP splice(VP x,VP idx,VP replace) {
-	int i, first = AS_i(idx,0),last=first+idx->n;
+	int i, first=AS_i(idx,0), last=first+idx->n;
 	VP acc;
 	PF("splice (%d len) %d..%d",x->n, first,last);DUMP(x);DUMP(idx);DUMP(replace);
 	if(first==0 && last==x->n) return replace;
@@ -728,12 +729,12 @@ VP splice(VP x,VP idx,VP replace) {
 }
 VP split(VP x,VP tok) {
 	PF("split\n");DUMP(x);DUMP(tok);
-	VP tmp=0,tmp2=0; int typerr=-1;
+	VP tmp=0, tmp2=0; int typerr=-1;
 
 	// special case for empty or null tok.. split vector into list
 	if(tok->n==0) {
 		tmp=xl0();
-		if(LIST(x))return x;
+		if(LIST(x)) return x;
 		VARY_EACHLIST(x,({
 			// PF("in split vary_each %c\n",_x);
 			tmp2=ALLOC_LIKE_SZ(x, 1);
@@ -744,14 +745,12 @@ VP split(VP x,VP tok) {
 		PF("split returning\n");DUMP(tmp);
 		return tmp;
 	} else if(x->t == tok->t) {
-		int j,i=0,last=0,tokn=tok->n;
-		VP rest=x,acc=0;
-		for(;i<x->n;i++) {
-			for(j=0;j < tokn;j++) {
-				if (!_equalm(x,i+j,tok,j)) 
-					break;
-				if(j==tokn-1) {
-					// we made it!
+		int j, i=0, last=0, tokn=tok->n;
+		VP rest=x, acc=0;
+		for(; i<x->n; i++) {
+			for(j=0; j<tokn; j++) {
+				if(!_equalm(x,i+j,tok,j)) break;
+				if(j==tokn-1) { // we made it to the end of the entire token!
 					if(!acc)acc=xlsz(x->n/1);
 					acc=append(acc,take_(rest,i-last));
 					rest=drop_(rest,i+(tokn)-last);
@@ -762,39 +761,34 @@ VP split(VP x,VP tok) {
 		if(acc){ acc=append(acc,rest); return acc; }
 		else return x;
 	}
-
 	return EXC(Tt(nyi),"split with that type of data not yet implemented",x,tok);
 }
-VP take_(const VP x,const int i) {
+VP take_(const VP x, const int i) {
 	VP res;
 	int st, end, xn=x->n;
-	if (i<0) { st=ABS((xn+i)%xn); end=ABS(i)+st; } else { st=0; end=i; }
+	if(i<0) { st=ABS((xn+i)%xn); end=ABS(i)+st; } else { st=0; end=i; }
 	res=ALLOC_LIKE_SZ(x,end-st);
 	FOR(st,end,({ res=appendbuf(res,ELi(x,_i % xn),1); }));
 	return res;
 }
-VP take(const VP x,const VP y) {
+VP take(const VP x, const VP y) {
 	int typerr=-1;
-	size_t st,end; //TODO slice() support more than 32bit indices
+	size_t st, end; //TODO slice() support more than 32bit indices
 	PF("take args\n"); DUMP(x); DUMP(y);
-	IF_RET(!NUM(y) ||!SCALAR(y), EXC(Tt(type),"take x arg must be single numeric",x,y));	
+	IF_RET(!NUM(y) || !SCALAR(y), EXC(Tt(type),"take x arg must be single numeric",x,y));	
 	VARY_EL(y, 0, ({ return take_(x,_x); }), typerr);
 	return (VP)0;
 }
-int _findbuf(const VP x,const buf_t y) {   // returns index or -1 on not found
+int _findbuf(const VP x, const buf_t y) {   // returns index or -1 on not found
 	// PF("findbuf\n");DUMP(x);
 	if(LISTDICT(x)) { ITERV(x,{ 
-		// PF("findbuf trying list\n"); DUMP(ELl(x,_i));
 		IF_RET(_findbuf(ELl(x,_i),y)!=-1,_i);
-		// PF("findbuf no list match\n");
 	}); } else {
-		// PF("findbuf trying vector\n");
 		ITERV(x,{ IF_RET(memcmp(ELi(x,_i),y,x->itemsz)==0,_i); });
-		// PF("findbuf no vector match\n");
 	}
 	return -1;
 }
-inline int _find1(const VP x,const VP y) {        // returns index or -1 on not found
+inline int _find1(const VP x, const VP y) {        // returns index or -1 on not found
 	// probably the most common, core call in the code. worth trying to optimize.
 	// PF("_find1\n",x,y); DUMP(x); DUMP(y);
 	ASSERT(LISTDICT(x) || (x->t==y->t && y->n==1), "_find1(): x must be list, or types must match with right scalar");
@@ -803,7 +797,7 @@ inline int _find1(const VP x,const VP y) {        // returns index or -1 on not 
 	else scan=x;
 	if(LIST(scan)) {
 		int i, sn=scan->n, yn=y->n, yt=y->t; VP item;
-		for(i=0;i<sn;i++) {
+		for(i=0; i<sn; i++) {
 			item=ELl(scan,i);
 			if(item && ( (item->t == yt && item->n == yn) ||
 									 LIST(item) && ELl(item,0)->t == yt ))
@@ -814,13 +808,13 @@ inline int _find1(const VP x,const VP y) {        // returns index or -1 on not 
 		ITERV(x,{ IF_RET(memcmp(ELi(x,_i),ELi(y,0),x->itemsz)==0,_i); });
 	return -1;    // The code of this function reminds me of Armenia, or some war torn place
 }
-VP find1(VP x,VP y) {
+VP find1(VP x, VP y) {
 	return xi(_find1(x,y));
 }
-int _contains(VP x,VP y) {
+int _contains(VP x, VP y) {
 	return _find1(x,y)==-1 ? 0 : 1;
 }
-VP contains(VP x,VP y) {
+VP contains(VP x, VP y) {
 	return xi(_contains(x,y));
 }
 VP condense(VP x) {
@@ -832,7 +826,7 @@ VP condense(VP x) {
 	// PF("condense returning\n");DUMP(acc);
 	return acc;
 }
-VP cast(VP x,VP y) { 
+VP cast(VP x, VP y) { 
 	// TODO cast() should short cut matching kind casts 
 	#define BUFSZ 128
 	VP res=0; I8 buf[BUFSZ]={0}; int typetag=-1;type_t typenum=-1; 
@@ -852,8 +846,7 @@ VP itemsz(VP x) {
 	return xi(x->itemsz);
 }
 VP info(VP x) {
-	VP res;
-	type_info_t t;
+	VP res; type_info_t t;
 	t=typeinfo(x->t);
 	res=xd0();
 	res=assign(res,Tt(typenum),xi(x->t));
@@ -868,42 +861,38 @@ VP info(VP x) {
 }
 VP type(VP x) {
 	if(x==0 || x->t<0 || x->t>MAX_TYPE) return Tt(null);
-	type_info_t t;
-	t=typeinfo(x->t);
+	type_info_t t=typeinfo(x->t);
 	return xt(_tagnums(t.name));
 }
-VP deal(VP range,VP amt) {
+VP deal(VP range, VP amt) {
 	PF("deal\n");DUMP(range);DUMP(amt);
 	IF_EXC(!LIST(range) && !NUM(range),Tt(type),"deal: left arg must be numeric", range, amt);
 	IF_EXC(!IS_i(amt) || !SCALAR(amt),Tt(type),"deal: single right arg must be int", range, amt);
-
 	int typerr=-1;
-	VP acc=NULL;
-
 	if(LIST(range)) {
-		int i, rn=range->n, amtt=AS_i(amt,0); acc=xlsz(AS_i(amt,0));
-		for(i=0; i<amtt; i++)
-			acc=append(acc,ELl(range,rand()%rn));
+		int i, rn=range->n, amtt=NUM_val(amt); 
+		VP acc=xlsz(amtt);
+		for(i=0; i<amtt; i++) acc=append(acc,ELl(range,rand()%rn));
 		return acc;
 	} else {
+		VP acc=NULL;
 		VARY_EL(amt, 0, ({ typeof(_x)amt=_x; acc=ALLOC_LIKE_SZ(range,_x); // TODO rethink deal in terms of more types
 			VARY_EL_NOFLOAT(range, 0, ({
 				FOR(0, amt, ({ EL(acc, typeof(_x), _i)=rand()%_x; }));
 				acc->n=amt;
 			}), typerr);}), typerr);
+		return acc;
 	}
-	return acc;
 }
 
 // APPLICATION, ITERATION AND ADVERBS
 
-static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
+static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 	// PF_LVL++;
 	PF("applyexpr (code, xarg, yarg):\n");DUMP(code);DUMP(xarg);DUMP(yarg);
 	// PF_LVL--;
 	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
 	if(SIMPLE(code) || !LIST(code)) return code;
-
 	char ch; int i; 
 	VP left=xarg,item=0;
 	tag_t tag, tcom=Ti(comment), texc=Ti(exception), texpr=Ti(expr), tlam=Ti(lambda), 
@@ -969,9 +958,8 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 	// MAYBE_RETURN needs to consider return_to*
 	if (!use_existing_item && !use_existing_left)
 		start_i=0;	
-	if(!use_existing_left) {
-		left=ELl(curframe,4);
-	} else {
+	if(!use_existing_left) left=ELl(curframe,4);
+	else {
 		PF("using existing left\n");DUMP(left);
 		if(left!=0 && UNLIKELY(IS_EXC(left))) { MAYBE_RETURN(left); }
 		use_existing_left=0;
@@ -999,9 +987,7 @@ static inline VP applyexpr(VP parent,VP code,VP xarg,VP yarg) {
 			if(item==0) continue;
 			if(UNLIKELY(IS_EXC(item))) { MAYBE_RETURN(item); }
 			goto evalexpr;
-		} else {
-			PF("picking up item from code %d\n", i); 
-		}
+		} else PF("picking up item from code %d\n", i); 
 		item=ELl(code,i);
 		PF("item=\n");DUMP(item);
 
