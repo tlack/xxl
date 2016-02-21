@@ -86,25 +86,36 @@
 #define ELi(v,n) ((BUF(v))+((v->itemsz)*(n)))                         // ..for index n (no type assumed)
 #define ELsz(v,sz,n) ((BUF(v))+(sz*n))                                // ..for index n, when casted to size = sz
 
-// Handy functions for manipulating values and their types
+// Handy functions for manipulating values and their types - from simple, to complex
+#define LEN(v) ((v)->n)
 #define SCALAR(v) ((v)->n==1)                            // is v a single value?
 #define NUM(v) (IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v)||IS_f(v))      // is v an int type?
 #define SIMPLE(v) (IS_t(v)||IS_c(v)||IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v)||IS_f(v))
 #define COMPARABLE(v) (NUM(v) || IS_c(v))
 #define LIST(v) ((v)->t==0)                              // is v a general list type?
+#define LIST_of_lists(v) (LIST(v) && LEN(v) && LIST(ELl(v,0)))
 #define ENLISTED(v) (LIST(v)&&SCALAR(v))                 // is v a single item inside a list?
+#define DISCLOSE(v) (ENLISTED(v) ? LIST_first(v) : v)
 #define EMPTYLIST(v) (LIST(v)&&v->n==0)                  // empty list
+#define LIST_first(v) (ELl(v,0))
+#define KEYS(v) (ELl(v,0))                               // keys for dict/table/ctx v
+#define VALS(v) (ELl(v,1))                               // values for dict/table/ctx v
 #define DICT(v) (IS_d(v))                                // is v a dictionary?
 #define LISTDICT(v) (IS_l(v)||IS_d(v))                   // is v a list or dictionary?
+#define TABLE(v) (IS_a(v))                               // is v a dictionary?
 #define CONTAINER(v) (IS_l(v)||IS_d(v)||IS_x(v))         // is v any kind of container? (i.e., non-vec but has children)
 #define CALLABLE(v) (IS_1(v)||IS_2(v)||IS_p(v)||IS_x(v)) // callable types - represent funcs or contexts
-#define KEYS(v) (ELl(v,0))                               // keys for dict v
-#define VALS(v) (ELl(v,1))                               // values for dict v
 
+// Helpful macros for specific types
 #define NUM_val(x) ( IS_i(x)?AS_i(x,0) : (IS_b(x)?AS_b(x,0) : (IS_j(x)?AS_j(x,0) : (IS_o(x)?AS_o(x,0) : -1))) )
+
 #define DICT_find(x,y) ({ int i = _find1(KEYS(x),y); i==-1?0:ELl(VALS(x),i); })
 #define DICT_key_n(x,y) (ELl(KEYS(x),y))
 #define DICT_val_n(x,y) (ELl(VALS(x),y))
+
+#define TABLE_col(x,n) (ELl(VALS(x),n))
+#define TABLE_ncols(x) (LEN(KEYS(x)))
+#define TABLE_nrows(x) (LEN(VALS(x))==0 ? 0 : TABLE_col(x,0)->n)
 
 // is this member of a context (gen list) a body of code? 
 #define LAMBDAISH(ctxmem) (LIST(ctxmem)&&(CALLABLE(ELl(ctxmem,0))||(ctxmem)->tag==Ti(lambda))) 
@@ -203,3 +214,5 @@ struct xxl_index_t {
 extern VP XB0; extern VP XB1; extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; 
 extern THREADLOCAL I8 IN_OUTPUT_HANDLER; 
 extern I8 MEM_WATCH;
+
+// TODO create "slice type" that literally represents a scalar value inside a pointer

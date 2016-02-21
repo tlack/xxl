@@ -123,6 +123,28 @@ char* repr_d(VP x,char* s,size_t sz) {
 	APF(sz,"]",0);
 	return s;
 }
+char* repr_a(VP x,char* s,size_t sz) { // table
+	int i, j, kn, vn;
+	VP k=KEYS(x), v=VALS(x), tmp, tmp2;
+	// if(!sz) return s;
+	if (!k || !v) { APF(sz,"[null]",0); return s; }
+	APF(sz,"[",0);
+	kn=k->n; vn=LEN(v) ? ELl(v,0)->n : 0;
+	repr0(k, s, sz-1);
+	APF(sz,"\n",0);
+	for(i=0; i<vn; i++) {
+		for(j=0; j<kn; j++) {
+			// TODO kill me. need shortcut apply or value-at type!
+			tmp=apply_simple_(ELl(v,j),i);
+			repr0(tmp, s, sz-2);
+			if(j!=kn-1) APF(sz,", ",0);
+			xfree(tmp);
+		}
+		if(i!=vn-1) APF(sz,"\n",0);
+	}
+	APF(sz,"]",0);
+	return s;
+}
 char* repr_l(VP x,char* s,size_t sz) {
 	int i=0, n=x->n;VP a;
 	APF(sz,"[",0);
@@ -508,27 +530,78 @@ VP behead(VP x) {
 	// PF("behead\n");DUMP(x);
 	return drop_(x,1);
 }
+VP catenate_table(VP table, VP row) {
+	PF("catenate_table\n"); DUMP(table); DUMP(row);
+	int trows=TABLE_nrows(table), tcols=TABLE_ncols(table);
+	if(DICT(row)) {
+		VP rk=KEYS(row), rv=VALS(row), rktmp, rvtmp, vec; int i=0;
+		ASSERT(LIST(rk)&&LIST(rv),"catenate_table: row keys or vals not list");
+		for(; i<rk->n; i++) {
+			rktmp=ELl(rk,i); rvtmp=ELl(rv,i);
+			vec=DICT_find(KEYS(table),rktmp);  // does this key already exist in table?
+			ARG_MUTATING(table);
+			if(vec==NULL) {
+				// NB. unknown columns are added, but old rows
+				// will get the same value as this one!
+				EL(table,VP,0)=append(ELl(table,0),rktmp);
+				EL(table,VP,1)=append(ELl(table,1),take_(rvtmp,trows));
+			} else vec=append(vec,rvtmp);
+		}
+		return table;
+	} else if (LIST(row)) {
+		int i=0;
+		// this could either be a single row, i.e., a list comprised of simple types,
+		// or a list of lists, meaning a list of individual lists of simple types. we'll
+		// check if the first member is a list to determine which we think it is.
+		if(LIST_of_lists(row) && LEN(LIST_first(row)) == tcols) {
+			PF("LOL\n");DUMP(row);
+			// TODO probably important not to recurse here
+			for(; i<row->n; i++) table=catenate_table(table,ELl(row,i));
+			return table;
+		} else {
+			VP colval;
+			if(row->n != tcols) return EXC(Tt(value),"table definition doesn't match list",table,row);
+			if(LEN(VALS(table))==0) {
+				for(i=0; i<LEN(row); i++) {
+					colval=ELl(row,i);
+					// if any of the values of this dictionary are not scalar, we'll need
+					// to make that column into a general list, or indexing row values will
+					// become very confusing indeed
+					if(!CONTAINER(colval) && !SCALAR(colval)) EL(row,VP,i)=xl(colval);
+				}
+				VALS(table) = row;
+			} else {
+				for(; i<row->n; i++) {
+					TABLE_col(table,i)=append(TABLE_col(table,i),ELl(row,i));
+				}
+			}
+			return table;
+		}
+	}
+	return EXC(Tt(type), "tables can't be joined with that type",table,row);
+}
 VP catenate(VP x,VP y) {
 	VP res=0;
-	PF("join\n");DUMP(x);DUMP(y);
+	PF("catenate\n");DUMP(x);DUMP(y);
 	int n = x->n + y->n;
 	if(!CONTAINER(x) && x->tag==0 && x->t==y->t) {
-		PF("join2\n");
+		PF("catenate2 - like simple objects\n");
 		res=ALLOC_LIKE_SZ(x, n);
 		appendbuf(res, BUF(x), x->n); appendbuf(res, BUF(y), y->n);
 	} else {
-		PF("join3\n");
-		if(DICT(x)) { ARG_MUTATING(x); return dict(x,y); }
+		PF("catenate3 - container as x, or unlike objects\n");
+		if(TABLE(x)) { return catenate_table(x,y); }
+		if(DICT(x)) { return dict(x,y); }
 		else if(LIST(x) && !LIST(y)) { ARG_MUTATING(x); res=append(x,y); }
 		else {
-			PF("join4\n");
+			PF("catenate4 - create 2-item list with both items in it\n");
 			res=xlsz(2);
 			res=append(res,x);
 			res=append(res,y);
 		}
 	}
 	//res=list2vec(res);
-	PF("join result");DUMP(res);
+	PF("catenate result");DUMP(res);
 	return res;
 }
 VP curtail(VP x) {
@@ -557,6 +630,7 @@ VP dict(VP x,VP y) {
 		PF("dict already dict returning\n");DUMP(x);
 		return x;
 	} else {
+		if(x->n > 1 && LIST_of_lists(y)) return make_table(x,y);
 		if(x->n > 1 && x->n != y->n) return EXC(Tt(value),"can't create dict from unlike vectors",x,y);
 		VP d=xd0();
 		if(LIKELY(SCALAR(x))) {
@@ -565,9 +639,11 @@ VP dict(VP x,VP y) {
 			else
 				d=assign(d,x,y);
 		} else {
-			int i;VP ii;
+			int i;VP tmp1,tmp2;
 			for(i=0;i<x->n;i++) {
-				ii=xi(i); d=assign(d,apply(x,ii),apply(y,ii));
+				tmp1=apply_simple_(x, i);
+				tmp2=apply_simple_(y, i);
+				d=assign(d,tmp1,tmp2);
 			}
 		}
 		d->n=2;
@@ -791,7 +867,7 @@ int _findbuf(const VP x, const buf_t y) {   // returns index or -1 on not found
 inline int _find1(const VP x, const VP y) {        // returns index or -1 on not found
 	// probably the most common, core call in the code. worth trying to optimize.
 	// PF("_find1\n",x,y); DUMP(x); DUMP(y);
-	ASSERT(LISTDICT(x) || (x->t==y->t && y->n==1), "_find1(): x must be list, or types must match with right scalar");
+	ASSERT(x && LISTDICT(x) || (x->t==y->t && y->n==1), "_find1(): x must be list, or types must match with right scalar");
 	VP scan;
 	if(UNLIKELY(DICT(x))) scan=KEYS(x);
 	else scan=x;
@@ -809,6 +885,8 @@ inline int _find1(const VP x, const VP y) {        // returns index or -1 on not
 	return -1;    // The code of this function reminds me of Armenia, or some war torn place
 }
 VP find1(VP x, VP y) {
+	if(!x || !(LISTDICT(x) || (x->t==y->t && SCALAR(y))))
+		return EXC(Tt(type),"find x must be list, or types must match with right scalar",x,y);
 	return xi(_find1(x,y));
 }
 int _contains(VP x, VP y) {
@@ -826,18 +904,65 @@ VP condense(VP x) {
 	// PF("condense returning\n");DUMP(acc);
 	return acc;
 }
-VP cast(VP x, VP y) { 
+VP table_row_list_(VP tbl, int row) { 
+	int tc=TABLE_ncols(tbl), i;
+	VP lst=xlsz(tc), res; 
+	for(i=0; i<tc; i++) { 
+		res=apply_simple_(TABLE_col(tbl,i), row); 
+		lst=append(lst,DISCLOSE(res)); 
+	}
+	return lst;
+}
+VP table_row_dict_(VP tbl, int row) {
+	return dict(clone(KEYS(tbl)), table_row_list_(tbl, row));
+}
+VP make_table(VP keys,VP vals) {
+  VP res, newvals; int i;
+	PF("make_table\n");DUMP(keys);DUMP(vals);
+	// approach: create empty table, then apply all these row values to it.
+	// catenate_table already handles lists-of-lists correctly.
+  res=xasz(2);
+	EL(res,VP,0)=clone(keys);
+	EL(res,VP,1)=xlsz(LEN(ELl(vals,0)));
+	res->n=2;
+	return catenate_table(res, vals);
+	if(LIST_of_lists(vals) && LEN(ELl(vals,0))==LEN(keys)) {
+	}
+	if(LEN(keys)!=LEN(vals)) return EXC(Tt(value),"tables require matching sized keys and vals",keys,vals);
+  EL(res,VP,0)=clone(keys);
+  newvals=clone(vals);
+  for(i=0; i<LEN(newvals); i++) {
+    // if any of the values of this dictionary are not scalar, we'll need
+    // to make that column into a general list, or indexing row values will
+    // become very confusing indeed
+    if(!SCALAR(ELl(newvals,i))) EL(newvals,VP,i)=xl(ELl(newvals,i));
+  }
+  EL(res,VP,1)=newvals;
+  res->n=2;
+	PF("make_table returning\n");DUMP(res);
+	return res;
+}
+VP make(VP x, VP y) { 
 	// TODO cast() should short cut matching kind casts 
-	#define BUFSZ 128
-	VP res=0; I8 buf[BUFSZ]={0}; int typetag=-1;type_t typenum=-1; 
+	PF("make\n");DUMP(x);DUMP(y);
+	VP res=0; type_t typenum=-1; tag_t typetag=-1;
 	// right arg is tag naming a type, use that.. otherwise use y's type
 	if(IS_t(y)) typetag=AS_t(y,0); else typenum=y->t;
+
+	if(typetag==Ti(table)) {
+		if(!DICT(x)) return EXC(Tt(type), "can only create table from dict", x, y);
+		return make_table(KEYS(x),VALS(x));
+	}
+
 	#include"cast.h"
 	// DUMPRAW(buf,BUFSZ);
 	return res;
 }
 VP len(VP x) {
-	return xin(1,x->n);
+	int n = x->n;
+	if(TABLE(x)) n=TABLE_nrows(x);
+	if(DICT(x)) n=1;
+	return xi(n);
 }
 VP capacity(VP x) {
 	return xin(1,x->cap);
@@ -896,7 +1021,8 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 	char ch; int i; 
 	VP left=xarg,item=0;
 	tag_t tag, tcom=Ti(comment), texc=Ti(exception), texpr=Ti(expr), tlam=Ti(lambda), 
-				tlistexpr=Ti(listexpr), tname=Ti(name), traw=Ti(raw), tstr=Ti(string), tws=Ti(ws);
+				tlistexpr=Ti(listexpr), tname=Ti(name), toper=Ti(oper),
+				traw=Ti(raw), tstr=Ti(string), tws=Ti(ws);
 
 	VP curframe,restore_left=0,stack=xl0();
 	int stack_i=-1, start_i=0, use_existing_item=0, use_existing_left=0, return_expr_type=0, return_to=0;
@@ -979,6 +1105,9 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		code=ELl(code,0);
 	}
 	
+	PF("applyexpr code body:\n");
+	DUMP(code);
+
 	for(i=start_i;i<code->n;i++) {
 		PF("applyexpr #%d/%d\n",i,code->n-1);
 		if (use_existing_item) {
@@ -1008,7 +1137,8 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			append(newctx,item); // second item of lambda is arity; ignore for now
 			item=newctx;
 			PF("created new lambda context item=\n");DUMP(item);
-		} else if (tag==texpr || tag==tlistexpr) {
+		// } else if (tag==texpr || tag==tlistexpr) {
+		} else if (LIST(item) && !(LEN(item) && IS_c(LIST_first(item)) && LEN(LIST_first(item))==0)) { // tag==texpr || tag==tlistexpr) {
 			// we've reached a paren expr or list expr that we must resolve before considering
 			// what to do with this term of the parse tree. many expressions are simple and
 			// don't require complex evaluation.. but some do require recursion
@@ -1032,7 +1162,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 				else if(tag==tlistexpr)
 					item=list(item);
 			}
-		} else if(LIKELY(IS_c(item)) && tag != tstr) {
+		} else if(LIKELY(IS_c(item)) && (tag==tname || tag==toper || tag==traw)) {
 			ch = AS_c(item,0);
 			// end of expr; cleanse expression
 			if(ch==';') { left=NULL; continue; }
@@ -1083,8 +1213,29 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			if(IS_EXC(item)) { MAYBE_RETURN(left!=NULL && CALLABLE(left)?left:item); }
 		} else if(tag==tname) {
 			PF("non-string name encountered");
-			item=get(parent,item);
+			VP getparent=parent;
+			/*
+			if(LIST(item) && LEN(item) > 1 && LIST_first(item)->tag==traw) {
+				// since 'x' and 'y' arent actually assigned identifiers, we have to look through
+				// the first items of this non-string name and replace 'x' and 'y'
+				// probably . too, somehow.. ultimately, this should be solved in get, but get
+				// would need some concept of x and y 
+				VP firstpart = LIST_first(item);
+				if(IS_c(firstpart) && LEN(firstpart)==1 && AS_c(firstpart,0)=='x') {
+					getparent=xarg; item=behead(item);
+				}
+				if(IS_c(firstpart) && LEN(firstpart)==1 && AS_c(firstpart,0)=='y') {
+					getparent=yarg; item=behead(item);
+				}
+			}
+			*/
+			item=get(getparent,item);
 			RETURN_IF_EXC(item);
+		} else if(tag==tstr) {
+			// strip off the 'string tag right before we use this value. this is because the
+			// 'string part is more of an indication of its role in parsing, but we dont want users'
+			// code to see this tag applied - they didnt ask for it.
+			item->tag=0;
 		}
 		
 		evalexpr:
@@ -1155,6 +1306,13 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 				left=item;
 			}
 		}
+
+		// recall that [1,2,3] goes into the parse tree as 'listexpr([1, 2, 3]), which is fine,
+		// but as we evaluate [1, 2, 3], we don't have a way of forcing 1 into being a list before
+		// that , occurs.. so after the first item, we force it to a list if it isnt one. :)
+		if(i==0 && code->tag==tlistexpr && !LIST(left))
+			left=xl(left);
+
 		PF("bottom\n");
 	}
 	PF("applyexpr done\n");
@@ -1233,11 +1391,67 @@ VP applyctx(VP ctx,const VP x,const VP y) {
 
 	return EXC(Tt(undef),"undefined in applyctx",x,y);
 }
+VP apply_simple_(VP x,int i) {   // a faster way to select just one item of x
+	if(x==0 || x->tag==Ti(exception)) return x;
+	// PF("apply_simple_ %d\n", i);
+	if(!LIST(x) && !SIMPLE(x)) { VP ii=xi(i), res=apply(x,ii); xfree(ii); return res; };
+	if(i > LEN(x)) return EXC(Tt(index),"index out of range",x,xi(i));
+	// see "special case for generic lists" below
+	if(LIST(x)) return ELl(x,i);
+	else {
+		VP res=xalloc(x->t,1);
+		res=appendbuf(res,ELi(x,i),1);
+		return res;
+	}
+}
+VP apply_table(VP x, VP y) {
+	int tc=TABLE_ncols(x);
+	int i;
+	PF("apply_table\n");DUMP(x);DUMP(y);
+	if(x==NULL || y==NULL) return NULL;
+	if(NUM(y)) {
+		if(SCALAR(y)) {
+			int yi=NUM_val(y);
+			return table_row_dict_(x, yi);
+			VP row=xlsz(tc);
+			for(i=0; i<tc; i++) row=append(row,apply(TABLE_col(x,i),y));
+			return dict(clone(KEYS(x)),row);
+		} else {
+			VP newtbl=xasz(2), newvals=xlsz(LEN(y)), vec; int j;
+			EL(newtbl,VP,0)=clone(KEYS(x));
+			for(i=0; i<tc; i++) {
+				vec=TABLE_col(x,i);
+				PF("apply_table doing\n");DUMP(vec);
+				newvals=append(newvals,apply(vec,y));
+			}
+			EL(newtbl,VP,1)=newvals;
+			newtbl->n=2;
+			PF("apply_table returning\n");DUMP(newtbl);
+			return newtbl;
+		}
+	} else {
+		int yn=LEN(y);
+		if(SCALAR(y)) {
+			return DICT_find(x,y);
+		} else {
+			VP res=xlsz(yn);
+			for(i=0; i<yn; i++) {
+				VP key=apply_simple_(y, i);
+				VP fnd=DICT_find(x,key);
+				if(fnd) res=append(res,fnd);
+				xfree(key);
+			}
+			VP row=xlsz(tc);
+			for(i=0; i<tc; i++) row=append(row,apply(TABLE_col(x,i),y));
+			return dict(clone(KEYS(x)),row);
+		}
+	}
+}
 VP apply(VP x,VP y) {
 	// this function is everything.
 	VP res=NULL;int i=0,typerr=-1;
 	// PF("apply\n");DUMP(x);DUMP(y);
-	if(x->tag==Ti(exception))return x;
+	if(x==0 || x->tag==Ti(exception))return x;
 	if(IS_p(x)) { 
 		// if its dyadic
 		   // if we have one arg, add y, and call - return result
@@ -1281,6 +1495,7 @@ VP apply(VP x,VP y) {
 		// PF("apply f2 returning\n");DUMP(res);
 		return res;
 	}
+	if(TABLE(x)) return apply_table(x,y);
 	if(!CALLABLE(x) && UNLIKELY(y && LIST(y) && !SCALAR(y))) { 
 		// indexing at depth - never done for callable types 1, 2, and p (but we do
 		// use it for x).  we should think about when applying with a list really
@@ -1324,26 +1539,30 @@ VP apply(VP x,VP y) {
 				if(LIST(y)) idx = _find1(k,ELl(y,_i));
 				else idx = _findbuf(k,ELi(y,_i));
 				if(idx>-1) {
-					found=1;
 					PF("found at idx %d\n", idx); 
-					append(res,xi(idx));
+					found=1; append(res,xi(idx));
 					break;
 				}
 			});
 		}
-		if(res->n==0) {
-			if(x->next!=0) res=apply((VP)x->next, res);
-		}
+		// nyi
+		// if(res->n==0 && x->next!=0) res=apply((VP)x->next, res);
 		if(res->n==0) return NULL; else return apply(v,res);
 	}
 	if(NUM(y)) { // index a value with an integer 
-		if(y->n==1 && LIST(x)) {
+
+		if(SCALAR(y)) {
+			return apply_simple_(x, NUM_val(y));
+		/*
+			y->n==1 && LIST(x)) {
 			// special case for generic lists: if you index with one item, return
 			// just that item generally you would receive a list back this may
 			// potentially become painful later on 
 			i = AS_i(y,0); 
+			PF("apply with number %d, x is list\n", i);
 			IF_RET(i>=x->n, ({ EXC(Tt(index),"index out of range",x,y);	}));
 			VP tmp = ELl(x,i); xref(tmp); return tmp;
+		*/
 		} else {
 			res=xalloc(x->t,y->n);
 			VARY_EACH_NOFLOAT(y,appendbuf(res,ELi(x,_x),1),typerr);
@@ -1421,11 +1640,31 @@ static inline VP eachdict(const VP obj,const VP fun) {
 	if(!vals) return 0;
 	return dict(KEYS(obj),vals);
 }
+static inline VP eachtable(const VP obj, const VP fun) {
+	PF("eachtable\n"); DUMP(obj); DUMP(fun);
+	int objnr=TABLE_nrows(obj);
+	VP acc=xlsz(objnr), tmpdict=NULL, res, item, tmpi; int i; 
+	for(i=0; i<objnr; i++) {
+		tmpdict=table_row_dict_(obj, i);
+		PF("calling eachtable fun\n"); DUMP(tmpdict);
+		PFIN();
+		res=apply(fun,tmpdict);
+		PFOUT();
+		PF("eachtable fun result\n"); DUMP(res);
+		if(IS_EXC(res)) return res;
+		acc=append(acc,res);
+		xfree(res); 
+		xfree(tmpdict); 
+	}
+	PF("eachtable returning\n"); DUMP(acc);
+	return acc;
+}
 VP each(const VP obj,const VP fun) { 
 	// each returns a list if the first returned value is the same as obj's type
 	// and has one item
 	VP tmp, res, acc=NULL; 
 	if(DICT(obj)) return eachdict(obj,fun);	
+	if(TABLE(obj)) return eachtable(obj,fun);
 	int n=obj->n;
 	// PF("each\n");DUMP(obj);DUMP(fun);
 	FOR(0,n,({ 
@@ -1826,9 +2065,10 @@ VP count(VP x) {
 }
 static inline VP times(VP x,VP y) {
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
-	// PF("times");DUMP(x);DUMP(y);DUMP(info(acc));
+	PF("times\n");DUMP(x);DUMP(y);DUMP(info(acc));
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"times argument should be simple types",x,0);
 	VARY_EACHBOTH(x,y,({
+		PF("%d %d %d %d\n", _i, _j, _x, _y);
 		if(LIKELY(x->t > y->t)) { _x=_x*_y; appendbuf(acc,(buf_t)&_x,1); }
 		else { _y=_y*_x; appendbuf(acc,(buf_t)&_y,1); }
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
@@ -1900,7 +2140,7 @@ VP get(VP x,VP y) {
 	// 'tag in the root scope, and then try to call its "get" member. 
 	// see _getmodular()
 	int xn=x->n,yn=y->n,i,j;VP item,res;
-	PF("get\n");DUMP(y);
+	PF("get\n");DUMP(x);DUMP(y);
 	if((DICT(x)||IS_x(x)) && LIST(y) && yn >= 2 && IS_t(ELl(y,0))) {
 		res=_getmodular(x,y);
 		if(res!=0) return res;
@@ -1916,7 +2156,7 @@ VP get(VP x,VP y) {
 			PF("get starting from root\n");
 			i=0;y=list(behead(y));
 			for(;i<xn;i++) {
-				PF("get #%d\n", i);
+				PF("get r#%d\n", i);
 				if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
 				res=apply(ELl(x,i),y);
 				if(res!=NULL) return res;
@@ -1925,7 +2165,7 @@ VP get(VP x,VP y) {
 			i=xn-1;
 			if(SIMPLE(y) && yn>1) y=list(y); // support depth queries with scalars like thing.item
 			for(;i>=0;i--) {
-				PF("get #%d\n", i);
+				PF("get t#%d\n", i);
 				item=ELl(x,i);
 				DUMP(item);
 				if(SIMPLE(y) && DICT(item)) {
@@ -1989,6 +2229,8 @@ VP set(VP x,VP y) {
 }
 
 VP set2(VP x,VP y) {                   // exactly like set, but arguments are [[ctx,name],[value]]
+	PF("set2\n");
+	DUMP(x);DUMP(y);
 	VP acc=xln(2,ELl(x,0),y), res=set(acc,ELl(x,1)); xfree(acc); return res;
 }
 
@@ -2394,12 +2636,17 @@ VP matchany(VP obj,VP pat) {
 	return acc;
 }
 VP matcheasy(VP obj,VP pat) {
-	IF_EXC(!SIMPLE(obj) && !LIST(obj),Tt(type),"matcheasy only works with numeric or string types in x",obj,pat);
+	IF_EXC(!SIMPLE(obj) && !LIST(obj) && !TABLE(obj),Tt(type),
+		"matcheasy only works with simple types, lists, and tables in x",obj,pat);
 	int j,n=obj->n,typerr=-1;VP item, acc;
-	// PF("matcheasy\n"); DUMP(obj); DUMP(pat);
+	PF("matcheasy\n"); DUMP(obj); DUMP(pat);
+	if(CALLABLE(pat)) return each(obj, pat);
+	if(TABLE(obj)) {
+		if(!CALLABLE(pat)) return EXC(Tt(type),"tables can only be matched with functions",obj,pat);
+		return eachtable(obj,pat);
+	}
 	acc=xbsz(n); // TODO matcheasy() should be smarter about initial buffer size
 	acc->n=n;
-	if(CALLABLE(pat)) return each(obj, pat);
 	if(LIST(obj)) {
 		FOR(0,n,({ 
 			VP item = ELl(obj,_i);
@@ -2409,9 +2656,7 @@ VP matcheasy(VP obj,VP pat) {
 		VARY_EACHLEFT(obj, pat, ({
 			if(_x == _y) {
 				j=0;
-				do {
-					EL(acc,CTYPE_b,_i+j) = 1;
-					j++;
+				do { EL(acc,CTYPE_b,_i+j) = 1; j++;
 				} while (_i+j<n && j<_yn && _equalm(obj,_i+j,pat,j));
 			}
 		}), typerr);
@@ -2525,13 +2770,13 @@ VP list2vec(VP obj) {
 	if(!LIST(obj)) return obj;
 	if(!obj->n) return obj;
 	acc=ALLOC_LIKE(ELl(obj,0));
-	if(obj->tag!=0) acc->tag=obj->tag;
+	if(obj->tag!=0) { t=obj->tag; acc->tag=obj->tag; }
 	FOR(0,obj->n,({ this=ELl(obj,_i);
 		// bomb out on non-scalar items or items of a different type than the first
 		// note: we allow the first item to be nonscalar to handle the list2vec
 		// [(0,1)] case - this is technically not a scalar first item, but clearly
 		// it should return (0,1)
-		if((t != 0 && this->tag != t) 
+		if((t != 0 && this->tag != t)
 			 || (_i > 0 && !SCALAR(this)) || this->t != acc->t){xfree(acc); return obj; } 
 		else append(acc,this); 
 		if(this->tag) t=this->tag;
@@ -2605,6 +2850,20 @@ VP parselambda(VP x) {
 	if(LIST(x) && IS_c(ELl(x,0)) && AS_c(ELl(x,0),0)=='{')
 		return entags(xln(2,drop_(drop_(x,-1),1),xi(arity)),"lambda");
 	else return x;
+}
+VP parsecomment(VP x) {
+	// strip tags from x
+	int i; VP item;
+
+	ARG_MUTATING(x);
+	for(i=0; i<LEN(x); i++) {
+		item=ELl(x,i);
+		if(item->tag==Ti(raw)) item->tag=0;
+	}
+	
+	VP res=list2vec(x);
+	res->tag=Ti(comment);
+	return res;
 }
 VP parsestrlit(VP x) {
 	int i,arity=1,typerr=-1,traw=Ti(raw);
@@ -2692,8 +2951,8 @@ VP parsestr(const char* str) {
 	ctx=mkbarectx();
 	pats=xln(3,
 		proj(2,&nest,0,xln(5, entags(xfroms("\""),"raw"), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit))),
-		proj(2,&nest,0,xln(4, entags(xfroms("//"),"raw"), xfroms("\n"), xfroms(""), Tt(comment))),
-		proj(2,&nest,0,xln(4, entags(xfroms("/*"),"raw"), xfroms("*/"), xfroms(""), Tt(comment)))
+		proj(2,&nest,0,xln(5, entags(xfroms("//"),"raw"), xfroms("\n"), xfroms(""), Tt(comment), x1(&parsecomment))),
+		proj(2,&nest,0,xln(5, entags(xfroms("/*"),"raw"), xfroms("*/"), xfroms(""), Tt(comment), x1(&parsecomment)))
 	);
 	ctx=append(ctx,pats);
 	acc=exhaust(acc,ctx);
@@ -2861,7 +3120,7 @@ VP loadin(VP fn,VP ctx) {
 	
 	#ifdef STDLIBFILE
 	VP tmp=xln(2,subctx,filedirname(fn));
-	set(tmp,Tt(_dir)); // returns value, not context - dont save
+	set(tmp,Tt(_dir)); // set() returns y value, not x context - dont preserve
 	xfree(tmp);
 	#endif
 

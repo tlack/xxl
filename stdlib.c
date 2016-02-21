@@ -22,7 +22,8 @@ VP filedirname(VP fn) {
 	VP fname=fn;
 	if(!IS_c(fname)) fname=filepath(fn);
 	if(!IS_c(fname)) return EXC(Tt(type),"dirname filename must be string or pathlist",fn,0);
-	VP res=xfroms(dirname(sfromx(fname)));
+	VP res=xfroms(dirname(sfromx(fname))), slash=xc('/');
+	res=append(res,slash);
 	xfree(fname);
 	return res;
 }

@@ -1,6 +1,5 @@
 
 	// postfix/unary operators
-	// res=assign(res,xt(_tagnums("]")),x1(&identity));
 	res=assign(res,Tt(arity),x1(&arity));
 	res=assign(res,Tt(condense),x1(&condense));
 	res=assign(res,Tt(count),x1(&count));
@@ -31,6 +30,15 @@
 
 	// infix/binary verbs
 	// operators:
+	// .. looping:
+	res=assign(res,Tt(::),x2(&each));
+	res=assign(res,xt(_tagnums(">:")),x2(&eachboth));
+	res=assign(res,xt(_tagnums("\\:")),x2(&eachleft));
+	res=assign(res,xt(_tagnums("/:")),x2(&eachright));
+	res=assign(res,xt(_tagnums("<:")),x2(&eachpair));
+	res=assign(res,xt(_tagnums("':")),x2(&over));
+	res=assign(res,xt(_tagnums(",:")),x2(&scan));
+	// .. math:
 	res=assign(res,Tt(=),x2(&equal));
 	res=assign(res,Tt(+),x2(&plus));
 	res=assign(res,Tt(-),x2(&minus));
@@ -42,24 +50,17 @@
 	res=assign(res,Tt(^),x2(&xor));
 	res=assign(res,xt(_tagnums("<")),x2(&lesser));
 	res=assign(res,xt(_tagnums(">")),x2(&greater));
+	// .. misc:
 	res=assign(res,Tt(!),x2(&amend));
 	res=assign(res,Tt(@),x2(&apply));
+	res=assign(res,Tt($),x2(&make));
 	res=assign(res,Tt(:),x2(&dict)); 
 	res=assign(res,Tt(?),x2(&find1));
 	res=assign(res,Tt(~),x2(&matcheasy));
 	res=assign(res,xt(_tagnums(",")),x2(&catenate)); 
-	// looping operators:
-	res=assign(res,Tt(::),x2(&each));
-	res=assign(res,xt(_tagnums(">:")),x2(&eachboth));
-	res=assign(res,xt(_tagnums("\\:")),x2(&eachleft));
-	res=assign(res,xt(_tagnums("/:")),x2(&eachright));
-	res=assign(res,xt(_tagnums("<:")),x2(&eachpair));
-	res=assign(res,xt(_tagnums("':")),x2(&over));
-	res=assign(res,xt(_tagnums(",:")),x2(&scan));
 	// named verbs:
 	res=assign(res,Tt(amend),x2(&amend));
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
-	res=assign(res,Tt(cast),x2(&cast));
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));
 	res=assign(res,Tt(deal),x2(&deal));
 	res=assign(res,Tt(deep),x2(&deep));
@@ -75,6 +76,7 @@
 	res=assign(res,Tt(in),x2(&matchany));
 	res=assign(res,Tt(join),x2(&join));
 	res=assign(res,Tt(loadin),x2(&loadin));
+	res=assign(res,Tt(make),x2(&make));
 	res=assign(res,Tt(nest),x2(&nest));
 	res=assign(res,Tt(pick),x2(&pick));
 	res=assign(res,Tt(over),x2(&over));

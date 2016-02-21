@@ -294,15 +294,14 @@
 	tmp1=apply(ctx,xi(0));
 	DUMP(tmp1);
 	DUMP(repr(tmp1));
-	ASSERT(_equal(repr(tmp1),xfroms("['a:(1,2i), 'b:'string(\"barf\")]")),"test parsestr dict literal 26");
+	ASSERT(_equal(repr(tmp1),xfroms("['a:(1,2i), 'b:\"barf\"]")),"test parsestr dict literal 26");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("('a,'b):((1,2),\"barf\")"));
 	tmp1=apply(ctx,xi(0));
 	DUMP(tmp1);
-	ASSERT(_equal(repr(tmp1),xfroms("['a:(1,2i), 'b:'string(\"barf\")]")),"test parsestr dict literal 27");
-	// ^ note this is an example of a bug that still exists - see quotes inside string
+	ASSERT(_equal(repr(tmp1),xfroms("['a:(1,2i), 'b:\"barf\"]")),"test parsestr dict literal 27");
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("5 {x*z} as 'f;3 f")); 

@@ -171,76 +171,95 @@ static inline VP xdan(VP a, int nargs,...) { va_list args; int i; VP x; a=xreall
 	for(i=0;i<nargs;i++){ x=va_arg(args,VP);
 	EL(a,VP,(a->n)+i)=x; }\
 	a->n+=nargs; return a; }
-/* accessors for type #9 or 1 (f1) implemented as unaryFunc* */
+/* accessors for type #9 or a (table) implemented as VP */
+#define MAX_a 0
+#define CTYPE_a VP
+#define T_a 9
+#define IS_a(v) ( (v)->t==9 )
+#define AS_a(v,n) ({ \
+	ASSERT(IS_a(v)==1, "AS_a: type not a");\
+	VP __x=EL(v,VP,n); __x; })
+static inline VP xa(VP x) { VP a; a=xalloc(9,1); EL(a,VP,0)=x; a->n=1; return a; }
+static inline VP xa0() { VP a=xalloc(9,1); return a; }
+static inline VP xasz(sz) { VP a=xalloc(9,sz); return a; }
+static inline VP xaa(VP a, VP x) { a=xrealloc(a,a->n++);EL(a,VP,a->n-1)=x; return a; }
+static inline VP xan(int nargs,...) { VP a; va_list args; int i; VP x; a=xalloc(9,nargs); a->n=nargs; va_start(args,nargs);\
+	for(i=0;i<nargs;i++){ x=va_arg(args,VP); EL(a,VP,i)=x; }\
+	return a; }
+static inline VP xaan(VP a, int nargs,...) { va_list args; int i; VP x; a=xrealloc(a,a->n+nargs); va_start(args,nargs);\
+	for(i=0;i<nargs;i++){ x=va_arg(args,VP);
+	EL(a,VP,(a->n)+i)=x; }\
+	a->n+=nargs; return a; }
+/* accessors for type #10 or 1 (f1) implemented as unaryFunc* */
 #define MAX_1 0
 #define CTYPE_1 unaryFunc*
-#define T_1 9
-#define IS_1(v) ( (v)->t==9 )
+#define T_1 10
+#define IS_1(v) ( (v)->t==10 )
 #define AS_1(v,n) ({ \
 	ASSERT(IS_1(v)==1, "AS_1: type not 1");\
 	unaryFunc* __x=EL(v,unaryFunc*,n); __x; })
-static inline VP x1(unaryFunc* x) { VP a; a=xalloc(9,1); EL(a,unaryFunc*,0)=x; a->n=1; return a; }
-static inline VP x10() { VP a=xalloc(9,1); return a; }
-static inline VP x1sz(sz) { VP a=xalloc(9,sz); return a; }
+static inline VP x1(unaryFunc* x) { VP a; a=xalloc(10,1); EL(a,unaryFunc*,0)=x; a->n=1; return a; }
+static inline VP x10() { VP a=xalloc(10,1); return a; }
+static inline VP x1sz(sz) { VP a=xalloc(10,sz); return a; }
 static inline VP x1a(VP a, unaryFunc* x) { a=xrealloc(a,a->n++);EL(a,unaryFunc*,a->n-1)=x; return a; }
-static inline VP x1n(int nargs,...) { VP a; va_list args; int i; unaryFunc* x; a=xalloc(9,nargs); a->n=nargs; va_start(args,nargs);\
+static inline VP x1n(int nargs,...) { VP a; va_list args; int i; unaryFunc* x; a=xalloc(10,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,unaryFunc*); EL(a,unaryFunc*,i)=x; }\
 	return a; }
 static inline VP x1an(VP a, int nargs,...) { va_list args; int i; unaryFunc* x; a=xrealloc(a,a->n+nargs); va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,unaryFunc*);
 	EL(a,unaryFunc*,(a->n)+i)=x; }\
 	a->n+=nargs; return a; }
-/* accessors for type #10 or 2 (f2) implemented as binaryFunc* */
+/* accessors for type #11 or 2 (f2) implemented as binaryFunc* */
 #define MAX_2 0
 #define CTYPE_2 binaryFunc*
-#define T_2 10
-#define IS_2(v) ( (v)->t==10 )
+#define T_2 11
+#define IS_2(v) ( (v)->t==11 )
 #define AS_2(v,n) ({ \
 	ASSERT(IS_2(v)==1, "AS_2: type not 2");\
 	binaryFunc* __x=EL(v,binaryFunc*,n); __x; })
-static inline VP x2(binaryFunc* x) { VP a; a=xalloc(10,1); EL(a,binaryFunc*,0)=x; a->n=1; return a; }
-static inline VP x20() { VP a=xalloc(10,1); return a; }
-static inline VP x2sz(sz) { VP a=xalloc(10,sz); return a; }
+static inline VP x2(binaryFunc* x) { VP a; a=xalloc(11,1); EL(a,binaryFunc*,0)=x; a->n=1; return a; }
+static inline VP x20() { VP a=xalloc(11,1); return a; }
+static inline VP x2sz(sz) { VP a=xalloc(11,sz); return a; }
 static inline VP x2a(VP a, binaryFunc* x) { a=xrealloc(a,a->n++);EL(a,binaryFunc*,a->n-1)=x; return a; }
-static inline VP x2n(int nargs,...) { VP a; va_list args; int i; binaryFunc* x; a=xalloc(10,nargs); a->n=nargs; va_start(args,nargs);\
+static inline VP x2n(int nargs,...) { VP a; va_list args; int i; binaryFunc* x; a=xalloc(11,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,binaryFunc*); EL(a,binaryFunc*,i)=x; }\
 	return a; }
 static inline VP x2an(VP a, int nargs,...) { va_list args; int i; binaryFunc* x; a=xrealloc(a,a->n+nargs); va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,binaryFunc*);
 	EL(a,binaryFunc*,(a->n)+i)=x; }\
 	a->n+=nargs; return a; }
-/* accessors for type #11 or p (proj) implemented as Proj */
+/* accessors for type #12 or p (proj) implemented as Proj */
 #define MAX_p 0
 #define CTYPE_p Proj
-#define T_p 11
-#define IS_p(v) ( (v)->t==11 )
+#define T_p 12
+#define IS_p(v) ( (v)->t==12 )
 #define AS_p(v,n) ({ \
 	ASSERT(IS_p(v)==1, "AS_p: type not p");\
 	Proj __x=EL(v,Proj,n); __x; })
-static inline VP xp(Proj x) { VP a; a=xalloc(11,1); EL(a,Proj,0)=x; a->n=1; return a; }
-static inline VP xp0() { VP a=xalloc(11,1); return a; }
-static inline VP xpsz(sz) { VP a=xalloc(11,sz); return a; }
+static inline VP xp(Proj x) { VP a; a=xalloc(12,1); EL(a,Proj,0)=x; a->n=1; return a; }
+static inline VP xp0() { VP a=xalloc(12,1); return a; }
+static inline VP xpsz(sz) { VP a=xalloc(12,sz); return a; }
 static inline VP xpa(VP a, Proj x) { a=xrealloc(a,a->n++);EL(a,Proj,a->n-1)=x; return a; }
-static inline VP xpn(int nargs,...) { VP a; va_list args; int i; Proj x; a=xalloc(11,nargs); a->n=nargs; va_start(args,nargs);\
+static inline VP xpn(int nargs,...) { VP a; va_list args; int i; Proj x; a=xalloc(12,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,Proj); EL(a,Proj,i)=x; }\
 	return a; }
 static inline VP xpan(VP a, int nargs,...) { va_list args; int i; Proj x; a=xrealloc(a,a->n+nargs); va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,Proj);
 	EL(a,Proj,(a->n)+i)=x; }\
 	a->n+=nargs; return a; }
-/* accessors for type #12 or x (ctx) implemented as VP */
+/* accessors for type #13 or x (ctx) implemented as VP */
 #define MAX_x 0
 #define CTYPE_x VP
-#define T_x 12
-#define IS_x(v) ( (v)->t==12 )
+#define T_x 13
+#define IS_x(v) ( (v)->t==13 )
 #define AS_x(v,n) ({ \
 	ASSERT(IS_x(v)==1, "AS_x: type not x");\
 	VP __x=EL(v,VP,n); __x; })
-static inline VP xx(VP x) { VP a; a=xalloc(12,1); EL(a,VP,0)=x; a->n=1; return a; }
-static inline VP xx0() { VP a=xalloc(12,1); return a; }
-static inline VP xxsz(sz) { VP a=xalloc(12,sz); return a; }
+static inline VP xx(VP x) { VP a; a=xalloc(13,1); EL(a,VP,0)=x; a->n=1; return a; }
+static inline VP xx0() { VP a=xalloc(13,1); return a; }
+static inline VP xxsz(sz) { VP a=xalloc(13,sz); return a; }
 static inline VP xxa(VP a, VP x) { a=xrealloc(a,a->n++);EL(a,VP,a->n-1)=x; return a; }
-static inline VP xxn(int nargs,...) { VP a; va_list args; int i; VP x; a=xalloc(12,nargs); a->n=nargs; va_start(args,nargs);\
+static inline VP xxn(int nargs,...) { VP a; va_list args; int i; VP x; a=xalloc(13,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,VP); EL(a,VP,i)=x; }\
 	return a; }
 static inline VP xxan(VP a, int nargs,...) { va_list args; int i; VP x; a=xrealloc(a,a->n+nargs); va_start(args,nargs);\
@@ -249,6 +268,6 @@ static inline VP xxan(VP a, int nargs,...) { va_list args; int i; VP x; a=xreall
 	a->n+=nargs; return a; }
 
 
-static int MAX_TYPE = 12;
+static int MAX_TYPE = 13;
 
 

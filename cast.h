@@ -9,6 +9,7 @@ int taglong=Ti(long);
 int tagocto=Ti(octo);
 int tagfloat=Ti(float);
 int tagdict=Ti(dict);
+int tagtable=Ti(table);
 int tagf1=Ti(f1);
 int tagf2=Ti(f2);
 int tagproj=Ti(proj);

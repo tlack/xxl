@@ -10,8 +10,9 @@ static type_info_t TYPES[] = {
 { 6, 'o', sizeof(__int128_t), "octo", &repr_o },
 { 7, 'f', sizeof(double), "float", &repr_f },
 { 8, 'd', sizeof(VP), "dict", &repr_d },
-{ 9, '1', sizeof(unaryFunc*), "f1", &repr_1 },
-{ 10, '2', sizeof(binaryFunc*), "f2", &repr_2 },
-{ 11, 'p', sizeof(Proj), "proj", &repr_p },
-{ 12, 'x', sizeof(VP), "ctx", &repr_x },
+{ 9, 'a', sizeof(VP), "table", &repr_a },
+{ 10, '1', sizeof(unaryFunc*), "f1", &repr_1 },
+{ 11, '2', sizeof(binaryFunc*), "f2", &repr_2 },
+{ 12, 'p', sizeof(Proj), "proj", &repr_p },
+{ 13, 'x', sizeof(VP), "ctx", &repr_x },
 };

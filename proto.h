@@ -7,6 +7,7 @@ VP amend(VP x,VP y);
 VP and(VP x,VP y);
 VP any(VP x);
 VP apply(VP x,VP y);
+VP apply_simple_(VP x,int i);          // faster way to index a simple type as new value
 VP apply2(const VP f,const VP x,const VP y);
 VP applyctx(VP ctx,VP x,VP y);
 VP append(VP x,VP y);
@@ -58,6 +59,7 @@ VP matcheasy(VP obj,VP pat);
 VP matchtag(VP obj,VP pat);
 int matchpass(VP obj,VP pat);
 VP proj(int type, void* func, VP left, VP right);
+VP make_table(VP keys,VP vals);
 VP mkworkspace();
 VP minus(VP x,VP y);
 VP mod(VP x,VP y);
@@ -88,6 +90,8 @@ static inline VP str2tag(VP str); // turns string, or list of strings, into tag 
 VP sum(VP x);
 VP sums(VP x);
 VP sys(VP x);
+VP table_row_dict_(VP tbl, int row);
+VP table_row_list_(VP tbl, int row);
 static inline VP tagname(tag_t tag);
 static inline const char* tagnames(const tag_t tag);
 /*static inline */

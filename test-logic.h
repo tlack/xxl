@@ -80,7 +80,7 @@ ASSERT(_equal(b,xfroms("c")),".file.basename");
 xfree(b);xfree(c);
 c=mkworkspace();
 b=evalstrin("\"/a/b/c\" .file.dirname",c);
-ASSERT(_equal(b,xfroms("/a/b")),".file.dirname");
+ASSERT(_equal(b,xfroms("/a/b/")),".file.dirname");
 xfree(b);xfree(c);
 #endif
 
@@ -93,7 +93,6 @@ c=mkworkspace();
 b=evalstrin("['abc:100,'xyz:999]each{-1}",c);
 a=evalstrin("['abc:99,'xyz:998]",c);
 ASSERT(_equal(repr(b),repr(a)),"dict each");
-
 
 c=mkworkspace();
 b=evalstrin("7 as 'p;[[p]]",c);
@@ -123,7 +122,49 @@ c=mkworkspace();
 b=evalstrin("\"hello\"!((1,2,5),\"x\")",c);
 ASSERT(_equal(b,xfroms("hxxlox")),"amend many indices one value");
 
+PFW(({
 c=mkworkspace();
 b=evalstrin("[]!(1,\"jordache\")",c);
-ASSERT(_equal(repr(b),xfroms("[/*null*/, 'string(\"jordache\")]")),"amend empty list");
+ASSERT(_equal(repr(b),xfroms("[/*null*/, \"jordache\"]")),"amend empty list");
+}));
 
+c=mkworkspace();
+b=evalstrin("'z is 20; 30 as 'b;z*b",c);
+DUMP(b);
+ASSERT(_equal(b,xi(600)),"is vs as");
+
+c=mkworkspace();
+b=evalstrin("['a:1,'b:2] make 'table,[3,4],[5,6],[7,8],[[9,10],[11,12]]",c);
+ASSERT(_equal(repr(b),xfroms("[['a, 'b]\n1i, 2i\n3i, 4i\n5i, 6i\n7i, 8i\n9i, 10i\n11i, 12i]")),"table 0");
+
+c=mkworkspace();
+b=evalstrin("['a:1,'b:'j] make 'table,[3,'z],[5,'q],[7,'m],[[9,'b],[11,'m]]",c);
+ASSERT(_equal(repr(b),xfroms("[['a, 'b]\n1i, 'j\n3i, 'z\n5i, 'q\n7i, 'm\n9i, 'b\n11i, 'm]")),"table 1");
+
+c=mkworkspace();
+b=evalstrin("['a:1,'b:'j] make 'table,[3,'z],[5,'q],[7,'m],[[9,'b],[11,'m]]@0",c);
+ASSERT(_equal(repr(b),xfroms("['a:1i, 'b:'j]")),"table scalar subscript");
+
+c=mkworkspace();
+b=evalstrin("['a:1,'b:'j] make 'table,[3,'z],[5,'q],[7,'m],[[9,'b],[11,'m]]@(1,2)",c);
+ASSERT(_equal(repr(b),xfroms("[['a, 'b]\n3i, 'z\n5i, 'q]")),"table vector subscript");
+
+c=mkworkspace();
+b=evalstrin("('a,'b,'c):[]",c);
+ASSERT(IS_EXC(b), "unlike vectors check when making table");
+c=mkworkspace();
+b=evalstrin("('a,'b,'c):[ ['a,2,4], ['b,4,6] ]",c);
+ASSERT(_equal(repr(b),xfroms("[('a,'b,'c)\n'a, 2i, 4i\n'b, 4i, 6i]")),"table built with list of lists");
+
+c=mkworkspace();
+b=apply_simple_(evalstrin("1,2,3",c),0);
+ASSERT(_equal(b,xi(1)),"apply_simple_ 0");
+xfree(b);xfree(c);
+
+c=mkworkspace();
+b=evalstrin("[\"B1\"]",c);
+ASSERT(LIST(b) && IS_c(LIST_first(b)), "listexpr with non-scalar simple content");
+
+c=mkworkspace();
+b=evalstrin("('a,'b,'c):[['a,2,4],['b,4,6]]~{x}",c);
+ASSERT(_equal(repr(b),xfroms("[['a:'a, 'b:2i, 'c:4i], ['a:'b, 'b:4i, 'c:6i]]")),"matcheasy with table - identity");
