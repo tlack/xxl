@@ -2,7 +2,7 @@ BUILDH="yes"
 CC="gcc"
 NODE="node" # often 'nodejs'
 ARCH="-m64"
-LIBS="-pthread "
+LIBS="-pthread -ldl "
 DEBUG="-pg"
 DEBUG="-DDEBUG -g -pg -ggdb3"  # comment out for silence
 OPT=""
@@ -46,7 +46,7 @@ COMPILESHARED="$COMPILE -fPIC -shared "
 BUILDOBJ="$COMPILE -o  "
 BUILDSHARED="$COMPILE -fPIC -shared -o "
 
-if [ "x$BUILDH" = "xyes" ]; then
+if [ "x$BUILDH" = "xyes" && -x $NODE ]; then
 	$NODE accessors.js > accessors.h && \
 	$NODE vary.js > vary.h && \
 	$NODE cast.js > cast.h && \
