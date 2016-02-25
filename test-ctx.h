@@ -61,7 +61,7 @@
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("1+1"));
-	tmp1=apply(ctx,xi(0));
+	tmp1=apply(ctx,0);
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,xi(2)),"test parsestr 0");
 	xfree(ctx);xfree(tmp1);
@@ -138,14 +138,14 @@
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("(1+(2*3))"));
-	tmp1=apply(ctx,xi(0));
+	tmp1=apply(ctx,0);
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,xi(7)),"test parsestr 10");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("/* test */2"));
-	tmp1=apply(ctx,xi(0));
+	tmp1=apply(ctx,0);
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,xi(2)),"test parsestr 11");
 	xfree(ctx);xfree(tmp1);
@@ -234,35 +234,35 @@
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("\"z\""));
-	tmp1=apply(ctx,xi(0));
+	tmp1=apply(ctx,0);
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,entags(xc('z'),"string")),"test parsestr 21");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("\"a\" as 's;s+1"));
-	tmp1=apply(ctx,xi(0));
+	tmp1=apply(ctx,0);
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,entags(xc('b'),"string")),"test as 1");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("[1,2,3]"));
-	tmp1=apply(ctx,xi(0));
+	tmp1=apply(ctx,0);
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,xln(3,xi(1),xi(2),xi(3))),"test parsestr list literal 23");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("['a:1]"));
-	tmp1=apply(ctx,xi(0));
+	tmp1=apply(ctx,0);
 	DUMP(tmp1);
 	ASSERT(_equal(apply(tmp1,Tt(a)),xi(1)),"test parsestr dict literal 24");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("['a:1,'b:2]"));
-	tmp1=apply(ctx,xi(0));
+	tmp1=apply(ctx,0);
 	DUMP(repr(tmp1));
 	tmp2=xfroms("['a:1i, 'b:2i]");
 	DUMP(tmp1);DUMP(tmp2);
@@ -271,9 +271,9 @@
 
 	ctx=mkworkspace();
 	ctx=append(ctx,parsestr("[\"aaa\"]"));
-	tmp2=apply(ctx,xi(0));
+	tmp2=apply(ctx,0);
 	ctx=append(ctx,parsestr("(\"aaa\")"));
-	tmp1=apply(ctx,xi(0));
+	tmp1=apply(ctx,0);
 	DUMP(tmp2);
 	DUMP(tmp1);
 	// ASSERT(_equal(tmp1,tmp2),"test parsestr string equivalence 0");
@@ -281,9 +281,9 @@
 
 	ctx=mkworkspace();
 	ctx=append(ctx,parsestr("[1,\"aaa\"]"));
-	tmp2=apply(ctx,xi(0));
+	tmp2=apply(ctx,0);
 	ctx=append(ctx,parsestr("(1,\"aaa\")"));
-	tmp1=apply(ctx,xi(0));
+	tmp1=apply(ctx,0);
 	DUMP(tmp2);
 	DUMP(tmp1);
 	// ASSERT(_equal(tmp1,tmp2),"test parsestr string equivalence 1");
@@ -291,7 +291,7 @@
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("['a:(1,2),'b:\"barf\"]"));
-	tmp1=apply(ctx,xi(0));
+	tmp1=apply(ctx,0);
 	DUMP(tmp1);
 	DUMP(repr(tmp1));
 	ASSERT(_equal(repr(tmp1),xfroms("['a:(1,2i), 'b:\"barf\"]")),"test parsestr dict literal 26");
@@ -299,19 +299,19 @@
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("('a,'b):((1,2),\"barf\")"));
-	tmp1=apply(ctx,xi(0));
+	tmp1=apply(ctx,0);
 	DUMP(tmp1);
 	ASSERT(_equal(repr(tmp1),xfroms("['a:(1,2i), 'b:\"barf\"]")),"test parsestr dict literal 27");
 
 	ctx=mkworkspace();
-	append(ctx,parsestr("5 {x*z} as 'f;3 f")); 
+	append(ctx,parsestr("5 {x*y} as 'f;3 f")); 
 	tmp1=apply(ctx,xi(2));
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,xi(15)),"test func as var 1");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
-	append(ctx,parsestr("5 {x*z} as 'f;f 3")); // note - technically invalid but still works! nice
+	append(ctx,parsestr("5 {x*y} as 'f;f 3")); // note - technically invalid but still works! nice
 	tmp1=apply(ctx,xi(2));
 	DUMP(tmp1);
 	ASSERT(_equal(tmp1,xi(15)),"test func as var 2");
@@ -364,21 +364,21 @@
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("['q:1,'w:2] as 'd;d"));
-	tmp1=apply(ctx,xi(3));
+	tmp1=apply(ctx,0);
 	tmp2=evalstrin("['q:1, 'w:2]", ctx);
 	ASSERT(_equal(tmp1,tmp2),"test evalstrin and complex variables");
 	xfree(ctx);xfree(tmp1);xfree(tmp2);
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("['q:1,'w:2] as 'd;d ! ('w,5)"));
-	tmp1=apply(ctx,xi(3));
+	tmp1=apply(ctx,0);
 	tmp2=evalstrin("['q:1, 'w:5]", ctx);
 	ASSERT(_equal(tmp1,tmp2),"test amend dict val");
 	xfree(ctx);xfree(tmp1);xfree(tmp2);
 
 	ctx=mkworkspace();
 	append(ctx,parsestr("['q:1,'w:2] as 'd;d,['w:5]"));
-	tmp1=apply(ctx,xi(3));
+	tmp1=apply(ctx,0);
 	tmp2=evalstrin("['q:1, 'w:5]", ctx);
 	DUMP(tmp1);DUMP(tmp2);
 	ASSERT(_equal(tmp1,tmp2),"test join dict literal");
