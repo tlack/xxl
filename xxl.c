@@ -1164,7 +1164,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			// don't require complex evaluation.. but some do require recursion
 			if (!SIMPLE(item)) {
 				PF("applying subexpression\n");
-				VP newframe = xln(9,parent,item,left,yarg,(VP)0,xi(i),xi(stack_i),xi(2),left);
+				VP newframe = xln(9,parent,item,xarg,yarg,(VP)0,xi(i),xi(stack_i),xi(2),left);
 				PF("trying stack hack for expression (expr/listexpr)\n");
 				DUMP(newframe);
 				stack=append(stack,newframe);
