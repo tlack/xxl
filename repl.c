@@ -8,24 +8,43 @@
 #include "vary.h"
 
 void banner() {
-	printf("XXL %s by @tlack; http://github.com/tlack/xxl/\n",XXLVER);
+	printf("XXL %s by @tlack; http://github.com/tlack/xxl/\n",XXL_VER);
 }
 
-void tip() {
-	VP before=xfroms("tip: "),after=xfroms(" ('tip' for more)");
+VP randtip() {
 	VP tips=xl0();
 	tips=append(tips,xfroms("you can trace your program's behavior. type 'xray' to try it out."));
 	tips=append(tips,xfroms("type 'memwatch' to see how your program allocates memory."));
 	tips=append(tips,xfroms("you can reference previous commands or program output like a regular variable. type 'inputs first' or 'outputs last' to see."));
+	tips=append(tips,xfroms("is your XXL acting wonky? run the self tests with '[] selftest'. you can find their source in 'test-*.h'."));
 	VP tip=deal(tips,XI1);
-	show(flatten(catenate(catenate(before,tip),after)));
-	xfree(tip);xfree(tips);xfree(after);xfree(before);
+	xfree(tips);
+	return tip;
 }
 
-void showexc(VP exc) {
-	int i; VP strs=xfroms("code\nmessage\nx\ny"), labels=split(strs,xc('\n'));
+void tip() {
+	VP before=xfroms("tip: "),after=xfroms(" ('tip' for more)");
+	VP tip=randtip();
+	show(flatten(catenate(catenate(before,tip),after)));
+	xfree(tip);xfree(after);xfree(before);
+}
+
+void showexc(VP ctx,VP exc) {
+	int i; VP clue,csel,strs=xfroms("code\nmessage\nx\ny"), labels=split(strs,xc('\n'));
 	show(exc);
 	printf("Oops. Exception:\n");
+	/*
+	csel=xln(2,Tt(repl),Tt(clues)); clue=get(ctx,csel);
+	if(!IS_EXC(clue)) {
+		DUMP(clue);
+		VP specific = apply(clue,ELl(exc,0));
+		printf("spec=%s\n", reprA(specific));
+		VP tmp = apply(specific,xln(2,Tt(caughtexec),exc));
+		printf("tmp=%s\n", reprA(tmp));
+		xfree(tmp); xfree(specific);
+	}
+	xfree(clue);xfree(csel);
+	*/
 	for(i=0;i<exc->n;i++) {
 		printf("%s: ",sfromx(ELl(labels,i)));
 		show(ELl(exc,i));
@@ -105,7 +124,7 @@ void repl(VP ctx) {
 			printf("outputs@%d:\n%s\n", i, sfromx(repr(t3)));
 		} else {
 			out=append(out,Tt(exception));
-			showexc(t3);
+			showexc(ctx,t3);
 		}
 		i++;
 	}
