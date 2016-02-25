@@ -1,0 +1,43 @@
+// XXL Workbench, a web-based XXL development environment
+"192.168.1.9" as 'host;                  // configure these
+8088 as 'port;
+_dir,"/ui.xxl" load as 'pagetmpl;      // load html interface from ui.xxl (and css.xxl in turn)
+
+'safe is ('A is (26count as 'l+65$'char),('a is (l+97$'char)),".,-+!$*'()"); // rfc1738
+
+'urldec is {;" ",x,"%" split "%" as 'p first behead,(p behead curtail :: { "0x",(x take 2)base16$'char,(x drop 2)}orelse"") flat};
+
+// short version for maniacs:
+// 'urldec is {;" ",x,"%"<|"%" as 'p .| |_,(p |_ _| ::{"0x",(x#|2)base16$'char,(x|#2)}orelse"")flat};
+
+// 'urlenc is {;x@(x::{in safe not} condense) split [] :: {"%",(x$'int base 16)}};
+'urlenc is {;"z",x||[]![{in safe not},{"%",(x$'int base 16)}] |# 1 ,| ""};
+
+[safe, urldec, urlenc] show;
+
+'makehttpserver is {;
+	['http,x] show; x as 'handlecb;
+	{
+		['innerhttp,x] show;
+		x first split "\r\n" as 'lines;        // HTTP requests are separated with CRLF
+		lines first split" " as 'method;       // separate request line.. GET /file HTTP/1.0
+		method@1 as 'uri;                      // pull out uri for further inspection
+		uri@(0,1)="/?" show ifelse ({uri drop 2 urldec evalin .},{
+			// 3 line static file server:
+			_dir,"pub/",(                      // build filename and trim leading slash
+				uri first="/" ifelse ({uri behead},{uri})
+			) as 'path .file.get orelse { 
+				[method,lines] handlecb as 'res len str as 'szs;
+				"HTTP/1.0 200 OK\r\nContent-Length: ",szs,"\r\n",
+				"Connection: close\r\n","Server: xxl v0.0\r\n\r\n"
+				show,res
+			}
+		})
+	}
+};
+'workbench is {;
+	['inhandler,x] show;"Welcome" pagetmpl "" flat str
+};
+workbench makehttpserver as 'mywebapp;
+(port,host) show .net.bind mywebapp as 'handle;
+

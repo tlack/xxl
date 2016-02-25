@@ -1,0 +1,85 @@
+{
+	_dir,"css.xxl" load as 'css;
+	[]sys@'ver as 'ver;
+	"<html>
+	<head>
+		<style>",css,"</style>
+		<title>XXL Workbench ",x,"</title>
+		<link rel='icon' type='image/png' href='/favicon-32x32.png' sizes='32x32'>
+		<link rel='icon' type='image/png' href='/android-chrome-192x192.png' sizes='192x192'>
+		<link rel='icon' type='image/png' href='/favicon-96x96.png' sizes='96x96'>
+		<link rel='icon' type='image/png' href='/favicon-16x16.png' sizes='16x16'>
+		<meta name='viewport' content='user-scalable=no,width=device-width'>
+	</head>
+	<body>
+	<div class=all>
+		<section class=hd><h1>XXL Workbench</h1>
+			<div class='menu'>
+				<!--<a class=pip href=#>&#9627;</a>-->
+				<a class=pip href=# onclick='Bpip()'>&#9714;<small><b>PIP</b></small></a>
+				<a class=wks href=# onclick='Bshare()'>&nbsp;&uarr;&nbsp;<small>Save / Share</small></a>
+				<a class=opt href=# onclick='Bmenu()'>&#9776;<small>Menu</small></a>
+			</div>
+			<div class=tip><i>Tip:</i> ",('tip sys),"</div>
+		</section>
+		<section class=pg>
+			<!--<h2>",x,"</h2>-->",y,"
+			<div id=repl></div>
+		</section>
+	</div>
+	<div class=modal><div class=modal-close><a href=# onclick='Bclose()'>&#10006;</a></div><div class=modal-inner></div></div>
+	<div id=pips></div>
+	<div class=tmpl>
+		<div class=menudlg>
+			<h2>About</h2>
+			<p>
+				Welcome to XXL. You are running <ins>",ver,"</ins>.
+			</p>
+			<h2>Help</h2>
+			<p>
+				The <a href='http://github.com/tlack/xxl/'>XXL page on Github</a> is the best place to look
+				for help and updates.
+			</p>
+			<h2>Guilty Parties</h2>
+			<p>
+				You can reach the author on Twitter at <a href='http://twitter.com/tlack'>@tlack</a>.
+			</p>
+			<p>
+				Made in Miami. Built at <a href='http://building.co'>Building.co</a>.
+			</p>
+			<p>
+				Remember to have fun.
+			</p>
+		</div>
+		<div class=pipdlg>
+			<h2>Picture in Picture</h2>
+			<p>
+				Enter an XXL expression below. Workbench will evaluate it every 5 seconds and show its result in the lower right 
+				of your web browser.
+			</p>
+			<input type=text class='pr demo' value='/pip 60 deal 6   // lotto!' />
+		</div>
+		<div class=savedlg>
+			<h2>Save</h2><p>
+				Use <ins>/save</ins> to share your session history up to now.
+				You can see your previous sessions by typing <ins>/load</ins>.
+			</p>
+			<input type=text class='pr demo' value='/save My First XXL Attempt' />
+			<h2>Share</h2><p>
+				Type <ins>/share [short dscription]</ins> to upload your session to the XXL pastebin. 
+				You'll get back a URL you can send to anyone you want.
+			</p>
+			<input type=text class='pr demo' value='/share Example of usage report' />
+			<p>
+				Don't worry. Your pastebin uploads aren't shown publicly to anyone unless you share the URL.
+			</p>
+		</div>
+		<div class=pipcss>
+			* { color: white; font-family:'Open Sans',Arial,'Lucida Grande',sans-serif; }
+		</div>
+	</div>
+	<script type=text/javascript src=app.js></script>
+	</body>
+	</html>"
+}
+

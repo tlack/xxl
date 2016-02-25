@@ -1,0 +1,213 @@
+	"#282828" as 'bg;
+	"#3d4041" as 'btnbg;
+	"#4d5051" as 'btnbghl;
+	"#9a9b9c" as 'btnfg;
+	"#9ca9ab" as 'fg;
+	"#f3f5f5" as 'headingfg;
+	"#363838" as 'prbg;                  // prompts (input type=text)
+"
+* { box-sizing: border-box; }
+html { 
+	height: 100%;
+	width: 100%;
+}
+a {
+	color: ",fg,";
+	font-weight: bold;
+	text-decoration: none;
+}
+a:hover { color: white; }
+p a { font-weight: normal; text-decoration: underline; }
+body {
+	background: ",bg," no-repeat;
+	color: ",fg,";
+	font-family:'Open Sans',Arial,'Lucida Grande',sans-serif;
+	font-size: 1.1rem;
+	height: 100%;
+	line-height: 1.5rem;
+	padding-top: 2rem;
+	width: 100%;
+}
+@media only screen and (orientation:landscape) {
+	body {
+		background-image: url(bgxxl.jpg);
+		background-size: cover;
+	}
+}
+@media only screen and (orientation:landscape) 
+	and (min-device-width:768px)
+	and (-webkit-min-device-pixel-ratio: 2) {
+	body {
+		background-image: url(bgxxl.jpg);
+		background-size: cover;
+	}
+}
+@media only screen and (orientation:landscape) 
+	and (min-width:1000px) {
+	body {
+		background-image: url(bgxxl.jpg);
+		background-size: cover;
+	}
+}
+h1 {
+	background: url(logo.png) no-repeat;
+	background-size:cover;
+	height: 22px;
+	text-indent:-5000px;
+	width: 250px;
+}
+@media only screen and (min-width:1000px) {
+	h1 {
+		height: 45px;
+		width: 500px;
+	}
+}
+h2 {
+	color: ",headingfg,";
+	font-size: 2rem;
+	font-weight: 300;
+}
+iframe {
+	background: ",btnbg,";
+	border: 0;
+	margin: 0;
+	outline none;
+	position: fixed;
+	bottom: 2rem; right: 2rem; 
+	max-height: 25%;
+	max-width: 25%;
+}
+ins {
+	border-radius: 3px;
+	font-family: Consolas,'Liberation Mono', Menlo, Courier, monospace;
+	font-size: 95%;
+	padding: 0.2em 0.4em; margin: 0;
+	background-color: rgba(0,0,0,0.1);
+	text-decoration: none;
+}
+section {
+	clear: both;
+	margin-bottom: 1rem; margin-left: 2rem; margin-right: 2rem;
+}
+.menu { 
+	clear: both; display: block;
+}
+@media only screen and (min-width:700px) {
+	.menu {
+		position: fixed; right: 2rem; top: 2rem;
+	}
+}
+.menu a {
+	background: ",btnbg,";
+	box-shadow: 0px 0px 5px rgba(0,0,0,0.5);
+	border-radius: 5px;
+	color: ",btnfg,";
+	display: inline-block;
+	font-size: 2rem; line-height: 1.5rem;
+	margin-bottom: 1rem; margin-right: 2rem;
+	height: 4rem;
+	padding: 1rem 0 0 0;
+	text-align: center; text-decoration: none;
+	transition: 0.2s all;
+	vertical-align: top;
+	width: 5rem;
+}
+@media only screen and (min-width:700px) {
+	.menu a { margin-bottom: 0; width: 6rem; }
+	.pg { margin-top: 4rem; }
+}
+.menu a:last-child { margin-right: 0; padding-top: 1.25rem; // hamburger thing is optically too high  }
+.menu a small { 
+	display: none; font-size: .7rem;
+}
+.menu a:hover {
+	background: ",btnbghl,"; color: white; height: 6rem;
+}
+.menu a:hover small {
+	display: block; margin-top: 1rem;
+}
+.modal {
+  position: fixed;
+  background: ",btnbg,";
+	display: none;
+  left: 0%; top: 0%;
+  width: 100%; height: 100%;
+  min-height: 700px;
+  padding: 2.5%;
+  z-index: 999;
+}
+@media screen and (min-width: 760px) {
+  .modal {
+    left: 5%; top: 5%;
+    width: 90%; height: 90%;
+  }
+}
+.modal h2 { 
+	border-top: 1px solid ",btnbghl,";
+	margin: 4rem 0 2rem 0; padding: 4rem 0 0 0; 
+	font-family: 'times new roman', serif;
+	font-style: italic; font-size: 2rem; font-weight: 300;
+	letter-spacing: 2px;
+}
+.modal h2:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
+.modal .modal-close { float: right; font-size: 2rem; z-index: 999; }
+.modal .modal-close a { color: white; }
+@media screen and (min-width: 760px) {
+	.modal-active .modal {
+		display: block;
+	}
+  .modal-active .all {
+    -webkit-filter: grayscale(0.5) blur(10px);
+    filter: grayscale(1) blur(10px);
+  }
+}
+.pr {
+	background: ",prbg,";
+	border: 1px solid ",bg,";
+	border-radius: 3px;
+	color:",fg,"; 
+	font-size: 1.5em; 
+	outline: none;
+	padding: 20px;
+	transition: 0.2s all;
+	width: calc(100% - 1rem);
+}
+.pr:focus { color: white; } 
+.tip { clear: both; display: none; }
+@media only screen and (min-width:700px) {
+	.tip { max-width: 400px; }
+}
+.tmpl { display: none; }
+#repl {
+	font-size: 1.5rem;
+}
+#repl ol {
+	font-size: 0.8rem;
+	margin: 0 0 0 -10px; padding: 0;
+	vertical-align: top;
+}
+#repl ol li {
+	margin-top: 1rem;
+}
+#repl .o {
+	margin-left: 1rem;
+}
+#repl .perf {
+	display: block;
+	float: right;
+	font-style: italic;
+	margin-right: 1rem;
+	opacity: 0.5;
+}
+#repl .pr {
+	background: rgba(0,0,0,0.05);
+	margin-left: 10px;
+	padding: 0;
+	width: calc(100% - 1rem);
+}
+#repl .pr:focus {
+	background: ",prbg,";
+	font-size: 2rem;
+}
+"
+
