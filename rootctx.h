@@ -1,10 +1,18 @@
 
 	// postfix/unary operators
+	// .. sequences and lists
+	res=assign(res,xt(_tagnums(".|")),x1(&first));
+	res=assign(res,xt(_tagnums("|.")),x1(&last));
+	res=assign(res,xt(_tagnums("_|")),x1(&curtail));
+	res=assign(res,xt(_tagnums("|_")),x1(&behead));
+	// named postfix verbs:
 	res=assign(res,Tt(arity),x1(&arity));
+	res=assign(res,Tt(behead),x1(&behead));
 	res=assign(res,Tt(condense),x1(&condense));
 	res=assign(res,Tt(count),x1(&count));
 	res=assign(res,Tt(curtail),x1(&curtail));
 	res=assign(res,Tt(info),x1(&info));
+	res=assign(res,Tt(first),x1(first));
 	res=assign(res,Tt(flat),x1(&flatten));
 	res=assign(res,Tt(last),x1(&last));
 	res=assign(res,Tt(len),x1(&len));
@@ -30,7 +38,13 @@
 
 	// infix/binary verbs
 	// operators:
+	// .. sequences and lists:
+	res=assign(res,xt(_tagnums("|>")),x2(&join));
+	res=assign(res,xt(_tagnums("<|")),x2(&split));
+	res=assign(res,xt(_tagnums("#|")),x2(&take));
+	res=assign(res,xt(_tagnums("|#")),x2(&drop));
 	// .. looping:
+	res=assign(res,xt(_tagnums(".:")),x2(&call));
 	res=assign(res,Tt(::),x2(&each));
 	res=assign(res,xt(_tagnums(">:")),x2(&eachboth));
 	res=assign(res,xt(_tagnums("\\:")),x2(&eachleft));
@@ -38,6 +52,7 @@
 	res=assign(res,xt(_tagnums("<:")),x2(&eachpair));
 	res=assign(res,xt(_tagnums("':")),x2(&over));
 	res=assign(res,xt(_tagnums(",:")),x2(&scan));
+	res=assign(res,xt(_tagnums("!:")),x2(&exhaust));
 	// .. math:
 	res=assign(res,Tt(=),x2(&equal));
 	res=assign(res,Tt(+),x2(&plus));
@@ -53,14 +68,16 @@
 	// .. misc:
 	res=assign(res,Tt(!),x2(&amend));
 	res=assign(res,Tt(@),x2(&apply));
-	res=assign(res,Tt($),x2(&make));
 	res=assign(res,Tt(:),x2(&dict)); 
 	res=assign(res,Tt(?),x2(&find1));
+	res=assign(res,Tt($),x2(&make));
 	res=assign(res,Tt(~),x2(&matcheasy));
 	res=assign(res,xt(_tagnums(",")),x2(&catenate)); 
-	// named verbs:
+	// named infix verbs:
 	res=assign(res,Tt(amend),x2(&amend));
+	res=assign(res,Tt(base),x2(&base));
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
+	res=assign(res,Tt(call),x2(&call));
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));
 	res=assign(res,Tt(deal),x2(&deal));
 	res=assign(res,Tt(deep),x2(&deep));
@@ -79,6 +96,7 @@
 	res=assign(res,Tt(make),x2(&make));
 	res=assign(res,Tt(nest),x2(&nest));
 	res=assign(res,Tt(pick),x2(&pick));
+	res=assign(res,Tt(orelse),x2(&orelse));
 	res=assign(res,Tt(over),x2(&over));
 	res=assign(res,Tt(rot),x2(&shift));
 	res=assign(res,Tt(scan),x2(&scan));

@@ -546,6 +546,10 @@ VP behead(VP x) {
 	// PF("behead\n");DUMP(x);
 	return drop_(x,1);
 }
+VP call(VP x,VP y) {
+	if(y==0) return EXC(Tt(value),"can't call null",x,y);
+	return apply(y,x);
+}
 VP catenate_table(VP table, VP row) {
 	PF("catenate_table\n"); DUMP(table); DUMP(row);
 	int trows=TABLE_nrows(table), tcols=TABLE_ncols(table);
@@ -2024,6 +2028,15 @@ VP or(VP x,VP y) { // TODO most of these primitive functions have the same patte
 	// PF("or result\n"); DUMP(acc);
 	return acc;
 }
+VP orelse(VP x,VP y) {
+	PF("orelse\n");DUMP(x);DUMP(y);
+	if(!IS_EXC(x) && LEN(x)>0) return x;
+	else if(NUM(x) && _any(x)) return x;
+	else {
+		if(CALLABLE(y)) return apply(y,x);
+		else return y;
+	}
+}
 VP plus(VP x,VP y) {
 	int typerr=-1;
 	// PF("plus\n");DUMP(x);DUMP(y);
@@ -2947,9 +2960,9 @@ VP parsestrlit(VP x) {
 }
 VP parseloopoper(VP x) {
 	PF("parseloopoper\n");DUMP(x);
-	VP st=xfroms(":"), en=xfroms(":\\/<>',");
+	VP st=xfroms(":|"), en=xfroms("#|:\\/<>',.");
 	st->tag=Ti(raw); en->tag=Ti(raw);
-	VP tmp1=matcheasy(x,st); 
+	VP tmp1=matchany(x,st); 
 	// PF("parseloopoper tmp1\n");DUMP(tmp1);
 	if (!_any(tmp1)) { xfree(st); xfree(en); xfree(tmp1); return x; }
 	VP tmp2=matchany(x,en);
@@ -2994,12 +3007,14 @@ VP parsestr(const char* str) {
 	PF("parsestr after nest\n");
 	xfree(pats);
 
+	acc=parseloopoper(acc);
+
 	pats=xl0();
 	lex=mklexer("0123456789.","num");
 	append(pats,ELl(lex,0));
 	append(pats,x1(&parsenum));
 	xfree(lex);
-	lex=mklexer("'abcdefghijklmnopqrstuvwxyz_.?","name");
+	lex=mklexer("'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_.?","name");
 	append(pats,ELl(lex,0));
 	append(pats,x1(&parsename));
 	xfree(lex);
@@ -3013,7 +3028,6 @@ VP parsestr(const char* str) {
 	//xfree(ctx);
 	PF("matchexec results\n");DUMP(t1);
 
-	t1=parseloopoper(t1);
 
 	// we only form expression trees after basic parsing - this saves us from
 	// having to do a bunch of deep manipulations earlier in this routine (i.e.,
