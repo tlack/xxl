@@ -839,10 +839,11 @@ VP splice(VP x,VP idx,VP replace) {
 }
 VP split(VP x,VP tok) {
 	PF("split\n");DUMP(x);DUMP(tok);
-	VP tmp=0, tmp2=0; int typerr=-1;
+	int typerr=-1;
 
 	// special case for empty or null tok.. split vector into list
 	if(tok->n==0) {
+		VP tmp, tmp2;
 		tmp=xl0();
 		if(LIST(x)) return x;
 		VARY_EACHLIST(x,({
@@ -3145,18 +3146,19 @@ void test_nest() {
 	xfree(a);xfree(b);xfree(c);
 }
 VP evalinwith(VP tree,VP ctx,VP xarg) {
+	if(!tree || !ctx) return NULL;
 	if(IS_c(tree)) return evalstrinwith(sfromx(tree),ctx,xarg);
 	if(!IS_x(ctx)) ctx=xxn(2,ctx,tree);  // try to make context ouf of dict (hopefully) and parse tree
 	else append(ctx,tree);               // parse tree is last item of context (a list, basically)
-	VP res=applyctx(ctx,xarg,0); 
+	VP res=applyctx(ctx,xarg,NULL);
 	ctx=curtail(ctx);
 	return res;
 }
 VP evalin(VP tree,VP ctx) {
-	evalinwith(tree,ctx,0);
+	return evalinwith(tree,ctx,NULL);
 }
 VP evalstrin(const char* str, VP ctx) {
-	return evalstrinwith(str,ctx,0);
+	return evalstrinwith(str,ctx,NULL);
 }
 VP evalstrinwith(const char* str, VP ctx, VP xarg) {
 	VP r;
