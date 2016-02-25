@@ -47,6 +47,7 @@ VP greater(VP x,VP y);
 VP info(VP x);
 VP iftrue(VP x,VP y);
 VP ifelse(VP x,VP y);
+void init_thread_locals();
 VP itemsz(VP x);
 VP join(VP list,VP sep);
 VP last(VP x);

@@ -3029,6 +3029,7 @@ void thr_start() {
 void* thr_run0(void* VPctx) {
 	#ifndef THREAD
 	#else
+	init_thread_locals();
 	VP ctx=clone(VPctx);
 	printf("thr_run %s\n", reprA(ctx));
 	ctx=apply(ctx,0);
@@ -3159,15 +3160,19 @@ VP selftest(VP dummy) {
 	}
 	return 0;
 }
-void init(){
-	XB0=xb(0); XB1=xb(1);
-	XI0=xi(0); XI1=xi(1);
+void init_thread_locals() {
 	XXL_SYS=xd0();
+	XXL_SYS=assign(XXL_SYS,Tt(ver),xfroms(XXL_VER));
 	XXL_SYS=assign(XXL_SYS,Tt(srcpath),xfroms(XXL_SRCPATH));
 	XXL_SYS=assign(XXL_SYS,Tt(compobj),xfroms(XXL_COMPILEOBJ));
 	XXL_SYS=assign(XXL_SYS,Tt(compshared),xfroms(XXL_COMPILESHARED));
 	XXL_SYS=assign(XXL_SYS,Tt(buildobj),xfroms(XXL_BUILDOBJ));
 	XXL_SYS=assign(XXL_SYS,Tt(buildshared),xfroms(XXL_BUILDSHARED));
+}
+void init(){
+	XB0=xb(0); XB1=xb(1);
+	XI0=xi(0); XI1=xi(1);
+	init_thread_locals();
 	thr_start();
 }
 void args(VP ctx, int argc, char* argv[]) {
