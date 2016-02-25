@@ -1,5 +1,5 @@
 // XXL Workbench, a web-based XXL development environment
-"192.168.1.9" as 'host;                  // configure these
+"localhost" as 'host;                  // configure these
 8088 as 'port;
 _dir,"/ui.xxl" load as 'pagetmpl;      // load html interface from ui.xxl (and css.xxl in turn)
 
