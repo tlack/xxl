@@ -684,6 +684,7 @@ VP dict(VP x,VP y) {
 VP drop_(VP x,int i) {
 	VP res;
 	int st, end;
+	if(!x || x->n==0) return x;
 	if(i<0) { st = 0; end=x->n+i; }
 	else { st = i; end=x->n; }
 	// PF("drop_(,%d) %d %d %d\n", i, x->n, st, end); DUMP(x);
@@ -801,12 +802,15 @@ VP shift(VP x,VP y) {
 	return (VP)0;
 }
 VP show(VP x) {
-	char* p;
 	if(x==NULL) { printf("null\n"); return x; }
-	if(IS_c(x)) p = sfromx(x);
-	else p = reprA(x);
-	printf("%s\n",p);
-	if(!IS_c(x)) free(p);
+	if(IS_c(x)) {
+		const char* p=sfromx(x);
+		printf("%s\n",p);
+	} else {
+		char* p = reprA(x);
+		printf("%s\n",p);
+		free(p);
+	}
 	return x;
 }
 VP splice(VP x,VP idx,VP replace) {
@@ -872,6 +876,7 @@ VP split(VP x,VP tok) {
 VP take_(const VP x, const int i) {
 	VP res;
 	int st, end, xn=x->n;
+	if(!x || x->n==0) return x;
 	if(i<0) { st=ABS((xn+i)%xn); end=ABS(i)+st; } else { st=0; end=i; }
 	res=ALLOC_LIKE_SZ(x,end-st);
 	FOR(st,end,({ res=appendbuf(res,ELi(x,_i % xn),1); }));
@@ -897,7 +902,7 @@ int _findbuf(const VP x, const buf_t y) {   // returns index or -1 on not found
 inline int _find1(const VP x, const VP y) {        // returns index or -1 on not found
 	// probably the most common, core call in the code. worth trying to optimize.
 	// PF("_find1\n",x,y); DUMP(x); DUMP(y);
-	ASSERT(x && LISTDICT(x) || (x->t==y->t && y->n==1), "_find1(): x must be list, or types must match with right scalar");
+	ASSERT(x && (LISTDICT(x) || (x->t==y->t && y->n==1)), "_find1(): x must be list, or types must match with right scalar");
 	VP scan;
 	if(UNLIKELY(DICT(x))) scan=KEYS(x);
 	else scan=x;
@@ -2242,16 +2247,17 @@ VP get(VP x,VP y) {
 	}
 	return apply(x,y);
 }
-
 VP set(VP x,VP y) {
 	// TODO set needs to support nesting
 	int i; VP res,ctx,val;
 	PF("set\n");DUMP(x);DUMP(y);
+	if(x==NULL || y==NULL) return x;
 	if(LIST(x)) {
 		if(!IS_x(AS_l(x,0))) return EXC(Tt(type),"set x must be (context,value)",x,y);
 		if(x->n!=2) return EXC(Tt(type),"set x must be (context,value)",x,y);
 		if(!IS_t(y)) return EXC(Tt(type),"set y must be symbol",x,y);
 		ctx=AS_l(x,0);val=AS_l(x,1); i=ctx->n-1;
+		if(val==NULL) return val;
 
 		// TODO rewrite these to share logic in the body of loop .. must be an easy
 		// way without using a helper func or macro
