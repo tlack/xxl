@@ -89,7 +89,7 @@
 // Handy functions for manipulating values and their types - from simple, to complex
 #define LEN(v) ((v)->n)
 #define SCALAR(v) ((v)->n==1)                            // is v a single value?
-#define NUM(v) (IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v)||IS_f(v))      // is v an int type?
+#define NUM(v) (IS_c(v)||IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v)||IS_f(v))      // is v an int type?
 #define SIMPLE(v) (IS_t(v)||IS_c(v)||IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v)||IS_f(v))
 #define COMPARABLE(v) (NUM(v) || IS_c(v))
 #define LIST(v) ((v)->t==0)                              // is v a general list type?

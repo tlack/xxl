@@ -7,7 +7,7 @@ m.types = [
 	// 3 c type
 	// 4 var args type
 	// 5 formatter
-	// 6 has repr
+	// 6 has repr func in xxl.c
 	// 7 max
 	[0,"l","list","VP","VP","%p",true,"0"],
 	[1,"t","tag","tag_t","long long","%llld",true,"LONG_LONG_MAX"],
@@ -15,7 +15,7 @@ m.types = [
 	[3,"b","byte","int8_t","int","%d",false,"SCHAR_MAX"],
 	[4,"i","int","int","int","%d",false,"INT_MAX"],
 	[5,"j","long","__int64_t","int","%ld",false,"LONG_MAX"],
-	[6,"o","octo","__int128_t","int","%llld",false,"LONG_LONG_MAX"],/* TODO custom printf for octowords */
+	[6,"o","octo","__int128_t","int","%llld",true,"LONG_LONG_MAX"],/* TODO custom printf for octowords */
 	[7,"f","float","double","double","%0.5f",false,"DBL_MAX"],/* TODO custom printf for octowords */
 	[8,"d","dict","VP","VP","%p",true,"0"],// a dict is a general list with two items [keys,vals]
 	[9,"a","table","VP","VP","%p",true,"0"],// a table is a dict whose vectors happen to contain more than 1 value (usually)

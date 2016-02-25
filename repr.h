@@ -30,16 +30,6 @@ char* repr_j(VP x,char* s,size_t sz) { int i;
 if(!SIMPLE(x) || x->n>1) APF(sz,")",0);
 return s; }
 
-char* repr_o(VP x,char* s,size_t sz) { int i; 
-	IF_RET(x->n==0,APF(sz,"xo0()",0));
-	if(!SIMPLE(x)) APF(sz,"'o(",0);
-	else if(x->n>1) APF(sz,"(",0);
-	for(i=0;i<x->n-1;i++) snprintf(s+strlen(s),sz-strlen(s)-1,"%llld,",AS_o(x,i)); 
-	if(SIMPLE(x)) snprintf(s+strlen(s),sz-strlen(s)-1,"%llldo",AS_o(x,i)); 
-		else snprintf(s+strlen(s),sz-strlen(s)-1,"...",AS_o(x,i)); 
-if(!SIMPLE(x) || x->n>1) APF(sz,")",0);
-return s; }
-
 char* repr_f(VP x,char* s,size_t sz) { int i; 
 	IF_RET(x->n==0,APF(sz,"xf0()",0));
 	if(!SIMPLE(x)) APF(sz,"'f(",0);
