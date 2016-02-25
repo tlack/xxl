@@ -3178,12 +3178,24 @@ void init(){
 void args(VP ctx, int argc, char* argv[]) {
 	if(argc > 1) {
 		int i; VP a=xlsz(argc); 
-		for(i=0; i<argc; i++) {
+		for(i=1; i<argc; i++) {
+			printf("args %d\n%s\n", i, argv[i]);
 			VP item=xfroms(argv[i]);
 			if(AS_c(item,0)=='-') 
 				show(evalin(show(catenate(xfroms("1 "),behead(item))),ctx));
-			else 
-				evalfile(ctx,argv[i]);
+			else if (access(argv[i],R_OK) != -1) { 
+				show(evalfile(ctx,argv[i]));
+			} else {
+				VP xarg;
+				#ifdef STDLIB_FILE
+					xarg=fileget(xfroms("-"));
+				#else
+					xarg=0;
+				#endif
+				printf("evaluating as str:\n%s\n", argv[i]);
+				show(evalstrinwith(argv[i],ctx,xarg));
+				exit(1);
+			}
 			a=append(a,item);
 		}
 		set(xln(2,ctx,a),Tt(argv));

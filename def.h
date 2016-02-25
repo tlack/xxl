@@ -158,7 +158,13 @@
 #define RETURN_IF_EXC(x) if(x==0 || IS_EXC(x)) return x;
 
 // misc
-#define IOBLOCKSZ 10*1024
+#define CH_SET_A "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#define CH_SET_a "abcdefghijklmnopqrstuvwxyz"
+#define CH_SET_n "0123456789"
+#define CH_SET_na CH_SET_n CH_SET_a
+#define CH_SET_nA CH_SET_n CH_SET_A
+
+#define IOBLOCKSZ 100*1024
 #define MAXSTACK 2048
 #define LIKELY(x)       __builtin_expect((x),1)
 #define UNLIKELY(x)     __builtin_expect((x),0)

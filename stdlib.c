@@ -35,16 +35,19 @@ VP filecwd(VP dummy) {
 		return EXC(Tt(open),"couldnt get current working directory",0,0);	
 }
 VP fileget(VP fn) {
-	size_t r=0; int fd=0; char buf[IOBLOCKSZ]; VP fname=fn;
+	int r, fd; char buf[IOBLOCKSZ]; VP fname=fn;
 	if(!IS_c(fname)) fname=filepath(fn);
 	if(!IS_c(fname)) return EXC(Tt(type),"readfile filename must be string or pathlist",fn,0);
-	fd=open(sfromx(fname),O_RDONLY);
+	//PF_LVL++;PF("fileget\n");DUMP(fn);PF_LVL--;
+	if(LEN(fname)==1 && AS_c(fname,0)=='-') fd=STDIN_FILENO; 
+	else fd=open(sfromx(fname),O_RDONLY);
 	if(fd<0) return EXC(Tt(open),"could not open file for reading",fname,0);
 	VP acc=xcsz(IOBLOCKSZ);
 	do {
 		r=read(fd,buf,IOBLOCKSZ);
-		if(r<0) { xfree(acc); close(fd); return EXC(Tt(read),"could not read from file",fname,0); }
-		else appendbuf(acc,(buf_t)buf,r);
+		//printf("fileget read %d\n",r);
+		if(r<=0) { xfree(acc); close(fd); return EXC(Tt(read),"could not read from file",fname,0); }
+		else appendbuf(acc,(buf_t)&buf,r);
 	} while (r==IOBLOCKSZ);
 	close(fd);
 	return acc;
