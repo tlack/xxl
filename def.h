@@ -17,7 +17,7 @@
 #include <pthread.h>
 #endif
 
-#define XXLVER "v0"
+#define XXL_VER "v0 spiral insana"
 #define TESTITERS 1
 #ifndef DEBUG
 #define DEBUG 0
