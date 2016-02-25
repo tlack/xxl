@@ -7,7 +7,7 @@
 
 #ifdef STDLIBNET
 
-size_t netr(int sock,void* b,size_t maxl) {
+int netr(int sock,void* b,size_t maxl) {
 	return read(sock,b,maxl);
 }
 VP netw(int sock,VP buf) {
@@ -27,8 +27,7 @@ VP netloop(VP xsock,VP cb) {
 	int sock=AS_i(xsock,0);
 	VP t1,t2,t3;
 	VP resp;
-	int n=0;
-	PF_LVL=3;
+	int nread, n=0;
 	printf("netloop starting..\n");
 	DUMP(xsock);
 	DUMP(cb);
@@ -43,7 +42,10 @@ VP netloop(VP xsock,VP cb) {
 		*/
 		PF("new connection %d, #%d\n",cons, n);
 		memset(input,0,NETLOOPBLK);
-		netr(cons,input,NETLOOPBLK-1);
+		nread=netr(cons,input,NETLOOPBLK-1);
+		PF("read result %d\n", nread); 
+		if(nread <= 0) { PF("closing socket\n"); close(cons); continue; }
+
 		t1=xfroms(input);t2=xfroms("n/a");t3=xln(2,t1,t2);
 		resp=apply(cb,t3);
 		xfree(t3);xfree(t2);xfree(t1);
@@ -87,8 +89,13 @@ VP netbind(VP opts,VP cb) {
 		strncpy(host,sfromx(ELl(opts,1)),64);
 		if(inet_aton(host,&sin.sin_addr)==-1)return EXC(Tt(host),"hostname not found",opts,cb);
 	}
-	if(bind(sock,(struct sockaddr*)&sin,sizeof(sin)))
-		return EXC(Tt(bind),"couldnt bind host/port",opts,cb);
+	if(bind(sock,(struct sockaddr*)&sin,sizeof(sin))) {
+		char* err=malloc(256); int len;
+		snprintf(err,256,"couldn't bind to host/port: ");
+		len=strlen(err);
+		strerror_r(errno, err+len, 256-len);
+		return EXC(Tt(bind),err,opts,cb);
+	}
 	listen(sock, 10); // XXX smarter listen backlog
 	xref(cb);
 	VP xsock=xi(sock);
@@ -98,6 +105,5 @@ VP netbind(VP opts,VP cb) {
 	DUMP(cb);
 	return opts;
 }
-
 #endif
 
