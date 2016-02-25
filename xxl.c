@@ -1107,7 +1107,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 	if(!use_existing_left) left=ELl(curframe,4);
 	else {
 		PF("using existing left\n");DUMP(left);
-		if(left!=0 && UNLIKELY(IS_EXC(left))) { MAYBE_RETURN(left); }
+		// if(left!=0 && UNLIKELY(IS_EXC(left))) { MAYBE_RETURN(left); }
 		use_existing_left=0;
 	}
 
@@ -1134,7 +1134,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			PF("using existing item\n"); DUMP(item);
 			use_existing_item=0;
 			if(item==0) continue;
-			if(UNLIKELY(IS_EXC(item))) { MAYBE_RETURN(item); }
+			// if(UNLIKELY(IS_EXC(item))) { MAYBE_RETURN(item); }
 			goto evalexpr;
 		} else PF("picking up item from code %d\n", i); 
 		item=ELl(code,i);
@@ -1230,7 +1230,9 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			} else
 				item=get(parent,item);
 			PF("decoded string identifier\n");DUMP(item);
-			if(IS_EXC(item)) { MAYBE_RETURN(left!=NULL && CALLABLE(left)?left:item); }
+			// if(IS_EXC(item)) { MAYBE_RETURN(left!=NULL && CALLABLE(left)?left:item); }
+			// NB. i dont remember why we did the callable check there :/ note to self dont be evil
+			if(IS_EXC(item)) { MAYBE_RETURN(item); }
 		} else if(tag==tname) {
 			PF("non-string name encountered");
 			VP getparent=parent;
@@ -1282,10 +1284,8 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			Proj p;
 			PF("applying dangling left callable\n");
 			DUMP(left);
-			if(left->tag==Ti(proj)) 
-				left=apply2(ELl(left,1),ELl(left,0),item);
-			else
-				left=apply(left,item);
+			if(left->tag==Ti(proj)) left=apply2(ELl(left,1),ELl(left,0),item);
+			else left=apply(left,item);
 			if(left == 0 || left->tag==texc) { MAYBE_RETURN(left); }
 			if(IS_p(left)) {
 				p=AS_p(left,0);
@@ -1318,7 +1318,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 						left=apply(item,left);
 						PFOUT();
 					}
-					if(IS_EXC(left)) { MAYBE_RETURN(left); }
+					// if(IS_EXC(left)) { MAYBE_RETURN(left); }
 				}
 				PF("applyexpr apply returned\n");DUMP(left);
 			} else {
@@ -1330,8 +1330,10 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		// recall that [1,2,3] goes into the parse tree as 'listexpr([1, 2, 3]), which is fine,
 		// but as we evaluate [1, 2, 3], we don't have a way of forcing 1 into being a list before
 		// that , occurs.. so after the first item, we force it to a list if it isnt one. :)
-		if(i==0 && code->tag==tlistexpr && !LIST(left))
+		if(i==0 && code->tag==tlistexpr && !LIST(left)) {
+			PF("forcing left as list due to listexpr\n");
 			left=xl(left);
+		}
 
 		PF("bottom\n");
 	}
