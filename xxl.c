@@ -338,10 +338,14 @@ VP xfree(VP x) {
 		//if(x->alloc && x->dyn) free(x->dyn);
 	} return x; }
 VP xref(VP x) { if(MEM_WATCH){MEMPF("ref %p\n",x);} x->rc++; return x; }
-VP xfroms(const char* str) {  // character value from string - strlen helper
+VP xfroms(const char* str) {  
+	// character vector from C string. allocates new VP. free it when done.
+	// NB. returned VP does not contain the final \0 
+	// (i.e., its result->n = strlen(str)-1)
 	size_t len = strlen(str); type_info_t t = typechar('c');
 	VP a = xalloc(t.t,len); memcpy(BUF(a),str,len); a->n=len; return a; }
-const char* sfromx(VP x) { 
+const char* sfromx(VP x) {
+	// NB. does NOT allocate - do not free returned value.
 	if(x==NULL)return "null";
 	return (char*)BUF(x); }
 static inline int _equalm(const VP x,const int xi,const VP y,const int yi) {
@@ -2111,7 +2115,7 @@ VP key(VP x) {
 		int i;VP item;
 		for(i=x->n-1;i>=0;i--) 
 			if(DICT(ELl(x,i)))
-				return ELl(ELl(x,i),0);
+				return KEYS(ELl(x,i));
 		return xd0();
 	}
 	if(SIMPLE(x)) return count(xi(x->n));
@@ -2387,8 +2391,6 @@ static inline VP str2tag(VP str) { // turns string, or list of strings, into tag
 static inline VP tagwrap(VP tag,VP x) {
 	return entag(xln(1, x),tag);
 }
-/*static inline 
-*/
 VP tagv(const char* name, VP x) {
 	return entags(xln(1,x),name);
 }
@@ -3100,30 +3102,42 @@ void test_nest() {
 	#include"test-nest.h"
 	xfree(a);xfree(b);xfree(c);
 }
-VP evalin(VP tree,VP ctx) {
-	if(IS_c(tree)) return evalstrin(sfromx(tree),ctx);
+VP evalinwith(VP tree,VP ctx,VP xarg) {
+	if(IS_c(tree)) return evalstrinwith(sfromx(tree),ctx,xarg);
 	if(!IS_x(ctx)) ctx=xxn(2,ctx,tree);  // try to make context ouf of dict (hopefully) and parse tree
 	else append(ctx,tree);               // parse tree is last item of context (a list, basically)
-	VP res=applyctx(ctx,0,0); 
+	VP res=applyctx(ctx,xarg,0); 
 	ctx=curtail(ctx);
 	return res;
 }
+VP evalin(VP tree,VP ctx) {
+	evalinwith(tree,ctx,0);
+}
 VP evalstrin(const char* str, VP ctx) {
+	return evalstrinwith(str,ctx,0);
+}
+VP evalstrinwith(const char* str, VP ctx, VP xarg) {
 	VP r;
-	PF("evalstrin\n\"%s\"\n",str);
+	PF_LVL++;
+	PF("evalstrinwith\n\"%s\"\n",str);DUMP(xarg);
+	PF_LVL--;
 	VP p=parsestr(str);
-	r=evalin(p,ctx);
+	r=evalinwith(p,ctx,xarg);
 	PF("evalstrin returning\n");DUMP(r);
 	return r;
 }
-void evalfile(VP ctx,const char* fn) {
+VP evalfile(VP ctx,const char* fn) {
+	return loadin(xfroms(fn), ctx);
+	/*
 	VP res,parse,acc = fileget(xfroms(fn));
 	PF("evalfile executing\n"); DUMP(acc);
 	parse=parsestr(sfromx(acc));
 	append(ctx,parse);
 	res=applyctx(ctx,NULL,NULL); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
 	ctx=curtail(ctx);
-	printf("%s\n",repr(res));
+	xfree(parse);
+	return res;
+	*/
 }
 VP loadin(VP fn,VP ctx) {
 	char cwd[1024];
