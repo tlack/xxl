@@ -479,20 +479,30 @@ VP amend(VP x,VP y) {
 	if(!SIMPLE(x) && !CONTAINER(x)) return EXC(Tt(type),"amend x must be a simple or container type",x,y);
 	if(DICT(x) && DICT(y)) return amend_dict_dict(x,y);
 	if(!CONTAINER(y) || y->n!=2) return EXC(Tt(type),"amend y should be [indices,replacements]",x,y);
-	VP idx=ELl(y,0), val=ELl(y,1), acc=ALLOC_LIKE_SZ(x, idx->n), idxi, idxv, tmp=0; int i,fail=-1;
-	if(CALLABLE(idx)) idx=condense(matcheasy(x,idx));
+	VP idx=ELl(y,0), val=ELl(y,1), acc=ALLOC_LIKE_SZ(x, idx->n), idxv, tmp=0; int i,fail=-1;
+	if(CALLABLE(idx)) { 
+		idx=matcheasy(x,idx);
+		RETURN_IF_EXC(idx);
+		idx=condense(idx);
+	}
 	for(i=0;i<idx->n;i++) { 
-		idxi=xi(i); idxv=apply(idx,idxi); // TODO really need a fast 0 alloc version of apply(simple,int)!
-		if(UNLIKELY(CALLABLE(val))) tmp=apply(val,apply(x,idxv));
-		else {
+		idxv=apply_simple_(idx,i); // TODO really need a fast 0 alloc version of apply(simple,int)!
+		if(UNLIKELY(CALLABLE(val))) {
+			PF("amend calling val cb\n");DUMP(val);
+			PFIN();
+			tmp=apply(val,apply(x,idxv));
+			PFOUT();
+		} else {
 			// handle the case of assigning one vector (ie a string) to a given index
 			// or the case of assigning many indices to one value
 			if (SCALAR(idx) || SCALAR(val)) tmp=xref(val); 
-			else tmp=apply(val,idxv);
+			else { PFIN(); tmp=apply(val,idxv); PFOUT(); }
 		}
-		if(UNLIKELY(!CONTAINER(x) && tmp->t!=x->t))return EXC(Tt(value),"amend value type does not match x",x,tmp);
+		RETURN_IF_EXC(tmp);
+		if(IS_EXC(tmp)) { xfree(idxv); return tmp; }
+		if(UNLIKELY(!CONTAINER(x) && tmp->t!=x->t)) return EXC(Tt(value),"amend value type does not match x",x,tmp);
 		assign(x,idxv,tmp);
-		xfree(idxi); xfree(idxv); xfree(tmp);
+		xfree(idxv); xfree(tmp);
 	}
 	PF("amend returning\n");DUMP(x);
 	return x;
