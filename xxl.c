@@ -1687,12 +1687,16 @@ VP each(const VP obj,const VP fun) {
 	VP tmp, res, acc=NULL; 
 	if(DICT(obj)) return eachdict(obj,fun);	
 	if(TABLE(obj)) return eachtable(obj,fun);
-	int n=obj->n;
+	int n=LEN(obj);
+	if(n==0) return obj;
 	// PF("each\n");DUMP(obj);DUMP(fun);
 	FOR(0,n,({ 
 		// PF("each #%d\n",n);
-		tmp=apply(obj, xi(_i)); res=apply(fun,tmp); 
+		tmp=apply_simple_(obj, _i); 
+		if(IS_EXC(tmp)) { if(acc) xfree(acc); return tmp; }
+		res=apply(fun,tmp); 
 		if(res==0) continue; // no idea lol
+		if(IS_EXC(res)) { if(acc) xfree(acc); return res; }
 		// delay creating return type until we know what this func produces
 		if (!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
 		else if (!LIST(acc) && res->t != acc->t) 
