@@ -70,7 +70,7 @@ char* repr0(VP x,char* s,size_t sz) {
 		APF(sz, ")", 0);
 	if(!SIMPLE(x)) {
 		for(i=0; i<REPR_SEEN_MAX; i++) {
-			if(REPR_SEEN[i] == 0) {
+			if(REPR_SEEN[i] == NULL) {
 				REPR_SEEN[i] = x; break;
 			}
 		}
