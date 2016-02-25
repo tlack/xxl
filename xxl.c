@@ -158,12 +158,11 @@ char* repr_l(VP x,char* s,size_t sz) {
 	APF(sz,"]",0);
 	return s;
 }
-char* repr_t(VP x,char* s,size_t sz) {
+char* repr_o(VP x,char* s,size_t sz) {
 	int i=0,n=x->n;tag_t tag;
 	if(n>1) APF(sz,"(",0);
 	for(;i<n;i++){
-		tag = AS_t(x,i);
-		APF(sz,"'%s",tagnames(tag));
+		APF(sz,"%s",sfromx(numelem2base(x,i,10)));
 		if(i!=n-1)
 			APF(sz,",",0);
 		// repr0(*(EL(x,VP*,i)),s,sz);
@@ -186,19 +185,32 @@ char* repr_p(VP x,char* s,size_t sz) {
 	APF(sz,")",0);
 	return s;
 }
+char* repr_t(VP x,char* s,size_t sz) {
+	int i=0,n=x->n;tag_t tag;
+	if(n>1) APF(sz,"(",0);
+	for(;i<n;i++){
+		tag = AS_t(x,i);
+		APF(sz,"'%s",tagnames(tag));
+		if(i!=n-1)
+			APF(sz,",",0);
+		// repr0(*(EL(x,VP*,i)),s,sz);
+	}
+	if(n>1) APF(sz,")",0);
+	return s;
+}
 char* repr_x(VP x,char* s,size_t sz) {
 	int i;VP a;
-	APF(sz,"'ctx[",0);
+	APF(sz,"'ctx#%p[\n",x);
 	for(i=0;i<x->n;i++){
 		a = ELl(x,i);
 		if(!a) APF(sz,"/*null*/",0);
 		else if(IS_d(a)) {
 			APF(sz,"'scope",0);
-			//repr0(KEYS(a),s,sz);
+			repr0(KEYS(a),s,sz);
 		} else
 			repr0(a,s,sz);
 		if(i!=x->n-1)
-			APF(sz,",",0);
+			APF(sz,"\n",0);
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
 	APF(sz,"]",0);
