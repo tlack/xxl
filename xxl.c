@@ -961,21 +961,6 @@ VP make_table(VP keys,VP vals) {
 	EL(res,VP,1)=xlsz(LEN(ELl(vals,0)));
 	res->n=2;
 	return catenate_table(res, vals);
-	if(LIST_of_lists(vals) && LEN(ELl(vals,0))==LEN(keys)) {
-	}
-	if(LEN(keys)!=LEN(vals)) return EXC(Tt(value),"tables require matching sized keys and vals",keys,vals);
-  EL(res,VP,0)=clone(keys);
-  newvals=clone(vals);
-  for(i=0; i<LEN(newvals); i++) {
-    // if any of the values of this dictionary are not scalar, we'll need
-    // to make that column into a general list, or indexing row values will
-    // become very confusing indeed
-    if(!SCALAR(ELl(newvals,i))) EL(newvals,VP,i)=xl(ELl(newvals,i));
-  }
-  EL(res,VP,1)=newvals;
-  res->n=2;
-	PF("make_table returning\n");DUMP(res);
-	return res;
 }
 VP make(VP x, VP y) { 
 	// TODO cast() should short cut matching kind casts 
