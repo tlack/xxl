@@ -799,7 +799,7 @@ VP shift(VP x,VP y) {
 	if(!NUM(y)) return EXC(Tt(type),"shr y must be numeric",x,y);
 	int typerr=-1;
 	VARY_EL(y,0,({return shift_(x,_x);}),typerr);
-	return (VP)0;
+	return NULL;
 }
 VP show(VP x) {
 	if(x==NULL) { printf("null\n"); return x; }
@@ -888,7 +888,7 @@ VP take(const VP x, const VP y) {
 	PF("take args\n"); DUMP(x); DUMP(y);
 	IF_RET(!NUM(y) || !SCALAR(y), EXC(Tt(type),"take x arg must be single numeric",x,y));	
 	VARY_EL(y, 0, ({ return take_(x,_x); }), typerr);
-	return (VP)0;
+	return NULL;
 }
 int _findbuf(const VP x, const buf_t y) {   // returns index or -1 on not found
 	// PF("findbuf\n");DUMP(x);
@@ -1164,7 +1164,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			// don't require complex evaluation.. but some do require recursion
 			if (!SIMPLE(item)) {
 				PF("applying subexpression\n");
-				VP newframe = xln(9,parent,item,xarg,yarg,(VP)0,xi(i),xi(stack_i),xi(2),left);
+				VP newframe = xln(9,parent,item,xarg,yarg,NULL,xi(i),xi(stack_i),xi(2),left);
 				PF("trying stack hack for expression (expr/listexpr)\n");
 				DUMP(newframe);
 				stack=append(stack,newframe);
@@ -1307,7 +1307,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 				} else {
 					PF("applyexpr calling apply(item,left)\n");DUMP(item);DUMP(left);
 					if(IS_x(item)) {
-						VP newframe = xln(9,item,ELl(item,item->n-1),left,(VP)0,left,xi(i+1),xi(stack_i),XI1,left);
+						VP newframe = xln(9,item,ELl(item,item->n-1),left,NULL,left,xi(i+1),xi(stack_i),XI1,left);
 						PF("trying stack hack\n");
 						DUMP(newframe);
 						stack=append(stack,newframe);
@@ -1750,7 +1750,7 @@ VP eachright(const VP obj,const VP fun) {
 }
 static inline VP eachpair(VP obj,VP fun) {
 	ASSERT(1,"eachpair nyi");
-	return (VP)0;
+	return NULL;
 }
 VP exhaust(const VP x,const VP y) {
 	int i;
@@ -2327,7 +2327,7 @@ VP sys(VP x) {
 		if(x==NULL || EMPTYLIST(x)) return clone(XXL_SYS); 
 		else return DICT_find(XXL_SYS,x);
 	}
-	return (VP)0;
+	return NULL;
 }
 VP partgroups(VP x) { 
 	// separate 1 3 4 5 7 8 -> [1, 3 4 5, 7 8]; always returns a list, even with one item
@@ -2813,7 +2813,7 @@ VP mkworkspace() {
 }
 VP eval(VP code) {
 	ASSERT(1, "eval nyi");
-	return (VP)0;
+	return NULL;
 }
 VP list2vec(VP obj) {
 	// Collapses lists that contain all the same kind of vector items into a
