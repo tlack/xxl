@@ -1853,6 +1853,22 @@ VP any(VP x) {
 	if(LIST(x)) return deep(x,x1(&any));
 	return xb(_any(x));
 }
+VP base(VP x,VP y) {
+	// two different functions in one:
+	// 1. convert string x to number, assuming it's a number formatted in base y.
+	// 2. convert an XXL number x to a string in base y
+	int b=NUM_val(y), xn=LEN(x), i;
+	if(IS_c(x)) {
+		VP xr=reverse(x); I128 acc;
+		if(b==10 || b==16) return str2num(x);
+		return EXC(Tt(nyi), "base not yet implemented", x, y);
+	}
+	if(NUM(x)) {
+		VP res=xcsz(5); // ARB
+		for(i=0; i<xn; i++) res=append(res,numelem2base(x, i, b));
+		return res;
+	}
+}
 static inline VP divv(VP x,VP y) { 
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
 	// PF("div");DUMP(x);DUMP(y);DUMP(acc);
@@ -2024,16 +2040,22 @@ VP plus(VP x,VP y) {
 }
 static inline VP str2num(VP x) {
 	// TODO optimize str2int
+	// NB. str2num creates int at the minimum
 	double d; I128 buf=0; const char* s=sfromx(flatten(x));
 	PF("str2num %s\n",s);DUMP(x);
 	IF_EXC(!IS_c(x),Tt(type),"str2int arg should be char vector",x,0);
 	if(strchr(s,'.')!=0 && (d=strtod(s,NULL))!=0) {
 		return xf(d);
+	} else if(LEN(x)>2 && s[0]=='0' && s[1]=='x') {
+		if (sscanf(s,"%llx",&buf)==1) {
+			if(buf<MAX_i)
+				return xi((CTYPE_i)buf);
+			if(buf<MAX_j)
+				return xj((CTYPE_j)buf);
+			return xo((CTYPE_o)buf);
+		} else 
+			return x;
 	} else if (sscanf(s,"%lld",&buf)==1) { // should probably use atoi or strtol
-		/* assume int by default 
-		if(buf<MAX_b)
-			return xb((CTYPE_b)buf);
-		*/
 		if(buf<MAX_i)
 			return xi((CTYPE_i)buf);
 		if(buf<MAX_j)
@@ -2081,7 +2103,7 @@ VP count(VP x) {
 }
 static inline VP times(VP x,VP y) {
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
-	PF("times\n");DUMP(x);DUMP(y);DUMP(info(acc));
+	//PF("times\n");DUMP(x);DUMP(y);DUMP(info(acc));
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"times argument should be simple types",x,0);
 	VARY_EACHBOTH(x,y,({
 		PF("%d %d %d %d\n", _i, _j, _x, _y);
@@ -2251,7 +2273,10 @@ VP set2(VP x,VP y) {                   // exactly like set, but arguments are [[
 }
 
 VP numelem2base(VP num,int i,int base) {
-	PF("numelem2base %d %d", i, base);DUMP(num);
+	// NB. this is called from repr_o. NO DUMP() ALLOWED!
+	if(!NUM(num)) return EXC(Tt(type),"numelem2base can't operate on that type",num,0);
+	if(base > 36) return EXC(Tt(value),"numelem2base can't produce that base",num,0);
+	if(i > LEN(num)) return EXC(Tt(value),"numelem2base bad index",num,xi(i));
 	if(IS_f(num)) {
 		char buf[20];
 		snprintf(buf,20,"%0.04f",num);
@@ -2260,33 +2285,30 @@ VP numelem2base(VP num,int i,int base) {
 	int typerr=-1; I8 buf; I128 rem; 	
 	VARY_EL_NOFLOAT(num,i,({ rem = _x; }),typerr);
 	VP res=xcsz(5);
+	char ch[]=CH_SET_na;
 	do {
-		PF("%lld\n", rem);
-		buf='0' + (rem % base);
+		// PF("%lld\n", rem);
+		buf=ch[rem % base];
 		appendbuf(res,&buf,1);
 		rem = rem / base;
 	} while (rem>0);
-	DUMP(res);
 	return reverse(res);
 }
-
 VP str(VP x) {
 	PF("str\n");DUMP(x);
 	if(IS_c(x)) return x;
 	if(IS_t(x)) return tagname(AS_t(x,0));
-	if(NUM(x)) return str(numelem2base(x,0,10));
+	if(NUM(x)) return numelem2base(x,0,10);
 	return EXC(Tt(type),"str only works with simple types",x,NULL);
 }
-
 VP sys(VP x) {
 	PF("sys\n");DUMP(x);
 	if(XXL_SYS) {
-		if(EMPTYLIST(x)) return clone(XXL_SYS); 
+		if(x==NULL || EMPTYLIST(x)) return clone(XXL_SYS); 
 		else return DICT_find(XXL_SYS,x);
 	}
 	return (VP)0;
 }
-
 VP partgroups(VP x) { 
 	// separate 1 3 4 5 7 8 -> [1, 3 4 5, 7 8]; always returns a list, even with one item
 	VP acc,tmp;int n=0,typerr=-1;
@@ -2845,9 +2867,8 @@ VP parsename(VP x) {
 VP parsenum(VP x) {
 	PF("parsenum\n");DUMP(x);
 	VP res=flatten(x);
-	if(IS_c(res)) {
-		return str2num(res);
-	} else return res;
+	if(IS_c(res)) return str2num(res);
+	else return res;
 }
 VP parselambda(VP x) {
 	int i,arity=0,typerr=-1,tname=Ti(name),traw=Ti(raw); VP this;

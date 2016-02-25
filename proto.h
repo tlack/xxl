@@ -67,6 +67,7 @@ VP mkworkspace();
 VP minus(VP x,VP y);
 VP mod(VP x,VP y);
 VP not(VP x);
+VP numelem2base(VP num,int i,int base);
 VP over(VP x,VP y);
 VP or(VP x,VP y);
 VP parse(VP x);
