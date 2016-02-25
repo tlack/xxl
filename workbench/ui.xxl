@@ -20,7 +20,7 @@
 				<a class=wks href=# onclick='Bshare()'>&nbsp;&uarr;&nbsp;<small>Save / Share</small></a>
 				<a class=opt href=# onclick='Bmenu()'>&#9776;<small>Menu</small></a>
 			</div>
-			<div class=tip><i>Tip:</i> ",('tip sys),"</div>
+			<!--<div class=tip><i>Tip:</i></div>-->
 		</section>
 		<section class=pg>
 			<!--<h2>",x,"</h2>-->",y,"
