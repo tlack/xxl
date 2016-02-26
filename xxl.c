@@ -285,8 +285,8 @@ VP xprofile_end() {
 	return xl0();
 }
 VP xrealloc(VP x,I32 newn) {
-	// PF("xrealloc %p %d\n",x,newn);
-	if(newn>x->cap) {
+	// PF("xrealloc %p t=%d isz=%d %d/%d n=%d a=%d\n",x,x->t,x->itemsz,newn,x->cap,x->n,x->alloc);
+	if(newn>=x->cap) {
 		buf_t newp; I32 newsz;
 		newn = (newn < 10*1024) ? newn * 4 : newn * 1.25; // TODO there must be research about realloc bins no?
 		newsz = newn * x->itemsz;
@@ -445,11 +445,11 @@ VP append(VP x,VP y) {
 		EL(x,VP,x->n)=y; x->n++;
 		// PF("afterward:\n"); DUMP(x);
 	} else {
-		buf_t dest;
-		// PF("append disaster\n");DUMP(info(x));DUMP(x);DUMP(info(y));DUMP(y);
-		dest = BUF(x) + (x->n*x->itemsz);
+		// PF("append disaster xn %d xc %d xi %d xsz %d yn %d yc %d yi %d ysz %d\n",x->n,x->cap,x->itemsz,x->sz,y->n,y->cap,y->itemsz,y->sz);
+		// DUMP(info(x));DUMP(x);DUMP(info(y));DUMP(y);
+		// dest = BUF(x) + (x->n*x->itemsz);
 		x=xrealloc(x,x->n + y->n);
-		memmove(ELsz(x,x->itemsz,x->n),BUF(y),y->sz);
+		memmove(ELsz(x,x->itemsz,x->n),BUF(y),y->n*y->itemsz);
 		x->n+=y->n;
 	}
 	return x;

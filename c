@@ -21,6 +21,7 @@ if [ -x /usr/bin/clang ]; then
 	echo using clang
 	CC="/usr/bin/clang"
 	ARCH=""
+	DEFS="$DEFS -fsanitize=address -fno-omit-frame-pointer "
 	# add Mac-specific definitions here
 fi
 
