@@ -8,7 +8,7 @@ DEBUG="-DDEBUG -g -pg -ggdb3"  # comment out for silence
 OPT=""
 # OPT="-O3"
 DEFS="-DTHREAD $DEBUG $OPT"
-WARN="-Wall -Wno-format-extra-args -Wno-unused-function -Wno-unused-value "
+WARN="-Wall -Wno-format-extra-args -Wno-unused-function -Wno-unused-value -Wchar-subscripts"
 WARN="$WARN -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format"
 
 # decide what goes into stdlib
