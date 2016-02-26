@@ -86,7 +86,7 @@ VP netbind(VP opts,VP cb) {
 	port=AS_i(ELl(opts,0),0);
 	sin.sin_port=htons(port);
 	if(ELl(opts,1)->n >= 1 && IS_c(ELl(opts,1))) {
-		strncpy(host,sfromx(ELl(opts,1)),64);
+		strncpy(host,bfromx(ELl(opts,1)),64);
 		if(inet_aton(host,&sin.sin_addr)==-1)return EXC(Tt(host),"hostname not found",opts,cb);
 	}
 	if(bind(sock,(struct sockaddr*)&sin,sizeof(sin))) {

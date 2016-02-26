@@ -25,8 +25,9 @@ VP randtip() {
 void tip() {
 	VP before=xfroms("tip: "),after=xfroms(" ('tip' for more)");
 	VP tip=randtip();
-	show(flatten(catenate(catenate(before,tip),after)));
-	xfree(tip);xfree(after);xfree(before);
+	VP str=flatten(catenate(catenate(before,tip),after));
+	show(str);
+	xfree(str);xfree(tip);xfree(after);xfree(before);
 }
 
 void showexc(VP ctx,VP exc) {
@@ -46,7 +47,7 @@ void showexc(VP ctx,VP exc) {
 	xfree(clue);xfree(csel);
 	*/
 	for(i=0;i<exc->n;i++) {
-		printf("%s: ",sfromx(ELl(labels,i)));
+		printf("%s: ",bfromx(ELl(labels,i)));
 		show(ELl(exc,i));
 	}
 	xfree(labels); xfree(strs);
@@ -72,7 +73,7 @@ void repl(VP ctx) {
 	tip();
 
 	for(;;) {
-		// printf("xxl@%s> ", sfromx(get(ctx,t1)));
+		// printf("xxl@%s> ", bfromx(get(ctx,t1)));
 		//PF_LVL=2;
 		printf("% 4d. ",i);
 		fgets(line, sizeof(line), stdin);
@@ -121,7 +122,7 @@ void repl(VP ctx) {
 			printf("null\n");
 		} else if(!IS_EXC(t3)) {
 			out=append(out,t3);
-			printf("outputs@%d:\n%s\n", i, sfromx(repr(t3)));
+			printf("outputs@%d:\n%s\n", i, bfromx(repr(t3)));
 		} else {
 			out=append(out,Tt(exception));
 			showexc(ctx,t3);

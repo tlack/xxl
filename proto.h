@@ -16,6 +16,7 @@ static inline int _arity(VP x);
 static inline VP arity(VP x);
 VP assign(VP x,VP k,VP val);
 VP behead(VP x); // everything except the first element
+const char* bfromx(VP x);
 VP cast(VP x,VP y);
 VP capacity(VP x);
 VP catenate(VP x,VP y);
@@ -83,7 +84,7 @@ VP rootctx();
 VP selftest(VP x);
 VP set(VP x,VP y);                     // used for 'as'
 VP set2(VP x,VP y);                    // same as set, but input arg order switched (for 'is')
-const char* sfromx(VP x);
+char* sfromxA(VP x);
 VP shift_(VP x,int i);
 VP shift(VP x,VP y);
 VP show(VP x);

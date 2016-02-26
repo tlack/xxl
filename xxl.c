@@ -57,7 +57,7 @@ char* repr0(VP x,char* s,size_t sz) {
 	t=typeinfo(x->t);
 	if(0 && DEBUG) {
 		APF(sz," /*%p %s tag=%d#%s itemsz=%d n=%d rc=%d*/ ",x,t.name,
-			x->tag,(x->tag!=0 ? sfromx(tagname(x->tag)) : ""),
+			x->tag,(x->tag!=0 ? bfromx(tagname(x->tag)) : ""),
 			x->itemsz,x->n,x->rc);
 	}
 
@@ -162,7 +162,9 @@ char* repr_o(VP x,char* s,size_t sz) {
 	int i=0,n=x->n;tag_t tag;
 	if(n>1) APF(sz,"(",0);
 	for(;i<n;i++){
-		APF(sz,"%s",sfromx(numelem2base(x,i,10)));
+		char* buf=sfromxA(numelem2base(x,i,10));
+		APF(sz,"%s",buf);
+		free(buf);
 		if(i!=n-1)
 			APF(sz,",",0);
 		// repr0(*(EL(x,VP*,i)),s,sz);
@@ -290,7 +292,7 @@ VP xrealloc(VP x,I32 newn) {
 		buf_t newp; I32 newsz;
 		newn = (newn < 10*1024) ? newn * 4 : newn * 1.25; // TODO there must be research about realloc bins no?
 		newsz = newn * x->itemsz;
-		if(x->alloc) {
+		if(x->alloc && x->dyn) {
 			// PF("realloc %p %d %d %d\n", x->dyn, x->sz, newn, newsz);
 			newp = realloc(x->dyn, newsz);
 		} else {
@@ -344,10 +346,16 @@ VP xfroms(const char* str) {
 	// (i.e., its result->n = strlen(str)-1)
 	size_t len = strlen(str); type_info_t t = typechar('c');
 	VP a = xalloc(t.t,len); memcpy(BUF(a),str,len); a->n=len; return a; }
-const char* sfromx(VP x) {
-	// NB. does NOT allocate - do not free returned value.
+const char* bfromx(VP x) {
+	// pointer to bytes of x. does NOT allocate - do not free returned value. NOT necessarily null terminated.
 	if(x==NULL)return "null";
 	return (char*)BUF(x); }
+char* sfromxA(VP x) {
+	// C-style string from bytes of x. DOES allocate string buffer. null terminated. free after use.
+	if(x==NULL)return "null";
+	char* buf=calloc(1,LEN(x)+1);
+	memcpy(buf,BUF(x),LEN(x));
+	return buf; }
 static inline int _equalm(const VP x,const int xi,const VP y,const int yi) {
 	if(x==NULL||y==NULL) return 0;
 	// PF("comparing %p to %p\n", ELi(x,xi), ELi(y,yi));
@@ -802,10 +810,12 @@ VP shift(VP x,VP y) {
 	return NULL;
 }
 VP show(VP x) {
+	PF("show\n");DUMP(x);
 	if(x==NULL) { printf("null\n"); return x; }
 	if(IS_c(x)) {
-		const char* p=sfromx(x);
+		char* p=sfromxA(x);
 		printf("%s\n",p);
+		free(p);
 	} else {
 		char* p = reprA(x);
 		printf("%s\n",p);
@@ -1024,7 +1034,7 @@ VP deal(VP range, VP amt) {
 		VP acc=NULL;
 		VARY_EL(amt, 0, ({ typeof(_x)amt=_x; acc=ALLOC_LIKE_SZ(range,_x); // TODO rethink deal in terms of more types
 			VARY_EL_NOFLOAT(range, 0, ({
-				FOR(0, amt, ({ EL(acc, typeof(_x), _i)=rand()%_x; }));
+				FOR(0, amt, ({ if(_x==0)_x=1; EL(acc, typeof(_x), _i)=rand()%_x; }));
 				acc->n=amt;
 			}), typerr);}), typerr);
 		return acc;
@@ -1879,6 +1889,7 @@ VP base(VP x,VP y) {
 		for(i=0; i<xn; i++) res=append(res,numelem2base(x, i, b));
 		return res;
 	}
+	return NULL;
 }
 static inline VP divv(VP x,VP y) { 
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
@@ -2061,7 +2072,7 @@ VP plus(VP x,VP y) {
 static inline VP str2num(VP x) {
 	// TODO optimize str2int
 	// NB. str2num creates int at the minimum
-	double d; I128 buf=0; const char* s=sfromx(flatten(x));
+	double d; I128 buf=0; const char* s=bfromx(flatten(x));
 	PF("str2num %s\n",s);DUMP(x);
 	IF_EXC(!IS_c(x),Tt(type),"str2int arg should be char vector",x,0);
 	if(strchr(s,'.')!=0 && (d=strtod(s,NULL))!=0) {
@@ -2419,14 +2430,18 @@ VP xray(VP x) {
 
 static inline VP str2tag(VP str) { // turns string, or list of strings, into tag vector
 	int i=0; VP acc=xtsz(str->n);
+	// PF("str2tag\n");DUMP(str);
 	if(IS_c(str)) return xt(_tagnum(str));
 	if(LIST(str)) {
-		VP tmp;
+		VP tmp, tagtmp;
 		for(;i<str->n;i++) {
 			tmp=ELl(str,i);
 			if(!IS_c(tmp)) return EXC(Tt(type),"str2tag arg not string or list of strings",str,0);
-			acc=append(acc,xt(_tagnum(tmp)));
+			tagtmp=xt(_tagnum(tmp));
+			// PF("append tag\n");DUMP(tagtmp);
+			acc=append(acc,tagtmp);
 		}
+		// PF("str2tag returning\n");DUMP(acc);
 		return acc;
 	}
 	return EXC(Tt(type),"str2tag arg not string or list of strings",str,0);
@@ -2842,9 +2857,10 @@ VP list2vec(VP obj) {
 	return acc;
 }
 VP labelitems(VP label,VP items) {
-	VP res;
+	VP res;char* labelbuf=sfromxA(label);
 	//PF("labelitems\n");DUMP(label);DUMP(items);
-	res=flatten(items);res->tag=_tagnums(sfromx(label));
+	res=flatten(items);res->tag=_tagnums(labelbuf);
+	free(labelbuf);
 	//DUMP(res);
 	return res;
 }
@@ -3058,7 +3074,10 @@ VP parsestr(const char* str) {
 }
 
 VP parse(VP x) {
-	return parsestr(sfromx(x));
+	char* buf=sfromxA(x);
+	VP res=parsestr(buf);
+	free(buf);
+	return res;
 }
 
 // THREADING
@@ -3147,7 +3166,12 @@ void test_nest() {
 }
 VP evalinwith(VP tree,VP ctx,VP xarg) {
 	if(!tree || !ctx) return NULL;
-	if(IS_c(tree)) return evalstrinwith(sfromx(tree),ctx,xarg);
+	if(IS_c(tree)) {
+		char* buf=sfromxA(tree);
+		VP res=evalstrinwith(buf,ctx,xarg);
+		free(buf);
+		return res;
+	}
 	if(!IS_x(ctx)) ctx=xxn(2,ctx,tree);  // try to make context ouf of dict (hopefully) and parse tree
 	else append(ctx,tree);               // parse tree is last item of context (a list, basically)
 	VP res=applyctx(ctx,xarg,NULL);
@@ -3175,7 +3199,7 @@ VP evalfile(VP ctx,const char* fn) {
 	/*
 	VP res,parse,acc = fileget(xfroms(fn));
 	PF("evalfile executing\n"); DUMP(acc);
-	parse=parsestr(sfromx(acc));
+	parse=parsestr(bfromx(acc));
 	append(ctx,parse);
 	res=applyctx(ctx,NULL,NULL); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
 	ctx=curtail(ctx);
@@ -3184,7 +3208,7 @@ VP evalfile(VP ctx,const char* fn) {
 	*/
 }
 VP loadin(VP fn,VP ctx) {
-	char cwd[1024];
+	char* str;
 	VP subctx,res,parse,acc = fileget(fn);
 	RETURN_IF_EXC(acc);
 	subctx=clone(ctx);
@@ -3195,10 +3219,11 @@ VP loadin(VP fn,VP ctx) {
 	xfree(tmp);
 	#endif
 
-	parse=parsestr(sfromx(acc));
-	append(subctx,parse);
+	str=sfromxA(acc);
+	parse=parsestr(str);
+	subctx=append(subctx,parse);
 	res=applyctx(subctx,NULL,NULL);
-	xfree(subctx);
+	xfree(subctx); free(str);
 	return res;
 }
 VP selftest(VP dummy) {

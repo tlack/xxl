@@ -150,7 +150,7 @@
 
 #define EXC(type,lbl,x,y) ({ \
 	VP exc; exc = entag(xln(4,type,xfroms(lbl),x,y),Tt(exception));  \
-	if(0) printf("exception: %s\n", sfromx(repr(exc))); \
+	if(0) printf("exception: %s\n", bfromx(repr(exc))); \
 	exc; }) 
 #define IF_EXC(cond,type,msg,x,y) if((cond)) return EXC(type,msg,x,y)
 #define IS_EXC(x) (x==0 || (x)->tag==Ti(exception))

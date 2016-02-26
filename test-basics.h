@@ -182,7 +182,7 @@
 	_tagnums("");
 	a=xin(3,10,9,8);
 	a->tag=_tagnums("test tag");
-	ASSERT(strcmp(sfromx(tagname(a->tag)),"test tag")==0,"tag name 0");
+	ASSERT(strcmp(bfromx(tagname(a->tag)),"test tag")==0,"tag name 0");
 	xfree(a);
 
 	a=xin(3,1,2,3); b=make(a,xt(Ti(byte)));
