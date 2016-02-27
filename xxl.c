@@ -350,7 +350,7 @@ VP xfree(VP x) {
 		free(x);
 		if(x->alloc && x->dyn) free(x->dyn);
 	} return x; }
-VP xref(VP x) { if(MEM_WATCH){MEMPF("ref %p\n",x);} x->rc++; return x; }
+VP xref(VP x) { if(!x) return x; if(MEM_WATCH){MEMPF("ref %p\n",x);} x->rc++; return x; }
 VP xfroms(const char* str) {  
 	// character vector from C string. allocates new VP. free it when done.
 	// NB. returned VP does not contain the final \0 
@@ -928,7 +928,7 @@ inline int _find1(const VP x, const VP y) {        // returns index or -1 on not
 		for(i=0; i<sn; i++) {
 			item=ELl(scan,i);
 			if(item && ( (item->t == yt && item->n == yn) ||
-									 LIST(item) && (ELl(item,0)->t == yt) ))
+									 (LIST(item) && ELl(item,0)->t == yt) ))
 				if (_equal(item,y)==1) return i;
 		}
 		return -1;
@@ -1224,15 +1224,13 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			}
 			else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
 				left=proj(2,&set,xln(2,parent,left),NULL);
-				left->tag=Ti(setproj);
-				xfree(left);
+				left->tag=Ti(as);
 				PF("created set projection (as)\n");
 				DUMP(left);
 				continue;
 			} else if(item->n==2 && ch=='i' && AS_c(item,1)=='s') {
 				left=proj(2,&set2,xln(2,parent,left),NULL);
-				left->tag=Ti(setproj);
-				xfree(left);
+				left->tag=Ti(is);
 				PF("created set projection (is)\n");
 				DUMP(left);
 				continue;
@@ -2412,7 +2410,7 @@ VP proj(int type, void* func, VP left, VP right) {
 	Proj p;
 	VP pv=xpsz(1);
 	p.type=type;
-	if(type<0) p.ctx=func;
+	if(type<0) p.ctx=xref(func);
 	else if(type==1) p.f1=func; 
 	else p.f2=func;
 	p.left=left; p.right=right;
@@ -2826,8 +2824,7 @@ VP mkworkspace() {
 	res=xx0(); root=rootctx(); locals=xd0();
 	assign(root,Tt(name),locals);
 	assign(locals,Tt(wkspc),xfroms(name));
-	res=append(res,root);
-	res=append(res,locals);
+	res=append(res,root); res=append(res,locals);
 	return res;
 }
 VP eval(VP code) {
@@ -3099,9 +3096,9 @@ void* thr_run0(void* VPctx) {
 	#else
 	init_thread_locals();
 	VP ctx=clone(VPctx);
-	printf("thr_run %s\n", reprA(ctx));
+	// printf("thr_run %s\n", reprA(ctx));
 	ctx=apply(ctx,0);
-	printf("thr_run0 done\n"); DUMP(ctx);
+	// printf("thr_run0 done\n"); DUMP(ctx);
 	pthread_exit(NULL);
 	#endif
 	return 0;
@@ -3208,19 +3205,16 @@ VP evalfile(VP ctx,const char* fn) {
 }
 VP loadin(VP fn,VP ctx) {
 	char* str;
-	VP subctx,res,parse,acc = fileget(fn);
+	if(!IS_x(ctx) || !IS_c(fn)) return EXC(Tt(type),"loadin x is filename and y is ctx",fn,ctx);
+	VP subctx,res,parsetree,acc = fileget(fn);
 	RETURN_IF_EXC(acc);
 	subctx=clone(ctx);
-	
-	#ifdef STDLIBFILE
 	VP tmp=xln(2,subctx,filedirname(fn));
 	set(tmp,Tt(_dir)); // set() returns y value, not x context - dont preserve
 	xfree(tmp);
-	#endif
-
 	str=sfromxA(acc);
-	parse=parsestr(str);
-	subctx=append(subctx,parse);
+	parsetree=parsestr(str);
+	subctx=append(subctx,parsetree);
 	res=applyctx(subctx,NULL,NULL);
 	xfree(subctx); free(str);
 	return res;

@@ -9,20 +9,21 @@ m.types = [
 	// 5 formatter
 	// 6 has repr func in xxl.c
 	// 7 max
-	[0,"l","list","VP","VP","%p",true,"0"],
-	[1,"t","tag","tag_t","long long","%llld",true,"LONG_LONG_MAX"],
-	[2,"c","char","char","int","%c",true,"SCHAR_MAX"],
-	[3,"b","byte","int8_t","int","%d",false,"SCHAR_MAX"],
-	[4,"i","int","int","int","%d",false,"INT_MAX"],
-	[5,"j","long","__int64_t","int","%ld",false,"LONG_MAX"],
-	[6,"o","octo","__int128_t","int","%llld",true,"LONG_LONG_MAX"],/* TODO custom printf for octowords */
-	[7,"f","float","double","double","%0.5f",false,"DBL_MAX"],/* TODO custom printf for octowords */
-	[8,"d","dict","VP","VP","%p",true,"0"],// a dict is a general list with two items [keys,vals]
-	[9,"a","table","VP","VP","%p",true,"0"],// a table is a dict whose vectors happen to contain more than 1 value (usually)
-	[10,"1","f1","unaryFunc*","unaryFunc*","%p",false,"0"],
-	[11,"2","f2","binaryFunc*","binaryFunc*","%p",false,"0"],
-	[12,"p","proj","Proj","Proj","%p",true,"0"],
-	[13,"x","ctx","VP","VP","%p",true,"0"],// a context is a list [scope0,scope1,..scopen,[code]]
+	// 8 container?
+	[0,"l","list","VP","VP","%p",true,"0",true],
+	[1,"t","tag","tag_t","long long","%llld",true,"LONG_LONG_MAX",false],
+	[2,"c","char","char","int","%c",true,"SCHAR_MAX",false],
+	[3,"b","byte","int8_t","int","%d",false,"SCHAR_MAX",false],
+	[4,"i","int","int","int","%d",false,"INT_MAX",false],
+	[5,"j","long","__int64_t","int","%ld",false,"LONG_MAX",false],
+	[6,"o","octo","__int128_t","int","%llld",true,"LONG_LONG_MAX",false],/* TODO custom printf for octowords */
+	[7,"f","float","double","double","%0.5f",false,"DBL_MAX",false],/* TODO custom printf for octowords */
+	[8,"d","dict","VP","VP","%p",true,"0",true],// a dict is a general list with two items [keys,vals]
+	[9,"a","table","VP","VP","%p",true,"0",true],// a table is a dict whose vectors happen to contain more than 1 value (usually)
+	[10,"1","f1","unaryFunc*","unaryFunc*","%p",false,"0",false],
+	[11,"2","f2","binaryFunc*","binaryFunc*","%p",false,"0",false],
+	[12,"p","proj","Proj","Proj","%p",true,"0",false],
+	[13,"x","ctx","VP","VP","%p",true,"0",true],// a context is a list [scope0,scope1,..scopen,[code]]
 ]; 
 m.dontcast = ["l", "d", "a", "1", "2", "p", "x"]; // TODO should be flag on m.types
 m.each = function each(a,f) {

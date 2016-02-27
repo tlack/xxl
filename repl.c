@@ -83,6 +83,7 @@ void repl(VP ctx) {
 			 strncmp(line,"quit\n",1024)==0)
 			exit(1);
 		if(strncmp(line,"clear\n",1024)==0) {
+			i=0;
 			each(in,x1(&xfree)); in->n=0;
 			each(out,x1(&xfree)); out->n=0;
 			printf("\n\n----------------------------------------------\n\n"); // for text logs/scrollback
@@ -104,6 +105,7 @@ void repl(VP ctx) {
 			else cmd=xfroms("1 xray");
 			show(cmd);
 			show(evalin(cmd,ctx));
+			ctx=curtail(ctx);
 			xfree(cmd);
 			continue;
 		}
@@ -112,7 +114,7 @@ void repl(VP ctx) {
 		in=append(in,t2);
 		// DUMP(t2);
 		// PF("APPENDING!!\n");
-		append(ctx,t2);
+		ctx=append(ctx,t2);
 		t3=applyctx(ctx,0,0);
 		ctx=curtail(ctx);
 		en=clock();

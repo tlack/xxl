@@ -48,7 +48,7 @@ BUILDOBJ="$COMPILE -o  "
 BUILDSHARED="$COMPILE -fPIC -shared -o "
 
 if [ "x$BUILDH" = "xyes" ]; then
-	if [ -x $NODE ]; then
+	if hash $NODE 2>/dev/null; then
 		$NODE accessors.js > accessors.h && \
 		$NODE vary.js > vary.h && \
 		$NODE cast.js > cast.h && \
