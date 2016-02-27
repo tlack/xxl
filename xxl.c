@@ -207,7 +207,7 @@ char* repr_x(VP x,char* s,size_t sz) {
 		a = ELl(x,i);
 		if(!a) APF(sz,"/*null*/",0);
 		else if(IS_d(a)) {
-			APF(sz,"'scope",0);
+			APF(sz,"'scope %p",a);
 			repr0(KEYS(a),s,sz);
 		} else
 			repr0(a,s,sz);
@@ -246,14 +246,25 @@ VP xalloc(const type_t t,const I32 initn) {
 					MEM_RETAIN[_i]=0;
 					MEM_RETAINED++;
 					g=_i;
+					PF("xalloc recycling retained %p\n",a);
+					DUMP(a);
 					memset(a,0,sizeof(struct V)+a->sz);
 					break;
 				}
 			}));
 		});
 	} 
-	if(a==NULL)
+	if(a==NULL) {
 		a = calloc(sizeof(struct V)+sz,1);
+		a->sz=sz; 
+	}
+	// note that we're careful not to set sz here, because if we are reclaiming
+	// a pointer from the retain pool, it will already have its own sz (which we know is
+	// better than what we need). we will however set cap, based on that sz/itemsz
+	// also note that we're setting alloc, tag and n to 0 for clarity, but they should have
+	// already been zeroed by calloc or memset above
+	a->alloc=0; a->t=t; a->tag=0; a->n=0; a->rc=1; a->itemsz=itemsz;
+	a->cap=a->sz / itemsz;
 	if (MEM_WATCH) {
 		WITHLOCK(mem, {
 			MEMPF("%salloc %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",(g==1?"GOBBLED! ":""),t,a,sizeof(struct V)+sz,finaln,itemsz,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
@@ -265,7 +276,6 @@ VP xalloc(const type_t t,const I32 initn) {
 			}
 		});
 	}
-	a->t=t;a->tag=0;a->n=0;a->rc=1;a->cap=finaln;a->sz=sz;a->itemsz=itemsz;
 	return a;
 }
 VP xprofile_start() {
@@ -318,7 +328,7 @@ VP xrealloc(VP x,I32 newn) {
 VP xfree(VP x) {
 	int i;
 	if(UNLIKELY(x==NULL)) return x;
-	//PF("xfree(%p)\n",x);DUMP(x);//DUMP(info(x));
+	PF("XFREE (%p)\n",x);DUMP(x);//DUMP(info(x));
 	x->rc--; 
 	if(LIKELY(x->rc==0)) {
 		if(CONTAINER(x))
@@ -328,16 +338,17 @@ VP xfree(VP x) {
 			MEM_FREES+=1;
 			MEMPF("free %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",x->t,x,x->sz,x->itemsz,x->cap,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
 		}
-		if (x->alloc == 0 && x->sz < RETAIN_MAX && N_RETAINS > 0) {
+		if (x->alloc==0 && x->sz < RETAIN_MAX && N_RETAINS > 0) {
 			for(i=0;i<N_RETAINS;i++)
 				if(MEM_RETAIN[i]==x || MEM_RETAIN[i]==0) {
 					MEM_RETAIN[i]=x;
 					return x;
 				}
 		}
-		//PF("xfree(%p) really dropping type=%d n=%d alloc=%d\n",x,x->t,x->n,x->alloc);
-		//free(x);
-		//if(x->alloc && x->dyn) free(x->dyn);
+		PF("xfree(%p) really dropping type=%d n=%d alloc=%d\n",x,x->t,x->n,x->alloc);
+		DUMP(x);
+		free(x);
+		if(x->alloc && x->dyn) free(x->dyn);
 	} return x; }
 VP xref(VP x) { if(MEM_WATCH){MEMPF("ref %p\n",x);} x->rc++; return x; }
 VP xfroms(const char* str) {  
@@ -414,10 +425,10 @@ VP clone(const VP obj) {
 inline VP appendbuf(VP x,const buf_t buf,const size_t nelem) {
 	int newn;buf_t dest;
 	//PF("appendbuf %d\n", nelem);DUMP(x);
-	newn = x->n+nelem;
+	newn=x->n+nelem;
 	x=xrealloc(x,newn);
 	// PF("after realloc"); DUMP(x);
-	dest = ELi(x,x->n);
+	dest=ELi(x,x->n);
 	memmove(dest,buf,x->itemsz * nelem);
 	x->n=newn;
 	// PF("appendbuf newn %d\n", newn); DUMPRAW(dest, x->itemsz * newn);
@@ -449,7 +460,8 @@ VP append(VP x,VP y) {
 	}
 	if(CONTAINER(x)) { 
 		// PF("append %p to list %p\n", y, x); DUMP(x);
-		x=xrealloc(x,x->n+1); xref(y);
+		xref(y);
+		x=xrealloc(x,x->n+1); 
 		EL(x,VP,x->n)=y; x->n++;
 		// PF("afterward:\n"); DUMP(x);
 	} else {
@@ -547,12 +559,11 @@ inline VP assign(VP x,VP k,VP val) {
 		return x;
 	} else if(LIST(x) && NUM(k)) {
 		int i=NUM_val(k);
-		PF("%d\n",i);
 		ARG_MUTATING(x);
-		if (i>=x->n) { xrealloc(x,i+1); x->n=i+1; }
-		if(i < x->n && ELl(x,i)) xfree(ELl(x,i));
+		if(i>=x->n) { xrealloc(x,i+1); x->n=i+1; }
+		if(i<x->n && ELl(x,i)) xfree(ELl(x,i)); // if we're assigning over something that exists in a container, free it
+		xref(val);
 		EL(x,VP,i)=val;
-		DUMP(x);
 		return x;
 	}
 	return EXC(Tt(type),"assign: bad types",x,0);
@@ -810,17 +821,12 @@ VP shift(VP x,VP y) {
 	return NULL;
 }
 VP show(VP x) {
+	char* p;
 	PF("show\n");DUMP(x);
 	if(x==NULL) { printf("null\n"); return x; }
-	if(IS_c(x)) {
-		char* p=sfromxA(x);
-		printf("%s\n",p);
-		free(p);
-	} else {
-		char* p = reprA(x);
-		printf("%s\n",p);
-		free(p);
-	}
+	if(IS_c(x)) p=sfromxA(x);
+	else p=reprA(x);
+	printf("%s\n",p); free(p);
 	return x;
 }
 VP splice(VP x,VP idx,VP replace) {
@@ -922,7 +928,7 @@ inline int _find1(const VP x, const VP y) {        // returns index or -1 on not
 		for(i=0; i<sn; i++) {
 			item=ELl(scan,i);
 			if(item && ( (item->t == yt && item->n == yn) ||
-									 LIST(item) && ELl(item,0)->t == yt ))
+									 LIST(item) && (ELl(item,0)->t == yt) ))
 				if (_equal(item,y)==1) return i;
 		}
 		return -1;
@@ -1421,7 +1427,6 @@ VP applyctx(VP ctx,const VP x,const VP y) {
 		}
 	}
 	*/
-
 	return EXC(Tt(undef),"undefined in applyctx",x,y);
 }
 VP apply_simple_(VP x,int i) {   // a faster way to select just one item of x
@@ -1430,7 +1435,7 @@ VP apply_simple_(VP x,int i) {   // a faster way to select just one item of x
 	if(!LIST(x) && !SIMPLE(x)) { VP ii=xi(i), res=apply(x,ii); xfree(ii); return res; };
 	if(i > LEN(x)) return EXC(Tt(index),"index out of range",x,xi(i));
 	// see "special case for generic lists" below
-	if(LIST(x)) return ELl(x,i);
+	if(LIST(x)) return xref(ELl(x,i)); // XXX bug hunting maybe UNDO
 	else {
 		VP res=xalloc(x->t,1);
 		res=appendbuf(res,ELi(x,i),1);
@@ -2411,6 +2416,7 @@ VP proj(int type, void* func, VP left, VP right) {
 	else if(type==1) p.f1=func; 
 	else p.f2=func;
 	p.left=left; p.right=right;
+	if(left) xref(left); if(right) xref(right); 
 	EL(pv,Proj,0)=p;
 	pv->n=1;
 	return pv;
@@ -2808,12 +2814,9 @@ VP rootctx() {
 	VP res;
 	res=xd0();
 	#include"rootctx.h"
-	PF("rootctx returning\n");
-	DUMP(res);
 	return res;
 }
 VP mkbarectx() {
-	char name[8];
 	return xx0();
 }
 VP mkworkspace() {
@@ -3015,6 +3018,7 @@ VP parseloopoper(VP x) {
 VP parsestr(const char* str) {
 	VP ctx,lex,pats,acc,t1,t2;size_t l=strlen(str);int i;
 	PF("parsestr '%s'\n",str);
+	if(l==0) return NULL;
 	acc=xlsz(l);
 	for(i=0;i<l;i++)
 		append(acc,entags(xc(str[i]),"raw"));
@@ -3185,13 +3189,8 @@ VP evalstrin(const char* str, VP ctx) {
 	return evalstrinwith(str,ctx,NULL);
 }
 VP evalstrinwith(const char* str, VP ctx, VP xarg) {
-	VP r;
-	PF_LVL++;
-	PF("evalstrinwith\n\"%s\"\n",str);DUMP(xarg);
-	PF_LVL--;
 	VP p=parsestr(str);
-	r=evalinwith(p,ctx,xarg);
-	PF("evalstrin returning\n");DUMP(r);
+	VP r=evalinwith(p,ctx,xarg);
 	return r;
 }
 VP evalfile(VP ctx,const char* fn) {
@@ -3269,11 +3268,9 @@ void args(VP ctx, int argc, char* argv[]) {
 			else if (access(argv[i],R_OK) != -1) { 
 				show(evalfile(ctx,argv[i]));
 			} else {
-				VP xarg;
+				VP xarg=NULL;
 				#ifdef STDLIB_FILE
-					xarg=fileget(xfroms("-"));
-				#else
-					xarg=0;
+				xarg=fileget(xfroms("-"));
 				#endif
 				printf("evaluating as str:\n%s\n", argv[i]);
 				show(evalstrinwith(argv[i],ctx,xarg));
