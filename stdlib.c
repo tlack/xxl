@@ -14,7 +14,7 @@ VP filebasename(VP fn) {
 	VP fname=fn;
 	if(!IS_c(fname)) fname=filepath(fn);
 	if(!IS_c(fname)) return EXC(Tt(type),"basename filename must be string or pathlist",fn,0);
-	const char* str=sfromxA(fname);
+	char* str=sfromxA(fname);
 	VP res=xfroms(basename(str));
 	xfree(fname); free(str);
 	return res;
@@ -23,7 +23,7 @@ VP filedirname(VP fn) {
 	VP fname=fn;
 	if(!IS_c(fname)) fname=filepath(fn);
 	if(!IS_c(fname)) return EXC(Tt(type),"dirname filename must be string or pathlist",fn,0);
-	const char* str=sfromxA(fname);
+	char* str=sfromxA(fname);
 	VP res=xfroms(dirname(str)), slash=xc('/');
 	res=append(res,slash);
 	xfree(fname); free(str);
@@ -41,7 +41,7 @@ VP fileget(VP fn) {
 	//PF_LVL++;PF("fileget\n");DUMP(fn);PF_LVL--;
 	if(LEN(fname)==1 && AS_c(fname,0)=='-') fd=STDIN_FILENO; 
 	else {
-		const char* str=sfromxA(fname);
+		char* str=sfromxA(fname);
 		fd=open(str,O_RDONLY);
 		free(str);
 	}
@@ -75,7 +75,7 @@ VP fileset(VP str,VP fn) {
 	if(!IS_c(fname)) fname=filepath(fn);
 	if(!IS_c(fname)) return EXC(Tt(type),"writefile filename must be string or pathlist",fn,0);
 	if(!IS_c(str)) return EXC(Tt(type),"writefile only deals writes strings right now",str,fn);
-	const char* fns=sfromxA(fname);
+	char* fns=sfromxA(fname);
 	int fd=open(fns,O_WRONLY);
 	free(fns);
 	if(fd<0) return EXC(Tt(open),"could not open file for writing",str,fname);
@@ -95,7 +95,7 @@ VP httpget(VP url) {
 #ifdef STDLIBSHAREDLIB
 VP sharedlibget(VP fn) {
 	if(!IS_c(fn)) return EXC(Tt(type),".sharedlib.get requires a filename string as argument",fn,0);
-	const char* fns=sfromxA(fn);
+	char* fns=sfromxA(fn);
 	void* fp;
 	fp=dlopen(fns,RTLD_LAZY);
 	free(fns);
@@ -132,7 +132,7 @@ VP sharedlibset(VP fn,VP funcs) {
 #ifdef STDLIBSHELL 
 VP shellget(VP cmd) {
 	if(!IS_c(cmd)) return EXC(Tt(type),".shell.get requires command arg as a string",cmd,0);
-	char buf[IOBLOCKSZ]={0}; size_t r; const char* cmds=sfromxA(cmd); 
+	char buf[IOBLOCKSZ]={0}; size_t r; char* cmds=sfromxA(cmd); 
 	FILE* fp=popen(cmds,"r");
 	if(fp==NULL) return free(cmds),EXC(Tt(popen),"popen failed",cmd,0);
 	VP acc=xcsz(IOBLOCKSZ);

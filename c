@@ -8,7 +8,7 @@ DEBUG="-DDEBUG -g -pg -ggdb3"  # comment out for silence
 OPT=""
 # OPT="-O3"
 DEFS="-DTHREAD $DEBUG $OPT"
-WARN="-Wall -Wno-format-extra-args -Wno-unused-function -Wno-unused-value -Wchar-subscripts"
+WARN="-Wall -Wno-format-extra-args -Wno-unused-function -Wno-unused-value -Wno-char-subscripts"
 WARN="$WARN -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format"
 
 # decide what goes into stdlib
@@ -47,12 +47,16 @@ COMPILESHARED="$COMPILE -fPIC -shared "
 BUILDOBJ="$COMPILE -o  "
 BUILDSHARED="$COMPILE -fPIC -shared -o "
 
-if [ "x$BUILDH" = "xyes" && -x $NODE ]; then
-	$NODE accessors.js > accessors.h && \
-	$NODE vary.js > vary.h && \
-	$NODE cast.js > cast.h && \
-	$NODE types.js > types.h && \
-	$NODE repr.js > repr.h 
+if [ "x$BUILDH" = "xyes" ]; then
+	if [ -x $NODE ]; then
+		$NODE accessors.js > accessors.h && \
+		$NODE vary.js > vary.h && \
+		$NODE cast.js > cast.h && \
+		$NODE types.js > types.h && \
+		$NODE repr.js > repr.h 
+	else
+		echo "can't find node; skipping build"
+	fi
 fi
 
 echo "" > compile.h
