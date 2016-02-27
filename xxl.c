@@ -3009,7 +3009,12 @@ VP parseloopoper(VP x) {
 		}
 		xfree(indices); 
 	}
-	xfree(st); xfree(en); xfree(tmp1); xfree(tmp2); xfree(tmp3); xfree(join);
+	xfree(st); 
+	xfree(en); 
+	xfree(tmp1); 
+	xfree(tmp2); 
+	xfree(tmp3); 
+	xfree(join);
 	return x;
 }
 VP parsestr(const char* str) {

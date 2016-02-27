@@ -41,7 +41,7 @@ function Bshare() {return modal(".savedlg"); }
 function Bpip() {return modal(".pipdlg"); }
 var pip={
 	REFRESH:PIP_REFRESH,
-	body: function(content) {return "<style>"+($('.pipcss').innerHTML)+'</style>'+content;},
+	body: function(content) {return "<style>"+($('.pipcss').innerHTML)+'</style><div style=float:right>/pipclose</div>'+content;},
 	draw: function() {
 		if(PIPS.length == 0) return;
 		var $p=$("#pips");
