@@ -349,7 +349,7 @@ VP xfree(VP x) {
 				}
 		}
 		PF("xfree(%p) really dropping type=%d n=%d alloc=%d\n",x,x->t,x->n,x->alloc);
-		DUMP(x);
+		// DUMP(x);
 		if(x->alloc && x->dyn) free(x->dyn);
 		free(x);
 	} return x; }
@@ -440,7 +440,9 @@ inline VP appendbuf(VP x,const buf_t buf,const size_t nelem) {
 VP append(VP x,VP y) { 
 	// append all items of y to x. if x is a general list, append pointer to y, and increase refcount.
 	// PF("append %p %p\n",x,y); DUMP(x); DUMP(y);
+	if(IS_EXC(x)) return x;
 	IF_EXC(!CONTAINER(x) && !(x->t==y->t), Tt(Type), "append x must be container or types must match", x, y);
+	if(TABLE(x)) return catenate_table(x,y);
 	if(IS_d(x)) {
 		ASSERT(y->n % 2 == 0, "append to a dict with ['key;value]");
 		VP k=KEYS(x),v=VALS(x),y1,y2; int i;
@@ -723,11 +725,14 @@ VP drop(VP x,VP y) {
 	int typerr=-1;
 	// PF("drop args\n"); DUMP(x); DUMP(y);
 	IF_RET(!NUM(y) || !SCALAR(y), EXC(Tt(type),"drop y arg must be single numeric",x,y));	
+	if(TABLE(x)) return each(VALS(x),proj(2,x2(&drop),0,y));
 	VARY_EL(y, 0, ({ return drop_(x,_x); }), typerr);
 	return res;
 }
 VP first(VP x) {
 	VP i,r;
+	if(TABLE(x)) return table_row_dict_(x,0);
+	if(DICT(x)) return EXC(Tt(type),"dict first/head doesn't make sense",x,0);
 	if(CONTAINER(x)) return xref(ELl(x,0));
 	else { i=xi(0); r=apply(x,i); xfree(i); return r; }
 }

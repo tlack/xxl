@@ -167,3 +167,9 @@ ASSERT(LIST(b) && IS_c(LIST_first(b)), "listexpr with non-scalar simple content"
 c=mkworkspace();
 b=evalstrin("('a,'b,'c):[['a,2,4],['b,4,6]]~{x}",c);
 ASSERT(_equal(repr(b),xfroms("[['a:'a, 'b:2i, 'c:4i], ['a:'b, 'b:4i, 'c:6i]]")),"matcheasy with table - identity");
+
+c=mkworkspace();
+b=evalstrin("('a,'b,'c):[ ['a,2,4], ['b,4,6] ]first",c);
+ASSERT(_equal(repr(b),xfroms("['a:'a, 'b:2i, 'c:4i]")),"table first");
+
+
