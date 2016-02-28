@@ -6,6 +6,7 @@
 	res=assign(res,xt(_tagnums("_|")),x1(&curtail));
 	res=assign(res,xt(_tagnums("|_")),x1(&behead));
 	// named postfix verbs:
+	res=assign(res,Tt(any),x1(&any));
 	res=assign(res,Tt(arity),x1(&arity));
 	res=assign(res,Tt(behead),x1(&behead));
 	res=assign(res,Tt(condense),x1(&condense));

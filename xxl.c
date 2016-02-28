@@ -1895,7 +1895,7 @@ int _any(VP x) {
 	if(IS_EXC(x)) return 0;              // IS_EXC checks if it's 0 also
 	if(LIST(x)) x=list2vec(deep(x,x1(&any)));
 	VARY_EACH(x,({ 
-		if(_x==1) return 1;
+		if(_x!=0) return 1;
 	}),typerr);
 	// since this routine returns an int we can't return an exception!
 	ASSERT(typerr==-1, "_any noniterable arg");
