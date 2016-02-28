@@ -1849,6 +1849,7 @@ VP and(const VP x,const VP y) {
 	int typerr=-1;
 	VP acc;
 	// PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
+	if(IS_EXC(x) || LEN(x)==0) return y; // NB. IS_EXC checks if x==NULL
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "and arguments should be same length", x, y);	
 	if(SIMPLE(x) && SIMPLE(y)) acc=ALLOC_BEST(x,y);
 	else acc=xlsz(x->n);
@@ -2065,8 +2066,8 @@ VP or(VP x,VP y) { // TODO most of these primitive functions have the same patte
 	int typerr=-1;
 	VP acc;
 	// PF("or\n"); DUMP(x); DUMP(y); // TODO or() and friends should handle type conversion better
-	if(x->n==0) return y;
-	if(y->n==0) return x;
+	if(IS_EXC(x) || LEN(x)==0) return x;
+	if(IS_EXC(y) || LEN(y)==0) return y;
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "or arguments should be same length", x, y);	
 	if(x->t == y->t) acc=xalloc(x->t, x->n);
 	else acc=xlsz(x->n);

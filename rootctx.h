@@ -75,6 +75,7 @@
 	res=assign(res,xt(_tagnums(",")),x2(&catenate)); 
 	// named infix verbs:
 	res=assign(res,Tt(amend),x2(&amend));
+	res=assign(res,Tt(and),x2(&and));
 	res=assign(res,Tt(aside),x2(&aside));
 	res=assign(res,Tt(base),x2(&base));
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
@@ -98,6 +99,7 @@
 	res=assign(res,Tt(make),x2(&make));
 	res=assign(res,Tt(nest),x2(&nest));
 	res=assign(res,Tt(pick),x2(&pick));
+	res=assign(res,Tt(or),x2(&or));
 	res=assign(res,Tt(orelse),x2(&orelse));
 	res=assign(res,Tt(over),x2(&over));
 	res=assign(res,Tt(rot),x2(&shift));
