@@ -22,6 +22,7 @@ VP casee(VP x,VP y);
 VP cast(VP x,VP y);
 VP capacity(VP x);
 VP catenate(VP x,VP y);
+VP catenate_table(VP table, VP row);
 VP clone(VP obj);
 VP condense(VP x);
 VP curtail(VP x); // everything except the last element
