@@ -1863,7 +1863,8 @@ VP and(const VP x,const VP y) {
 int _any(VP x) {
 	int typerr=-1;
 	VP acc;
-	// PF("_any\n"); DUMP(x);
+	PF("_any\n"); DUMP(x);
+	if(IS_EXC(x)) return 0;              // IS_EXC checks if it's 0 also
 	if(LIST(x)) x=list2vec(deep(x,x1(&any)));
 	VARY_EACH(x,({ 
 		if(_x==1) return 1;
