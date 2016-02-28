@@ -1031,6 +1031,7 @@ VP info(VP x) {
 }
 VP type(VP x) {
 	if(x==0 || x->t<0 || x->t>MAX_TYPE) return Tt(null);
+	if(IS_EXC(x)) return xt(_tagnums("exception"));
 	type_info_t t=typeinfo(x->t);
 	return xt(_tagnums(t.name));
 }
