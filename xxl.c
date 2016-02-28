@@ -1178,9 +1178,10 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			item=list(item);
 			for(j=0;j<parent->n;j++) {
 				this=ELl(parent,j);
-				if(j!=parent->n-1 || !LIST(this)) append(newctx,clone(ELl(parent,j)));
+				// if(j!=parent->n-1 || !LIST(this)) append(newctx,clone(ELl(parent,j)));
+				if(j!=parent->n-1 || !LIST(this)) append(newctx,LIST_item(parent,j));
 			}
-			append(newctx,item); // second item of lambda is arity; ignore for now
+			append(newctx,item); 
 			item=newctx;
 			PF("created new lambda context item=\n");DUMP(item);
 		// } else if (tag==texpr || tag==tlistexpr) {
