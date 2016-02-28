@@ -107,6 +107,8 @@
 #define TABLE(v) (IS_a(v))                               // is v a dictionary?
 // is v any kind of container? (i.e., non-vec but has children)
 #define CONTAINER(v) ((IS_l(v)||IS_d(v)||IS_a(v)||IS_x(v)) && !IS_EXC(v))         
+
+#define INDEXABLE(v) (CALLABLE(v) || !SCALAR(v))
 #define CALLABLE(v) (IS_1(v)||IS_2(v)||IS_p(v)||IS_x(v)) // callable types - represent funcs or contexts
 
 // Helpful macros for specific types
