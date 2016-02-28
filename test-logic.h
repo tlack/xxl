@@ -172,4 +172,7 @@ c=mkworkspace();
 b=evalstrin("('a,'b,'c):[ ['a,2,4], ['b,4,6] ]first",c);
 ASSERT(_equal(repr(b),xfroms("['a:'a, 'b:2i, 'c:4i]")),"table first");
 
+c=mkworkspace();
+b=evalstrin("1,2,3 recurse {rot1}",c);
+ASSERT(_equal(repr(b),xfroms("[(2,3,1i), (3,1,2i)]")),"recurse0");
 

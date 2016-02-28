@@ -79,6 +79,7 @@ VP parse(VP x);
 VP parseloopoper(VP x);
 VP parsestr(const char* str);
 VP plus(VP x,VP y);
+VP recurse(VP x,VP y);
 void repl(VP ctx);
 VP repr(VP x);
 char* repr0(VP x,char* s,size_t len);

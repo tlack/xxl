@@ -1775,25 +1775,34 @@ static inline VP eachpair(VP obj,VP fun) {
 	ASSERT(1,"eachpair nyi");
 	return NULL;
 }
-VP exhaust(const VP x,const VP y) {
+VP exhaust0(const VP x,const VP y,int collect) {
 	int i;
-	PF("+++EXHAUST\n");DUMP(x);DUMP(y);
-	IF_RET(CALLABLE(x), EXC(Tt(type),"exhaust y must be func or projection",x,y));
-	IF_RET(x->n==0, ALLOC_LIKE_SZ(x,0));
-	VP last=x,this=0;
+	VP last=x,this=NULL,acc=NULL;
+	if(collect) acc=xl0();
 	for(i=0;i<MAXSTACK;i++) {
 		PF("exhaust calling #%d\n",i);DUMP(y);DUMP(this);DUMP(last);
 		PFIN();
 		this=apply(y,last);
 		PFOUT();
 		PF("exhaust result #%d\n",i);DUMP(last);DUMP(this);
-		if(UNLIKELY(_equal(this,last))) {
-			PF("exhaust = returning\n");DUMP(this);
-			return this;
-		} else 
+		if(IS_EXC(this) || UNLIKELY(_equal(this,x) || _equal(this,last))) {
+			xfree(last); 
+			if(collect) return acc;
+			else return last;
+		} else {
+			if(collect) acc=append(acc,this);
+			xfree(last);
 			last=this;
+		}
 	}
 	return EXC(Tt(exhausted),"exhaust hit stack limit",x,last);
+}
+VP exhaust(const VP x,const VP y) {
+	int i;
+	PF("+++EXHAUST\n");DUMP(x);DUMP(y);
+	VP res=exhaust0(x,y,0);
+	PF("exhaust returning\n");DUMP(res);
+	return res;
 }
 VP over(const VP x,const VP y) {
 	//PF("over\n");DUMP(x);DUMP(y);
@@ -1825,12 +1834,23 @@ VP scan(const VP x,const VP y) { // always returns a list
 	PF("scan result\n");DUMP(acc);
 	return acc;
 }
+VP recurse(const VP x,const VP y) {
+	// note: monadic scan in q returns the argument as the first
+	// member of the result. seems counterintuitive. we do not. 
+	// q)(neg\)1
+	// 1 -1
+	// xxl: 0. 1 recurse neg
+	// -1
+	int i;
+	PF("+++RECURSE\n");DUMP(x);DUMP(y);
+	VP res=exhaust0(x,y,1);
+	PF("recurse returning\n");DUMP(res);
+	return res;
+}
 VP wide(const VP obj,const VP f) {
 	int i; VP acc;
 	PF("wide\n");DUMP(obj);DUMP(f);
-
 	if(!CONTAINER(obj)) return apply(f, obj);
-
 	// PF("wide top level\n");DUMP(obj);
 	acc=apply(f,obj);
 	if(CONTAINER(acc)) {
