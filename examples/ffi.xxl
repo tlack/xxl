@@ -1,0 +1,38 @@
+{ 'srcpath sys as 'sp; .file.path as 'path;
+	["def.h","proto.h","accessors.h"] each { "#include \"",sp,"/",x,"\"\n" } 
+} as 'incl;
+
+{ // write unary or binary function header, ex: VP xxlffi_myfuncname(VP x,VP y) { .. }
+	x as 'lbl; y as 'code;
+	(code~"y"ifelse(("VP xxlffi_",lbl,"(VP x,VP y){"),("VP xxlffi_",lbl,"(VP x){")))
+} as 'fhdr;
+
+{
+	x fhdr y,
+	"\n ", code, "\}\n\n"
+} as 'fbody;
+
+{ 
+	x as 'fn; y as 'funcs; 
+	x incl,
+	([{key},{val}] show ,[funcs] show >: @ fbody)
+} as 'src;
+
+{
+	[x,".c"] .file.path as 'outfn;
+	x src y as 'code;
+	[outfn,code] show;
+	code
+	// .file.set ([x,".c"] as 'cfn);
+	// 'buildshared sys ,cfn shell show
+} as 'comp;
+
+['incl:incl,'src:src,'comp:comp]
+
+/*
+	example:
+	"/tmp/mymodule" .ffi.comp ['double:"x * y"]
+*/
+
+
+
