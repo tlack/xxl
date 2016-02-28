@@ -84,7 +84,7 @@ var repl={
 			item.innerHTML=repl.draw_.pr();
 			console.log(item);
 			$('#repl ol').appendChild(item);
-			item.focus();
+			$pr().focus();
 		},
 		pr:function() { return "<input type=text onkeydown='repl.ev.key()' class='pr'/>"; }
 	},
