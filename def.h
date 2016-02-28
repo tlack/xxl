@@ -112,7 +112,8 @@
 #define CALLABLE(v) (IS_1(v)||IS_2(v)||IS_p(v)||IS_x(v)) // callable types - represent funcs or contexts
 
 // Helpful macros for specific types
-#define NUM_val(x) ( IS_i(x)?AS_i(x,0) : (IS_b(x)?AS_b(x,0) : (IS_j(x)?AS_j(x,0) : (IS_o(x)?AS_o(x,0) : -1))) )
+#define NUM_item(x,n) ( IS_i(x)?AS_i(x,n) : (IS_b(x)?AS_b(x,n) : (IS_j(x)?AS_j(x,n) : (IS_o(x)?AS_o(x,n) : -1))) )
+#define NUM_val(x) NUM_item(x,0)
 
 #define DICT_find(x,y) ({ int i = _find1(KEYS(x),y); i==-1?0:ELl(VALS(x),i); })
 #define DICT_key_n(x,y) (ELl(KEYS(x),y))
