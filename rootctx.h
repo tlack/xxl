@@ -39,8 +39,8 @@
 	// infix/binary verbs
 	// operators:
 	// .. sequences and lists:
-	res=assign(res,xt(_tagnums("|>")),x2(&join));
-	res=assign(res,xt(_tagnums("<|")),x2(&split));
+	res=assign(res,xt(_tagnums("|,")),x2(&join));
+	res=assign(res,xt(_tagnums("||")),x2(&split));
 	res=assign(res,xt(_tagnums("#|")),x2(&take));
 	res=assign(res,xt(_tagnums("|#")),x2(&drop));
 	// .. looping:
