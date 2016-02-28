@@ -14,6 +14,7 @@ VP append(VP x,VP y);
 VP appendbuf(VP x,buf_t buf,size_t nelem);
 static inline int _arity(VP x);
 static inline VP arity(VP x);
+VP aside(VP x,VP y); 
 VP assign(VP x,VP k,VP val);
 VP behead(VP x); // everything except the first element
 const char* bfromx(VP x);

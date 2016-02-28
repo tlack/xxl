@@ -1834,7 +1834,7 @@ VP wide(const VP obj,const VP f) {
 	return acc;
 }
 
-// MATHY STUFF:
+// MATHY/LOGICY STUFF:
 
 VP abss(const VP x) {
 	if(!SIMPLE(x)) return EXC(Tt(type),"abs only supports simple types",x,0);
@@ -1876,6 +1876,14 @@ VP any(VP x) {
 	IF_EXC(!SIMPLE(x) && !LIST(x), Tt(type), "any arg must be list or simple type", x, 0);
 	if(LIST(x)) return deep(x,x1(&any));
 	return xb(_any(x));
+}
+VP aside(VP x,VP y) {
+	// used to do some work with the chaining value, but in such a way as to not
+	// disrupt what we're building up:
+	// 100 count % 2 aside {['mods,x]show} * 5..
+	// without aside, the ['mods,x] would be passed on to * 5..
+	// luckily a very simple implementation
+	return x;
 }
 VP base(VP x,VP y) {
 	// two different functions in one:
