@@ -128,11 +128,12 @@ char* repr_a(VP x,char* s,size_t sz) { // table
 	VP k=KEYS(x), v=VALS(x), tmp, tmp2;
 	// if(!sz) return s;
 	if (!k || !v) { APF(sz,"[null]",0); return s; }
-	APF(sz,"[",0);
+	APF(sz,"+",0);
 	kn=k->n; vn=LEN(v) ? ELl(v,0)->n : 0;
 	repr0(k, s, sz-1);
 	APF(sz,"\n",0);
 	for(i=0; i<vn; i++) {
+		APF(sz,"%d:[",i);
 		for(j=0; j<kn; j++) {
 			// TODO kill me. need shortcut apply or value-at type!
 			tmp=apply_simple_(ELl(v,j),i);
@@ -140,7 +141,7 @@ char* repr_a(VP x,char* s,size_t sz) { // table
 			if(j!=kn-1) APF(sz,", ",0);
 			xfree(tmp);
 		}
-		if(i!=vn-1) APF(sz,"\n",0);
+		if(i!=vn-1) APF(sz,"],\n",0);
 	}
 	APF(sz,"]",0);
 	return s;
@@ -328,7 +329,7 @@ VP xrealloc(VP x,I32 newn) {
 VP xfree(VP x) {
 	int i;
 	if(UNLIKELY(x==NULL)) return x;
-	PF("XFREE (%p)\n",x);DUMP(x);//DUMP(info(x));
+	//PF("XFREE (%p)\n",x);//DUMP(x);//DUMP(info(x));
 	x->rc--; 
 	if(LIKELY(x->rc==0)) {
 		if(CONTAINER(x)) {
