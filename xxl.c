@@ -82,7 +82,7 @@ char* repr0(VP x,char* s,size_t sz) {
 }
 char* reprA(VP x) {
 	memset(REPR_SEEN,0,REPR_SEEN_MAX*sizeof(VP));
-	#define BS 1024*10
+	#define BS 1024*65
 	char* s = calloc(1,BS);
 	s = repr0(x,s,BS);
 	//APF(BS,"\n",0);
@@ -2678,8 +2678,6 @@ VP nest(VP x,VP y) {
 		else base=xb(1);
 		out=bracketjoin(xb(1), xln(2,consecutivejoin(base,opens),closes)); 
 		xfree(base);
-		DUMP(base);
-		DUMP(out);
 		where=condense(out);
 	}
 	PF("nest where\n");DUMP(where);
