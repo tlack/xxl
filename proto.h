@@ -17,6 +17,7 @@ static inline VP arity(VP x);
 VP assign(VP x,VP k,VP val);
 VP behead(VP x); // everything except the first element
 const char* bfromx(VP x);
+VP casee(VP x,VP y);
 VP cast(VP x,VP y);
 VP capacity(VP x);
 VP catenate(VP x,VP y);

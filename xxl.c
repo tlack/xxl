@@ -1894,6 +1894,22 @@ VP base(VP x,VP y) {
 	}
 	return NULL;
 }
+VP casee(VP x,VP y) {
+	if(!LIST(y) || LEN(y) < 2) return EXC(Tt(type),"case y arg should be [cond1,result1,cond2,result2,elseresult]",x,y);
+	int i, yn=LEN(y); VP cond=NULL, res=NULL;
+	for(i=0; i<yn-(yn%2); i+=2) {
+		cond=LIST_item(y,i);
+		if(CALLABLE(cond)) cond=apply(cond,x);
+		if(_any(cond)) {
+			res=LIST_item(y,i+1);
+			break;
+		}
+	}
+	if(res==NULL) 
+		res=LIST_item(y,LEN(y)-1);
+	if(res && CALLABLE(res)) return apply(res,x);
+	else return res;
+}
 static inline VP divv(VP x,VP y) { 
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
 	// PF("div");DUMP(x);DUMP(y);DUMP(acc);

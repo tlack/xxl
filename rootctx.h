@@ -78,6 +78,7 @@
 	res=assign(res,Tt(base),x2(&base));
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
 	res=assign(res,Tt(call),x2(&call));
+	res=assign(res,Tt(case),x2(&casee));
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));
 	res=assign(res,Tt(deal),x2(&deal));
 	res=assign(res,Tt(deep),x2(&deep));
