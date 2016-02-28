@@ -60,7 +60,7 @@
 #define PERR(msg) {perror(msg);exit(1);}
 
 /* Debugging: */
-#define APF(sz,fmt,...) ({ snprintf(s+strlen(s),sz-strlen(s),fmt,__VA_ARGS__); s; })
+#define APF(sz,fmt,...) ({ int len=strlen(s); if(sz-len>5) { snprintf(s+len,sz-len,fmt,__VA_ARGS__); } s; })
 #define ASSERT(cond,txt) ({ if (!(cond)) { printf("ASSERT: %s\n", txt); raise(SIGABRT); exit(1); } })
 #define P0(fmt,x) ({ typeof(x) xx=x; char* s=malloc(1024);snprintf(fmt,1024,xx); xx; })
 #define _PF(...) ({ FOR(0,PF_LVL,printf("  ")); printf(__VA_ARGS__);})
