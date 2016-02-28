@@ -299,3 +299,7 @@
 	ASSERT(_equal(b,xi(1)),"join 1");
 	a=xln(3,xfroms("a"),xfroms("b"),xfroms("c")); b=join(a,xfroms("/"));
 	ASSERT(_equal(b,xfroms("a/b/c")),"join 2");
+
+	a=xin(3,1,-2,3); b=xin(3,-1,2,-3);
+	ASSERT(_equal(neg(a),b),"neg0");
+

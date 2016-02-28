@@ -70,6 +70,7 @@ VP make_table(VP keys,VP vals);
 VP mkworkspace();
 VP minus(VP x,VP y);
 VP mod(VP x,VP y);
+VP neg(VP x);
 VP not(VP x);
 VP numelem2base(VP num,int i,int base);
 VP over(VP x,VP y);

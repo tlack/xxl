@@ -2057,6 +2057,18 @@ VP mod(VP x,VP y) {
 	PF("mod result\n"); DUMP(acc);
 	return acc;
 }
+VP neg(VP x) {
+	int typerr=-1;
+	VP acc;
+	// PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
+	acc=ALLOC_LIKE(x);
+	VARY_EACH(x,({ 
+		_x=-_x; appendbuf(acc,(buf_t)&_x,1);
+	}),typerr);
+	IF_EXC(typerr != -1, Tt(type), "not arg type not valid", x, 0);
+	// PF("and result\n"); DUMP(acc);
+	return acc;
+}
 VP not(VP x) {
 	int typerr=-1;
 	VP acc;
