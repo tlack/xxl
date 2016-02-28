@@ -16,6 +16,7 @@
 	res=assign(res,Tt(first),x1(first));
 	res=assign(res,Tt(flat),x1(&flatten));
 	res=assign(res,Tt(last),x1(&last));
+	res=assign(res,Tt(list),x1(&list));
 	res=assign(res,Tt(len),x1(&len));
 	res=assign(res,Tt(key),x1(&key));
 	res=assign(res,Tt(min),x1(&min));
@@ -92,6 +93,7 @@
 	res=assign(res,Tt(eachl),x2(&eachleft));
 	res=assign(res,Tt(eachr),x2(&eachright));
 	res=assign(res,Tt(evalin),x2(&evalin));
+	res=assign(res,Tt(exhaust),x2(&exhaust));
 	res=assign(res,Tt(get),x2(&get));
 	res=assign(res,Tt(iftrue),x2(&iftrue));
 	res=assign(res,Tt(ifelse),x2(&ifelse));
