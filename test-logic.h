@@ -176,3 +176,8 @@ c=mkworkspace();
 b=evalstrin("1,2,3 recurse {rot1}",c);
 ASSERT(_equal(repr(b),xfroms("[(2,3,1i), (3,1,2i)]")),"recurse0");
 
+c=mkworkspace();
+b=evalstrin("1,2,3 exhaust {rot1}",c);
+ASSERT(_equal(repr(b),xfroms("(3,1,2i)")),"exhaust0");
+
+
