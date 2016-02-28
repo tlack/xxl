@@ -1710,22 +1710,23 @@ VP each(const VP obj,const VP fun) {
 	VP tmp, res, acc=NULL; 
 	if(DICT(obj)) return eachdict(obj,fun);	
 	if(TABLE(obj)) return eachtable(obj,fun);
-	int n=LEN(obj);
+	int n=LEN(obj), i;
 	if(n==0) return obj;
 	// PF("each\n");DUMP(obj);DUMP(fun);
-	FOR(0,n,({ 
+	for(i=0; i<n; i++) {
 		// PF("each #%d\n",n);
-		tmp=apply_simple_(obj, _i); 
+		tmp=apply_simple_(obj, i); 
 		if(IS_EXC(tmp)) { if(acc) xfree(acc); return tmp; }
 		res=apply(fun,tmp); 
 		if(res==0) continue; // no idea lol
 		if(IS_EXC(res)) { if(acc) xfree(acc); return res; }
 		// delay creating return type until we know what this func produces
 		if (!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
-		else if (!LIST(acc) && res->t != acc->t) 
-			acc = xl(acc);
+		else if (!LIST(acc) && res->t != acc->t) acc = xl(acc);
+		// PF("each tmp (rc=%d)\n",tmp->rc);DUMP(tmp);
+		append(acc,res);
 		xfree(tmp);
-		append(acc,res); }));
+	}
 	// PF("each returning\n");DUMP(acc);
 	return acc;
 }
@@ -1818,19 +1819,22 @@ VP over(const VP x,const VP y) {
 }
 VP scan(const VP x,const VP y) { // always returns a list
 	// PF("scan\n");DUMP(x);DUMP(y);
-	IF_RET(!CALLABLE(y), EXC(Tt(type),"scan y must be func or projection",x,y));
-	IF_RET(x->n==0, xalloc(x->t, 0));
-	IF_RET(x->n==1, x);
-	VP last,next,acc=0;
-	last=apply(x,xi(0));
+	IF_RET(!INDEXABLE(y), EXC(Tt(type),"scan y must be indexable",x,y));
+	VP last,next,acc=0; int xn=LEN(x),i;
+	if(xn<2) return apply(y,x);
+	last=apply_simple_(x,0);
 	acc=ALLOC_LIKE(x);
-	append(acc,last);
-	FOR(1,x->n,({
-		next=apply(x, xi(_i));
-		last=apply(apply(y,last),next);
+	acc=append(acc,last);
+	for(i=0; i<xn; i++) {
+		next=apply_simple_(x,i);
+		VP tmp=apply(y,last);
+		last=apply(tmp,next);
 		PF("scan step\n");DUMP(last);
-		append(acc,last);
-	}));
+		acc=append(acc,last);
+		xfree(last);
+		xfree(tmp);
+		xfree(next);
+	}
 	PF("scan result\n");DUMP(acc);
 	return acc;
 }
@@ -2814,30 +2818,39 @@ VP matchexec(VP obj,VP pats) {
 	DUMP(pats);
 	for(i=0;i<pats->n;i+=2) {
 		PF("matchexec %d\n", i);
-		rule=apply(pats,xi(i));
-		if(IS_t(rule)) 
-			res=matchtag(obj,rule);
-		else
-			res=matchany(obj,rule);
+		rule=apply_simple_(pats,i);
+		if(IS_t(rule)) res=matchtag(obj,rule);
+		else res=matchany(obj,rule);
 		PF("matchexec match, rule and res:\n");
 		DUMP(rule);
 		DUMP(res);
 		// rules start with an unimportant first item: empty tag for tagmatch
 		if(_any(res)) {
-			VP indices = partgroups(condense(res));
+			VP cond=condense(res);
+			VP indices=partgroups(cond);
+			xfree(cond);
 			diff = 0;
 			for (j=0; j<indices->n; j++) {
-				VP idx = ELl(indices, j);
+				VP idx = LIST_item(indices, j);
 				PF("matchexec idx, len=%d, diff=%d\n", idx->n, diff); DUMP(idx);
-				res2=apply(ELl(pats,i+1),apply(obj,plus(idx, xi(diff))));
+				VP diffi=xi(diff);
+				VP newidx=plus(idx,diffi);
+				xfree(diffi);
+				VP objelem=apply(obj,newidx);
+				VP handler=LIST_item(pats,i+1);
+				res2=apply(handler,objelem);
+				xfree(objelem);
 				if(LIST(res2) && res2->n == 0) continue;
 				PF("matchexec after apply, len=%d\n", res2->n);
 				DUMP(res2);
-				obj=splice(obj,plus(idx, xi(diff)),res2);
+				obj=splice(obj,newidx,res2);
 				diff += 1 - idx->n;
 				PF("matchexec new obj, diff=%d", diff);
 				DUMP(obj);
+				xfree(res2);xfree(newidx);
+				// idx isnt a reference, dont free it.
 			}
+			xfree(indices);
 		}
 	}	
 	PF("matchexec done");
