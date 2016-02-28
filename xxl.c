@@ -347,8 +347,8 @@ VP xfree(VP x) {
 		}
 		PF("xfree(%p) really dropping type=%d n=%d alloc=%d\n",x,x->t,x->n,x->alloc);
 		DUMP(x);
-		free(x);
 		if(x->alloc && x->dyn) free(x->dyn);
+		free(x);
 	} return x; }
 VP xref(VP x) { if(!x) return x; if(MEM_WATCH){MEMPF("ref %p\n",x);} x->rc++; return x; }
 VP xfroms(const char* str) {  
