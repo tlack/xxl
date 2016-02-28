@@ -99,6 +99,7 @@
 #define DISCLOSE(v) (ENLISTED(v) ? LIST_first(v) : v)
 #define EMPTYLIST(v) (LIST(v)&&v->n==0)                  // empty list
 #define LIST_first(v) (ELl(v,0))
+#define LIST_item(v,n) (ELl(v,n))
 #define KEYS(v) (ELl(v,0))                               // keys for dict/table/ctx v
 #define VALS(v) (ELl(v,1))                               // values for dict/table/ctx v
 #define DICT(v) (IS_d(v))                                // is v a dictionary?
