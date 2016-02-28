@@ -331,8 +331,10 @@ VP xfree(VP x) {
 	PF("XFREE (%p)\n",x);DUMP(x);//DUMP(info(x));
 	x->rc--; 
 	if(LIKELY(x->rc==0)) {
-		if(CONTAINER(x))
+		if(CONTAINER(x)) {
 			ITERV(x,xfree(ELl(x,_i)));
+			x->n=0;
+		}
 		if(MEM_WATCH) {
 			MEM_FREED_SZ+=sizeof(struct V) + x->sz;
 			MEM_FREES+=1;
