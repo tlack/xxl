@@ -1726,6 +1726,9 @@ VP each(const VP obj,const VP fun) {
 	if(TABLE(obj)) return eachtable(obj,fun);
 	int n=LEN(obj), i;
 	if(n==0) return obj;
+	// we normally want to try to create vectors from each, but not if the
+	// object isn't a vector in the first place, so pre-set acc here
+	if(!SIMPLE(obj)) acc=xlsz(n); 
 	// PF("each\n");DUMP(obj);DUMP(fun);
 	for(i=0; i<n; i++) {
 		// PF("each #%d\n",n);
