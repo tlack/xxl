@@ -40,48 +40,37 @@ static pthread_t THR[MAXTHR]={0};
 
 // REPRESENTATION
 
-#define REPR_SEEN_MAX 1024
-THREADLOCAL VP REPR_SEEN[REPR_SEEN_MAX]={0};
+MEMO_make(REPR_SEEN);
 char* repr0(VP x,char* s,size_t sz) {
-	type_info_t t;
-	int i;
+	type_info_t t; int i;
+	// PF("repr0\n");
 	if(x==NULL) { APF(sz,"/*null*/",0); return s; }
 	if(x->t < 0 || x->t > MAX_TYPE) { APF(sz,"/*unknown*/",0); return s; }
 	if(!SIMPLE(x)) {
-		for(i=0; i<REPR_SEEN_MAX; i++) {
-			if(REPR_SEEN[i] == x) {
-				APF(sz,"/*cycle*/",0); return s;
-			}
-		}
+		MEMO_check(REPR_SEEN, x, ({ APF(sz,".. (cycle) ..",0); return s; }), i);
 	}
+	// PF("past memo check %d\n", x->t);
 	t=typeinfo(x->t);
 	if(0 && DEBUG) {
 		APF(sz," /*%p %s tag=%d#%s itemsz=%d n=%d rc=%d*/ ",x,t.name,
 			x->tag,(x->tag!=0 ? bfromx(tagname(x->tag)) : ""),
 			x->itemsz,x->n,x->rc);
 	}
-
 	IN_OUTPUT_HANDLER++;
-
 	if(x->tag!=0) 
 		APF(sz, "'%s(", tagnames(x->tag));
 	if(t.repr) (*(t.repr)(x,s,sz));
 	if(x->tag!=0)
 		APF(sz, ")", 0);
 	if(!SIMPLE(x)) {
-		for(i=0; i<REPR_SEEN_MAX; i++) {
-			if(REPR_SEEN[i] == NULL) {
-				REPR_SEEN[i] = x; break;
-			}
-		}
+		//PF("memo_set\n");
+		MEMO_set(REPR_SEEN,x,(VP)s,i);
 	}
-
 	IN_OUTPUT_HANDLER--;
-
 	return s;
 }
 char* reprA(VP x) {
-	memset(REPR_SEEN,0,REPR_SEEN_MAX*sizeof(VP));
+	MEMO_clear(REPR_SEEN);
 	#define BS 1024*65
 	char* s = calloc(1,BS);
 	s = repr0(x,s,BS);
@@ -253,7 +242,7 @@ VP xalloc(const type_t t,const I32 initn) {
 					MEM_RETAINED++;
 					g=_i;
 					PF("xalloc recycling retained %p\n",a);
-					DUMP(a);
+					// DUMP(a);
 					memset(a,0,sizeof(struct V)+a->sz);
 					break;
 				}
