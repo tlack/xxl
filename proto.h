@@ -63,6 +63,7 @@ VP lesser(VP x,VP y);
 VP list2vec(VP obj);
 VP loadin(VP fn,VP ctx);
 VP match(VP obj,VP pat);
+VP matchany(VP obj,VP pat);
 VP matcheasy(VP obj,VP pat);
 VP matchtag(VP obj,VP pat);
 int matchpass(VP obj,VP pat);
