@@ -2293,9 +2293,10 @@ VP key(VP x) {
 	if(DICT(x)) return ELl(x,0);
 	if(IS_x(x)){ // locals for context
 		int i;VP item;
-		for(i=x->n-1;i>=0;i--) 
-			if(DICT(ELl(x,i)))
-				return KEYS(ELl(x,i));
+		for(i=x->n-1;i>=0;i--) {
+			if(DICT(LIST_item(x,i))) 
+				return LIST_item(x,i);
+		}
 		return xd0();
 	}
 	if(SIMPLE(x)) return count(xi(x->n));
