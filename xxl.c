@@ -2305,16 +2305,16 @@ VP get(VP x,VP y) {
 	// in our case, if you pass in ['tag,arg] on the right, it will look up
 	// 'tag in the root scope, and then try to call its "get" member. 
 	// see _getmodular()
-	int xn=x->n,yn=y->n,i,j;VP item,res;
+	int xn=LEN(x),yn=LEN(y),i,j;VP item,res;
 	PF("get\n");DUMP(x);DUMP(y);
 	if((DICT(x)||IS_x(x)) && LIST(y) && yn >= 2 && IS_t(ELl(y,0))) {
 		res=_getmodular(x,y);
 		if(res!=0) return res;
 	}
 	if(IS_x(x)) {
-		if(LIKELY(IS_c(y) || (LIST(y) && IS_c(ELl(y,0))))) 
-			y=str2tag(y);
-		DUMP(y);
+		if(LIKELY(IS_c(y) || (LIST(y) && IS_c(ELl(y,0))))) {
+			y=str2tag(y); yn=LEN(y);
+		}
 		if(IS_t(y) && AS_t(y,0)==Ti(.)) {
 			//return clone(curtail(x)); // clone(KEYS(x));
 			return curtail(x);
@@ -2329,7 +2329,7 @@ VP get(VP x,VP y) {
 			}
 		} else {
 			i=xn-1;
-			if(SIMPLE(y) && yn>1) y=list(y); // support depth queries with scalars like thing.item
+			if(IS_t(y) && yn>1) y=list(y); // support depth queries with scalars like thing.item
 			for(;i>=0;i--) {
 				PF("get t#%d\n", i);
 				item=ELl(x,i);
