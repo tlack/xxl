@@ -822,7 +822,7 @@ VP replaceleft(VP x,int n,VP replace) { // replace first i values with just 'rep
 	return x;
 }
 VP reverse(VP x) {
-	if(!SIMPLE(x)||CONTAINER(x)) return EXC(Tt(type),"reverse arg must be simple or container",x,0);
+	if(!SIMPLE(x)||CONTAINER(x)) return EXC(Tt(type),"reverse arg must be simple or container",x,NULL);
 	int i,typerr=-1; VP acc=ALLOC_LIKE(x);
 	for(i=x->n-1;i>=0;i--) appendbuf(acc,ELi(x,i),1);
 	return acc;
@@ -1191,8 +1191,8 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			item=list(item);
 			for(j=0;j<parent->n;j++) {
 				this=ELl(parent,j);
-				// if(j!=parent->n-1 || !LIST(this)) append(newctx,clone(ELl(parent,j)));
-				if(j!=parent->n-1 || !LIST(this)) append(newctx,LIST_item(parent,j));
+				if(j!=parent->n-1 || !LIST(this)) append(newctx,clone(ELl(parent,j)));
+				//if(j!=parent->n-1 || !LIST(this)) append(newctx,LIST_item(parent,j));
 			}
 			append(newctx,item); 
 			item=newctx;
@@ -1824,7 +1824,7 @@ VP exhaust(const VP x,const VP y) {
 }
 VP over(const VP x,const VP y) {
 	//PF("over\n");DUMP(x);DUMP(y);
-	IF_RET(!CALLABLE(y), EXC(Tt(type),"over y must be func or projection",x,y));
+	IF_RET(!INDEXABLE(y), EXC(Tt(type),"over y must be indexable",x,y));
 	IF_RET(x->n==0, xalloc(x->t, 0));
 	VP last,next;
 	last=apply(x,xi(0));
@@ -1870,10 +1870,12 @@ VP recurse(const VP x,const VP y) {
 }
 VP wide(const VP obj,const VP f) {
 	int i; VP acc;
+	if(IS_EXC(obj)) return obj;
 	PF("wide\n");DUMP(obj);DUMP(f);
 	if(!CONTAINER(obj)) return apply(f, obj);
 	// PF("wide top level\n");DUMP(obj);
 	acc=apply(f,obj);
+	if(IS_EXC(acc)) return acc;
 	if(CONTAINER(acc)) {
 		for(i=0;i<acc->n;i++) {
 			//PF("wide #%d\n",i);PFIN();
@@ -1935,6 +1937,10 @@ VP aside(VP x,VP y) {
 	// 100 count % 2 aside {['mods,x]show} * 5..
 	// without aside, the ['mods,x] would be passed on to * 5..
 	// luckily a very simple implementation
+	if(CALLABLE(y)) {
+		VP res=apply(y,x);
+		xfree(res);
+	}
 	return x;
 }
 VP base(VP x,VP y) {
