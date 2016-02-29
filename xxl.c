@@ -1217,8 +1217,8 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			item=list(item);
 			for(j=0;j<parent->n;j++) {
 				this=ELl(parent,j);
-				if(j!=parent->n-1 || !LIST(this)) append(newctx,clone(ELl(parent,j)));
-				//if(j!=parent->n-1 || !LIST(this)) append(newctx,LIST_item(parent,j));
+				//if(j!=parent->n-1 || !LIST(this)) append(newctx,clone(ELl(parent,j)));
+				if(j!=parent->n-1 || !LIST(this)) append(newctx,LIST_item(parent,j));
 			}
 			append(newctx,item); 
 			item=newctx;
