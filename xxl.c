@@ -3115,6 +3115,18 @@ VP parseloopoper(VP x) {
 	xfree(join);
 	return x;
 }
+VP parseallexprs(VP tree) {
+	if(IS_EXC(tree) || !LIST(tree)) return tree;
+	PF("parseallexprs\n");DUMP(tree);
+	VP brace=xfroms("{"), paren=xfroms("("), bracket=xfroms("[");
+	if(_find1(tree,brace)!=-1)
+		tree=nest(tree,xln(5, entags(brace,"raw"), xfroms("}"), xfroms(""), Tt(lambda), x1(&parselambda)));
+	if(_find1(tree,paren)!=-1)
+		tree=nest(tree,xln(5, entags(paren,"raw"), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr)));
+	if(_find1(tree,bracket)!=-1)
+		tree=nest(tree,xln(5, entags(bracket,"raw"), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)));
+	return tree;
+}
 VP parsestr(const char* str) {
 	VP ctx,lex,pats,acc,t1,t2;size_t l=strlen(str);int i;
 	PF("parsestr '%s'\n",str);
@@ -3123,20 +3135,11 @@ VP parsestr(const char* str) {
 	for(i=0;i<l;i++)
 		append(acc,entags(xc(str[i]),"raw"));
 	if(AS_c(ELl(acc,acc->n - 1),0)!='\n')
-		append(acc,entags(xc('\n'),"raw"));
-	ctx=mkbarectx();
-	pats=xln(3,
-		proj(2,&nest,0,xln(5, entags(xfroms("\""),"raw"), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit))),
-		proj(2,&nest,0,xln(5, entags(xfroms("//"),"raw"), xfroms("\n"), xfroms(""), Tt(comment), x1(&parsecomment))),
-		proj(2,&nest,0,xln(5, entags(xfroms("/*"),"raw"), xfroms("*/"), xfroms(""), Tt(comment), x1(&parsecomment)))
-	);
-	ctx=append(ctx,pats);
-	acc=exhaust(acc,ctx);
-	PF("parsestr after nest\n");
-	xfree(pats);
-
+		append(acc,entags(xc('\n'),"raw"));	
+	acc=nest(acc,xln(5, entags(xfroms("\""),"raw"), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit)));
+	acc=nest(acc,xln(5, entags(xfroms("//"),"raw"), xfroms("\n"), xfroms(""), Tt(comment), x1(&parsecomment)));
+	acc=nest(acc,xln(5, entags(xfroms("/*"),"raw"), xfroms("*/"), xfroms(""), Tt(comment), x1(&parsecomment)));
 	acc=parseloopoper(acc);
-
 	pats=xl0();
 	lex=mklexer("0123456789.","num");
 	append(pats,ELl(lex,0));
@@ -3152,28 +3155,9 @@ VP parsestr(const char* str) {
 	xfree(lex);
 	t1=matchexec(acc,pats);
 	xfree(pats);
-	xfree(acc);
-	//xfree(ctx);
 	PF("matchexec results\n");DUMP(t1);
-
-
-	// we only form expression trees after basic parsing - this saves us from
-	// having to do a bunch of deep manipulations earlier in this routine (i.e.,
-	// its faster to scan a flat list)
-	ctx=mkbarectx();
-	pats=xln(3,
-		proj(2,&nest,0,xln(5, entags(xfroms("{"),"raw"), xfroms("}"), xfroms(""), Tt(lambda), x1(&parselambda))),
-		proj(2,&nest,0,xln(5, entags(xfroms("("),"raw"), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr))),
-		proj(2,&nest,0,xln(5, entags(xfroms("["),"raw"), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)))
-	);
 	t2=t1;
-	for(i=0;i<pats->n;i++) {
-		PF("parsestr exhausting %d\n", i);
-		//t2=exhaust(t2,proj(2,&wide,0,ELl(pats,i)));
-		//t2=exhaust(t2,ELl(pats,i)); // wide doesnt seem needed here after tag fixes
-		//t2=wide(t2,proj(2,&exhaust,0,ELl(pats,i)));
-		t2=wide(t2,ELl(pats,i));
-	}
+	t2=wide(t2,x1(&parseallexprs));
 	return t2;
 }
 
