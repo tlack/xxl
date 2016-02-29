@@ -150,6 +150,11 @@ char* repr_l(VP x,char* s,size_t sz) {
 	int i=0, n=x->n;VP a;
 	APF(sz,"[",0);
 	for(i=0;i<n;i++){
+		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
+			APF(sz,".. (%d omitted) ..", n-REPR_MAX_ITEMS);
+			i+=REPR_MAX_ITEMS;
+			continue;
+		}
 		a = ELl(x,i);
 		if (a==NULL) APF(sz,"/*null*/",0); 
 		else repr0(a,s,sz);
@@ -742,6 +747,14 @@ VP drop(VP x,VP y) {
 	VARY_EL(y, 0, ({ return drop_(x,_x); }), typerr);
 	return res;
 }
+VP except(VP x,VP y) {
+	VP where=matchany(x,y);
+	VP invw=not(where);
+	VP wherec=condense(invw);
+	VP res=apply(x,wherec);
+	xfree(wherec); xfree(invw); xfree(where);
+	return res;
+}
 VP first(VP x) {
 	VP i,r;
 	if(TABLE(x)) return table_row_dict_(x,0);
@@ -822,7 +835,7 @@ VP replaceleft(VP x,int n,VP replace) { // replace first i values with just 'rep
 	return x;
 }
 VP reverse(VP x) {
-	if(!SIMPLE(x)||CONTAINER(x)) return EXC(Tt(type),"reverse arg must be simple or container",x,0);
+	if(!SIMPLE(x)||CONTAINER(x)) return EXC(Tt(type),"reverse arg must be simple or container",x,NULL);
 	int i,typerr=-1; VP acc=ALLOC_LIKE(x);
 	for(i=x->n-1;i>=0;i--) appendbuf(acc,ELi(x,i),1);
 	return acc;
@@ -1191,8 +1204,8 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			item=list(item);
 			for(j=0;j<parent->n;j++) {
 				this=ELl(parent,j);
-				// if(j!=parent->n-1 || !LIST(this)) append(newctx,clone(ELl(parent,j)));
-				if(j!=parent->n-1 || !LIST(this)) append(newctx,LIST_item(parent,j));
+				if(j!=parent->n-1 || !LIST(this)) append(newctx,clone(ELl(parent,j)));
+				//if(j!=parent->n-1 || !LIST(this)) append(newctx,LIST_item(parent,j));
 			}
 			append(newctx,item); 
 			item=newctx;
@@ -1726,6 +1739,9 @@ VP each(const VP obj,const VP fun) {
 	if(TABLE(obj)) return eachtable(obj,fun);
 	int n=LEN(obj), i;
 	if(n==0) return obj;
+	// we normally want to try to create vectors from each, but not if the
+	// object isn't a vector in the first place, so pre-set acc here
+	if(!SIMPLE(obj)) acc=xlsz(n); 
 	// PF("each\n");DUMP(obj);DUMP(fun);
 	for(i=0; i<n; i++) {
 		// PF("each #%d\n",n);
@@ -1821,7 +1837,7 @@ VP exhaust(const VP x,const VP y) {
 }
 VP over(const VP x,const VP y) {
 	//PF("over\n");DUMP(x);DUMP(y);
-	IF_RET(!CALLABLE(y), EXC(Tt(type),"over y must be func or projection",x,y));
+	IF_RET(!INDEXABLE(y), EXC(Tt(type),"over y must be indexable",x,y));
 	IF_RET(x->n==0, xalloc(x->t, 0));
 	VP last,next;
 	last=apply(x,xi(0));
@@ -1867,10 +1883,12 @@ VP recurse(const VP x,const VP y) {
 }
 VP wide(const VP obj,const VP f) {
 	int i; VP acc;
+	if(IS_EXC(obj)) return obj;
 	PF("wide\n");DUMP(obj);DUMP(f);
 	if(!CONTAINER(obj)) return apply(f, obj);
 	// PF("wide top level\n");DUMP(obj);
 	acc=apply(f,obj);
+	if(IS_EXC(acc)) return acc;
 	if(CONTAINER(acc)) {
 		for(i=0;i<acc->n;i++) {
 			//PF("wide #%d\n",i);PFIN();
@@ -1932,6 +1950,10 @@ VP aside(VP x,VP y) {
 	// 100 count % 2 aside {['mods,x]show} * 5..
 	// without aside, the ['mods,x] would be passed on to * 5..
 	// luckily a very simple implementation
+	if(CALLABLE(y)) {
+		VP res=apply(y,x);
+		xfree(res);
+	}
 	return x;
 }
 VP base(VP x,VP y) {
@@ -2296,16 +2318,16 @@ VP get(VP x,VP y) {
 	// in our case, if you pass in ['tag,arg] on the right, it will look up
 	// 'tag in the root scope, and then try to call its "get" member. 
 	// see _getmodular()
-	int xn=x->n,yn=y->n,i,j;VP item,res;
+	int xn=LEN(x),yn=LEN(y),i,j;VP item,res;
 	PF("get\n");DUMP(x);DUMP(y);
 	if((DICT(x)||IS_x(x)) && LIST(y) && yn >= 2 && IS_t(ELl(y,0))) {
 		res=_getmodular(x,y);
 		if(res!=0) return res;
 	}
 	if(IS_x(x)) {
-		if(LIKELY(IS_c(y) || (LIST(y) && IS_c(ELl(y,0))))) 
-			y=str2tag(y);
-		DUMP(y);
+		if(LIKELY(IS_c(y) || (LIST(y) && IS_c(ELl(y,0))))) {
+			y=str2tag(y); yn=LEN(y);
+		}
 		if(IS_t(y) && AS_t(y,0)==Ti(.)) {
 			//return clone(curtail(x)); // clone(KEYS(x));
 			return curtail(x);
@@ -2320,7 +2342,7 @@ VP get(VP x,VP y) {
 			}
 		} else {
 			i=xn-1;
-			if(SIMPLE(y) && yn>1) y=list(y); // support depth queries with scalars like thing.item
+			if(IS_t(y) && yn>1) y=list(y); // support depth queries with scalars like thing.item
 			for(;i>=0;i--) {
 				PF("get t#%d\n", i);
 				item=ELl(x,i);
@@ -2855,20 +2877,17 @@ VP matchexec(VP obj,VP pats) {
 				res2=apply(handler,objelem);
 				xfree(objelem);
 				if(LIST(res2) && res2->n == 0) continue;
-				PF("matchexec after apply, len=%d\n", res2->n);
-				DUMP(res2);
+				PF("matchexec after apply, len=%d\n", res2->n); DUMP(res2);
 				obj=splice(obj,newidx,res2);
 				diff += 1 - idx->n;
-				PF("matchexec new obj, diff=%d", diff);
-				DUMP(obj);
+				PF("matchexec new obj, diff=%d", diff); DUMP(obj);
 				xfree(res2);xfree(newidx);
 				// idx isnt a reference, dont free it.
 			}
 			xfree(indices);
 		}
 	}	
-	PF("matchexec done");
-	DUMP(obj);
+	PF("matchexec done\n"); DUMP(obj);
 	return obj;
 }
 VP matchtag(const VP obj,const VP pat) {
@@ -3109,6 +3128,18 @@ VP parseloopoper(VP x) {
 	xfree(join);
 	return x;
 }
+VP parseallexprs(VP tree) {
+	if(IS_EXC(tree) || !LIST(tree)) return tree;
+	PF("parseallexprs\n");DUMP(tree);
+	VP brace=xfroms("{"), paren=xfroms("("), bracket=xfroms("[");
+	if(_find1(tree,brace)!=-1)
+		tree=nest(tree,xln(5, entags(brace,"raw"), xfroms("}"), xfroms(""), Tt(lambda), x1(&parselambda)));
+	if(_find1(tree,paren)!=-1)
+		tree=nest(tree,xln(5, entags(paren,"raw"), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr)));
+	if(_find1(tree,bracket)!=-1)
+		tree=nest(tree,xln(5, entags(bracket,"raw"), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)));
+	return tree;
+}
 VP parsestr(const char* str) {
 	VP ctx,lex,pats,acc,t1,t2;size_t l=strlen(str);int i;
 	PF("parsestr '%s'\n",str);
@@ -3117,20 +3148,11 @@ VP parsestr(const char* str) {
 	for(i=0;i<l;i++)
 		append(acc,entags(xc(str[i]),"raw"));
 	if(AS_c(ELl(acc,acc->n - 1),0)!='\n')
-		append(acc,entags(xc('\n'),"raw"));
-	ctx=mkbarectx();
-	pats=xln(3,
-		proj(2,&nest,0,xln(5, entags(xfroms("\""),"raw"), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit))),
-		proj(2,&nest,0,xln(5, entags(xfroms("//"),"raw"), xfroms("\n"), xfroms(""), Tt(comment), x1(&parsecomment))),
-		proj(2,&nest,0,xln(5, entags(xfroms("/*"),"raw"), xfroms("*/"), xfroms(""), Tt(comment), x1(&parsecomment)))
-	);
-	ctx=append(ctx,pats);
-	acc=exhaust(acc,ctx);
-	PF("parsestr after nest\n");
-	xfree(pats);
-
+		append(acc,entags(xc('\n'),"raw"));	
+	acc=nest(acc,xln(5, entags(xfroms("\""),"raw"), xfroms("\""), xfroms("\\"), Tt(string), x1(&parsestrlit)));
+	acc=nest(acc,xln(5, entags(xfroms("//"),"raw"), xfroms("\n"), xfroms(""), Tt(comment), x1(&parsecomment)));
+	acc=nest(acc,xln(5, entags(xfroms("/*"),"raw"), xfroms("*/"), xfroms(""), Tt(comment), x1(&parsecomment)));
 	acc=parseloopoper(acc);
-
 	pats=xl0();
 	lex=mklexer("0123456789.","num");
 	append(pats,ELl(lex,0));
@@ -3146,28 +3168,9 @@ VP parsestr(const char* str) {
 	xfree(lex);
 	t1=matchexec(acc,pats);
 	xfree(pats);
-	xfree(acc);
-	//xfree(ctx);
 	PF("matchexec results\n");DUMP(t1);
-
-
-	// we only form expression trees after basic parsing - this saves us from
-	// having to do a bunch of deep manipulations earlier in this routine (i.e.,
-	// its faster to scan a flat list)
-	ctx=mkbarectx();
-	pats=xln(3,
-		proj(2,&nest,0,xln(5, entags(xfroms("{"),"raw"), xfroms("}"), xfroms(""), Tt(lambda), x1(&parselambda))),
-		proj(2,&nest,0,xln(5, entags(xfroms("("),"raw"), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr))),
-		proj(2,&nest,0,xln(5, entags(xfroms("["),"raw"), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)))
-	);
 	t2=t1;
-	for(i=0;i<pats->n;i++) {
-		PF("parsestr exhausting %d\n", i);
-		//t2=exhaust(t2,proj(2,&wide,0,ELl(pats,i)));
-		//t2=exhaust(t2,ELl(pats,i)); // wide doesnt seem needed here after tag fixes
-		//t2=wide(t2,proj(2,&exhaust,0,ELl(pats,i)));
-		t2=wide(t2,ELl(pats,i));
-	}
+	t2=wide(t2,x1(&parseallexprs));
 	return t2;
 }
 
@@ -3277,6 +3280,7 @@ VP evalinwith(VP tree,VP ctx,VP xarg) {
 	return res;
 }
 VP evalin(VP tree,VP ctx) {
+	if(IS_EXC(tree) || LEN(tree)==0) return tree;
 	return evalinwith(tree,ctx,NULL);
 }
 VP evalstrin(const char* str, VP ctx) {

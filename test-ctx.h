@@ -359,7 +359,7 @@
 	ctx=mkworkspace();
 	append(ctx,parsestr("[3,4,5]each{+2}"));
 	tmp1=apply(ctx,xi(3));
-	ASSERT(_equal(tmp1,xin(3,5,6,7)),"test apply simple lambda");
+	ASSERT(_equal(tmp1,xln(3,xi(5),xi(6),xi(7))),"test apply simple lambda");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();

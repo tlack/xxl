@@ -44,6 +44,7 @@ VP evalin(VP str,VP ctx);
 VP evalinwith(VP tree,VP ctx,VP xarg);
 VP evalstrin(const char* str,VP ctx);
 VP evalstrinwith(const char* str, VP ctx, VP xarg);
+VP except(VP x,VP y);
 int _find1(VP x,VP y);
 int _findbuf(const VP x,const buf_t y); // returns index or -1 on not found
 VP first(VP x);
@@ -62,6 +63,7 @@ VP lesser(VP x,VP y);
 VP list2vec(VP obj);
 VP loadin(VP fn,VP ctx);
 VP match(VP obj,VP pat);
+VP matchany(VP obj,VP pat);
 VP matcheasy(VP obj,VP pat);
 VP matchtag(VP obj,VP pat);
 int matchpass(VP obj,VP pat);

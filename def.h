@@ -153,6 +153,7 @@
 #else
 	#define TRACELBL(x,lbl) (x) 
 #endif
+#define REPR_MAX_ITEMS 500
 
 #define EXC(type,lbl,x,y) ({ \
 	VP exc; exc = entag(xln(4,type,xfroms(lbl),x,y),Tt(exception));  \
