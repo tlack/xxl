@@ -47,6 +47,7 @@
 	res=assign(res,xt(_tagnums("||")),x2(&split));
 	res=assign(res,xt(_tagnums("#|")),x2(&take));
 	res=assign(res,xt(_tagnums("|#")),x2(&drop));
+	res=assign(res,xt(_tagnums("|?")),x2(&except));
 	// .. looping:
 	res=assign(res,xt(_tagnums(".:")),x2(&call));
 	res=assign(res,Tt(::),x2(&each));
