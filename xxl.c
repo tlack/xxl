@@ -150,6 +150,11 @@ char* repr_l(VP x,char* s,size_t sz) {
 	int i=0, n=x->n;VP a;
 	APF(sz,"[",0);
 	for(i=0;i<n;i++){
+		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
+			APF(sz,".. (%d omitted) ..", n-REPR_MAX_ITEMS);
+			i+=REPR_MAX_ITEMS;
+			continue;
+		}
 		a = ELl(x,i);
 		if (a==NULL) APF(sz,"/*null*/",0); 
 		else repr0(a,s,sz);

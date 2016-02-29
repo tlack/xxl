@@ -4,7 +4,13 @@ char* repr_b(VP x,char* s,size_t sz) { int i;
 	IF_RET(x->n==0,APF(sz,"xb0()",0));
 	if(!SIMPLE(x)) APF(sz,"'b(",0);
 	else if(x->n>1) APF(sz,"(",0);
-	for(i=0;i<x->n-1;i++) snprintf(s+strlen(s),sz-strlen(s)-1,"%d,",AS_b(x,i)); 
+	for(i=0;i<x->n-1;i++) {
+		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
+			APF(sz,".. (%d omitted) ..", (x->n)-REPR_MAX_ITEMS);
+			i+=REPR_MAX_ITEMS;
+			continue;}
+		snprintf(s+strlen(s),sz-strlen(s)-1,"%d,",AS_b(x,i)); 
+	}
 	if(SIMPLE(x)) snprintf(s+strlen(s),sz-strlen(s)-1,"%db",AS_b(x,i)); 
 		else snprintf(s+strlen(s),sz-strlen(s)-1,"...",AS_b(x,i)); 
 if(!SIMPLE(x) || x->n>1) APF(sz,")",0);
@@ -14,7 +20,13 @@ char* repr_i(VP x,char* s,size_t sz) { int i;
 	IF_RET(x->n==0,APF(sz,"xi0()",0));
 	if(!SIMPLE(x)) APF(sz,"'i(",0);
 	else if(x->n>1) APF(sz,"(",0);
-	for(i=0;i<x->n-1;i++) snprintf(s+strlen(s),sz-strlen(s)-1,"%d,",AS_i(x,i)); 
+	for(i=0;i<x->n-1;i++) {
+		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
+			APF(sz,".. (%d omitted) ..", (x->n)-REPR_MAX_ITEMS);
+			i+=REPR_MAX_ITEMS;
+			continue;}
+		snprintf(s+strlen(s),sz-strlen(s)-1,"%d,",AS_i(x,i)); 
+	}
 	if(SIMPLE(x)) snprintf(s+strlen(s),sz-strlen(s)-1,"%di",AS_i(x,i)); 
 		else snprintf(s+strlen(s),sz-strlen(s)-1,"...",AS_i(x,i)); 
 if(!SIMPLE(x) || x->n>1) APF(sz,")",0);
@@ -24,7 +36,13 @@ char* repr_j(VP x,char* s,size_t sz) { int i;
 	IF_RET(x->n==0,APF(sz,"xj0()",0));
 	if(!SIMPLE(x)) APF(sz,"'j(",0);
 	else if(x->n>1) APF(sz,"(",0);
-	for(i=0;i<x->n-1;i++) snprintf(s+strlen(s),sz-strlen(s)-1,"%ld,",AS_j(x,i)); 
+	for(i=0;i<x->n-1;i++) {
+		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
+			APF(sz,".. (%d omitted) ..", (x->n)-REPR_MAX_ITEMS);
+			i+=REPR_MAX_ITEMS;
+			continue;}
+		snprintf(s+strlen(s),sz-strlen(s)-1,"%ld,",AS_j(x,i)); 
+	}
 	if(SIMPLE(x)) snprintf(s+strlen(s),sz-strlen(s)-1,"%ldj",AS_j(x,i)); 
 		else snprintf(s+strlen(s),sz-strlen(s)-1,"...",AS_j(x,i)); 
 if(!SIMPLE(x) || x->n>1) APF(sz,")",0);
@@ -34,7 +52,13 @@ char* repr_f(VP x,char* s,size_t sz) { int i;
 	IF_RET(x->n==0,APF(sz,"xf0()",0));
 	if(!SIMPLE(x)) APF(sz,"'f(",0);
 	else if(x->n>1) APF(sz,"(",0);
-	for(i=0;i<x->n-1;i++) snprintf(s+strlen(s),sz-strlen(s)-1,"%0.5f,",AS_f(x,i)); 
+	for(i=0;i<x->n-1;i++) {
+		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
+			APF(sz,".. (%d omitted) ..", (x->n)-REPR_MAX_ITEMS);
+			i+=REPR_MAX_ITEMS;
+			continue;}
+		snprintf(s+strlen(s),sz-strlen(s)-1,"%0.5f,",AS_f(x,i)); 
+	}
 	if(SIMPLE(x)) snprintf(s+strlen(s),sz-strlen(s)-1,"%0.5ff",AS_f(x,i)); 
 		else snprintf(s+strlen(s),sz-strlen(s)-1,"...",AS_f(x,i)); 
 if(!SIMPLE(x) || x->n>1) APF(sz,")",0);
@@ -44,7 +68,13 @@ char* repr_1(VP x,char* s,size_t sz) { int i;
 	IF_RET(x->n==0,APF(sz,"x10()",0));
 	if(!SIMPLE(x)) APF(sz,"'1(",0);
 	else if(x->n>1) APF(sz,"(",0);
-	for(i=0;i<x->n-1;i++) snprintf(s+strlen(s),sz-strlen(s)-1,"%p,",AS_1(x,i)); 
+	for(i=0;i<x->n-1;i++) {
+		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
+			APF(sz,".. (%d omitted) ..", (x->n)-REPR_MAX_ITEMS);
+			i+=REPR_MAX_ITEMS;
+			continue;}
+		snprintf(s+strlen(s),sz-strlen(s)-1,"%p,",AS_1(x,i)); 
+	}
 	if(SIMPLE(x)) snprintf(s+strlen(s),sz-strlen(s)-1,"%p1",AS_1(x,i)); 
 		else snprintf(s+strlen(s),sz-strlen(s)-1,"...",AS_1(x,i)); 
 if(!SIMPLE(x) || x->n>1) APF(sz,")",0);
@@ -54,7 +84,13 @@ char* repr_2(VP x,char* s,size_t sz) { int i;
 	IF_RET(x->n==0,APF(sz,"x20()",0));
 	if(!SIMPLE(x)) APF(sz,"'2(",0);
 	else if(x->n>1) APF(sz,"(",0);
-	for(i=0;i<x->n-1;i++) snprintf(s+strlen(s),sz-strlen(s)-1,"%p,",AS_2(x,i)); 
+	for(i=0;i<x->n-1;i++) {
+		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
+			APF(sz,".. (%d omitted) ..", (x->n)-REPR_MAX_ITEMS);
+			i+=REPR_MAX_ITEMS;
+			continue;}
+		snprintf(s+strlen(s),sz-strlen(s)-1,"%p,",AS_2(x,i)); 
+	}
 	if(SIMPLE(x)) snprintf(s+strlen(s),sz-strlen(s)-1,"%p2",AS_2(x,i)); 
 		else snprintf(s+strlen(s),sz-strlen(s)-1,"...",AS_2(x,i)); 
 if(!SIMPLE(x) || x->n>1) APF(sz,")",0);
