@@ -1012,7 +1012,7 @@ VP table_row_list_(VP tbl, int row) {
 	return lst;
 }
 VP table_row_dict_(VP tbl, int row) {
-	return dict(clone(KEYS(tbl)), table_row_list_(tbl, row));
+	return dict(KEYS(tbl), table_row_list_(tbl, row));
 }
 VP make_table(VP keys,VP vals) {
   VP res, newvals; int i;
