@@ -972,8 +972,9 @@ inline int _find1(const VP x, const VP y) {        // returns index or -1 on not
 		int i, sn=scan->n, yn=y->n, yt=y->t; VP item;
 		for(i=0; i<sn; i++) {
 			item=ELl(scan,i);
+
 			if(item && ( (item->t == yt && item->n == yn) ||
-									 (LIST(item) && ELl(item,0)->t == yt) ))
+									 (LIST(item) && LIST_item(item,0) && LIST_item(item,0)->t == yt) ))
 				if (_equal(item,y)==1) return i;
 		}
 		return -1;
