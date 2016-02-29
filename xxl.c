@@ -2864,20 +2864,17 @@ VP matchexec(VP obj,VP pats) {
 				res2=apply(handler,objelem);
 				xfree(objelem);
 				if(LIST(res2) && res2->n == 0) continue;
-				PF("matchexec after apply, len=%d\n", res2->n);
-				DUMP(res2);
+				PF("matchexec after apply, len=%d\n", res2->n); DUMP(res2);
 				obj=splice(obj,newidx,res2);
 				diff += 1 - idx->n;
-				PF("matchexec new obj, diff=%d", diff);
-				DUMP(obj);
+				PF("matchexec new obj, diff=%d", diff); DUMP(obj);
 				xfree(res2);xfree(newidx);
 				// idx isnt a reference, dont free it.
 			}
 			xfree(indices);
 		}
 	}	
-	PF("matchexec done");
-	DUMP(obj);
+	PF("matchexec done\n"); DUMP(obj);
 	return obj;
 }
 VP matchtag(const VP obj,const VP pat) {
@@ -3286,6 +3283,7 @@ VP evalinwith(VP tree,VP ctx,VP xarg) {
 	return res;
 }
 VP evalin(VP tree,VP ctx) {
+	if(IS_EXC(tree) || LEN(tree)==0) return tree;
 	return evalinwith(tree,ctx,NULL);
 }
 VP evalstrin(const char* str, VP ctx) {
