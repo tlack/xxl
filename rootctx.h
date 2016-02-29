@@ -11,6 +11,7 @@
 	res=assign(res,Tt(behead),x1(&behead));
 	res=assign(res,Tt(condense),x1(&condense));
 	res=assign(res,Tt(count),x1(&count));
+	res=assign(res,Tt(clone),x1(&clone));
 	res=assign(res,Tt(curtail),x1(&curtail));
 	res=assign(res,Tt(info),x1(&info));
 	res=assign(res,Tt(first),x1(first));

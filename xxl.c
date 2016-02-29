@@ -413,19 +413,37 @@ int _equal(const VP x,const VP y) {
 VP equal(const VP x,const VP y) {
 	return xb(_equal(x,y));
 }
+MEMO_make(CLONE);
+VP clone0(const VP obj) {
+	if(IS_EXC(obj)) return obj;
+	PF("clone0 %p\n",obj);DUMP(obj);
+	int i, objn=obj->n; 
+	MEMO_check(CLONE,obj,({ PF("found memoized %p\n", memo_val); return memo_val; }),i);
+	VP res=ALLOC_LIKE(obj);
+	MEMO_set(CLONE,obj,res,i);
+	if(objn) {
+		if(CONTAINER(obj)) {
+			res->n=objn;
+			for(i=0;i<objn;i++) {
+				VP elem=LIST_item(obj,i);
+				if(elem==0) continue;
+				if(IS_t(elem) || IS_1(elem) || IS_2(elem))
+					EL(res,VP,i)=elem;
+				else
+					EL(res,VP,i)=clone0(elem);
+			}
+		} else {
+			res=appendbuf(res,BUF(obj),objn);
+		}
+	}
+	return res;
+}
 VP clone(const VP obj) { 
 	// TODO keep a counter of clone events for performance reasons - these represent a concrete
 	// loss over mutable systems
-	// PF("clone\n");DUMP(obj);
-	int i, objn=obj->n; VP res=ALLOC_LIKE(obj);
-	if(CONTAINER(obj)) {
-		res->n=objn;
-		for(i=0;i<objn;i++) 
-			EL(res,VP,i)=clone(ELl(obj,i));
-	} else 
-		res=appendbuf(res,BUF(obj),objn);
-	// PF("clone returning\n");DUMP(res);
-	return res;
+	PF("clone\n");DUMP(obj);
+	MEMO_clear(CLONE);
+	return clone0(obj);
 }
 
 // RUNTIME 
