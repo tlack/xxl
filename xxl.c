@@ -600,13 +600,15 @@ VP catenate_table(VP table, VP row) {
 	PF("catenate_table\n"); DUMP(table); DUMP(row);
 	int trows=TABLE_nrows(table), tcols=TABLE_ncols(table);
 	if(DICT(row)) {
+		VP rk=KEYS(row);
 		ASSERT(LIST(KEYS(row))&&LIST(VALS(row)),"catenate_table: row keys or vals not list");
 		VP fullrow;
 		if(LEN(rk) != tcols) { // mismatching columns!
-			VP ii=xi(trows), lastrow=table_row(table,ii);
-			fullrow=unionn(lastrow,row);
-		}
-		VP rk=KEYS(fullrow), rv=VALS(fullrow), rktmp, rvtmp, vec; int i=0;
+			VP lastrow=table_row_dict_(table,trows-1);
+			fullrow=catenate(lastrow,row);
+		} else fullrow=row;
+		rk=KEYS(fullrow);
+		VP rv=VALS(fullrow), rktmp, rvtmp, vec; int i=0;
 		for(; i<rk->n; i++) {
 			rktmp=ELl(rk,i); rvtmp=ELl(rv,i);
 			PF("catenate col\n");
