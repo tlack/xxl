@@ -588,17 +588,28 @@ VP catenate_table(VP table, VP row) {
 	PF("catenate_table\n"); DUMP(table); DUMP(row);
 	int trows=TABLE_nrows(table), tcols=TABLE_ncols(table);
 	if(DICT(row)) {
-		VP rk=KEYS(row), rv=VALS(row), rktmp, rvtmp, vec; int i=0;
-		ASSERT(LIST(rk)&&LIST(rv),"catenate_table: row keys or vals not list");
+		ASSERT(LIST(KEYS(row))&&LIST(VALS(row)),"catenate_table: row keys or vals not list");
+		VP fullrow;
+		if(LEN(rk) != tcols) { // mismatching columns!
+			VP ii=xi(trows), lastrow=table_row(table,ii);
+			fullrow=unionn(lastrow,row);
+		}
+		VP rk=KEYS(fullrow), rv=VALS(fullrow), rktmp, rvtmp, vec; int i=0;
 		for(; i<rk->n; i++) {
 			rktmp=ELl(rk,i); rvtmp=ELl(rv,i);
-			vec=DICT_find(KEYS(table),rktmp);  // does this key already exist in table?
+			PF("catenate col\n");
+			DUMP(rktmp);
+			DUMP(KEYS(table));
+			DUMP(VALS(table));
+			DUMP(table);
+			vec=TABLE_col_named(table,rktmp);
+			PF("vec %p\n",vec);DUMP(vec);
 			ARG_MUTATING(table);
 			if(vec==NULL) {
 				// NB. unknown columns are added, but old rows
 				// will get the same value as this one!
-				EL(table,VP,0)=append(ELl(table,0),rktmp);
-				EL(table,VP,1)=append(ELl(table,1),take_(rvtmp,trows));
+				KEYS(table)=append(KEYS(table),rktmp);
+				VALS(table)=append(VALS(table),take_(rvtmp,trows));
 			} else vec=append(vec,rvtmp);
 		}
 		return table;
@@ -615,15 +626,17 @@ VP catenate_table(VP table, VP row) {
 		} else {
 			VP colval;
 			if(row->n != tcols) return EXC(Tt(value),"table definition doesn't match list",table,row);
-			if(LEN(VALS(table))==0) {
+			if(LEN(VALS(table))==0) {        // we have not yet setup the values records
 				for(i=0; i<LEN(row); i++) {
-					colval=ELl(row,i);
+					colval=LIST_item(row,i);
+					xref(colval);
 					// if any of the values of this dictionary are not scalar, we'll need
 					// to make that column into a general list, or indexing row values will
 					// become very confusing indeed
-					if(!CONTAINER(colval) && !SCALAR(colval)) EL(row,VP,i)=xl(colval);
+					if(!SCALAR(colval)) EL(row,VP,i)=xl(colval);
+				
 				}
-				VALS(table) = row;
+				VALS(table) = xref(row);
 			} else {
 				for(; i<row->n; i++) {
 					TABLE_col(table,i)=append(TABLE_col(table,i),ELl(row,i));

@@ -115,11 +115,12 @@
 #define NUM_item(x,n) ( IS_i(x)?AS_i(x,n) : (IS_b(x)?AS_b(x,n) : (IS_j(x)?AS_j(x,n) : (IS_o(x)?AS_o(x,n) : -1))) )
 #define NUM_val(x) NUM_item(x,0)
 
-#define DICT_find(x,y) ({ int i = _find1(KEYS(x),y); i==-1?0:ELl(VALS(x),i); })
+#define DICT_find(x,y) ({ int i = _find1(KEYS(x),y); VP result=(i==-1?((VP)NULL):ELl(VALS(x),i)); result; })
 #define DICT_key_n(x,y) (ELl(KEYS(x),y))
 #define DICT_val_n(x,y) (ELl(VALS(x),y))
 
 #define TABLE_col(x,n) (ELl(VALS(x),n))
+#define TABLE_col_named(x,n) ({ int i = _find1(KEYS(x),n); i==-1 ? ((VP)NULL) : (TABLE_col(x,i)); })
 #define TABLE_ncols(x) (LEN(KEYS(x)))
 #define TABLE_nrows(x) (LEN(VALS(x))==0 ? 0 : TABLE_col(x,0)->n)
 
