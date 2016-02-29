@@ -1,5 +1,5 @@
-{['fac,x] show; x < 2 ifelse (1,{x * (x-1 fac)})} as 'fac;
-3 fac show
+{['fac,x] show; self as 'fac; x as 'n < 2 ifelse (1,{n show * (n-1 fac)})}
+
 
 
 
