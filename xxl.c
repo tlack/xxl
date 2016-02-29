@@ -714,6 +714,7 @@ VP dict(VP x,VP y) {
 		if(x->n > 1 && LIST_of_lists(y)) return make_table(x,y);
 		if(x->n > 1 && x->n != y->n) return EXC(Tt(value),"can't create dict from unlike vectors",x,y);
 		VP d=xd0();
+		if(LEN(x)==0 && LEN(y)==0) { KEYS(d)=xl0(); VALS(d)=xl0(); return d; }
 		if(LIKELY(SCALAR(x))) {
 			if(LIST(x))  // handle ['a:1] which becomes [['a]:1]
 				d=assign(d,ELl(x,0),y);
