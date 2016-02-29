@@ -1021,7 +1021,8 @@ VP make_table(VP keys,VP vals) {
 	// catenate_table already handles lists-of-lists correctly.
   res=xasz(2);
 	EL(res,VP,0)=clone(keys);
-	EL(res,VP,1)=xlsz(LEN(ELl(vals,0)));
+	int sz=vals && LEN(vals) ? LEN(ELl(vals,0)) : 0;
+	EL(res,VP,1)=xlsz(sz);
 	res->n=2;
 	return catenate_table(res, vals);
 }
