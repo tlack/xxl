@@ -2457,9 +2457,15 @@ VP numelem2base(VP num,int i,int base) {
 VP str(VP x) {
 	PF("str\n");DUMP(x);
 	if(IS_c(x)) return x;
-	if(IS_t(x)) return tagname(AS_t(x,0));
-	if(NUM(x)) return numelem2base(x,0,10);
-	return EXC(Tt(type),"str only works with simple types",x,NULL);
+	if(NUM(x) || IS_t(x)) {
+		int xn=LEN(x), i;
+		VP acc=xlsz(xn),final;
+		if(NUM(x)) for(i=0; i<xn; i++) acc=append(acc,numelem2base(x,i,10));
+		else if(IS_t(x)) for(i=0; i<xn; i++) acc=append(acc,tagname(AS_t(x,i)));
+		final=join(acc,xfroms(","));
+		return final;
+	}
+	return repr(x);
 }
 VP sys(VP x) {
 	PF("sys\n");DUMP(x);
