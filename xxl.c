@@ -1728,7 +1728,7 @@ static inline VP eachdict(const VP obj,const VP fun) {
 static inline VP eachtable(const VP obj, const VP fun) {
 	PF("eachtable\n"); DUMP(obj); DUMP(fun);
 	int objnr=TABLE_nrows(obj);
-	VP acc=xlsz(objnr), tmpdict=NULL, res, item, tmpi; int i; 
+	VP acc=NULL, tmpdict=NULL, res, item, tmpi; int i; 
 	for(i=0; i<objnr; i++) {
 		tmpdict=table_row_dict_(obj, i);
 		PF("calling eachtable fun\n"); DUMP(tmpdict);
@@ -1736,10 +1736,13 @@ static inline VP eachtable(const VP obj, const VP fun) {
 		res=apply(fun,tmpdict);
 		PFOUT();
 		PF("eachtable fun result\n"); DUMP(res);
-		if(IS_EXC(res)) return res;
+		if(IS_EXC(res)) { if(acc) xfree(acc); return res; }
+		if(!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
+		else if (!LIST(acc) && res->t != acc->t) {
+			VP newacc=xl(acc); xfree(acc); acc=newacc;
+		}
 		acc=append(acc,res);
-		xfree(res); 
-		xfree(tmpdict); 
+		xfree(res); xfree(tmpdict); 
 	}
 	PF("eachtable returning\n"); DUMP(acc);
 	return acc;
