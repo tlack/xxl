@@ -2147,6 +2147,7 @@ VP or(VP x,VP y) { // TODO most of these primitive functions have the same patte
 	// PF("or\n"); DUMP(x); DUMP(y); // TODO or() and friends should handle type conversion better
 	if(IS_EXC(x) || LEN(x)==0) return x;
 	if(IS_EXC(y) || LEN(y)==0) return y;
+	if(DICT(x) && DICT(y)) return unionn(x,y);
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "or arguments should be same length", x, y);	
 	if(x->t == y->t) acc=xalloc(x->t, x->n);
 	else acc=xlsz(x->n);
@@ -2525,6 +2526,10 @@ VP proj(int type, void* func, VP left, VP right) {
 	EL(pv,Proj,0)=p;
 	pv->n=1;
 	return pv;
+}
+VP unionn(VP x,VP y) {
+	if(DICT(x) && DICT(y)) return catenate(x, y);
+	return EXC(Tt(nyi), "union not yet implemented for that type", x, y);
 }
 VP xray(VP x) {
 	PF("xray\n");DUMP(x);
