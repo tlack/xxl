@@ -164,6 +164,15 @@
 // TODO if_exc doesnt give us a chance to free memory :-/
 #define RETURN_IF_EXC(x) if(x==0 || IS_EXC(x)) return x;
 
+#define MEMO_sz 1024
+#define MEMO_make(varname) THREADLOCAL VP varname##_key[MEMO_sz]; THREADLOCAL VP varname##_val[MEMO_sz]
+#define MEMO_clear(varname) memset(varname##_key,0,MEMO_sz*sizeof(VP)); memset(varname##_val,0,MEMO_sz*sizeof(VP))
+#define MEMO_check(varname,val,body,ctr) for(ctr=0; ctr<MEMO_sz; ctr++) { \
+	if(val==0||varname##_key[ctr]==0)break; \
+	if(varname##_key[ctr]==val){ VP memo_val=varname##_val[ctr]; body; }}
+#define MEMO_set(varname,key,val,ctr) for(ctr=0; ctr<MEMO_sz; ctr++) { \
+	if(varname##_key[ctr]==key || varname##_key[ctr]==NULL){ varname##_key[ctr]=key; varname##_val[ctr]=val; break; }}
+
 // misc
 #define CH_SET_A "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 #define CH_SET_a "abcdefghijklmnopqrstuvwxyz"
