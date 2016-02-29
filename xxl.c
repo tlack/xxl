@@ -802,18 +802,19 @@ VP identity(VP x) {
 	return x;
 }
 VP join(VP list,VP sep) {
-	VP acc=NULL,x,t1; int i;
-	if(list->n==0 || SCALAR(list)) return list;
-	for(i=0;i<list->n-1;i++) {
-		t1=xi(i); x=apply(list,t1);
+	VP acc=NULL,x; int ln=LEN(list), i;
+	if(IS_EXC(list) || ln==0) return list;
+	if(SCALAR(list)) return apply_simple_(list,0);
+	for(i=0;i<ln-1;i++) {
+		x=apply_simple_(list,i);
 		if(!acc) acc=ALLOC_LIKE(x);
 		acc=catenate(acc,x);
 		acc=catenate(acc,sep);
-		xfree(t1);xfree(x);
+		xfree(x);
 	}
-	t1=xi(i); x=apply(list,t1);
+	x=apply_simple_(list,i);
 	acc=catenate(acc,x);
-	xfree(t1); xfree(x);
+	xfree(x);
 	return acc;
 }
 VP last(VP x) {
