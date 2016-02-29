@@ -734,6 +734,14 @@ VP drop(VP x,VP y) {
 	VARY_EL(y, 0, ({ return drop_(x,_x); }), typerr);
 	return res;
 }
+VP except(VP x,VP y) {
+	VP where=matchany(x,y);
+	VP invw=not(where);
+	VP wherec=condense(invw);
+	VP res=apply(x,wherec);
+	xfree(wherec); xfree(invw); xfree(where);
+	return res;
+}
 VP first(VP x) {
 	VP i,r;
 	if(TABLE(x)) return table_row_dict_(x,0);

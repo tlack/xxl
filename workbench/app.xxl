@@ -7,9 +7,10 @@ _dir,"/ui.xxl" load as 'pagetmpl;      // load html interface from ui.xxl (and c
 'urldec is {;" ",x,"%" split "%" as 'p first behead,(p behead curtail :: { "0x",(x take 2)base16$'char,(x drop 2)}orelse"") flat};
 'urlenc is {;"z",x||[]![{in safe not},{"%",(x$'int base 16)}] |# 1 ,| ""};
 
-'wrapresp is {x as 'resp len str as 'szs;
+'wrapresp is {x str as 'resp len str as 'szs;
 	"HTTP/1.0 200 OK\r\nContent-Length: ",szs,"\r\n",
-	"Connection: close\r\n","Server: xxl v0.0\r\n\r\n",resp};
+	"Connection: close\r\n","Server: xxl v0.0\r\n\r\n",
+	resp};
 
 'makehttpserver is {;
 	['http,x] show; x as 'handlecb;
@@ -19,7 +20,7 @@ _dir,"/ui.xxl" load as 'pagetmpl;      // load html interface from ui.xxl (and c
 		lines first split" " as 'method;       // separate request line.. GET /file HTTP/1.0
 		method@1 behead as 'uri                // pull out uri for further inspection and strip leading /
     case [
-			{uri@0="?"},{uri drop 2 urldec evalin . show},
+			{uri & uri@0="?"},{uri drop 1 iftrue {urldec evalin . show}},
 			{_dir,"pub/",uri show .file.get as 'content},{content aside {['static,x]show}},
 			{[method,lines] handlecb show}
 		] wrapresp aside {['result,x]show}

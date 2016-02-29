@@ -180,4 +180,15 @@ c=mkworkspace();
 b=evalstrin("1,2,3 exhaust {rot1}",c);
 ASSERT(_equal(repr(b),xfroms("(3,1,2i)")),"exhaust0");
 
+c=mkworkspace();
+b=evalstrin("1,2,3 except 4",c);
+ASSERT(_equal(repr(b),xfroms("(1,2,3i)")),"except0");
+
+c=mkworkspace();
+b=evalstrin("1,2,3 except (3)",c);
+ASSERT(_equal(repr(b),xfroms("(1,2i)")),"except1");
+
+c=mkworkspace();
+b=evalstrin("1,2,3 except (3,1)",c);
+ASSERT(_equal(repr(b),xfroms("2i")),"except2");
 
