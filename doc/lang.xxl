@@ -71,7 +71,7 @@
 // MISC
 ['t:'unary,
  'name:"sys",
- 'op:"::",
+ 'op:"",
  'cat:'system,
  'desc:"retrieve information about the current XXL environment by passing [] as x",
  'ex:[
