@@ -598,12 +598,17 @@ VP call(VP x,VP y) {
 }
 VP catenate_table(VP table, VP row) {
 	PF("catenate_table\n"); DUMP(table); DUMP(row);
-	int trows=TABLE_nrows(table), tcols=TABLE_ncols(table);
+	int trows, tcols;
+	if(LEN(table)==0) {
+		trows=0; tcols=0;
+	} else {
+		trows=TABLE_nrows(table); tcols=TABLE_ncols(table);
+	}
 	if(DICT(row)) {
 		VP rk=KEYS(row);
 		ASSERT(LIST(KEYS(row))&&LIST(VALS(row)),"catenate_table: row keys or vals not list");
 		VP fullrow;
-		if(LEN(rk) != tcols) { // mismatching columns!
+		if(tcols != 0 && LEN(rk) != tcols) { // mismatching columns on existing table!
 			VP lastrow=table_row_dict_(table,trows-1);
 			fullrow=catenate(lastrow,row);
 		} else fullrow=row;
@@ -1515,9 +1520,6 @@ VP apply_table(VP x, VP y) {
 		if(SCALAR(y)) {
 			int yi=NUM_val(y);
 			return table_row_dict_(x, yi);
-			VP row=xlsz(tc);
-			for(i=0; i<tc; i++) row=append(row,apply(TABLE_col(x,i),y));
-			return dict(clone(KEYS(x)),row);
 		} else {
 			VP newtbl=xasz(2), newvals=xlsz(LEN(y)), vec; int j;
 			EL(newtbl,VP,0)=clone(KEYS(x));
