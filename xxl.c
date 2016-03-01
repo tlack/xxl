@@ -599,8 +599,9 @@ VP call(VP x,VP y) {
 VP catenate_table(VP table, VP row) {
 	PF("catenate_table\n"); DUMP(table); DUMP(row);
 	int trows, tcols;
-	if(LEN(table)==0) {
-		trows=0; tcols=0;
+	if(table==NULL || LEN(table)==0 || LEN(KEYS(table))==0) {
+		if(DICT(row)) return make_table(KEYS(row),VALS(row));
+		else return EXC(Tt(value),"can't catenate an empty table with that",table,row);
 	} else {
 		trows=TABLE_nrows(table); tcols=TABLE_ncols(table);
 	}
@@ -892,11 +893,9 @@ VP splice(VP x,VP idx,VP replace) {
 		for(i=last;i<x->n;i++)
 			acc=append(acc,ELl(x,i));
 	} else {
-		if(first > 0) 
-			acc=append(acc, take_(x, first));
+		if(first > 0) acc=append(acc, take_(x, first));
 		acc=append(acc, replace);
-		if (last < x->n)
-			acc=append(acc, drop_(x, last));
+		if (last < x->n) acc=append(acc, drop_(x, last));
 		PF("splice calling over\n");DUMP(acc);
 		return over(acc, x2(&catenate));
 	}
@@ -948,15 +947,13 @@ VP take_(const VP x, const int i) {
 	res=ALLOC_LIKE_SZ(x,end-st);
 	if(LIKELY(SIMPLE(x))) { 
 		FOR(st,end,({ res=appendbuf(res,ELi(x,_i % xn),1); }));
-		return res;
 	} else {
-		if(!LIST(x)&&!TABLE(x))
+		if(!LIST(x)&&!TABLE(x)) 
 			return EXC(Tt(nyi),"take not yet implemented for that type",x,xi(i));
-		VP rng=range_(st, end);
-		res=apply(x, rng);
-		xfree(rng);
-		return res;
+		VP tmp;
+		FOR(st,end,({ tmp=apply_simple_(x,_i%xn); res=append(res,tmp); xfree(tmp); }));
 	}
+	PF("take_ returning\n");DUMP(res);
 	return res;
 }
 VP take(const VP x, const VP y) {
@@ -2279,11 +2276,14 @@ VP count(VP x) {
 	return acc;
 }
 VP range_(int start, int end) {
-	int n=ABS(end-start), i;
+	int n=ABS(end-start), i, j;
 	VP res=xisz(n); 
 	int inc=(end<start)?-1:1, realend=end+inc;
+	PF("range_ %d %d %d %d\n", start, end, n, inc);
+	j=start;
 	for(i=start; i!=realend; i+=inc)
-		EL(res,int,i)=i;
+		EL(res,int,j++)=i;
+	res->n=j;
 	return res;
 }
 VP range(VP start,VP end) {
