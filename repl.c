@@ -129,6 +129,7 @@ void repl(VP ctx) {
 			out=append(out,Tt(exception));
 			showexc(ctx,t3);
 		}
+		printf("\n"); // the horror!
 		i++;
 	}
 }

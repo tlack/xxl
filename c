@@ -60,7 +60,7 @@ if [ "x$BUILDH" = "xyes" ]; then
 fi
 
 echo "" > compile.h
-echo "#define XXL_SRCPATH \"$SRCPATH\"" >> compile.h
+echo "#define XXL_SRCPATH \"$SRCPATH/\"" >> compile.h
 echo "#define XXL_COMPILEOBJ \"$COMPILEOBJ\"" >> compile.h
 echo "#define XXL_COMPILESHARED \"$COMPILESHARED\"" >> compile.h
 echo "#define XXL_BUILDOBJ \"$BUILDOBJ\"" >> compile.h

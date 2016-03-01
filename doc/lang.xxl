@@ -55,7 +55,7 @@
  'desc:"attempt to remove one level of nesting of x; may return general list if not possible to fuse general list into vector",
  'ex:[
    ["[1,2,[3,4,5]] flat",(1,2,3,4,5)],
-	 ["[1,2,[3,4,'z]] flat",[[1i, 2i], [3i, 4i, 'z]]]
+	 ["[1,2,[3,4,'z]] flat",[[1, 2], [3, 4, 'z]]]
  ] 
 ],
 // LOOPING
