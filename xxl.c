@@ -937,18 +937,28 @@ VP split(VP x,VP tok) {
 }
 VP take_(const VP x, const int i) {
 	VP res;
-	int st, end, xn=x->n;
-	if(!x || x->n==0) return x;
+	int xn=_len(x), st, end, j;
+	if(!x || xn==0) return x;
 	if(i<0) { st=ABS((xn+i)%xn); end=ABS(i)+st; } else { st=0; end=i; }
 	res=ALLOC_LIKE_SZ(x,end-st);
-	FOR(st,end,({ res=appendbuf(res,ELi(x,_i % xn),1); }));
+	if(LIKELY(SIMPLE(x))) { 
+		FOR(st,end,({ res=appendbuf(res,ELi(x,_i % xn),1); }));
+		return res;
+	} else {
+		if(!LIST(x)&&!TABLE(x))
+			return EXC(Tt(nyi),"take not yet implemented for that type",x,xi(i));
+		VP rng=range_(st, end);
+		res=apply(x, rng);
+		xfree(rng);
+		return res;
+	}
 	return res;
 }
 VP take(const VP x, const VP y) {
 	int typerr=-1;
 	size_t st, end; //TODO slice() support more than 32bit indices
 	PF("take args\n"); DUMP(x); DUMP(y);
-	IF_RET(!NUM(y) || !SCALAR(y), EXC(Tt(type),"take x arg must be single numeric",x,y));	
+	IF_RET(!NUM(y) || !SCALAR(y), EXC(Tt(type),"take y arg must be single numeric",x,y));	
 	VARY_EL(y, 0, ({ return take_(x,_x); }), typerr);
 	return NULL;
 }
@@ -1042,11 +1052,14 @@ VP make(VP x, VP y) {
 	// DUMPRAW(buf,BUFSZ);
 	return res;
 }
-VP len(VP x) {
-	int n = x->n;
+int _len(VP x) {
+	int n = LEN(x);
 	if(TABLE(x)) n=TABLE_nrows(x);
 	if(DICT(x)) n=1;
-	return xi(n);
+	return n;
+}
+VP len(VP x) {
+	return xi(_len(x));
 }
 VP capacity(VP x) {
 	return xin(1,x->cap);
@@ -2262,6 +2275,17 @@ VP count(VP x) {
 	IF_RET(typerr>-1, EXC(Tt(type), "count arg must be numeric", x, 0));
 	DUMP(acc);
 	return acc;
+}
+VP range_(int start, int end) {
+	int n=ABS(end-start), i;
+	VP res=xisz(n); 
+	int inc=(end<start)?-1:1, realend=end+inc;
+	for(i=start; i!=realend; i+=inc)
+		EL(res,int,i)=i;
+	return res;
+}
+VP range(VP start,VP end) {
+	return range_(NUM_val(start),NUM_val(end));
 }
 static inline VP times(VP x,VP y) {
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);

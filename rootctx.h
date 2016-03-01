@@ -109,6 +109,7 @@
 	res=assign(res,Tt(or),x2(&or));
 	res=assign(res,Tt(orelse),x2(&orelse));
 	res=assign(res,Tt(over),x2(&over));
+	res=assign(res,Tt(range),x2(&range));
 	res=assign(res,Tt(recurse),x2(&recurse));
 	res=assign(res,Tt(rot),x2(&shift));
 	res=assign(res,Tt(scan),x2(&scan));
