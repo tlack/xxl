@@ -1251,7 +1251,11 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		} else if(LIKELY(IS_c(item)) && (tag==tname || tag==toper || tag==traw)) {
 			ch = AS_c(item,0);
 			// end of expr; cleanse expression
-			if(ch==';') { left=NULL; continue; }
+			if(ch==';') { 
+				// if something on this line generated an exception, return it 
+				if(IS_EXC(left)) MAYBE_RETURN(left);
+				left=NULL; continue; 
+			}
 			PF("much ado about\n");DUMP(item);
 			if(item->n==1 && ch=='x') {
 				if (LIKELY(xarg!=0)) 
