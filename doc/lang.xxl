@@ -1,0 +1,81 @@
+'lists,'logic,'math,'misc,'stdlib as 'categories;
+
+// LISTS AND VALUE MANIPULATION
+['t:'binary,
+ 'name:"split",
+ 'op:"||",
+ 'cat:'lists,
+ 'desc:"splits x into a list of pieces delimited by y.",
+ 'ex:[ ["1,7,2,7,3 split 7",[1,2,3]] ] 
+]$'table,
+['t:'binary,
+ 'name:"join",
+ 'op:"|,",
+ 'cat:'lists,
+ 'desc:"join list x into new list (or vector, if all types match) with pieces joined together by y",
+ 'ex:[ 
+		["1,2,3 join 0",(1,0,2,0,3)],
+		["[\"m\",\"ss\",\"ss\",\"pp\",\"\"] join \"i\"",["mississippi"]]
+	]
+],
+['t:'binary,
+ 'name:"take",
+ 'op:"#|",
+ 'cat:'lists,
+ 'desc:"takes the first y pieces of x (which can be a vector or a list). use a negative value in y to take from the end of the list",
+ 'ex:[
+   ["1,7,2,7,3 take 2",(1,7)],
+	 ["1,7,2,7,3 take (2neg)",(7,3)]
+ ] 
+],
+['t:'binary,
+ 'name:"drop",
+ 'op:"|#",
+ 'cat:'lists,
+ 'desc:"removes the first y pieces of x (which can be a vector or a list). use a negative value in y to drop from the end of the list",
+ 'ex:[
+   ["1,7,2,7,3 drop 2",(2,7,3)],
+	 ["1,7,2,7,3 drop (2neg)",(1,7,2)]
+ ] 
+],
+['t:'binary,
+ 'name:"except",
+ 'op:"|?",
+ 'cat:'lists,
+ 'desc:"remove items in x that are present in y",
+ 'ex:[
+   ["1,7,2,7,3 except 7",(1,2,3)],
+	 ["1,7,2,7,3 except (7,1,8)",(2,3)]
+ ] 
+],
+['t:'unary,
+ 'name:"flat",
+ 'op:"",
+ 'cat:'lists,
+ 'desc:"attempt to remove one level of nesting of x; may return general list if not possible to fuse general list into vector",
+ 'ex:[
+   ["[1,2,[3,4,5]] flat",(1,2,3,4,5)],
+	 ["[1,2,[3,4,'z]] flat",[[1i, 2i], [3i, 4i, 'z]]]
+ ] 
+],
+// LOOPING
+['t:'binary,
+ 'name:"each",
+ 'op:"::",
+ 'cat:'looping,
+ 'desc:"perform y for every item in x and return result as same type as x (or a general list if not possible)",
+ 'ex:[
+   ["1,7,2,7,3 each {*2}",(2,14,4,14,6)]
+ ] 
+],
+// MISC
+['t:'unary,
+ 'name:"sys",
+ 'op:"",
+ 'cat:'system,
+ 'desc:"retrieve information about the current XXL environment by passing [] as x",
+ 'ex:[
+   ["[]sys",('ver:"v0",'srcpath:"/tmp/xxl")]
+ ] 
+]
+as 'verbs

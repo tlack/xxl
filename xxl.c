@@ -40,48 +40,37 @@ static pthread_t THR[MAXTHR]={0};
 
 // REPRESENTATION
 
-#define REPR_SEEN_MAX 1024
-THREADLOCAL VP REPR_SEEN[REPR_SEEN_MAX]={0};
+MEMO_make(REPR_SEEN);
 char* repr0(VP x,char* s,size_t sz) {
-	type_info_t t;
-	int i;
+	type_info_t t; int i;
+	// PF("repr0\n");
 	if(x==NULL) { APF(sz,"/*null*/",0); return s; }
 	if(x->t < 0 || x->t > MAX_TYPE) { APF(sz,"/*unknown*/",0); return s; }
 	if(!SIMPLE(x)) {
-		for(i=0; i<REPR_SEEN_MAX; i++) {
-			if(REPR_SEEN[i] == x) {
-				APF(sz,"/*cycle*/",0); return s;
-			}
-		}
+		MEMO_check(REPR_SEEN, x, ({ APF(sz,".. (cycle) ..",0); return s; }), i);
 	}
+	// PF("past memo check %d\n", x->t);
 	t=typeinfo(x->t);
 	if(0 && DEBUG) {
 		APF(sz," /*%p %s tag=%d#%s itemsz=%d n=%d rc=%d*/ ",x,t.name,
 			x->tag,(x->tag!=0 ? bfromx(tagname(x->tag)) : ""),
 			x->itemsz,x->n,x->rc);
 	}
-
 	IN_OUTPUT_HANDLER++;
-
 	if(x->tag!=0) 
 		APF(sz, "'%s(", tagnames(x->tag));
 	if(t.repr) (*(t.repr)(x,s,sz));
 	if(x->tag!=0)
 		APF(sz, ")", 0);
 	if(!SIMPLE(x)) {
-		for(i=0; i<REPR_SEEN_MAX; i++) {
-			if(REPR_SEEN[i] == NULL) {
-				REPR_SEEN[i] = x; break;
-			}
-		}
+		//PF("memo_set\n");
+		MEMO_set(REPR_SEEN,x,(VP)s,i);
 	}
-
 	IN_OUTPUT_HANDLER--;
-
 	return s;
 }
 char* reprA(VP x) {
-	memset(REPR_SEEN,0,REPR_SEEN_MAX*sizeof(VP));
+	MEMO_clear(REPR_SEEN);
 	#define BS 1024*65
 	char* s = calloc(1,BS);
 	s = repr0(x,s,BS);
@@ -253,7 +242,7 @@ VP xalloc(const type_t t,const I32 initn) {
 					MEM_RETAINED++;
 					g=_i;
 					PF("xalloc recycling retained %p\n",a);
-					DUMP(a);
+					// DUMP(a);
 					memset(a,0,sizeof(struct V)+a->sz);
 					break;
 				}
@@ -413,19 +402,37 @@ int _equal(const VP x,const VP y) {
 VP equal(const VP x,const VP y) {
 	return xb(_equal(x,y));
 }
+MEMO_make(CLONE);
+VP clone0(const VP obj) {
+	if(IS_EXC(obj)) return obj;
+	PF("clone0 %p\n",obj);DUMP(obj);
+	int i, objn=obj->n; 
+	MEMO_check(CLONE,obj,({ PF("found memoized %p\n", memo_val); return memo_val; }),i);
+	VP res=ALLOC_LIKE(obj);
+	MEMO_set(CLONE,obj,res,i);
+	if(objn) {
+		if(CONTAINER(obj)) {
+			res->n=objn;
+			for(i=0;i<objn;i++) {
+				VP elem=LIST_item(obj,i);
+				if(elem==0) continue;
+				if(IS_t(elem) || IS_1(elem) || IS_2(elem))
+					EL(res,VP,i)=elem;
+				else
+					EL(res,VP,i)=clone0(elem);
+			}
+		} else {
+			res=appendbuf(res,BUF(obj),objn);
+		}
+	}
+	return res;
+}
 VP clone(const VP obj) { 
 	// TODO keep a counter of clone events for performance reasons - these represent a concrete
 	// loss over mutable systems
-	// PF("clone\n");DUMP(obj);
-	int i, objn=obj->n; VP res=ALLOC_LIKE(obj);
-	if(CONTAINER(obj)) {
-		res->n=objn;
-		for(i=0;i<objn;i++) 
-			EL(res,VP,i)=clone(ELl(obj,i));
-	} else 
-		res=appendbuf(res,BUF(obj),objn);
-	// PF("clone returning\n");DUMP(res);
-	return res;
+	PF("clone\n");DUMP(obj);
+	MEMO_clear(CLONE);
+	return clone0(obj);
 }
 
 // RUNTIME 
@@ -593,17 +600,30 @@ VP catenate_table(VP table, VP row) {
 	PF("catenate_table\n"); DUMP(table); DUMP(row);
 	int trows=TABLE_nrows(table), tcols=TABLE_ncols(table);
 	if(DICT(row)) {
-		VP rk=KEYS(row), rv=VALS(row), rktmp, rvtmp, vec; int i=0;
-		ASSERT(LIST(rk)&&LIST(rv),"catenate_table: row keys or vals not list");
+		VP rk=KEYS(row);
+		ASSERT(LIST(KEYS(row))&&LIST(VALS(row)),"catenate_table: row keys or vals not list");
+		VP fullrow;
+		if(LEN(rk) != tcols) { // mismatching columns!
+			VP lastrow=table_row_dict_(table,trows-1);
+			fullrow=catenate(lastrow,row);
+		} else fullrow=row;
+		rk=KEYS(fullrow);
+		VP rv=VALS(fullrow), rktmp, rvtmp, vec; int i=0;
 		for(; i<rk->n; i++) {
 			rktmp=ELl(rk,i); rvtmp=ELl(rv,i);
-			vec=DICT_find(KEYS(table),rktmp);  // does this key already exist in table?
+			PF("catenate col\n");
+			DUMP(rktmp);
+			DUMP(KEYS(table));
+			DUMP(VALS(table));
+			DUMP(table);
+			vec=TABLE_col_named(table,rktmp);
+			PF("vec %p\n",vec);DUMP(vec);
 			ARG_MUTATING(table);
 			if(vec==NULL) {
 				// NB. unknown columns are added, but old rows
 				// will get the same value as this one!
-				EL(table,VP,0)=append(ELl(table,0),rktmp);
-				EL(table,VP,1)=append(ELl(table,1),take_(rvtmp,trows));
+				KEYS(table)=append(KEYS(table),rktmp);
+				VALS(table)=append(VALS(table),take_(rvtmp,trows));
 			} else vec=append(vec,rvtmp);
 		}
 		return table;
@@ -620,15 +640,17 @@ VP catenate_table(VP table, VP row) {
 		} else {
 			VP colval;
 			if(row->n != tcols) return EXC(Tt(value),"table definition doesn't match list",table,row);
-			if(LEN(VALS(table))==0) {
+			if(LEN(VALS(table))==0) {        // we have not yet setup the values records
 				for(i=0; i<LEN(row); i++) {
-					colval=ELl(row,i);
+					colval=LIST_item(row,i);
+					xref(colval);
 					// if any of the values of this dictionary are not scalar, we'll need
 					// to make that column into a general list, or indexing row values will
 					// become very confusing indeed
-					if(!CONTAINER(colval) && !SCALAR(colval)) EL(row,VP,i)=xl(colval);
+					if(!SCALAR(colval)) EL(row,VP,i)=xl(colval);
+				
 				}
-				VALS(table) = row;
+				VALS(table) = xref(row);
 			} else {
 				for(; i<row->n; i++) {
 					TABLE_col(table,i)=append(TABLE_col(table,i),ELl(row,i));
@@ -692,6 +714,7 @@ VP dict(VP x,VP y) {
 		if(x->n > 1 && LIST_of_lists(y)) return make_table(x,y);
 		if(x->n > 1 && x->n != y->n) return EXC(Tt(value),"can't create dict from unlike vectors",x,y);
 		VP d=xd0();
+		if(LEN(x)==0 && LEN(y)==0) { KEYS(d)=xl0(); VALS(d)=xl0(); return d; }
 		if(LIKELY(SCALAR(x))) {
 			if(LIST(x))  // handle ['a:1] which becomes [['a]:1]
 				d=assign(d,ELl(x,0),y);
@@ -779,18 +802,19 @@ VP identity(VP x) {
 	return x;
 }
 VP join(VP list,VP sep) {
-	VP acc=NULL,x,t1; int i;
-	if(list->n==0 || SCALAR(list)) return list;
-	for(i=0;i<list->n-1;i++) {
-		t1=xi(i); x=apply(list,t1);
+	VP acc=NULL,x; int ln=LEN(list), i;
+	if(IS_EXC(list) || ln==0) return list;
+	if(SCALAR(list)) return apply_simple_(list,0);
+	for(i=0;i<ln-1;i++) {
+		x=apply_simple_(list,i);
 		if(!acc) acc=ALLOC_LIKE(x);
 		acc=catenate(acc,x);
 		acc=catenate(acc,sep);
-		xfree(t1);xfree(x);
+		xfree(x);
 	}
-	t1=xi(i); x=apply(list,t1);
+	x=apply_simple_(list,i);
 	acc=catenate(acc,x);
-	xfree(t1); xfree(x);
+	xfree(x);
 	return acc;
 }
 VP last(VP x) {
@@ -948,8 +972,9 @@ inline int _find1(const VP x, const VP y) {        // returns index or -1 on not
 		int i, sn=scan->n, yn=y->n, yt=y->t; VP item;
 		for(i=0; i<sn; i++) {
 			item=ELl(scan,i);
+
 			if(item && ( (item->t == yt && item->n == yn) ||
-									 (LIST(item) && ELl(item,0)->t == yt) ))
+									 (LIST(item) && LIST_item(item,0) && LIST_item(item,0)->t == yt) ))
 				if (_equal(item,y)==1) return i;
 		}
 		return -1;
@@ -987,7 +1012,7 @@ VP table_row_list_(VP tbl, int row) {
 	return lst;
 }
 VP table_row_dict_(VP tbl, int row) {
-	return dict(clone(KEYS(tbl)), table_row_list_(tbl, row));
+	return dict(KEYS(tbl), table_row_list_(tbl, row));
 }
 VP make_table(VP keys,VP vals) {
   VP res, newvals; int i;
@@ -996,7 +1021,8 @@ VP make_table(VP keys,VP vals) {
 	// catenate_table already handles lists-of-lists correctly.
   res=xasz(2);
 	EL(res,VP,0)=clone(keys);
-	EL(res,VP,1)=xlsz(LEN(ELl(vals,0)));
+	int sz=vals && LEN(vals) ? LEN(ELl(vals,0)) : 0;
+	EL(res,VP,1)=xlsz(sz);
 	res->n=2;
 	return catenate_table(res, vals);
 }
@@ -1191,8 +1217,8 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			item=list(item);
 			for(j=0;j<parent->n;j++) {
 				this=ELl(parent,j);
-				if(j!=parent->n-1 || !LIST(this)) append(newctx,clone(ELl(parent,j)));
-				//if(j!=parent->n-1 || !LIST(this)) append(newctx,LIST_item(parent,j));
+				//if(j!=parent->n-1 || !LIST(this)) append(newctx,clone(ELl(parent,j)));
+				if(j!=parent->n-1 || !LIST(this)) append(newctx,LIST_item(parent,j));
 			}
 			append(newctx,item); 
 			item=newctx;
@@ -1702,7 +1728,7 @@ static inline VP eachdict(const VP obj,const VP fun) {
 static inline VP eachtable(const VP obj, const VP fun) {
 	PF("eachtable\n"); DUMP(obj); DUMP(fun);
 	int objnr=TABLE_nrows(obj);
-	VP acc=xlsz(objnr), tmpdict=NULL, res, item, tmpi; int i; 
+	VP acc=NULL, tmpdict=NULL, res, item, tmpi; int i; 
 	for(i=0; i<objnr; i++) {
 		tmpdict=table_row_dict_(obj, i);
 		PF("calling eachtable fun\n"); DUMP(tmpdict);
@@ -1710,10 +1736,13 @@ static inline VP eachtable(const VP obj, const VP fun) {
 		res=apply(fun,tmpdict);
 		PFOUT();
 		PF("eachtable fun result\n"); DUMP(res);
-		if(IS_EXC(res)) return res;
+		if(IS_EXC(res)) { if(acc) xfree(acc); return res; }
+		if(!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
+		else if (!LIST(acc) && res->t != acc->t) {
+			VP newacc=xl(acc); xfree(acc); acc=newacc;
+		}
 		acc=append(acc,res);
-		xfree(res); 
-		xfree(tmpdict); 
+		xfree(res); xfree(tmpdict); 
 	}
 	PF("eachtable returning\n"); DUMP(acc);
 	return acc;
@@ -2134,6 +2163,7 @@ VP or(VP x,VP y) { // TODO most of these primitive functions have the same patte
 	// PF("or\n"); DUMP(x); DUMP(y); // TODO or() and friends should handle type conversion better
 	if(IS_EXC(x) || LEN(x)==0) return x;
 	if(IS_EXC(y) || LEN(y)==0) return y;
+	if(DICT(x) && DICT(y)) return unionn(x,y);
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "or arguments should be same length", x, y);	
 	if(x->t == y->t) acc=xalloc(x->t, x->n);
 	else acc=xlsz(x->n);
@@ -2263,9 +2293,10 @@ VP key(VP x) {
 	if(DICT(x)) return ELl(x,0);
 	if(IS_x(x)){ // locals for context
 		int i;VP item;
-		for(i=x->n-1;i>=0;i--) 
-			if(DICT(ELl(x,i)))
-				return KEYS(ELl(x,i));
+		for(i=x->n-1;i>=0;i--) {
+			if(DICT(LIST_item(x,i))) 
+				return LIST_item(x,i);
+		}
 		return xd0();
 	}
 	if(SIMPLE(x)) return count(xi(x->n));
@@ -2426,9 +2457,15 @@ VP numelem2base(VP num,int i,int base) {
 VP str(VP x) {
 	PF("str\n");DUMP(x);
 	if(IS_c(x)) return x;
-	if(IS_t(x)) return tagname(AS_t(x,0));
-	if(NUM(x)) return numelem2base(x,0,10);
-	return EXC(Tt(type),"str only works with simple types",x,NULL);
+	if(NUM(x) || IS_t(x)) {
+		int xn=LEN(x), i;
+		VP acc=xlsz(xn),final;
+		if(NUM(x)) for(i=0; i<xn; i++) acc=append(acc,numelem2base(x,i,10));
+		else if(IS_t(x)) for(i=0; i<xn; i++) acc=append(acc,tagname(AS_t(x,i)));
+		final=join(acc,xfroms(","));
+		return final;
+	}
+	return repr(x);
 }
 VP sys(VP x) {
 	PF("sys\n");DUMP(x);
@@ -2512,6 +2549,10 @@ VP proj(int type, void* func, VP left, VP right) {
 	EL(pv,Proj,0)=p;
 	pv->n=1;
 	return pv;
+}
+VP unionn(VP x,VP y) {
+	if(DICT(x) && DICT(y)) return catenate(x, y);
+	return EXC(Tt(nyi), "union not yet implemented for that type", x, y);
 }
 VP xray(VP x) {
 	PF("xray\n");DUMP(x);

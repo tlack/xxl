@@ -115,11 +115,12 @@
 #define NUM_item(x,n) ( IS_i(x)?AS_i(x,n) : (IS_b(x)?AS_b(x,n) : (IS_j(x)?AS_j(x,n) : (IS_o(x)?AS_o(x,n) : -1))) )
 #define NUM_val(x) NUM_item(x,0)
 
-#define DICT_find(x,y) ({ int i = _find1(KEYS(x),y); i==-1?0:ELl(VALS(x),i); })
+#define DICT_find(x,y) ({ int i = _find1(KEYS(x),y); VP result=(i==-1?((VP)NULL):ELl(VALS(x),i)); result; })
 #define DICT_key_n(x,y) (ELl(KEYS(x),y))
 #define DICT_val_n(x,y) (ELl(VALS(x),y))
 
 #define TABLE_col(x,n) (ELl(VALS(x),n))
+#define TABLE_col_named(x,n) ({ int i = _find1(KEYS(x),n); i==-1 ? ((VP)NULL) : (TABLE_col(x,i)); })
 #define TABLE_ncols(x) (LEN(KEYS(x)))
 #define TABLE_nrows(x) (LEN(VALS(x))==0 ? 0 : TABLE_col(x,0)->n)
 
@@ -162,6 +163,15 @@
 #define IS_EXC(x) (x==0 || (x)->tag==Ti(exception))
 // TODO if_exc doesnt give us a chance to free memory :-/
 #define RETURN_IF_EXC(x) if(x==0 || IS_EXC(x)) return x;
+
+#define MEMO_sz 1024
+#define MEMO_make(varname) THREADLOCAL VP varname##_key[MEMO_sz]; THREADLOCAL VP varname##_val[MEMO_sz]
+#define MEMO_clear(varname) memset(varname##_key,0,MEMO_sz*sizeof(VP)); memset(varname##_val,0,MEMO_sz*sizeof(VP))
+#define MEMO_check(varname,val,body,ctr) for(ctr=0; ctr<MEMO_sz; ctr++) { \
+	if(val==0||varname##_key[ctr]==0)break; \
+	if(varname##_key[ctr]==val){ VP memo_val=varname##_val[ctr]; body; }}
+#define MEMO_set(varname,key,val,ctr) for(ctr=0; ctr<MEMO_sz; ctr++) { \
+	if(varname##_key[ctr]==key || varname##_key[ctr]==NULL){ varname##_key[ctr]=key; varname##_val[ctr]=val; break; }}
 
 // misc
 #define CH_SET_A "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

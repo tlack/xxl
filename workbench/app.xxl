@@ -1,33 +1,32 @@
 // XXL Workbench, a web-based XXL development environment
-"localhost" as 'host;                  // configure these
-8088 as 'port;
+"45.63.13.1" as 'host;                  // configure these
+80 as 'port;
 _dir,"/ui.xxl" load as 'pagetmpl;      // load html interface from ui.xxl (and css.xxl in turn)
 
+'noshow is {x};
 'safe is ('A is (26count as 'l+65$'char),('a is (l+97$'char)),".,-+!$*'()"); // rfc1738
 'urldec is {;" ",x,"%" split "%" as 'p first behead,(p behead curtail :: { "0x",(x take 2)base16$'char,(x drop 2)}orelse"") flat};
 'urlenc is {;"z",x||[]![{in safe not},{"%",(x$'int base 16)}] |# 1 ,| ""};
-
-'wrapresp is {x str as 'resp len str as 'szs;
+'wrapresp is {x show str as 'resp len str as 'szs;
 	"HTTP/1.0 200 OK\r\nContent-Length: ",szs,"\r\n",
 	"Connection: close\r\n","Server: xxl v0.0\r\n\r\n",
 	resp};
-
 'makehttpserver is {;
-	['http,x] show; x as 'handlecb;
+	['http,x] noshow; x as 'handlecb;
 	{
-		['innerhttp,x] show;
+		['innerhttp,x] noshow;
 		x first split "\r\n" as 'lines;        // HTTP requests are separated with CRLF
 		lines first split" " as 'method;       // separate request line.. GET /file HTTP/1.0
-		method@1 behead as 'uri                // pull out uri for further inspection and strip leading /
+		method@1 behead as 'uri show           // pull out uri for further inspection and strip leading /
     case [
-			{uri & uri@0="?"},{uri drop 1 iftrue {urldec evalin . show}},
-			{_dir,"pub/",uri show .file.get as 'content},{content aside {['static,x]show}},
-			{[method,lines] handlecb show}
-		] wrapresp aside {['result,x]show}
+			{uri show & uri@0="?"},{uri drop 1 urldec show evalin . show},
+			{uri iftrue {_dir,"pub/",(uri![(uri~"/"condense),"_"]) show .file.get as 'content show}},{content},
+			{[method,lines] handlecb}
+		] wrapresp show
 	}
 };
 'workbench is {;
-	['inhandler,x] show;"Welcome" pagetmpl "" flat str
+	['inhandler,x] noshow;"Welcome" pagetmpl ""
 };
 workbench makehttpserver as 'mywebapp;
 (port,host) show .net.bind mywebapp as 'handle;
