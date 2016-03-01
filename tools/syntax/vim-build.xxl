@@ -1,0 +1,7 @@
+'LANGREF is ([]sys@'srcpath,"/doc/lang.xxl");    // CONFIG
+'TMPL is (_dir,"vim-template.vim");              //       
+
+LANGREF load@'name::{"syn keyword xxlPrim ",x}join"\n" as 'kws;
+TMPL .file.get split "__KEYWORDS__" join kws
+
+
