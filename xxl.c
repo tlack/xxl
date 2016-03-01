@@ -3378,30 +3378,33 @@ void init_thread_locals() {
 	XXL_SYS=assign(XXL_SYS,Tt(buildobj),xfroms(XXL_BUILDOBJ));
 	XXL_SYS=assign(XXL_SYS,Tt(buildshared),xfroms(XXL_BUILDSHARED));
 }
-void init(){
+void init() {
 	XB0=xb(0); XB1=xb(1);
 	XI0=xi(0); XI1=xi(1);
 	init_thread_locals();
 	thr_start();
 }
+void deinit(int failed) {
+	exit(failed);
+}
 void args(VP ctx, int argc, char* argv[]) {
 	if(argc > 1) {
 		int i; VP a=xlsz(argc); 
 		for(i=1; i<argc; i++) {
-			printf("args %d\n%s\n", i, argv[i]);
 			VP item=xfroms(argv[i]);
 			if(AS_c(item,0)=='-') 
 				show(evalin(show(catenate(xfroms("1 "),behead(item))),ctx));
 			else if (access(argv[i],R_OK) != -1) { 
 				show(evalfile(ctx,argv[i]));
+				if(!isatty(fileno(stdout))) 
+					deinit(0);
 			} else {
 				VP xarg=NULL;
 				#ifdef STDLIB_FILE
 				xarg=fileget(xfroms("-"));
 				#endif
-				printf("evaluating as str:\n%s\n", argv[i]);
 				show(evalstrinwith(argv[i],ctx,xarg));
-				exit(1);
+				deinit(0);
 			}
 			a=append(a,item);
 		}
@@ -3414,7 +3417,8 @@ int main(int argc, char* argv[]) {
 	args(ctx,argc,argv);
 	// net();
 	repl(ctx);
-	exit(1);
+	deinit(0);
+	return 0;
 }
 /*	
 	TODO diff: (1,2,3,4)diff(1,2,55) = [['set,2,55],['del,3]] (plus an easy way to map that diff to funcs to perform)
