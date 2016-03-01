@@ -1,0 +1,30 @@
+/*
+  Parent-child trees in the style of Stevan Apter
+
+	Please see the phenomenal
+	http://archive.vector.org.uk/art10500340
+	for full description of the technique. 
+
+	Sample data below:
+
+	tree	path
+	----- --------
+	A     A
+	 B    A B
+    C   A B C
+    D   A B D
+   E    A E
+    F   A E F
+     G  A E F G
+     H  A E F H
+     I  A E F I
+
+	Arthur has some interesting examples as well:
+	http://kx.com/q/tree.q
+*/
+
+'a,'b,'c,'d,'e,'f,'g,'h,'i as 'tree; 
+0,0,1,1,0,4,5,5,5 as 'p; 
+'leaves is {x len count except x}; 
+'paths is {x as 'p len count :: {x,(x recurse p) flat}};
+
