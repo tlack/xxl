@@ -75,7 +75,7 @@ void repl(VP ctx) {
 	for(;;) {
 		// printf("xxl@%s> ", bfromx(get(ctx,t1)));
 		//PF_LVL=2;
-		printf("% 4d. ",i);
+		printf("%d. ",i);
 		fgets(line, sizeof(line), stdin);
 		if(strncmp(line,"\n",1024)==0) continue;
 		if(strncmp(line,"\\\\\n",1024)==0 ||
