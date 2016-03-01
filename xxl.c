@@ -3191,11 +3191,11 @@ VP parseallexprs(VP tree) {
 	PF("parseallexprs\n");DUMP(tree);
 	VP brace=xfroms("{"), paren=xfroms("("), bracket=xfroms("[");
 	if(_find1(tree,brace)!=-1)
-		tree=nest(tree,xln(5, entags(brace,"raw"), xfroms("}"), xfroms(""), Tt(lambda), x1(&parselambda)));
+		tree=nest(tree,xln(5, entags(brace,"raw"), entags(xfroms("}"),"raw"), xfroms(""), Tt(lambda), x1(&parselambda)));
 	if(_find1(tree,paren)!=-1)
-		tree=nest(tree,xln(5, entags(paren,"raw"), xfroms(")"), xfroms(""), Tt(expr), x1(&parseexpr)));
+		tree=nest(tree,xln(5, entags(paren,"raw"), entags(xfroms(")"),"raw"), xfroms(""), Tt(expr), x1(&parseexpr)));
 	if(_find1(tree,bracket)!=-1)
-		tree=nest(tree,xln(5, entags(bracket,"raw"), xfroms("]"), xfroms(""), Tt(listexpr), x1(&parseexpr)));
+		tree=nest(tree,xln(5, entags(bracket,"raw"), entags(xfroms("]"),"raw"), xfroms(""), Tt(listexpr), x1(&parseexpr)));
 	return tree;
 }
 VP parsestr(const char* str) {

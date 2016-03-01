@@ -192,3 +192,8 @@ c=mkworkspace();
 b=evalstrin("1,2,3 except (3,1)",c);
 ASSERT(_equal(repr(b),xfroms("2i")),"except2");
 
+c=mkworkspace();
+b=evalstrin("[1,2,3]::{\"{\"}flat",c);
+DUMP(repr(b));
+ASSERT(_equal(repr(b),xfroms("\"{{{\"")),"bracequote");
+
