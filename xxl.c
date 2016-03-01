@@ -1503,7 +1503,7 @@ VP apply_simple_(VP x,int i) {   // a faster way to select just one item of x
 	// see "special case for generic lists" below
 	if(LIST(x)) return xref(ELl(x,i)); // XXX bug hunting maybe UNDO
 	else {
-		VP res=xalloc(x->t,1);
+		VP res=ALLOC_LIKE_SZ(x,1);
 		res=appendbuf(res,ELi(x,i),1);
 		return res;
 	}
@@ -2767,7 +2767,7 @@ VP nest(VP x,VP y) {
 	if(x->n<2)return x;
 	p1=proj(2,&matcheasy,x,0);
 	p2=proj(2,&matcheasy,x,0);
-	open=apply(y,XI0); close=apply(y,XI1);
+	open=apply_simple_(y,0); close=apply_simple_(y,1);
 	if(!LIST(x) && x->t != open->t) return x;
 	// if(LIST(open) && x->t != AS_l(open,0)->t) return x;
 	if(_equal(open,close)) {
