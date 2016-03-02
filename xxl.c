@@ -2332,14 +2332,15 @@ VP xor(VP x,VP y) {
 // MANIPULATING LISTS AND VECTORS (misc):
 
 VP key(VP x) {
+	if(IS_EXC(x)) return x;
 	if(DICT(x)||TABLE(x)) return KEYS(x);
-	if(IS_x(x)){ // locals for context
-		int i;VP item;
-		for(i=x->n-1;i>=0;i--) {
-			if(DICT(LIST_item(x,i))) 
-				return LIST_item(x,i);
+	if(IS_x(x)) { // locals for context
+		int xn=LEN(x), i; VP acc=xlsz(xn);
+		for(i=xn-1; i>=0; i--) {
+			VP tmp=ELl(x,i);
+			if(tmp && DICT(tmp)) acc=append(acc,clone(tmp));
 		}
-		return xd0();
+		return acc;
 	}
 	if(SIMPLE(x)) return count(xi(x->n));
 	return EXC(Tt(type),"key can't operate on that type",x,0);
@@ -2347,6 +2348,17 @@ VP key(VP x) {
 
 VP val(VP x) {
 	if(DICT(x)) return ELl(x,1);
+	if(IS_x(x)) { // func body for context
+		int xn=LEN(x), i; VP acc=xlsz(xn);
+		for(i=xn-1; i>=0; i--) {
+			VP tmp=ELl(x,i);
+			if(tmp && LIST(tmp)) {
+				if(tmp->tag==Ti(lambda)) return ELl(tmp,0);
+				else return tmp;
+			}
+		}
+		return NULL;
+	}
 	return EXC(Tt(type),"val can't operate on that type",x,0);
 }
 
