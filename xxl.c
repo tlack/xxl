@@ -2456,7 +2456,7 @@ VP set(VP x,VP y) {
 					continue;
 				if(DICT(dest)) {
 					PF("set assigning in %d..\n", i);
-					dest=assign(dest,y,val);
+					dest=assign(dest,y,clone(val));
 					PF("set in %p\n",dest);
 					DUMP(dest);
 					return val;
@@ -2469,7 +2469,7 @@ VP set(VP x,VP y) {
 					continue;
 				if(DICT(dest)) {
 					PF("set assigning in #%d\n",i);DUMP(dest);
-					dest=assign(dest,y,val);
+					dest=assign(dest,y,clone(val));
 					PF("set in %p\n",dest);
 					DUMP(dest);
 					return val;
