@@ -1756,6 +1756,7 @@ static inline VP eachtable(const VP obj, const VP fun) {
 		res=apply(fun,tmpdict);
 		PFOUT();
 		PF("eachtable fun result\n"); DUMP(res);
+		if(res==NULL) continue;
 		if(IS_EXC(res)) { if(acc) xfree(acc); return res; }
 		if(!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
 		else if (!LIST(acc) && res->t != acc->t) {
@@ -1802,7 +1803,7 @@ VP eachboth(const VP obj,const VP fun) {
 	if(right->n != n) return EXC(Tt(type),"eachboth x must be same-length items",obj,fun);
 	FOR(0,n,({ 
 		tmpl=apply(left, xi(_i)); tmpr=apply(right, xi(_i)); res=apply2(fun,tmpl,tmpr); 
-		if(res==0) continue; // no idea lol
+		if(res==NULL) continue; 
 		// delay creating return type until we know what this func produces
 		if (!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
 		else if (!LIST(acc) && res->t != acc->t) acc = xl(acc);
@@ -1879,11 +1880,11 @@ VP over(const VP x,const VP y) {
 	last=apply(x,xi(0));
 	FOR(1,x->n,({
 		next=apply(x, xi(_i));
-		last=apply(apply(y,last),next);
+		last=apply(apply(y,last),next);    // TODO over should use apply2
 	}));
 	return last;
 }
-VP scan(const VP x,const VP y) { // always returns a list
+VP scan(const VP x,const VP y) {       // returns a list if result vals dont match
 	// PF("scan\n");DUMP(x);DUMP(y);
 	IF_RET(!INDEXABLE(y), EXC(Tt(type),"scan y must be indexable",x,y));
 	VP last,next,acc=0; int xn=LEN(x),i;
@@ -1893,7 +1894,7 @@ VP scan(const VP x,const VP y) { // always returns a list
 	acc=append(acc,last);
 	for(i=0; i<xn; i++) {
 		next=apply_simple_(x,i);
-		VP tmp=apply(y,last);
+		VP tmp=apply(y,last);              // TODO scan should use apply2
 		last=apply(tmp,next);
 		PF("scan step\n");DUMP(last);
 		acc=append(acc,last);
