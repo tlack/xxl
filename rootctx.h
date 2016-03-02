@@ -35,6 +35,7 @@
 	res=assign(res,Tt(sum),x1(&sum));
 	res=assign(res,Tt(sums),x1(&sums));
 	res=assign(res,Tt(sys),x1(&sys));
+	res=assign(res,Tt(tag),x1(&tag));
 	res=assign(res,Tt(type),x1(&type));
 	res=assign(res,Tt(val),x1(&val));
 	res=assign(res,Tt(ver),xi(0));

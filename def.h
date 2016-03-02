@@ -132,6 +132,7 @@
 
 #define Ti(n) (_tagnums(#n))                             // int value for tag n (literal not string)
 #define Tt(n) (xt(_tagnums(#n)))                         // tag n (literal not string) as a scalar of type tag
+#define TAG_class(tag) (((char)tag>='A') && ((char)tag<='Z'))
 
 #define BEST_NUM_FIT(val) ({ int t; \
 	if(val<MAX_i)t=T_i; else if (val<MAX_j)t=T_j; else t=T_o; \

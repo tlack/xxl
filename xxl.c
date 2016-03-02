@@ -1044,15 +1044,18 @@ VP make(VP x, VP y) {
 	VP res=0; type_t typenum=-1; tag_t typetag=-1;
 	// right arg is tag naming a type, use that.. otherwise use y's type
 	if(IS_t(y)) typetag=AS_t(y,0); else typenum=y->t;
-
 	if(typetag==Ti(table)) {
 		if(!DICT(x)) return EXC(Tt(type), "can only create table from dict", x, y);
 		return make_table(KEYS(x),VALS(x));
 	}
-
 	#include"cast.h"
 	// DUMPRAW(buf,BUFSZ);
-	return res;
+	if(res) return res;
+	if(typetag!=-1) {
+		ARG_MUTATING(x);
+		x->tag=typetag;
+	}
+	return x;
 }
 int _len(VP x) {
 	int n = LEN(x);
@@ -2624,24 +2627,18 @@ static inline VP str2tag(VP str) { // turns string, or list of strings, into tag
 	}
 	return EXC(Tt(type),"str2tag arg not string or list of strings",str,0);
 }
-static inline VP tagwrap(VP tag,VP x) {
-	return entag(xln(1, x),tag);
-}
-VP tagv(const char* name, VP x) {
-	return entags(xln(1,x),name);
-}
 VP entag(VP x,VP t) {
-	if(IS_c(t))
-		x->tag=_tagnum(t);
-	else if (IS_i(t))
-		x->tag=AS_i(t,0);
-	else if (IS_t(t))
-		x->tag=AS_t(t,0);
+	if(IS_c(t)) x->tag=_tagnum(t);
+	else if(IS_i(t)) x->tag=AS_i(t,0);
+	else if(IS_t(t)) x->tag=AS_t(t,0);
 	return x;
 }
 VP entags(VP x,const char* name) {
 	x->tag=_tagnums(name);
 	return x;
+}
+VP tag(VP x) {                         // return tag of x
+	return x->tag==0?xt0():xt(x->tag);
 }
 static inline VP tagname(const tag_t tag) {
 	char buf[256]={0};
@@ -2656,7 +2653,6 @@ static inline const char* tagnames(const tag_t tag) {
 static inline tag_t _tagnum(const VP s) {
 	int i; VP ss=0;
 	tag_t res=0;
-
 	ASSERT(IS_c(s),"_tagnum(): non-string argument");
 	memcpy(&res,BUF(s),MIN(s->n,sizeof(res)));
 	return res;

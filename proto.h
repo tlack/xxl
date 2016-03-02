@@ -110,6 +110,7 @@ VP table_row_list_(VP tbl, int row);
 static inline VP tagname(tag_t tag);
 static inline const char* tagnames(const tag_t tag);
 /*static inline */
+VP tag(VP x);
 VP tagv(const char* name, VP x);
 VP take_(VP x,int i);
 VP take(VP x,VP y);
