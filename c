@@ -17,8 +17,10 @@ STDLIB="-DSTDLIBFILE -DSTDLIBNET -DSTDLIBSHAREDLIB -DSTDLIBSHELL "
 # command to use to run it - put testing args to binary for execution here
 RUN="./xxl $*"
 
+errcho() { echo "$@" 1>&2; }
+
 if [ -x /usr/bin/clang ]; then
-	echo using clang
+	errcho using clang
 	CC="/usr/bin/clang"
 	ARCH=""
 	DEFS="$DEFS -fsanitize=address -fno-omit-frame-pointer "
@@ -26,17 +28,17 @@ if [ -x /usr/bin/clang ]; then
 fi
 
 if [ -x /bin/x86_64-w64-mingw32-gcc-4.9.2.exe ]; then
-	echo using mingw64
+	errcho using mingw64
 	CC="/bin/x86_64-w64-mingw32-gcc-4.9.2.exe"
 fi
 
 if [ -x /bin/x86_64-pc-cygwin-gcc.exe ]; then
-	echo using cygwin
+	errcho using cygwin
 	CC="/bin/x86_64-pc-cygwin-gcc.exe"
 fi
 
 if which rlwrap >/dev/null; then
-	echo using rlwrap
+	errcho using rlwrap
 	RUN="rlwrap $RUN"
 fi
 
@@ -55,7 +57,7 @@ if [ "x$BUILDH" = "xyes" ]; then
 		$NODE types.js > types.h && \
 		$NODE repr.js > repr.h 
 	else
-		echo "can't find node; skipping build"
+		errcho "can't find node; skipping build"
 	fi
 fi
 

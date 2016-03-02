@@ -47,7 +47,14 @@ char* repr0(VP x,char* s,size_t sz) {
 	if(x==NULL) { APF(sz,"/*null*/",0); return s; }
 	if(x->t < 0 || x->t > MAX_TYPE) { APF(sz,"/*unknown*/",0); return s; }
 	if(!SIMPLE(x)) {
-		MEMO_check(REPR_SEEN, x, ({ APF(sz,".. (cycle) ..",0); return s; }), i);
+		VP existing=NULL;
+		MEMO_check(REPR_SEEN, x, ({ existing=memo_val; }), i);
+		if(existing!=NULL) {
+			s=(char*)existing;
+			// printf("cycle %p found after %d iters\n", x, i);
+			APF(sz,"..cycle..",0);
+			return s;
+		}
 	}
 	// PF("past memo check %d\n", x->t);
 	t=typeinfo(x->t);
@@ -124,7 +131,6 @@ char* repr_a(VP x,char* s,size_t sz) { // table
 	for(i=0; i<vn; i++) {
 		APF(sz,"%d:[",i);
 		for(j=0; j<kn; j++) {
-			// TODO kill me. need shortcut apply or value-at type!
 			tmp=apply_simple_(ELl(v,j),i);
 			repr0(tmp, s, sz-2);
 			if(j!=kn-1) APF(sz,", ",0);
@@ -461,11 +467,10 @@ VP append(VP x,VP y) {
 		y1=ELl(y,0);
 		y2=ELl(y,1);
 		if(k==NULL) {                      // create dict
-			if(0 && SCALAR(y1)) 
-				k=ALLOC_LIKE_SZ(y1, 4);
-			else 
-				k=xl0();
-			v=xl0(); xref(k);xref(v); EL(x,VP,0)=k; EL(x,VP,1)=v;
+			if(0 && SCALAR(y1)) k=ALLOC_LIKE_SZ(y1, 4);
+			else  k=xl0();
+			v=xl0(); xref(k); xref(v); 
+			EL(x,VP,0)=k; EL(x,VP,1)=v;
 			x->n=2; i=-1;                    // not found so insert below
 		} else i=_find1(k,y1);
 		if(i==-1) {
@@ -679,7 +684,7 @@ VP catenate(VP x,VP y) {
 		PF("catenate3 - container as x, or unlike objects\n");
 		if(TABLE(x)) { return catenate_table(x,y); }
 		if(DICT(x)) { return dict(x,y); }
-		else if(LIST(x) && !LIST(y)) { ARG_MUTATING(x); res=append(x,y); }
+		else if(LIST(x) && !LIST(y)) { res=append(x,clone(y)); }
 		else {
 			PF("catenate4 - create 2-item list with both items in it\n");
 			res=xlsz(2);
@@ -773,10 +778,9 @@ VP except(VP x,VP y) {
 }
 VP first(VP x) {
 	VP i,r;
-	if(TABLE(x)) return table_row_dict_(x,0);
 	if(DICT(x)) return EXC(Tt(type),"dict first/head doesn't make sense",x,0);
-	if(CONTAINER(x)) return xref(ELl(x,0));
-	else { i=xi(0); r=apply(x,i); xfree(i); return r; }
+	if(LIST(x)) return xref(ELl(x,0));
+	else return apply_simple_(x,0);
 }
 int _flat(VP x) { // returns 1 if vector, or a list composed of vectors (and not other lists)
 	// PF("flat\n");DUMP(x);
@@ -814,12 +818,12 @@ VP join(VP list,VP sep) {
 	for(i=0;i<ln-1;i++) {
 		x=apply_simple_(list,i);
 		if(!acc) acc=ALLOC_LIKE(x);
-		acc=catenate(acc,x);
-		acc=catenate(acc,sep);
+		acc=append(acc,x);
+		acc=append(acc,sep);
 		xfree(x);
 	}
 	x=apply_simple_(list,i);
-	acc=catenate(acc,x);
+	acc=append(acc,x);
 	xfree(x);
 	return acc;
 }
@@ -1498,6 +1502,7 @@ VP applyctx(VP ctx,const VP x,const VP y) {
 VP apply_simple_(VP x,int i) {   // a faster way to select just one item of x
 	if(x==0 || x->tag==Ti(exception)) return x;
 	// PF("apply_simple_ %d\n", i);
+	if(TABLE(x)) return table_row_dict_(x,i);
 	if(!LIST(x) && !SIMPLE(x)) { VP ii=xi(i), res=apply(x,ii); xfree(ii); return res; };
 	if(i > LEN(x)) return EXC(Tt(index),"index out of range",x,xi(i));
 	// see "special case for generic lists" below
@@ -2320,7 +2325,7 @@ VP xor(VP x,VP y) {
 // MANIPULATING LISTS AND VECTORS (misc):
 
 VP key(VP x) {
-	if(DICT(x)) return ELl(x,0);
+	if(DICT(x)||TABLE(x)) return KEYS(x);
 	if(IS_x(x)){ // locals for context
 		int i;VP item;
 		for(i=x->n-1;i>=0;i--) {

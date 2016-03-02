@@ -197,3 +197,7 @@ b=evalstrin("[1,2,3]::{\"{\"}flat",c);
 DUMP(repr(b));
 ASSERT(_equal(repr(b),xfroms("\"{{{\"")),"bracequote");
 
+c=mkworkspace();
+b=evalstrin("[[1,2,3],[4,5,6]]join\":\"",c);
+ASSERT(_equal(repr(b),xfroms("[[1i, 2i, 3i], \":\", [4i, 5i, 6i]]")),"join list flat");
+
