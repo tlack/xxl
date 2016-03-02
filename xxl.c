@@ -56,7 +56,6 @@ char* repr0(VP x,char* s,size_t sz) {
 			return s;
 		}
 	}
-	// PF("past memo check %d\n", x->t);
 	t=typeinfo(x->t);
 	if(0 && DEBUG) {
 		APF(sz," /*%p %s tag=%d#%s itemsz=%d n=%d rc=%d*/ ",x,t.name,
@@ -64,13 +63,10 @@ char* repr0(VP x,char* s,size_t sz) {
 			x->itemsz,x->n,x->rc);
 	}
 	IN_OUTPUT_HANDLER++;
-	if(x->tag!=0) 
-		APF(sz, "'%s(", tagnames(x->tag));
+	if(x->tag!=0) APF(sz, "'%s(", tagnames(x->tag));
 	if(t.repr) (*(t.repr)(x,s,sz));
-	if(x->tag!=0)
-		APF(sz, ")", 0);
+	if(x->tag!=0) APF(sz, ")", 0);
 	if(!SIMPLE(x)) {
-		//PF("memo_set\n");
 		MEMO_set(REPR_SEEN,x,(VP)s,i);
 	}
 	IN_OUTPUT_HANDLER--;
