@@ -1,48 +1,52 @@
 'lists,'logic,'math,'misc,'stdlib as 'categories;
 
 // LISTS AND VALUE MANIPULATION
-['cat:'lists,
- 't:'binary,
+['t:'binary,
  'name:"split",
  'op:"||",
  'desc:"splits x into a list of pieces delimited by y.",
- 'ex:[ ["1,7,2,7,3 split 7",[1,2,3]] ] 
+ 'ex:[ ["1,7,2,7,3 split 7",[1,2,3]] ],
+ 'cat:'lists
 ]$'table,
 ['t:'binary,
  'name:"join",
  'op:"|,",
  'desc:"join list x into new list (or vector, if all types match) with pieces joined together by y",
  'ex:[ 
-		["1,2,3 join 0",(1,0,2,0,3)],
-		["[\"m\",\"ss\",\"ss\",\"pp\",\"\"] join \"i\"",["mississippi"]]
-	]
+  ["1,2,3 join 0",(1,0,2,0,3)],
+  ["[\"m\",\"ss\",\"ss\",\"pp\",\"\"] join \"i\"",["mississippi"]]
+ ],
+ 'cat:'lists
 ],
 ['t:'binary,
  'name:"take",
  'op:"#|",
  'desc:"takes the first y pieces of x (which can be a vector or a list). use a negative value in y to take from the end of the list",
  'ex:[
-   ["1,7,2,7,3 take 2",(1,7)],
-	 ["1,7,2,7,3 take (2neg)",(7,3)]
- ] 
+  ["1,7,2,7,3 take 2",(1,7)],
+  ["1,7,2,7,3 take (2neg)",(7,3)]
+ ],
+ 'cat:'lists
 ],
 ['t:'binary,
  'name:"drop",
  'op:"|#",
  'desc:"removes the first y pieces of x (which can be a vector or a list). use a negative value in y to drop from the end of the list",
  'ex:[
-   ["1,7,2,7,3 drop 2",(2,7,3)],
-	 ["1,7,2,7,3 drop (2neg)",(1,7,2)]
- ] 
+  ["1,7,2,7,3 drop 2",(2,7,3)],
+  ["1,7,2,7,3 drop (2neg)",(1,7,2)]
+ ],
+ 'cat:'lists
 ],
 ['t:'binary,
  'name:"except",
  'op:"|?",
  'desc:"remove items in x that are present in y",
  'ex:[
-   ["1,7,2,7,3 except 7",(1,2,3)],
-	 ["1,7,2,7,3 except (7,1,8)",(2,3)]
- ] 
+  ["1,7,2,7,3 except 7",(1,2,3)],
+  ["1,7,2,7,3 except (7,1,8)",(2,3)]
+ ],
+ 'cat:'lists
 ],
 ['t:'unary,
  'name:"flat",
@@ -50,12 +54,12 @@
  'cat:'lists,
  'desc:"attempt to remove one level of nesting of x; may return general list if not possible to fuse general list into vector",
  'ex:[
-   ["[1,2,[3,4,5]] flat",(1,2,3,4,5)],
-	 ["[1,2,[3,4,'z]] flat",[[1, 2], [3, 4, 'z]]]
- ] 
+  ["[1,2,[3,4,5]] flat",(1,2,3,4,5)],
+  ["[1,2,[3,4,'z]] flat",[[1, 2], [3, 4, 'z]]]
+ ],
+ 'cat:'lists
 ],
 // LOGIC
-['cat:'logic],
 ['t:'binary,
  'name:"case",
  'op:"",
@@ -67,30 +71,31 @@
 
  Returns after first match.",
  'ex:[
-		["1 case [1,7,2,6,8]",1],
-		["2 case [1,7,2,6,8]",6],
-		["3 case [1,7,2,6,8]",8],
-		["3 case [1,7,2,6]",3]
-	]
+  ["1 case [1,7,2,6,8]",1],
+  ["2 case [1,7,2,6,8]",6],
+  ["3 case [1,7,2,6,8]",8],
+  ["3 case [1,7,2,6]",3]
+ ],
+ 'cat:'logic
 ],
 // LOOPING
-['cat:'looping],
 ['t:'binary,
  'name:"each",
  'op:"::",
  'desc:"perform y for every item in x and return result as same type as x (or a general list if not possible)",
  'ex:[
-   ["1,7,2,7,3 each {*2}",(2,14,4,14,6)]
- ] 
+  ["1,7,2,7,3 each {*2}",(2,14,4,14,6)]
+ ],
+ 'cat:'looping
 ],
 // MISC
 // SYSTEM
-['cat:'system],
 ['t:'unary,
  'name:"sys",
  'op:"",
  'desc:"retrieve information about the current XXL environment by passing [] as x",
  'ex:[
    ["[]sys",('ver:"v0",'srcpath:"/tmp/xxl")]
- ] 
+ ],
+ 'cat:'system
 ] as 'verbs
