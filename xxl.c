@@ -2873,6 +2873,7 @@ VP matchany(VP obj,VP pat) {
 	IF_EXC(SIMPLE(obj) && obj->t != pat->t, Tt(type),"matchany only works with matching simple types",obj,pat);
 	int j,n=obj->n,typerr=-1;VP item, acc;
 	// PF("matchany\n"); DUMP(obj); DUMP(pat);
+	if(CALLABLE(pat)) return each(obj, pat);
 	acc=xbsz(n); 
 	acc->n=n;
 	if(LIST(obj)) {
