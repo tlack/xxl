@@ -1,11 +1,15 @@
-'lists,'logic,'math,'misc,'stdlib as 'categories;
+'lists,'values,'logic,'math,'misc,'stdlib as 'categories;
 
-// LISTS AND VALUE MANIPULATION
-['t:'binary,
- 'name:"split",
- 'op:"||",
- 'desc:"splits x into a list of pieces delimited by y.",
- 'ex:[ ["1,7,2,7,3 split 7",[1,2,3]] ],
+// LISTS MANIPULATION
+['t:'unary,
+ 'name:"flat",
+ 'op:"",
+ 'cat:'lists,
+ 'desc:"attempt to remove one level of nesting of x; may return general list if not possible to fuse general list into vector",
+ 'ex:[
+  ["[1,2,[3,4,5]] flat",(1,2,3,4,5)],
+  ["[1,2,[3,4,'z]] flat",[[1, 2], [3, 4, 'z]]]
+ ],
  'cat:'lists
 ]$'table,
 ['t:'binary,
@@ -19,6 +23,24 @@
  'cat:'lists
 ],
 ['t:'binary,
+ 'name:"split",
+ 'op:"||",
+ 'desc:"splits x into a list of pieces delimited by y.",
+ 'ex:[ ["1,7,2,7,3 split 7",[1,2,3]] ],
+ 'cat:'lists
+],
+// VALUE MANIPULATION (and usually lists too)
+['t:'unary, 
+ 'name:"behead", 
+ 'desc:"return x without its first element", 
+ 'ex:[["2,3,4 behead",(3,4)]], 
+ 'cat:'values],
+['t:'unary, 
+ 'name:"curtail", 
+ 'desc:"return x without its last element. cute name amirite?", 
+ 'ex:[["2,3,4 curtail",(2,3)]], 
+ 'cat:'values],
+['t:'binary,
  'name:"take",
  'op:"#|",
  'desc:"takes the first y pieces of x (which can be a vector or a list). use a negative value in y to take from the end of the list",
@@ -26,7 +48,7 @@
   ["1,7,2,7,3 take 2",(1,7)],
   ["1,7,2,7,3 take (2neg)",(7,3)]
  ],
- 'cat:'lists
+ 'cat:'values
 ],
 ['t:'binary,
  'name:"drop",
@@ -36,7 +58,7 @@
   ["1,7,2,7,3 drop 2",(2,7,3)],
   ["1,7,2,7,3 drop (2neg)",(1,7,2)]
  ],
- 'cat:'lists
+ 'cat:'values
 ],
 ['t:'binary,
  'name:"except",
@@ -46,18 +68,7 @@
   ["1,7,2,7,3 except 7",(1,2,3)],
   ["1,7,2,7,3 except (7,1,8)",(2,3)]
  ],
- 'cat:'lists
-],
-['t:'unary,
- 'name:"flat",
- 'op:"",
- 'cat:'lists,
- 'desc:"attempt to remove one level of nesting of x; may return general list if not possible to fuse general list into vector",
- 'ex:[
-  ["[1,2,[3,4,5]] flat",(1,2,3,4,5)],
-  ["[1,2,[3,4,'z]] flat",[[1, 2], [3, 4, 'z]]]
- ],
- 'cat:'lists
+ 'cat:'values
 ],
 // LOGIC
 ['t:'binary,
@@ -78,6 +89,30 @@
  ],
  'cat:'logic
 ],
+['t:'binary, 'name:"iftrue", 
+ 'desc:"returns y if x is truthy. if y is callable, y will be invoked with x as an argument.", 
+ 'ex:[["0 iftrue 2",0],["1 iftrue 2",2]],
+ 'cat:'logic],
+['t:'binary, 'name:"orelse", 
+ 'desc:"returns y if x is falsy. if y is callable, y will be invoked with x as an argument.", 
+ 'ex:[["0 orelse 2",2],["1 orelse 2",1]],
+ 'cat:'logic],
+['t:'binary, 'name:"ifelse", 
+ 'desc:"returns y[0] if x is truthy or y[1] otherwise. if y is callable it will be invoked with x as an argument.",
+ 'ex:[["0 ifelse (3,4)",4],["1 ifelse (3,4)",3]],
+ 'cat:'logic],
+['t:'binary, 
+ 'name:"or", 
+ 'desc:"if x or y is empty, null, or an exception, returns the other (y or x). 
+ 
+ if x and y are dictionaries: returns the union of those dictionaries.
+	 
+ for same-sized vectors: returns a vector composed of the higher element of each (x,y) pair. this can
+ be used as \"max\" of two vectors.
+
+", 'ex:[
+	["() or 0",0]
+], 'cat:'misc],
 // LOOPING
 ['t:'binary,
  'name:"each",
@@ -120,7 +155,6 @@
 // TODO
 ['t:'unary, 'name:"any", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"arity", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"behead", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"condense", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"count", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"clone", 'desc:"", 'ex:[], 'cat:'misc],
@@ -161,15 +195,11 @@
 ['t:'binary, 'name:"evalin", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"exhaust", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"get", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"iftrue", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"ifelse", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"in", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"loadin", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"make", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"nest", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"pick", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"or", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"orelse", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"over", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"range", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"recurse", 'desc:"", 'ex:[], 'cat:'misc],
