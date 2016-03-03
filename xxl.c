@@ -1066,7 +1066,7 @@ VP make(VP x, VP y) {
 int _len(VP x) {
 	int n = LEN(x);
 	if(TABLE(x)) n=TABLE_nrows(x);
-	if(DICT(x)) n=1;
+	if(DICT(x)) n=LEN(KEYS(x));
 	return n;
 }
 VP len(VP x) {
