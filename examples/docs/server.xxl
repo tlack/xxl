@@ -1,0 +1,43 @@
+// XXL documentation web site
+
+"localhost" as 'host;                  // CONFIG
+8080 as 'port;
+
+_dir,"layout.xxl" load show as 'pagetmpl;    
+[]sys@'srcpath,"/doc/lang.xxl" load show as 'docs;
+
+'safe is ('A is (26count as 'l+65$'char),('a is (l+97$'char)),".,-+!$*'()"); // rfc1738
+'urldec is {;" ",x,"%" split "%" as 'p first behead,(p behead curtail :: 
+	{ "0x",(x take 2)base16$'char,(x drop 2)}orelse"") flat};
+'urlenc is {;"z",x||[]![{in safe not},{"%",(x$'int base 16)}] drop 1 join ""};
+'wrapresp is {x show str as 'resp len str as 'szs;
+	"HTTP/1.0 200 OK\r\nContent-Length: ",szs,"\r\n",
+	"Connection: close\r\n","Server: xxl v0.0\r\n\r\n",
+	resp};
+'mkhttp is {;
+	x as 'handlecb;
+	{
+		['innerhttp,x] noshow;
+		x first split "\r\n" as 'lines;        // HTTP requests are separated with CRLF
+		lines first split" " as 'method;       // separate request line.. GET /file HTTP/1.0
+		method@1 behead as 'uri show           // pull out uri for further inspection and strip leading /
+    case [
+			{uri iftrue {_dir,"pub/",(uri![(uri~"/"condense),"_"]) .file.get as 'content}},
+				{content},
+			{[method,lines] handlecb}
+		] wrapresp 
+	}
+};
+'docsserver is {;
+	'lastcat is 0;
+	"XXL docs" pagetmpl (
+		docs :: {
+			x@'cat=lastcat not ifelse({cat is 'lastcat; "<h2>",(x@'cat),"</h2>"},""),
+			"<section><h3>",(x@'name),"</h3>
+			<p>",(x@'desc),"</p></section>"
+		}
+	)
+};
+docsserver mkhttp as 'mywebapp;
+(port,host) show .net.bind mywebapp as 'handle;
+
