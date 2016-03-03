@@ -2798,8 +2798,8 @@ VP nest(VP x,VP y) {
 		PF("+ matching opens\n");DUMP(opens);
 		if(_any(opens)) {
 			VP esc = 0;
-			if(y->n >= 3) {
-				esc = matcheasy(x,ELl(y,2));
+			if(y->n >= 3 && LEN(LIST_item(y,2))!=0) {
+				esc = matcheasy(x,LIST_item(y,2));
 				PF("escapes\n");DUMP(esc);
 				EL(opens,VP,0)=and(AS_l(opens,0),shift_(not(esc),-1));
 				PF("new escaped opens\n");
@@ -2838,20 +2838,18 @@ VP nest(VP x,VP y) {
 		closes=consecutivejoin(xb(1),closes);
 		if(close->n > 1)
 			closes=shift_(closes, (close->n-1)*-1);
-		if(open->tag) base=matchtag(x,xt(open->tag));
-		else base=xb(1);
-		out=bracketjoin(xb(1), xln(2,consecutivejoin(base,opens),closes)); 
+		base=xb(1);
+		out=bracketjoin(base,xln(2,consecutivejoin(base,opens),closes)); 
 		xfree(base);
 		where=condense(out);
 	}
 	PF("nest where\n");DUMP(where);
 	if(where->n) {
 		rep=apply(x,where);
-		if(y->n >= 5) {
-			rep=apply(ELl(y,4),rep);
-		}
-		if(y->n >= 4)
-			rep->tag=AS_t(ELl(y,3),0);
+		if(y->n >= 5 && LEN(LIST_item(y,4))!=0)
+			rep=apply(LIST_item(y,4),rep);
+		if(y->n >= 4 && LEN(LIST_item(y,3))!=0)
+			rep->tag=AS_t(LIST_item(y,3),0);
 		rep=list2vec(rep);
 		PF("nest rep\n");DUMP(rep);
 		// splice is smart enough to merge like-type replace args into one
