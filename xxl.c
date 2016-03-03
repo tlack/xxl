@@ -124,6 +124,8 @@ char* repr_a(VP x,char* s,size_t sz) { // table
 	kn=k->n; vn=LEN(v) ? ELl(v,0)->n : 0;
 	repr0(k, s, sz-1);
 	APF(sz,"\n",0);
+	// printf("table raw keys: %s\n",reprA(KEYS(x)));
+	// printf("table raw values: %s\n",reprA(VALS(x)));
 	for(i=0; i<vn; i++) {
 		APF(sz,"%d:[",i);
 		for(j=0; j<kn; j++) {
@@ -407,7 +409,7 @@ VP equal(const VP x,const VP y) {
 MEMO_make(CLONE);
 VP clone0(const VP obj) {
 	if(IS_EXC(obj)) return obj;
-	PF("clone0 %p\n",obj);DUMP(obj);
+	// PF("clone0 %p\n",obj);DUMP(obj);
 	int i, objn=obj->n; 
 	MEMO_check(CLONE,obj,({ PF("found memoized %p\n", memo_val); return memo_val; }),i);
 	VP res=ALLOC_LIKE(obj);
@@ -600,25 +602,40 @@ VP catenate_table(VP table, VP row) {
 	PF("catenate_table\n"); DUMP(table); DUMP(row);
 	int trows, tcols;
 	if(table==NULL || LEN(table)==0 || LEN(KEYS(table))==0) {
-		if(DICT(row)) return make_table(KEYS(row),VALS(row));
+		PF("table seems to be blank; creating table from this row");
+		if(DICT(row)) return make_table(MUTATE_CLONE(KEYS(row)),MUTATE_CLONE(VALS(row)));
 		else return EXC(Tt(value),"can't catenate an empty table with that",table,row);
 	} else {
 		trows=TABLE_nrows(table); tcols=TABLE_ncols(table);
+	}
+	if(TABLE(row)) {
+		VP tmp; int i; 
+		PF("catenating table\n");
+		for(i=0; i<trows; i++) {
+			tmp=table_row_dict_(row, i);
+			ARG_MUTATING(table);
+			table=catenate_table(MUTATE_CLONE(table),tmp);
+			xfree(tmp);
+		}
+		return table;
 	}
 	if(DICT(row)) {
 		VP rk=KEYS(row);
 		ASSERT(LIST(KEYS(row))&&LIST(VALS(row)),"catenate_table: row keys or vals not list");
 		VP fullrow;
-		if(tcols != 0 && LEN(rk) != tcols) { // mismatching columns on existing table!
+		if(tcols != 0 && !_equal(rk,KEYS(table))) { // mismatching columns on existing table!
+			PF("row keys/table keys mismatch, loading old row defaults\n");
 			VP lastrow=table_row_dict_(table,trows-1);
 			fullrow=catenate(lastrow,row);
-		} else fullrow=row;
+			DUMP(fullrow);
+		} else fullrow=MUTATE_CLONE(row);
 		rk=KEYS(fullrow);
 		VP rv=VALS(fullrow), rktmp, rvtmp, vec; int i=0;
 		for(; i<rk->n; i++) {
 			rktmp=ELl(rk,i); rvtmp=ELl(rv,i);
 			PF("catenate col\n");
 			DUMP(rktmp);
+			DUMP(rvtmp);
 			DUMP(KEYS(table));
 			DUMP(VALS(table));
 			DUMP(table);
@@ -629,19 +646,28 @@ VP catenate_table(VP table, VP row) {
 				// NB. unknown columns are added, but old rows
 				// will get the same value as this one!
 				KEYS(table)=append(KEYS(table),rktmp);
-				VALS(table)=append(VALS(table),take_(rvtmp,trows));
-			} else vec=append(vec,rvtmp);
+				VALS(table)=append(VALS(table),take_(rvtmp,trows+1));
+				PF("new keys and vals:\n");
+				DUMP(KEYS(table));
+				DUMP(VALS(table));
+			} else {
+				vec=append(vec,rvtmp);
+				PF("new vec\n");
+				DUMP(vec);
+			}
 		}
 		return table;
 	} else if (LIST(row)) {
 		int i=0;
+		row=MUTATE_CLONE(row);
+		table=MUTATE_CLONE(table);
 		// this could either be a single row, i.e., a list comprised of simple types,
 		// or a list of lists, meaning a list of individual lists of simple types. we'll
 		// check if the first member is a list to determine which we think it is.
 		if(LIST_of_lists(row) && LEN(LIST_first(row)) == tcols) {
 			PF("LOL\n");DUMP(row);
 			// TODO probably important not to recurse here
-			for(; i<row->n; i++) table=catenate_table(table,ELl(row,i));
+			for(; i<row->n; i++) table=catenate_table(table,MUTATE_CLONE(LIST_item(row,i)));
 			return table;
 		} else {
 			VP colval;
@@ -654,7 +680,7 @@ VP catenate_table(VP table, VP row) {
 					// to make that column into a general list, or indexing row values will
 					// become very confusing indeed
 					if(!SCALAR(colval)) EL(row,VP,i)=xl(colval);
-				
+					// EL(row,VP,i)=xl(colval);
 				}
 				VALS(table) = xref(row);
 			} else {
@@ -677,9 +703,10 @@ VP catenate(VP x,VP y) {
 		appendbuf(res, BUF(x), x->n); appendbuf(res, BUF(y), y->n);
 	} else {
 		PF("catenate3 - container as x, or unlike objects\n");
-		if(TABLE(x)) { return catenate_table(x,y); }
-		if(DICT(x)) { return dict(x,y); }
-		else if(LIST(x) && !LIST(y)) { res=append(x,clone(y)); }
+		if(TABLE(x)) { return catenate_table(clone(x),y); }
+		if(DICT(x)) { return dict(clone(x),y); }
+		else if(LIST(x) && LEN(x)==0) { return xl(y); }
+		else if(LIST(x)) { res=append(x,clone(y)); }
 		else {
 			PF("catenate4 - create 2-item list with both items in it\n");
 			res=xlsz(2);
@@ -722,10 +749,7 @@ VP dict(VP x,VP y) {
 		VP d=xd0();
 		if(LEN(x)==0 && LEN(y)==0) { KEYS(d)=xl0(); VALS(d)=xl0(); return d; }
 		if(LIKELY(SCALAR(x))) {
-			if(LIST(x))  // handle ['a:1] which becomes [['a]:1]
-				d=assign(d,ELl(x,0),y);
-			else
-				d=assign(d,x,y);
+			d=assign(d,DISCLOSE(x),DISCLOSE(y));
 		} else {
 			int i;VP tmp1,tmp2;
 			for(i=0;i<x->n;i++) {
@@ -1026,6 +1050,8 @@ VP table_row_list_(VP tbl, int row) {
 		res=apply_simple_(TABLE_col(tbl,i), row); 
 		lst=append(lst,DISCLOSE(res)); 
 	}
+	PF("table_row_list_ #%d returning\n");
+	DUMP(lst);
 	return lst;
 }
 VP table_row_dict_(VP tbl, int row) {
@@ -1041,7 +1067,7 @@ VP make_table(VP keys,VP vals) {
 	int sz=vals && LEN(vals) ? LEN(ELl(vals,0)) : 0;
 	EL(res,VP,1)=xlsz(sz);
 	res->n=2;
-	return catenate_table(res, vals);
+	return catenate_table(res, clone(vals));
 }
 VP make(VP x, VP y) { 
 	// TODO cast() should short cut matching kind casts 
@@ -2371,7 +2397,6 @@ VP val(VP x) {
 	}
 	return EXC(Tt(type),"val can't operate on that type",x,0);
 }
-
 VP _getmodular(VP x,VP y) {
 	ASSERT((DICT(x)||IS_x(x))&&LIST(y),"_getmodular");
 	PF("_getmodular");DUMP(y);
@@ -3066,7 +3091,20 @@ VP mklexer(const char* chars, const char* label) {
 	);
 }
 VP parseexpr(VP x) {
+	int i;
 	PF("parseexpr\n");DUMP(x);
+	if(!LIST(x)) return x;               // confuzzling..
+	if(IS_c(ELl(x,0)) && AS_c(ELl(x,0),0)=='[') {
+		if(LEN(x)==2) return xl0();        // empty
+		VP res=xlsz(LEN(x)+1);
+		res=append(res,xl0());
+		if(LEN(x)>2) {
+			res=append(res,entags(xc(','),"raw"));
+			for(i=1;i<LEN(x)-1;i++) 
+				res=append(res,ELl(x,i));
+		}
+		return res;
+	}
 	if(LIST(x) && IS_c(ELl(x,0)) && 
 			((AS_c(ELl(x,0),0)=='(') ||
 			  AS_c(ELl(x,0),0)=='['))

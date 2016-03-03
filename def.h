@@ -148,6 +148,8 @@
 // to mark parts of code that change their input arguments' values, so that we can have a good map
 // of the semantic and structural changes that immutability might require
 #define ARG_MUTATING(x) 
+// at some point this will be intelligent about not cloning values for mapped types
+#define MUTATE_CLONE(x) clone(x)
 
 #ifdef DEBUG
 	#define TRACELBL(x,lbl) ( (x)->tag=lbl, x )
