@@ -2352,9 +2352,8 @@ VP key(VP x) {
 	if(SIMPLE(x)) return count(xi(x->n));
 	return EXC(Tt(type),"key can't operate on that type",x,0);
 }
-
 VP val(VP x) {
-	if(DICT(x)) return ELl(x,1);
+	if(TABLE(x) || DICT(x)) return clone(VALS(x));
 	if(IS_x(x)) { // func body for context
 		int xn=LEN(x), i; VP acc=xlsz(xn);
 		for(i=xn-1; i>=0; i--) {
