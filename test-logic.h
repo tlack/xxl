@@ -122,11 +122,9 @@ c=mkworkspace();
 b=evalstrin("\"hello\"!((1,2,5),\"x\")",c);
 ASSERT(_equal(b,xfroms("hxxlox")),"amend many indices one value");
 
-PFW(({
 c=mkworkspace();
 b=evalstrin("[]!(1,\"jordache\")",c);
 ASSERT(_equal(repr(b),xfroms("[null, \"jordache\"]")),"amend empty list");
-}));
 
 c=mkworkspace();
 b=evalstrin("'z is 20; 30 as 'b;z*b",c);
