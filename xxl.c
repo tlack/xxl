@@ -778,7 +778,7 @@ VP drop_(VP x,int i) {
 	PF("drop_ result\n"); DUMP(res);
 	return res;
 }
-VP drop(VP x,VP y) {
+VP drop(const VP x,const VP y) {
 	VP res=0;
 	int typerr=-1;
 	// PF("drop args\n"); DUMP(x); DUMP(y);
@@ -787,21 +787,22 @@ VP drop(VP x,VP y) {
 	VARY_EL(y, 0, ({ return drop_(x,_x); }), typerr);
 	return res;
 }
-VP except(VP x,VP y) {
-	VP where=list2vec(matchany(x,y));
+VP except(const VP x,const VP y) {
+	VP where=matchany(x,y);
+	if(LIST(where)) where=list2vec(where);
 	VP invw=not(where);
 	VP wherec=condense(invw);
 	VP res=apply(x,wherec);
 	xfree(wherec); xfree(invw); xfree(where);
 	return res;
 }
-VP first(VP x) {
+VP first(const VP x) {
 	VP i,r;
 	if(DICT(x)) return EXC(Tt(type),"dict first/head doesn't make sense",x,0);
 	if(LIST(x)) return xref(ELl(x,0));
 	else return apply_simple_(x,0);
 }
-int _flat(VP x) { // returns 1 if vector, or a list composed of vectors (and not other lists)
+int _flat(const VP x) { // returns 1 if vector, or a list composed of vectors (and not other lists)
 	// PF("flat\n");DUMP(x);
 	if(!CONTAINER(x)) return 1;
 	else return 0; // lists are never flat
