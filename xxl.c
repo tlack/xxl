@@ -423,9 +423,8 @@ VP clone0(const VP obj) {
 				else
 					EL(res,VP,i)=clone0(elem);
 			}
-		} else {
+		} else 
 			res=appendbuf(res,BUF(obj),objn);
-		}
 	}
 	return res;
 }
@@ -1252,7 +1251,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			// we've reached a paren expr or list expr that we must resolve before considering
 			// what to do with this term of the parse tree. many expressions are simple and
 			// don't require complex evaluation.. but some do require recursion
-			if (!SIMPLE(item)) {
+			if (!SIMPLE(item) && LEN(item)>1) {
 				PF("applying subexpression\n");
 				VP newframe = xln(9,parent,item,xarg,yarg,NULL,xi(i),xi(stack_i),xi(2),left);
 				PF("trying stack hack for expression (expr/listexpr)\n");
@@ -1267,10 +1266,13 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 				// "'listexpr("p")" with the 'name part stripped out. so let's reconsider item when
 				// we reach this case so that we can resolve the name in the scope
 				item->tag=(tag_t)0;
+				item=flatten(item);
+				/*
 				if(IS_c(item))
 					goto consideritem;
 				else if(tag==tlistexpr)
 					item=list(item);
+				*/
 			}
 		} else if(LIKELY(IS_c(item)) && (tag==tname || tag==toper || tag==traw)) {
 			ch = AS_c(item,0);
@@ -1422,10 +1424,12 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		// recall that [1,2,3] goes into the parse tree as 'listexpr([1, 2, 3]), which is fine,
 		// but as we evaluate [1, 2, 3], we don't have a way of forcing 1 into being a list before
 		// that , occurs.. so after the first item, we force it to a list if it isnt one. :)
+		/*
 		if(i==0 && code->tag==tlistexpr && !LIST(left)) {
 			PF("forcing left as list due to listexpr\n");
 			left=xl(left);
 		}
+		*/
 
 		PF("bottom\n");
 	}

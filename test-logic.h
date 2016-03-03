@@ -96,22 +96,22 @@ ASSERT(_equal(repr(b),repr(a)),"dict each");
 
 c=mkworkspace();
 b=evalstrin("7 as 'p;[[p]]",c);
-ASSERT(_equal(b,xi(7)),"nested simple listexpr");
+ASSERT(_equal(b,xl(xl(xi(7)))),"nested simple listexpr");
 
 c=mkworkspace();
-b=evalstrin("[1,2,3],[9,8,7] eachb +",c);
+b=evalstrin("[(1,2,3),(9,8,7)] eachb +",c);
 ASSERT(_equal(b,xin(3,10,10,10)),"eachboth");
 
 c=mkworkspace();
-b=evalstrin("[1,2,3],[9,8,7] >: +",c);
+b=evalstrin("[(1,2,3),(9,8,7)] >: +",c);
 ASSERT(_equal(b,xin(3,10,10,10)),"eachboth short");
 
 c=mkworkspace();
-b=evalstrin("[1,2,3],[3] \\: +",c);
+b=evalstrin("[(1,2,3),3] \\: +",c);
 ASSERT(_equal(b,xin(3,4,5,6)),"eachleft short");
 
 c=mkworkspace();
-b=evalstrin("[3],[1,2,3] /: +",c);
+b=evalstrin("[3,(1,2,3)] /: +",c);
 ASSERT(_equal(b,xin(3,4,5,6)),"eachright short");
 
 c=mkworkspace();
@@ -122,9 +122,11 @@ c=mkworkspace();
 b=evalstrin("\"hello\"!((1,2,5),\"x\")",c);
 ASSERT(_equal(b,xfroms("hxxlox")),"amend many indices one value");
 
+PFW(({
 c=mkworkspace();
 b=evalstrin("[]!(1,\"jordache\")",c);
-ASSERT(_equal(repr(b),xfroms("[/*null*/, \"jordache\"]")),"amend empty list");
+ASSERT(_equal(repr(b),xfroms("[null, \"jordache\"]")),"amend empty list");
+}));
 
 c=mkworkspace();
 b=evalstrin("'z is 20; 30 as 'b;z*b",c);
