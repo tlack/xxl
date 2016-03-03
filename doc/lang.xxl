@@ -1,6 +1,7 @@
 'lists,'values,'logic,'math,'misc,'stdlib as 'categories;
 
-// LISTS MANIPULATION
+// GENERAL LISTS & LIST MANIPULATION -----------------------------------
+
 ['t:'unary,
  'name:"flat",
  'op:"",
@@ -10,8 +11,14 @@
   ["[1,2,[3,4,5]] flat",(1,2,3,4,5)],
   ["[1,2,[3,4,'z]] flat",[[1, 2], [3, 4, 'z]]]
  ],
- 'cat:'lists
-]$'table,
+ 'seealso:[],
+ 'cat:'lists]
+$'table,                               // make dict into start of new table
+['t:'unary, 'name:"list", 
+ 'desc:"Converts vector x into a general list", 
+ 'ex:[ ["(1,2,3)vec",[1,2,3]] ], 
+ 'seealso:["vec"],
+ 'cat:'lists],
 ['t:'binary,
  'name:"join",
  'op:"|,",
@@ -20,25 +27,71 @@
   ["1,2,3 join 0",(1,0,2,0,3)],
   ["[\"m\",\"ss\",\"ss\",\"pp\",\"\"] join \"i\"",["mississippi"]]
  ],
- 'cat:'lists
-],
+ 'cat:'lists],
 ['t:'binary,
  'name:"split",
  'op:"||",
  'desc:"splits x into a list of pieces delimited by y.",
  'ex:[ ["1,7,2,7,3 split 7",[1,2,3]] ],
- 'cat:'lists
-],
-// VALUE MANIPULATION (and usually lists too)
+ 'cat:'lists],
+['t:'unary, 
+ 'name:"vec", 
+ 'desc:"transforms general list x into a same-type vector. returns x unmolested if not possible.", 
+ 'ex:[ ["1,2,3vec",(1,2,3)] ], 
+ 'cat:'lists],
+
+// VECTORS & THEIR VALUES ----------------------------------------------
+
+['t:'binary, 
+ 'name:"amend", 
+ 'op:"!",
+ 'desc:"update parts of x according to instructions in y. 
+ 
+ y is a list like [indices, values].
+
+ y's first element is the indices to modify in x.  This may be a callable (such
+ as a function), in which case the indices for which the function returns
+ something truthy will be used as the list to update.
+ 
+ y's second element is the value(s) to set the indices to. 
+ If it is a callable, it will be applied with the value of x@(y@0@n).
+
+ If y@0 is plural and y@1 is singular, all of x@(y@0) will be updated with
+ the same value: y@1.
+ 
+ What's really powerful about this technique is that you can generate your
+ lists of indices to update or values to apply via other means.
+ ", 
+ 'ex:[
+  ["(4,5,6)![1,10]",(4,10,6)],
+	["(4,5,6)![(0,2),10]",(10,5,10)],
+	["(4,5,6)![(0,2),(10,20)]",(10,5,20)],
+	["(4,5,6)![{%2=0},{*3}]",(12,5,18)]
+ ], 'cat:'misc],
+['t:'unary, 
+ 'name:"first", 
+ 'desc:"returns first item of x", 
+ 'ex:[ ["1,2,3 first",1] ], 
+ 'seealso:["behead","curtail","last"],
+ 'cat:'misc],
+['t:'unary, 
+ 'name:"last", 'desc:"returns last item of x", 
+ 'ex:[ ["1,2,3 last",3] ], 
+ 'seealso:["behead","curtail","first"],
+ 'cat:'misc],
 ['t:'unary, 
  'name:"behead", 
+ 'op:"|_",
  'desc:"return x without its first element", 
  'ex:[["2,3,4 behead",(3,4)]], 
+ 'seealso:["curtail","first","last"],
  'cat:'values],
 ['t:'unary, 
  'name:"curtail", 
+ 'op:"_|",
  'desc:"return x without its last element. cute name amirite?", 
- 'ex:[["2,3,4 curtail",(2,3)]], 
+ 'ex:[["2,3,4 curtail",(2,3)]],
+ 'seealso:["behead","first","last"],
  'cat:'values],
 ['t:'binary,
  'name:"take",
@@ -70,7 +123,36 @@
  ],
  'cat:'values
 ],
-// LOGIC
+['t:'unary,
+ 'name:"len",
+ 'desc:"Returns length of list or vector x",
+ 'ex:[],
+ 'cat:'values],
+['t:'binary, 
+ 'name:"make", 
+ 'desc:"transforms x into typed denoted by tag in y (such as float)", 
+ 'ex:[], 
+ 'cat:'values],
+['t:'unary, 
+ 'name:"rev", 
+ 'desc:"returns vector x in reverse order", 
+ 'ex:[["3,7,9rev",(9,7,3)]], 
+ 'cat:'values],
+['t:'unary, 
+ 'name:"key", 
+ 'desc:"Returns the keys/columns of dictionary/table x", 
+ 'ex:[ ["['name:'Tom,'city:'Miami]key",['name,'city']] ], 
+ 'seealso:["val"],
+ 'cat:'values],
+['t:'unary, 
+ 'name:"val", 
+ 'desc:"when x is a dict or table, return the values of x. Exception otherwise", 
+ 'ex:[ ["['name:'Tom,'city:'Miami]val",['Tom,'Miami]] ], 
+ 'seealso:["key"],
+ 'cat:'values],
+
+// LOGIC ---------------------------------------------------------------
+
 ['t:'binary,
  'name:"case",
  'op:"",
@@ -89,41 +171,145 @@
  ],
  'cat:'logic
 ],
-['t:'binary, 'name:"iftrue", 
+['t:'binary, 
+ 'name:"iftrue", 
  'desc:"returns y if x is truthy. if y is callable, y will be invoked with x as an argument.", 
  'ex:[["0 iftrue 2",0],["1 iftrue 2",2]],
  'cat:'logic],
-['t:'binary, 'name:"orelse", 
+['t:'binary,
+ 'name:"orelse", 
  'desc:"returns y if x is falsy. if y is callable, y will be invoked with x as an argument.", 
  'ex:[["0 orelse 2",2],["1 orelse 2",1]],
  'cat:'logic],
-['t:'binary, 'name:"ifelse", 
+['t:'binary, 
+ 'name:"ifelse", 
  'desc:"returns y[0] if x is truthy or y[1] otherwise. if y is callable it will be invoked with x as an argument.",
  'ex:[["0 ifelse (3,4)",4],["1 ifelse (3,4)",3]],
  'cat:'logic],
 ['t:'binary, 
  'name:"or", 
- 'desc:"if x or y is empty, null, or an exception, returns the other (y or x). 
+ 'desc:"
+ if x or y is empty, null, or an exception, returns the other (y or x). 
  
  if x and y are dictionaries: returns the union of those dictionaries.
 	 
  for same-sized vectors: returns a vector composed of the higher element of each (x,y) pair. this can
  be used as \"max\" of two vectors.
+ ", 
+ 'ex:[["() or 0",0]], 
+ 'cat:'logic],
+['t:'unary, 'name:"not", 
+ 'desc:"transforms non-zeroes to zeroes and vice versa", 
+ 'ex:[["1,0,2not",(0,1,0)]], 
+ 'cat:'misc],
+['t:'binary, 
+ 'name:"pick", 
+ 'desc:"returns items of x which correspond to indices of y containing 1.
+ 
+ This is useful to use with functions like match that returns vectors of
+ 0s and 1s.", 
+ 'ex:[
+  ["1,2,3 as 'z pick (z~2 not)",(1,3)],
+	["\"abcdefg\" pick (0,1,1,0,1)","bce"]
+ ], 
+ 'cat:'logic],
 
-", 'ex:[
-	["() or 0",0]
-], 'cat:'misc],
-// LOOPING
+// LOOPING -------------------------------------------------------------
+
 ['t:'binary,
  'name:"each",
  'op:"::",
- 'desc:"perform y for every item in x and return result as same type as x (or a general list if not possible)",
- 'ex:[
-  ["1,7,2,7,3 each {*2}",(2,14,4,14,6)]
- ],
+ 'desc:"
+ perform y for every item in x and return result as same type as x (or a
+ general list if not possible)
+ ",
+ 'ex:[["1,7,2,7,3 each {*2}",(2,14,4,14,6)]],
  'cat:'looping
 ],
-// MISC
+['t:'binary, 
+ 'name:"exhaust", 
+ 'desc:"
+ apply y to x and then again to that result over and over again until it
+ returns x or the same thing twice. Returns the last result.
+ ", 
+ 'ex:[
+	["\"abc\"exhaust{rot1}","cab"]
+ ], 
+ 'cat:'misc],
+['t:'binary, 
+ 'name:"recurse", 
+ 'desc:"
+ call y on x, and then again on the result of that, collecting all intermediate
+ results in a list, until it returns x again or the same thing twice. Similar
+ to exhaust, but returns all results along the way, rather than the last one.
+ ", 
+ 'ex:[
+  ["\"abc\"recurse{rot1}",["bca","cab"]]
+ ], 'cat:'misc],
+
+// MATH ----------------------------------------------------------------
+
+['t:'binary, 
+ 'name:"deal", 
+ 'desc:"create y random integers from 0 to x. Can also be used with a list
+ as x, which will return y random items from that list.", 
+ 'ex:[], 'cat:'math],
+['t:'unary, 'name:"min", 
+ 'desc:"Returns the minimum value in vector x", 
+ 'ex:[["(100neg),0,100 min",(100 neg)]], 
+ 'cat:'math],
+['t:'unary, 'name:"max", 
+ 'desc:"Returns the maximum value in vector x", 
+ 'ex:[["(100neg),0,100 max",100]], 
+ 'cat:'math],
+['t:'unary, 'name:"neg", 
+ 'desc:"Reverse the sign of all elements in x", 
+ 'ex:[["(10neg),0,13neg",(10,0,-13)]], 
+ 'cat:'math],
+['t:'binary, 
+ 'name:"range", 
+ 'desc:"returns a vector comprised of x .. y inclusive", 
+ 'ex:[],
+ 'cat:'math],
+['t:'unary, 
+ 'name:"sum", 
+ 'desc:"return the sum of each item in vector x", 
+ 'ex:[ ["5,2,9,6 sum",22] ], 
+ 'cat:'math],
+['t:'unary, 
+ 'name:"sums", 
+ 'desc:"returns the running total for each item in vector x", 
+ 'ex:[ ["5,2,9,6 sums",(5,7,16,22)] ], 
+ 'cat:'math],
+
+// MISC ----------------------------------------------------------------
+
+['t:'binary, 
+ 'name:"aside", 
+ 'desc:"
+ A convenience function: evaluate y but return x.  This is useful in situations
+ where you want to use some verb against the value of the expression you've
+ built up, but don't want that verb's result to interrupt the next stage of
+ that expression.
+ ", 
+ 'ex:[["fname .file.get aside {len show} parse",['parsetree]]], 
+ 'cat:'misc],
+['t:'unary,
+ 'name:"count", 
+ 'desc:"
+ Returns a vector of the integers between 0 and x-1. 
+ 
+ These can be used as indices into another value or perhaps as a loop counter of sorts.", 
+ 'ex:[["count 5",(0,1,2,3,4)]], 
+ 'cat:'misc],
+['t:'unary, 'name:"info", 
+ 'desc:"Returns a dictionary of information about x", 
+ 'ex:[
+  ["1,2,3 info",
+	 ['typenum:4,'type:"int",'len:3, 'capacity:4, 'itemsz:4, 'alloced:0, 'baseptr:13519424, 'memptr:13519488]
+	]
+ ], 
+ 'cat:'misc],
 ['t:'unary, 
  'name:"parse", 
  'desc:"return the XXL parse string for string x", 
@@ -133,15 +319,46 @@
   ]
  ], 
  'cat:'misc],
-//
+['t:'binary, 
+ 'name:"rot", 
+ 'desc:"rotate the contents of the vector x right by y positions. y may be negative", 
+ 'ex:[], 'cat:'misc],
 ['t:'unary,
  'name:"show",
  'op:"",
- 'desc:"display the value on the user's screen (depending on how the XXL program is being run) and return
- that value so it can be used in the rest of the expression.",
+ 'desc:"display the value of x on the user's screen (depending on how the XXL
+ program is being run) and return that value so it can be used in the rest of
+ the expression. The formatting used is the same as the repr verb.",
  'ex:[ ["1,2,3 show","1,2,3"] ],
- 'cat:'misc
-],
+ 'seealso:["repr","str"],
+ 'cat:'misc],
+['t:'unary, 
+ 'name:"type", 
+ 'desc:"Returns the type of x as a symbol", 
+ 'ex:[["[1,2.1,\"x\"]::type",['int, 'float, 'char]]], 
+ 'seealso:[],
+ 'cat:'misc],
+
+// STRINGS -------------------------------------------------------------
+
+['t:'unary, 
+ 'name:"repr", 
+ 'desc:
+ "return a text representation of x. This is usually close to what you'd type in to XXL to create that value", 
+ 'ex:[], 'cat:'strings],
+['t:'unary, 
+ 'name:"str", 
+ 'desc:
+ "return string representation of x. Compared to the repr verb this is usually a simpler version of the value", 
+ 'ex:[], 'cat:'strings],
+['t:'binary, 
+ 'name:"base", 
+ 'desc:"
+ if x is a string, assume it's a number in base y, and return that number as an XXL value.
+
+ if x is a number type, format it as a string in base y, and return that string.
+ ", 'ex:[], 'cat:'strings],
+
 // SYSTEM
 ['t:'unary,
  'name:"sys",
@@ -153,76 +370,42 @@
  'cat:'system
 ],
 // TODO
-['t:'unary, 'name:"any", 'desc:"
-returns 1 if any of the elements of x 
-are nonzero", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"arity", 
-'desc:"returns 1 for unary functions and
-2 for binary functions. Useful for user defined 
-functions", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"condense", 'desc:"
-Repeats each item of x the number of times that the 
-value contains. Not ", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"count", 'desc:"
-Returns a vector of the integers between 0
-and x-1", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"clone", 'desc:"
-Creates a copy of x", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"curtail", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"info", 'desc:"
-Returns a dictionary of information about x", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"first", 'desc:"
-Returns first item of x", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"last", 'desc:"
-Returns last item of x", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"list", 'desc:"
-Converts vector x into a general list", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"len", 'desc:"
-Returns length of list or vector x", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"key", 'desc:"
-Returns the keys/columns of dictionary/table x", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"min", 'desc:"
-Returns the minimum value in vector x", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"max", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"neg", 'desc:"
-Reverse the sign of all elements in x", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"not", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"repr", 'desc:"return a text representation of x. This is usually close to what you'd type in to XXL to create that value", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"rev", 'desc:"
-Returns vector x in reverse order", 'ex:[], 'cat:'misc],
+['t:'unary, 
+ 'name:"any", 
+ 'desc:"returns 1 if any of the elements of x are nonzero", 
+ 'ex:[["0,0any",0],["0,1any",1]], 
+ 'cat:'misc],
+['t:'unary, 
+ 'name:"arity", 
+ 'desc:"returns 1 for unary functions and 2 for binary functions. Useful when applying user defined functions", 
+ 'ex:[],
+ 'cat:'misc],
+['t:'unary, 
+ 'name:"condense", 
+ 'desc:"Repeats each item of x the number of times that the value contains. ", 
+ 'ex:[], 'cat:'misc],
+['t:'unary, 
+ 'name:"clone", 
+ 'desc:"Creates a copy of x", 
+ 'ex:[], 
+ 'cat:'misc],
 ['t:'unary, 'name:"selftest", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"str", 'desc:"return string representation of x. Compared to the repr verb this is usually a simpler version of the value", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"sum", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"sums", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"tag", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"type", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"val", 'desc:"when x is a dict or table, return the values of x. Exception otherwise", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"vec", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"xray", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"::", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"amend", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"and", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"aside", 'desc:"evaluate y but return x. This is useful in situations where you want to use the value of the expression you've built up, but don't want to interrupt that expression", 'ex:[["fname .file.get aside {len show} parse",['parsetree]], 'cat:'misc],
-['t:'binary, 'name:"base", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"bracketj", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"call", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"consecj", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"deal", 'desc:"create x random numbers from 0 to y", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"deep", 'desc:"invokes y for each nested list in x", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"eachl", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"eachr", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"evalin", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"exhaust", 'desc:"apply y to x and then again to that result over and over again until it returns x or the same thing twice. Returns the last result.", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"get", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"in", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"loadin", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"make", 'desc:"transforms x into typed denoted by tag in y (such as float)", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"nest", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"pick", 'desc:"returns items of x which correspond to indices of y containing 1", 'ex:[["1,2,3 as 'z pick (z~2 not )",(1,3)]], 'cat:'misc],
 ['t:'binary, 'name:"over", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"range", 'desc:"returns a vector comprised of x .. y inclusive", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"recurse", 'desc:"call y on x, and then again on the result of that, collecting all intermediate results in a list, until it returns x again or the same thing twice. Similar to exhaust, but returns all results along the way, rather than the last one", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"rot", 'desc:"rotate the contents of the vector x right by y positions. y may be negative", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"scan", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"wide", 'desc:"invoke y for each item in list x, and then again for each member of the result that's a list, and so on. This is similar to a breadth first search of a tree. ", 'ex:[], 'cat:'misc]
 as 'verbs
