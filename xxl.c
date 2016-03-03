@@ -976,12 +976,13 @@ int _findbuf(const VP x, const buf_t y) {   // returns index or -1 on not found
 inline int _find1(const VP x, const VP y) {        // returns index or -1 on not found
 	// probably the most common, core call in the code. worth trying to optimize.
 	// PF("_find1\n",x,y); DUMP(x); DUMP(y);
-	ASSERT(x && (LISTDICT(x) || (x->t==y->t && y->n==1)), "_find1(): x must be list, or types must match with right scalar");
+	ASSERT(x && (LISTDICT(x) || x->t==y->t), "_find1(): x must be list, or types must match");
 	VP scan;
 	if(UNLIKELY(DICT(x))) scan=KEYS(x);
 	else scan=x;
+	int sn=LEN(scan), yn=LEN(y), i;
 	if(LIST(scan)) {
-		int i, sn=scan->n, yn=y->n, yt=y->t; VP item;
+		int yt=y->t; VP item;
 		for(i=0; i<sn; i++) {
 			item=ELl(scan,i);
 
@@ -990,13 +991,18 @@ inline int _find1(const VP x, const VP y) {        // returns index or -1 on not
 				if (_equal(item,y)==1) return i;
 		}
 		return -1;
-	} else 
-		ITERV(x,{ IF_RET(memcmp(ELi(x,_i),ELi(y,0),x->itemsz)==0,_i); });
+	} else {
+		if(sn<yn) return -1;
+		for(i=0; i<sn-(yn-1); i++) {
+			if(memcmp(ELi(x,i), ELi(y,0), yn * x->itemsz)==0)
+				return i;
+		}
+	}
 	return -1;    // The code of this function reminds me of Armenia, or some war torn place
 }
 VP find1(VP x, VP y) {
-	if(!x || !(LISTDICT(x) || (x->t==y->t && SCALAR(y))))
-		return EXC(Tt(type),"find x must be list, or types must match with right scalar",x,y);
+	if(!x || !(LISTDICT(x) || x->t==y->t))
+		return EXC(Tt(type),"find x must be list, or types must match",x,y);
 	return xi(_find1(x,y));
 }
 int _contains(VP x, VP y) {
