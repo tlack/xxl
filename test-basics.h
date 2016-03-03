@@ -303,3 +303,10 @@
 	a=xin(3,1,-2,3); b=xin(3,-1,2,-3);
 	ASSERT(_equal(neg(a),b),"neg0");
 
+	a=xfroms("hello");
+	i=_find1(a,xfroms("el"));
+	ASSERT(i==1,"find nonscalar 0");
+	i=_find1(a,xfroms("ex"));
+	ASSERT(i==-1,"find nonscalar 1");
+
+
