@@ -1986,7 +1986,9 @@ VP and(const VP x,const VP y) {
 	int typerr=-1;
 	VP acc;
 	// PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
-	if(IS_EXC(x) || LEN(x)==0) return y; // NB. IS_EXC checks if x==NULL
+	if(IS_EXC(x) || LEN(x)==0) return x; // NB. IS_EXC checks if x==NULL
+	if(IS_EXC(y) || LEN(y)==0) return y;
+	if(LIST(x) || LIST(y)) return EXC(Tt(nyi),"and on lists not yet implemented",x,y);
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "and arguments should be same length", x, y);	
 	if(SIMPLE(x) && SIMPLE(y)) acc=ALLOC_BEST(x,y);
 	else acc=xlsz(x->n);
@@ -2227,12 +2229,12 @@ VP or(VP x,VP y) { // TODO most of these primitive functions have the same patte
 	int typerr=-1;
 	VP acc;
 	// PF("or\n"); DUMP(x); DUMP(y); // TODO or() and friends should handle type conversion better
-	if(IS_EXC(x) || LEN(x)==0) return x;
-	if(IS_EXC(y) || LEN(y)==0) return y;
+	if(IS_EXC(x) || LEN(x)==0) return y;
+	if(IS_EXC(y) || LEN(y)==0) return x;
 	if(DICT(x) && DICT(y)) return unionn(x,y);
+	if(LIST(x) || LIST(y)) return EXC(Tt(nyi),"or does not currently support lists",x,y);
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "or arguments should be same length", x, y);	
-	if(x->t == y->t) acc=xalloc(x->t, x->n);
-	else acc=xlsz(x->n);
+	acc=xalloc(x->t, x->n);
 	VARY_EACHBOTH(x,y,({ if (_x > _y) appendbuf(acc, (buf_t)&_x, 1); 
 		else appendbuf(acc, (buf_t)&_y, 1); }), typerr);
 	IF_EXC(typerr != -1, Tt(type), "or arg type not valid", x, y);
