@@ -765,7 +765,7 @@ VP drop(VP x,VP y) {
 	return res;
 }
 VP except(VP x,VP y) {
-	VP where=matchany(x,y);
+	VP where=list2vec(matchany(x,y));
 	VP invw=not(where);
 	VP wherec=condense(invw);
 	VP res=apply(x,wherec);
