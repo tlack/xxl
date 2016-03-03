@@ -535,7 +535,7 @@ VP amend(VP x,VP y) {
 			// handle the case of assigning one vector (ie a string) to a given index
 			// or the case of assigning many indices to one value
 			if (SCALAR(idx) || SCALAR(val)) tmp=xref(val); 
-			else { PFIN(); tmp=apply(val,idxv); PFOUT(); }
+			else { PFIN(); tmp=apply_simple_(val,i); PFOUT(); }
 		}
 		RETURN_IF_EXC(tmp);
 		if(IS_EXC(tmp)) { xfree(idxv); return tmp; }
