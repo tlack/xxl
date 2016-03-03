@@ -38,6 +38,7 @@
 	res=assign(res,Tt(tag),x1(&tag));
 	res=assign(res,Tt(type),x1(&type));
 	res=assign(res,Tt(val),x1(&val));
+	res=assign(res,Tt(vec),x1(&list2vec));
 	res=assign(res,Tt(ver),xi(0));
 	res=assign(res,Tt(xray),x1(&xray));
 
