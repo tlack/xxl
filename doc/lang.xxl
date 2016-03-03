@@ -153,8 +153,13 @@
  'cat:'system
 ],
 // TODO
-['t:'unary, 'name:"any", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"arity", 'desc:"", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"any", 'desc:"
+returns 1 if any of the elements of x 
+are nonzero", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"arity", 
+'desc:"returns 1 for unary functions and
+2 for binary functions. Useful for user defined 
+functions", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"condense", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"count", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"clone", 'desc:"", 'ex:[], 'cat:'misc],
