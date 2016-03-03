@@ -160,22 +160,36 @@ are nonzero", 'ex:[], 'cat:'misc],
 'desc:"returns 1 for unary functions and
 2 for binary functions. Useful for user defined 
 functions", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"condense", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"count", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"clone", 'desc:"", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"condense", 'desc:"
+Repeats each item of x the number of times that the 
+value contains. Not ", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"count", 'desc:"
+Returns a vector of the integers between 0
+and x-1", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"clone", 'desc:"
+Creates a copy of x", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"curtail", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"info", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"first", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"last", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"list", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"len", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"key", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"min", 'desc:"", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"info", 'desc:"
+Returns a dictionary of information about x", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"first", 'desc:"
+Returns first item of x", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"last", 'desc:"
+Returns last item of x", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"list", 'desc:"
+Converts vector x into a general list", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"len", 'desc:"
+Returns length of list or vector x", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"key", 'desc:"
+Returns the keys/columns of dictionary/table x", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"min", 'desc:"
+Returns the minimum value in vector x", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"max", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"neg", 'desc:"", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"neg", 'desc:"
+Reverse the sign of all elements in x", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"not", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"repr", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"rev", 'desc:"", 'ex:[], 'cat:'misc],
+['t:'unary, 'name:"rev", 'desc:"
+Returns vector x in reverse order", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"selftest", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"str", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"sum", 'desc:"", 'ex:[], 'cat:'misc],
