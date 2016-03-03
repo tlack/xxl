@@ -3117,13 +3117,11 @@ VP parselambda(VP x) {
 VP parsecomment(VP x) {
 	// strip tags from x
 	int i; VP item;
-
 	ARG_MUTATING(x);
 	for(i=0; i<LEN(x); i++) {
 		item=ELl(x,i);
 		if(item->tag==Ti(raw)) item->tag=0;
-	}
-	
+	}	
 	VP res=list2vec(x);
 	res->tag=Ti(comment);
 	return res;
@@ -3345,6 +3343,10 @@ void test_nest() {
 	#include"test-nest.h"
 	xfree(a);xfree(b);xfree(c);
 }
+void test_semantics() {
+	printf("TEST_SEMANTICS\n");
+	#include"test-semantics.h"
+}
 VP evalinwith(VP tree,VP ctx,VP xarg) {
 	if(!tree || !ctx) return NULL;
 	if(IS_c(tree)) {
@@ -3410,6 +3412,7 @@ VP selftest(VP dummy) {
 		test_ctx();
 		test_eval();
 		test_logic();
+		test_semantics();
 		printf("TESTS PASSED\n");
 		if(MEM_WATCH) {
 			PF("alloced = %llu, freed = %llu\n", MEM_ALLOC_SZ, MEM_FREED_SZ);

@@ -1,0 +1,14 @@
+VP a,b,c;
+a=mkworkspace();
+b=evalstrin("['a:1]$'table as 'z,['b:2]",a);
+DUMP(b);
+ASSERT(_len(b)==2 && _len(KEYS(b))==2,"table append dict");
+xfree(b);
+b=evalstrin("['a:1]as 'z!('b,2)as 'b;z len=(b len)",a);
+ASSERT(NUM_val(b)==0,"dict not shadowed");
+xfree(b);
+b=evalstrin("['a:1]$'table as 'z,['b:2]as 'b;z len=(b len)",a);
+DUMP(key(a));
+ASSERT(NUM_val(b)==0,"table not shadowed");
+xfree(b);
+xfree(a);
