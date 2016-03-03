@@ -44,7 +44,7 @@ MEMO_make(REPR_SEEN);
 char* repr0(VP x,char* s,size_t sz) {
 	type_info_t t; int i;
 	// PF("repr0\n");
-	if(x==NULL) { APF(sz,"/*null*/",0); return s; }
+	if(x==NULL) { APF(sz,"null",0); return s; }
 	if(x->t < 0 || x->t > MAX_TYPE) { APF(sz,"/*unknown*/",0); return s; }
 	if(!SIMPLE(x)) {
 		VP existing=NULL;
@@ -147,7 +147,7 @@ char* repr_l(VP x,char* s,size_t sz) {
 			continue;
 		}
 		a = ELl(x,i);
-		if (a==NULL) APF(sz,"/*null*/",0); 
+		if (a==NULL) APF(sz,"null",0); 
 		else repr0(a,s,sz);
 		if(i!=n-1)
 			APF(sz,", ",0);
