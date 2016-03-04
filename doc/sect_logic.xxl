@@ -1,6 +1,13 @@
 "
-Most logic functions work with vectors of bytes, composed of 0s and 1s.
+Like other languages, XXL has a set of verbs for conditional logic, like the
+\"if\" and \"else\" statements that we're all used to. I believe ours are more
+powerful, and more regular, than most.
 
+We'll be using these verbs in this section. You may want to review them.
+
+`verbsummary:match,rot,condense,amend`
+
+Most of XXL's logic verbs work with vectors of bytes, composed of 0s and 1s.
 For example: 
 ```"hello world"~"o"|||(0,0,0,0,1,0,0,1,0,0,0)```.
 
@@ -64,11 +71,11 @@ recall the fact that the space character just so happens to be character number
 32, and skip the `make` step altogether:
 ```'up is {x-" "}; "dog" up|||"DOG"```
 
-If this was something you'd really be adding to your little toolbox, you should
+(If this was something you'd really be adding to your little toolbox, you should
 check to be sure the character is within the range of lowercase characters
-before adjusting it. 
+before adjusting it.)
 
-Pretty cute expressino, but we're not quite ready to collect our Turing award
+Pretty cute expression but we're not quite ready to collect our Turing award
 just yet.  Now to update that damn string with our new function.
 
 Thinking back, recall that the `amend` function (optionally known by its operator,
