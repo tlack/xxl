@@ -4,14 +4,25 @@ Most logic functions work with vectors of bytes, composed of 0s and 1s.
 For example: 
 ```"hello world"~"o"|||(0,0,0,0,1,0,0,1,0,0,0)```.
 
+`~` is match. Match checks every item in the left argument against the item
+in the right argument, which can be a specific value (like `"o"`) or a
+function.
+
+The result is a list of 0s where the value wasn't found (or where the
+function returned something "falsey"), and 1s where it was found (or
+the function returned something "truthy").
+
+Why not just return the indices, instead of a vector of booelans?
+
 This is useful because you can compose these boolean lists together to form
 more complex logic, in ways that are often difficult to state in other 
 languages.
 
-As a very simple example, let's say you wanted to write a function to upper
-case the first letter of every word in a sentence. In PHP this is known as
-ucwords() and it's one of those helper functions that you always seem to need
-when running some horrible errand.
+To start with a very simple example, which doesn't require too many interesting
+logical conditions, let's say you wanted to write a function to upper case the
+first letter of every word in a sentence. In PHP this is known as ucwords() and
+it's one of those helper functions that you always seem to need when running
+some horrible errand.
 
 We already saw your first stab at something similar:
 ```"hello world"~"o"|||(0,0,0,0,1,0,0,1,0,0,0)```.
