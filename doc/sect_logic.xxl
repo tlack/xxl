@@ -34,7 +34,7 @@ the spaces:
 OK, so we need to capitalize the letter *after* those spaces. So let's rotate
 that vector by negative one which is equivalent to shifting everything to the
 right (i.e., move the 1 right after the space, where the "w" is):
-```"hello world"~" "rot(1neg)|||(0,0,0,0,1,0,0,0,0,0,0)```.
+```"hello world"~" "rot(1neg)|||(0,0,0,0,0,0,1,0,0,0,0)```.
 
 We also need the first character of course, so we'll set position zero to 1
 using the `amend` verb:
