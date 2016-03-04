@@ -539,7 +539,10 @@ VP amend(VP x,VP y) {
 		}
 		RETURN_IF_EXC(tmp);
 		if(IS_EXC(tmp)) { xfree(idxv); return tmp; }
-		if(UNLIKELY(!CONTAINER(x) && tmp->t!=x->t)) return EXC(Tt(value),"amend value type does not match x",x,tmp);
+		if(UNLIKELY(!CONTAINER(x) && tmp->t!=x->t)) {
+			if(NUM(x) && NUM(tmp)) tmp=make(tmp,x);
+			else return EXC(Tt(value),"amend value type does not match x",x,tmp);
+		}
 		assign(x,idxv,tmp);
 		xfree(idxv); xfree(tmp);
 	}

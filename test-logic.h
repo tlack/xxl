@@ -125,6 +125,12 @@ ASSERT(_equal(b,xfroms("hxxlox")),"amend many indices one value");
 c=mkworkspace();
 b=evalstrin("[]!(1,\"jordache\")",c);
 ASSERT(_equal(repr(b),xfroms("[null, \"jordache\"]")),"amend empty list");
+xfree(b); xfree(c);
+
+c=mkworkspace();
+b=evalstrin("\"abc\"~\"\"![0,1]",c);
+ASSERT(_equal(b,xbn(3,1,0,0)),"amend byte vec with int");
+xfree(b); xfree(c);
 
 c=mkworkspace();
 b=evalstrin("'z is 20; 30 as 'b;z*b",c);
