@@ -97,6 +97,10 @@ Later on, once you're drunk, consider the shortest way to write this expression.
 it's:
 ```"hello world"as 's![(s~" "rot(1neg)![0,1]~>),{-" "}]```
 
+Another version might be:
+
+```"hello world"aside{~" "rot(1neg)![0,1]~>as 'w}![w,{-" "}]```
+
 For more information, see the following verbs:
 
 `{verbsincat:'logic}`
