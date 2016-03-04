@@ -59,7 +59,8 @@
 })
 #define PERR(msg) {perror(msg);exit(1);}
 
-/* Debugging: */
+// DEBUGGING HELPER MACROS ---------------------------------------------
+
 #define APF(sz,fmt,...) ({ int len=strlen(s); if(sz-len>5) { snprintf(s+len,sz-len,fmt,__VA_ARGS__); } s; })
 #define ASSERT(cond,txt) ({ if (!(cond)) { printf("ASSERT: %s\n", txt); raise(SIGABRT); exit(1); } })
 #define P0(fmt,x) ({ typeof(x) xx=x; char* s=malloc(1024);snprintf(fmt,1024,xx); xx; })
@@ -76,8 +77,15 @@
 	#define DUMP(x) ({})
 	#define DUMPRAW(x,sz) ({})
 #endif
+#ifdef DEBUG
+	#define TRACELBL(x,lbl) ( (x)->tag=lbl, x )
+#else
+	#define TRACELBL(x,lbl) (x) 
+#endif
+#define REPR_MAX_ITEMS 500
 
-/* Element access and type checks*/
+// ACCESSING THE DATA OF XXL VARIABLES (VP) ----------------------------
+
 #define BUF(v) ((buf_t)( (v)->alloc ? (v->dyn) : (buf_t)&((v)->st) )) // data ptr
 #define EL(v,type,n) (((type*)BUF(v))[n])                             // ..as type, for index n
 // TODO ELl() and friends should do more checking on arguments, or provide a safe wrapper to do it 
@@ -87,7 +95,8 @@
 #define ELi(v,n) ((BUF(v))+((v->itemsz)*(n)))                         // ..for index n (no type assumed)
 #define ELsz(v,sz,n) ((BUF(v))+(sz*n))                                // ..for index n, when casted to size = sz
 
-// Handy functions for manipulating values and their types - from simple, to complex
+// HIGHER LEVEL VALUE ACCESSORS AND PREDICATES -------------------------
+
 #define LEN(v) ((v)->n)
 #define SCALAR(v) ((v)->n==1)                            // is v a single value?
 #define NUM(v) (IS_c(v)||IS_b(v)||IS_i(v)||IS_j(v)||IS_o(v)||IS_f(v))      // is v an int type?
@@ -107,11 +116,9 @@
 #define TABLE(v) (IS_a(v))                               // is v a dictionary?
 // is v any kind of container? (i.e., non-vec but has children)
 #define CONTAINER(v) ((IS_l(v)||IS_d(v)||IS_a(v)||IS_x(v)) && !IS_EXC(v))         
-
 #define INDEXABLE(v) (CALLABLE(v) || !SCALAR(v))
 #define CALLABLE(v) (IS_1(v)||IS_2(v)||IS_p(v)||IS_x(v)) // callable types - represent funcs or contexts
 
-// Helpful macros for specific types
 #define NUM_item(x,n) ( IS_i(x)?AS_i(x,n) : (IS_b(x)?AS_b(x,n) : (IS_j(x)?AS_j(x,n) : (IS_o(x)?AS_o(x,n) : -1))) )
 #define NUM_val(x) NUM_item(x,0)
 
@@ -127,7 +134,6 @@
 // is this member of a context (gen list) a body of code? 
 #define LAMBDAISH(ctxmem) (LIST(ctxmem)&&(CALLABLE(ELl(ctxmem,0))||(ctxmem)->tag==Ti(lambda))) 
 // is this member a dictionary of scope definitions (resolvable identifiers)
-#define FRAME(ctxmem) (DICT(ctxmem))
 #define LAMBDAARITY(x) (AS_i(ELl(x,1),0))
 
 #define Ti(n) (_tagnums(#n))                             // int value for tag n (literal not string)
@@ -151,13 +157,6 @@
 // at some point this will be intelligent about not cloning values for mapped types
 #define MUTATE_CLONE(x) clone(x)
 
-#ifdef DEBUG
-	#define TRACELBL(x,lbl) ( (x)->tag=lbl, x )
-#else
-	#define TRACELBL(x,lbl) (x) 
-#endif
-#define REPR_MAX_ITEMS 500
-
 #define EXC(type,lbl,x,y) ({ \
 	VP exc; exc = entag(xln(4,type,xfroms(lbl),x,y),Tt(exception));  \
 	if(0) printf("exception: %s\n", bfromx(repr(exc))); \
@@ -176,7 +175,8 @@
 #define MEMO_set(varname,key,val,ctr) for(ctr=0; ctr<MEMO_sz; ctr++) { \
 	if(varname##_key[ctr]==key || varname##_key[ctr]==NULL){ varname##_key[ctr]=key; varname##_val[ctr]=val; break; }}
 
-// misc
+// MISC
+
 #define CH_SET_A "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 #define CH_SET_a "abcdefghijklmnopqrstuvwxyz"
 #define CH_SET_n "0123456789"
@@ -191,14 +191,11 @@
 	st=clock(); for(i=0;i<n;i++) { expr; } \
 	en=clock(); printf("%0.2f", ((double)(en-st)) / CLOCKS_PER_SEC); })
 
-
-// TYPES:
+// XXL'S FUNDAMENTAL TYPES ---------------------------------------------
 
 #define TYD(name,type) typedef type name
 TYD(I8,unsigned char); TYD(I32,int); TYD(I64,__int64_t); TYD(I128,__int128_t);
-TYD(type_t,I8); TYD(buf_t,I8*);
-
-TYD(tag_t,I128);
+TYD(type_t,I8); TYD(buf_t,I8*); TYD(tag_t,I128);
 
 /* Structure for most values. 'st' and 'dyn' static and dynamic storage for data */
 struct V { 
@@ -215,7 +212,6 @@ typedef VP (unaryFunc)(VP x);
 typedef VP (binaryFunc)(VP x,VP y);
 typedef char* (reprFunc)(VP x,char*s,size_t sz);
 
-// TODO projection C type should work with VP's of type 1/2 (un/bin func), rather than C-style function pointers
 struct Proj0 { int type; union { unaryFunc* f1; binaryFunc* f2; VP ctx; }; VP left; VP right; };
 typedef struct Proj0 Proj;
 
@@ -223,7 +219,7 @@ struct type_info { type_t t; char c; int sz; char name[32]; reprFunc* repr; };
 typedef struct type_info type_info_t;
 
 #ifdef STDLIBSHAREDLIB
-struct xxl_index_t {
+struct xxl_index_t {                   // index of exported values for shared library use
 	char name[40];
 	char implfunc[40];
 	int arity;
@@ -236,9 +232,9 @@ struct xxl_index_t {
 #define THREADLOCAL
 #endif
 
-// GLOBALS FROM xxl.c
+// GLOBALS FROM xxl.c --------------------------------------------------
+
 extern VP XB0; extern VP XB1; extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; 
 extern THREADLOCAL I8 IN_OUTPUT_HANDLER; 
 extern I8 MEM_WATCH;
 
-// TODO create "slice type" that literally represents a scalar value inside a pointer
