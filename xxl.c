@@ -1988,17 +1988,20 @@ VP abss(const VP x) {
 VP and(const VP x,const VP y) {
 	int typerr=-1;
 	VP acc;
-	// PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
+	PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
 	if(IS_EXC(x) || LEN(x)==0) return x; // NB. IS_EXC checks if x==NULL
 	if(IS_EXC(y) || LEN(y)==0) return y;
 	if(LIST(x) || LIST(y)) return EXC(Tt(nyi),"and on lists not yet implemented",x,y);
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "and arguments should be same length", x, y);	
 	if(SIMPLE(x) && SIMPLE(y)) acc=ALLOC_BEST(x,y);
-	else acc=xlsz(x->n);
 	// PF("and acc\n");DUMP(acc);
-	VARY_EACHBOTH(x,y,({ 
-		if (_x < _y) appendbuf(acc, (buf_t)&_x, 1); 
-		else appendbuf(acc, (buf_t)&_y, 1); }), typerr);
+	if(x->t > y->t) {
+		VARY_EACHBOTH(x,y,({ 
+			if (_x > _y) _x=_y; appendbuf(acc, (buf_t)&_x, 1); }), typerr);
+  } else {
+		VARY_EACHBOTH(x,y,({ 
+			if (_x < _y) _y=_x; appendbuf(acc, (buf_t)&_y, 1); }), typerr);
+	}
 	IF_EXC(typerr != -1, Tt(type), "and arg type not valid", x, y);
 	// PF("and result\n"); DUMP(acc);
 	return acc;
