@@ -74,7 +74,10 @@ is getting a little longer, I'm going to save parts of it as named values
 (variables) using `as`. Then we can refer to bits and pieces of it as we build
 our final expression:
 
-```'up is {x-" "}; "hello world" as 'str ~ " "rot(1neg) amend [0,1] condense as 'where; str amend [where,up]
+```{x-" "} as 'up; 
+"hello world" as 'str 
+~" " rot (1neg) amend [0,1] condense as 'where; 
+str amend [where,up]
 |||"Hello World"```
 
 It works! Have a martini to celebrate.
