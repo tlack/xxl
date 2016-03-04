@@ -3226,7 +3226,7 @@ VP parsestrlit(VP x) {
 }
 VP parseloopoper(VP x) {
 	PF("parseloopoper\n");DUMP(x);
-	VP st=xfroms(":|"), en=xfroms("#|:\\/<>',.");
+	VP st=xfroms(":|>"), en=xfroms("#|:\\/<>~',.");
 	st->tag=Ti(raw); en->tag=Ti(raw);
 	VP tmp1=matchany(x,st); 
 	// PF("parseloopoper tmp1\n");DUMP(tmp1);

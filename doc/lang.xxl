@@ -186,6 +186,17 @@ $'table,                               // make dict into start of new table
  'desc:"returns y[0] if x is truthy or y[1] otherwise. if y is callable it will be invoked with x as an argument.",
  'ex:[["0 ifelse (3,4)",4],["1 ifelse (3,4)",3]],
  'cat:'logic],
+['t:'unary, 
+ 'name:"condense", 
+ 'oper:"~>",
+ 'desc:"
+ Repeats each item of x the number of times that the value contains. 
+ 
+ This is useful for expanding boolean lists used in XXL logic functions (like
+ 0,1,1,1,0,1) into indices to manipulate other vectors.
+ ", 
+ 'ex:[ ["0,0,1,0,0,1,1,0,0 condense", (2,5,6)] ], 
+ 'cat:'logic],
 ['t:'binary, 
  'name:"or", 
  'desc:"
@@ -380,10 +391,6 @@ $'table,                               // make dict into start of new table
  'desc:"returns 1 for unary functions and 2 for binary functions. Useful when applying user defined functions", 
  'ex:[],
  'cat:'misc],
-['t:'unary, 
- 'name:"condense", 
- 'desc:"Repeats each item of x the number of times that the value contains. ", 
- 'ex:[], 'cat:'misc],
 ['t:'unary, 
  'name:"clone", 
  'desc:"Creates a copy of x", 
