@@ -2338,14 +2338,16 @@ VP range_(int start, int end) {
 	VP res=xisz(n); 
 	int inc=(end<start)?-1:1, realend=end+inc;
 	PF("range_ %d %d %d %d\n", start, end, n, inc);
-	j=start;
+	j=0;
 	for(i=start; i!=realend; i+=inc)
 		EL(res,int,j++)=i;
 	res->n=j;
 	return res;
 }
 VP range(VP start,VP end) {
-	return range_(NUM_val(start),NUM_val(end));
+	VP res=range_(NUM_val(start),NUM_val(end));
+	if(res->t != end->t) res=make(res,end);
+	return res;
 }
 static inline VP times(VP x,VP y) {
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);

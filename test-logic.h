@@ -207,3 +207,7 @@ c=mkworkspace();
 b=evalstrin("[[1,2,3],[4,5,6]]join\":\"",c);
 ASSERT(_equal(repr(b),xfroms("[[1i, 2i, 3i], \":\", [4i, 5i, 6i]]")),"join list flat");
 
+c=mkworkspace();
+b=evalstrin("\"a\"range\"d\"",c);
+ASSERT(_equal(repr(b),repr(xfroms("abcd"))),"range with chars");
+
