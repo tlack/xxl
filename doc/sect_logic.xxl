@@ -1,0 +1,91 @@
+"
+Most logic functions work with vectors of bytes, composed of 0s and 1s.
+
+For example: 
+```"hello world"~"o"|||(0,0,0,0,1,0,0,1,0,0,0)```.
+
+This is useful because you can compose these boolean lists together to form
+more complex logic, in ways that are often difficult to state in other 
+languages.
+
+As a very simple example, let's say you wanted to write a function to upper
+case the first letter of every word in a sentence. In PHP this is known as
+ucwords() and it's one of those helper functions that you always seem to need
+when running some horrible errand.
+
+We already saw your first stab at something similar:
+```"hello world"~"o"|||(0,0,0,0,1,0,0,1,0,0,0)```.
+
+Just for fun as we start exploring this problem, let's get the positions of all
+the spaces:
+```"hello world"~" "|||(0,0,0,0,0,1,0,0,0,0,0)```.
+
+OK, so we need to capitalize the letter *after* those spaces. So let's rotate
+that vector by negative one which is equivalent to shifting everything to the
+right (i.e., move the 1 right after the space, where the "w" is):
+```"hello world"~" "rot(1neg)|||(0,0,0,0,1,0,0,0,0,0,0)```.
+
+We also need the first character of course, so we'll set position zero to 1
+using the `amend` verb:
+```'up is {x-" "}; "hello world" as 'str ~ " "rot(1neg) ! [0,1]|||(1,0,0,0,0,0,1,0,0,0,0b)```
+
+Now we have to modify that character and make it upper case. 
+
+Most languages have some kind of handy toupper or uppercase function, but we
+don't have that yet in XXL. So we'll just use our knowledge of ASCII and
+subtract 32 from the value of that character. Let's make a little function so
+we can test our idea:
+
+```'up is {x-32}; "dog" up|||(68,79,71)```
+
+Well, those ASCII codes look right, but it's no longer a string! Never fear.
+Plus (and the other math operators), when faced with two different kinds of
+vectors (in this instance, a char vector (string) and an integer) try to produce
+the result as the "bigger type" of the two. That way you won't have to worry as much
+about numbers overflowing the types they are stored in. 
+
+In our case, that's an annoyance, so let's convert it back to a string using
+`make`:
+```'up is {x-32 make 'char}; "dog" up|||"DOG"```
+
+For extra points, use your ninja-level knowledge of computer internals to
+recall the fact that the space character just so happens to be character number
+32, and skip the `make` step altogether:
+```'up is {x-" "}; "dog" up|||"DOG"```
+
+If this was something you'd really be adding to your little toolbox, you should
+check to be sure the character is within the range of lowercase characters
+before adjusting it. 
+
+Pretty cute expressino, but we're not quite ready to collect our Turing award
+just yet.  Now to update that damn string with our new function.
+
+Thinking back, recall that the `amend` function (optionally known by its operator,
+`!`) can be used to update single values inside a vector. This sounds exactly
+like what we want to do!
+
+Remember that `amend` expects a list of indices to update, and what we have is a
+boolean list of 0s and 1s, denoting the true/false value of our test against each
+of those values. To convert it to a list of indices, use `condense`:
+```"hello world"~" "rot(1neg) amend [0,1] condense|||(0,6)```
+
+Alright, now for the amend bit. This shouldn't be too hard. Since our expression
+is getting a little longer, I'm going to save parts of it as named values
+(variables) using `as`. Then we can refer to bits and pieces of it as we build
+our final expression:
+
+```'up is {x-" "}; "hello world" as 'str ~ " "rot(1neg) amend [0,1] condense as 'where; str amend [where,up]
+|||"Hello World"```
+
+It works! Have a martini to celebrate.
+
+Later on, once you're drunk, consider the shortest way to write this expression. I think
+it's:
+```"hello world"as 's![(s~" "rot(1neg)![0,1]~>),{-" "}]```
+
+For more information, see the following verbs:
+
+`{verbsincat:'logic}`
+
+"
+
