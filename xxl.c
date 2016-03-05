@@ -419,11 +419,9 @@ VP clone0(const VP obj) {
 			res->n=objn;
 			for(i=0;i<objn;i++) {
 				VP elem=LIST_item(obj,i);
-				if(elem==0) continue;
-				if(IS_t(elem) || IS_1(elem) || IS_2(elem))
-					EL(res,VP,i)=elem;
-				else
-					EL(res,VP,i)=clone0(elem);
+				if(elem==0) { res->n--; continue; };
+				if(IS_t(elem) || IS_1(elem) || IS_2(elem)) EL(res,VP,i)=xref(elem);
+				else EL(res,VP,i)=clone0(elem);
 			}
 		} else 
 			res=appendbuf(res,BUF(obj),objn);
@@ -444,7 +442,7 @@ inline VP appendbuf(VP x,const buf_t buf,const size_t nelem) {
 	int newn;buf_t dest;
 	//PF("appendbuf %d\n", nelem);DUMP(x);
 	newn=x->n+nelem;
-	x=xrealloc(x,newn);
+	x=XREALLOC(x,newn);
 	// PF("after realloc"); DUMP(x);
 	dest=ELi(x,x->n);
 	memmove(dest,buf,x->itemsz * nelem);
@@ -480,14 +478,14 @@ VP append(VP x,VP y) {
 	if(CONTAINER(x)) { 
 		// PF("append %p to list %p\n", y, x); DUMP(x);
 		xref(y);
-		x=xrealloc(x,x->n+1); 
+		x=XREALLOC(x,x->n+1); 
 		EL(x,VP,x->n)=y; x->n++;
 		// PF("afterward:\n"); DUMP(x);
 	} else {
 		// PF("append disaster xn %d xc %d xi %d xsz %d yn %d yc %d yi %d ysz %d\n",x->n,x->cap,x->itemsz,x->sz,y->n,y->cap,y->itemsz,y->sz);
 		// DUMP(info(x));DUMP(x);DUMP(info(y));DUMP(y);
 		// dest = BUF(x) + (x->n*x->itemsz);
-		x=xrealloc(x,x->n + y->n);
+		x=XREALLOC(x,x->n + y->n);
 		memmove(ELsz(x,x->itemsz,x->n),BUF(y),y->n*y->itemsz);
 		x->n+=y->n;
 	}
@@ -573,7 +571,7 @@ inline VP assign(VP x,VP k,VP val) {
 		if(x->t != val->t) return EXC(Tt(type),"assign value and target types don't match",x,val);
 		int typerr=-1, i=NUM_val(k);
 		ARG_MUTATING(x);
-		if (i>=x->n) { xrealloc(x,i+1); x->n=i+1; } 
+		if (i>=x->n) { XREALLOC(x,i+1); x->n=i+1; } 
 		VARY_EACHRIGHT_NOFLOAT(x,k,({
 			EL(x,typeof(_x),_y) = EL(val,typeof(_x),_y%val->n); // TODO assign should create new return value
 		}),typerr);
@@ -582,7 +580,7 @@ inline VP assign(VP x,VP k,VP val) {
 	} else if(LIST(x) && NUM(k)) {
 		int i=NUM_val(k);
 		ARG_MUTATING(x);
-		if(i>=x->n) { xrealloc(x,i+1); x->n=i+1; }
+		if(i>=x->n) { XREALLOC(x,i+1); x->n=i+1; }
 		if(i<x->n && ELl(x,i)) xfree(ELl(x,i)); // if we're assigning over something that exists in a container, free it
 		xref(val);
 		EL(x,VP,i)=val;
