@@ -51,6 +51,7 @@ VP first(VP x);
 VP flatten(VP x);
 VP get(VP x,VP y);
 VP greater(VP x,VP y); 
+VP identity(VP x);
 VP info(VP x);
 VP iftrue(VP x,VP y);
 VP ifelse(VP x,VP y);
