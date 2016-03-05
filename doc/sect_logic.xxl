@@ -1,3 +1,7 @@
+// note for human readers: this doc is meant to be consumed by XXL itself to
+// produce the documentation website. the markdown tags below with triple
+// quotes are code samples. the part before the ||| is the XXL code
+// and the part after it is the result.
 "
 Like other languages, XXL has a set of verbs for conditional logic, like the
 \"if\" and \"else\" statements that we're all used to. I believe ours are more
