@@ -1,14 +1,18 @@
+1 as 'valctr;
+[""] as 'ids;
+'id is {valctr as 'c+1 as 'valctr; x str,(c str) as 'id; id,ids as 'ids; id};
 'codebody is "//hello\n512 * 20 count sum";
 'pt is (codebody parse);
-'fmt_cmnt is {"// ",x,"\n"};
-'fmt_int  is {show; "ANONVAL(xi(",(x str),"))"};
-'fmt_raw  is {show; "getctx(CURCTX,ANONSTR(\"",(x str),"\"))"};
+'fmt_cmnt is {x}; // comments already have the leading / included
+'fmt_val  is {"VP val",(y id),"=",x,";"};
+'fmt_int  is {"ANONVAL(xi(",(x str),"))" fmt_val 'num};
+'fmt_get  is {"getctx(CURCTX,ANONSTR(\"",(x str),"\"))" fmt_val 'ref};
 'fmt_ws   is {;};
-
+'fmt_str  is {as 'el tag case('comment,{el fmt_cmnt}, 'raw,{el fmt_get}, 'name,{el fmt_get}, fmt_ws) flat};
 pt show;
-pt :: {as 'el type case 
-	('comment,{el fmt_cmnt}, 'int,{el fmt_int}, 'raw,{el fmt_raw}, 'char,fmt_ws)}
-
+pt :: {as 'el type case ('char,{el fmt_str}, 'int,{el fmt_int}, el)} show;
+ids show;
+ids :: {"apply(",x,", "}
 
 
 
