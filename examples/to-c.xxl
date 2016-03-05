@@ -1,0 +1,15 @@
+'codebody is "//hello\n512 * 20 count sum";
+'pt is (codebody parse);
+'fmt_cmnt is {"// ",x,"\n"};
+'fmt_int  is {show; "ANONVAL(xi(",(x str),"))"};
+'fmt_raw  is {show; "getctx(CURCTX,ANONSTR(\"",(x str),"\"))"};
+'fmt_ws   is {;};
+
+pt show;
+pt :: {as 'el type case 
+	('comment,{el fmt_cmnt}, 'int,{el fmt_int}, 'raw,{el fmt_raw}, 'char,fmt_ws)}
+
+
+
+
+
