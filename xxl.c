@@ -709,10 +709,10 @@ VP catenate(VP x,VP y) {
 		appendbuf(res, BUF(x), x->n); appendbuf(res, BUF(y), y->n);
 	} else {
 		PF("catenate3 - container as x, or unlike objects\n");
-		if(TABLE(x)) { return catenate_table(clone(x),y); }
-		if(DICT(x)) { return dict(clone(x),y); }
+		if(TABLE(x)) { return catenate_table(MUTATE_CLONE(x),y); }
+		if(DICT(x)) { return dict(MUTATE_CLONE(x),y); }
 		else if(LIST(x) && LEN(x)==0) { return xl(y); }
-		else if(LIST(x)) { res=append(x,clone(y)); }
+		else if(LIST(x)) { res=append(x,y); }
 		else {
 			PF("catenate4 - create 2-item list with both items in it\n");
 			res=xlsz(2);
