@@ -23,7 +23,7 @@ The result is a list of 0s where the value wasn't found (or where the
 function returned something "falsey"), and 1s where it was found (or
 the function returned something "truthy").
 
-Why not just return the indices, instead of a vector of booelans?
+Why not just return the indices, instead of a vector of booleans?
 
 This is useful because you can compose these boolean lists together to form
 more complex logic, in ways that are often difficult to state in other 
