@@ -459,7 +459,7 @@ VP append(VP x,VP y) {
 	// append all items of y to x. if x is a general list, append pointer to y, and increase refcount.
 	// PF("append %p %p\n",x,y); DUMP(x); DUMP(y);
 	if(IS_EXC(x)) return x;
-	IF_EXC(!CONTAINER(x) && !(x->t==y->t), Tt(Type), "append x must be container or types must match", x, y);
+	if(!CONTAINER(x) && !(x->t==y->t)) { return EXC(Tt(type),"append x must be container or types must match", x, y); }
 	if(TABLE(x)) return catenate_table(x,y);
 	if(IS_d(x)) {
 		ASSERT(y->n % 2 == 0, "append to a dict with ['key;value]");
