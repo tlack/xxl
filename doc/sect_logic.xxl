@@ -48,31 +48,41 @@ right (i.e., move the 1 right after the space, where the "w" is):
 ```"hello world"~" "rot(1neg)|||(0,0,0,0,0,0,1,0,0,0,0)```.
 
 We also need the first character of course, so we'll set position zero to 1
-using the `amend` verb:
-```'up is {x-" "}; "hello world" as 'str ~ " "rot(1neg) ! [0,1]|||(1,0,0,0,0,0,1,0,0,0,0b)```
+using the `amend` verb. `amend` takes an argument on its left as x and modifies
+it according to y, which is in the format [indices_to_update, new_values]. 
+It's often (rightly) abbreviated as `!`, but we'll use the full name here.
 
-Now we have to modify that character and make it upper case. 
+```'up is {x-" "}; "hello world" as 'str ~ " "rot(1neg) amend [0,1]|||(1,0,0,0,0,0,1,0,0,0,0)```
+
+OK, this list looks right. Now we have to modify the characters we've identified and make them 
+upper case. 
 
 Most languages have some kind of handy toupper or uppercase function, but we
 don't have that yet in XXL. So we'll just use our knowledge of ASCII and
 subtract 32 from the value of that character. Let's make a little function so
-we can test our idea:
+we can test our idea to be sure our memory of the arcane is working properly:
 
 ```'up is {x-32}; "dog" up|||(68,79,71)```
 
 Well, those ASCII codes look right, but it's no longer a string! Never fear.
-Plus (and the other math operators), when faced with two different kinds of
-vectors (in this instance, a char vector (string) and an integer) try to produce
-the result as the "bigger type" of the two. That way you won't have to worry as much
-about numbers overflowing the types they are stored in. 
 
-In our case, that's an annoyance, so let's convert it back to a string using
-`make`:
+Plus (and the other math operators), when faced with two different kinds of
+number vectors (in this instance, a char vector (string, 8 bits per character) and an 
+integer (32 bits per number)) try to produce the result as the "bigger type" of the two. 
+That way you won't have to worry as much about numbers overflowing the types they are 
+stored in. In this case, though, major annoyance.
+
+Let's fix this using a handy built in verb called `make`, which transforms vectors
+from one similar type to another. You supply your original value as x and the type 
+you want to convert to as a name (tag) in the y parameter. In this case, we want
+to use `'char`.
+
 ```'up is {x-32 make 'char}; "dog" up|||"DOG"```
 
 For extra points, use your ninja-level knowledge of computer internals to
 recall the fact that the space character just so happens to be character number
-32, and skip the `make` step altogether:
+32, and skip the `make` step altogether, by subtracting the char directly!
+
 ```'up is {x-" "}; "dog" up|||"DOG"```
 
 (If this was something you'd really be adding to your little toolbox, you should
@@ -80,7 +90,8 @@ check to be sure the character is within the range of lowercase characters
 before adjusting it.)
 
 Pretty cute expression but we're not quite ready to collect our Turing award
-just yet.  Now to update that damn string with our new function.
+just yet. All we have yet to do is update the original string with our new function 
+applied in the indices we've discovered.
 
 Thinking back, recall that the `amend` function (optionally known by its operator,
 `!`) can be used to update single values inside a vector. This sounds exactly
@@ -88,7 +99,9 @@ like what we want to do!
 
 Remember that `amend` expects a list of indices to update, and what we have is a
 boolean list of 0s and 1s, denoting the true/false value of our test against each
-of those values. To convert it to a list of indices, use `condense`:
+of those values. We're done with using it in that format so to convert it to a list 
+of indices, use `condense`:
+
 ```"hello world"~" "rot(1neg) amend [0,1] condense|||(0,6)```
 
 Alright, now for the amend bit. This shouldn't be too hard. Since our expression
@@ -104,12 +117,12 @@ str amend [where,up]
 
 It works! Have a martini to celebrate.
 
-Later on, once you're drunk, consider the shortest way to write this expression. I think
+There's something to be said for brevity if applied with a modicum of taste. Later on, 
+once you're drunk, consider the shortest way to write this expression. I think
 it's:
 ```"hello world"as 's![(s~" "rot(1neg)![0,1]~>),{-" "}]```
 
-Another version might be:
-
+Another version, using the lurid `aside` verb, might be:
 ```"hello world"aside{~" "rot(1neg)![0,1]~>as 'w}![w,{-" "}]```
 
 For more information, see the following verbs:
