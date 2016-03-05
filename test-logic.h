@@ -210,4 +210,12 @@ ASSERT(_equal(repr(b),xfroms("[[1i, 2i, 3i], \":\", [4i, 5i, 6i]]")),"join list 
 c=mkworkspace();
 b=evalstrin("\"a\"range\"d\"",c);
 ASSERT(_equal(repr(b),repr(xfroms("abcd"))),"range with chars");
+xfree(c);
 
+c=mkworkspace();
+b=evalstrin("65535 base 16",c);
+ASSERT(_equal(repr(b),repr(xfroms("ffff"))),"base 16 0");
+b=evalstrin("45325235 base 16",c); //arb
+ASSERT(_equal(repr(b),repr(xfroms("2b39bb3"))),"base 16 1");
+b=evalstrin("45325235 as 'z base 16 base 16 = z",c); //arb
+ASSERT(_equal(b,xi(1)),"base 16 2");
