@@ -1116,12 +1116,21 @@ VP info(VP x) {
 	res=xd0();
 	res=assign(res,Tt(typenum),xi(x->t));
 	res=assign(res,Tt(type),xfroms(t.name));
+	res=assign(res,Tt(rc),xi(x->rc));
 	res=assign(res,Tt(len),len(x));
 	res=assign(res,Tt(capacity),capacity(x));
 	res=assign(res,Tt(itemsz),itemsz(x));
 	res=assign(res,Tt(alloced),xi(x->alloc));
 	res=assign(res,Tt(baseptr),xi((int)x));
 	res=assign(res,Tt(memptr),xi((int)BUF(x)));
+	if(DICT(x)) {
+		res=assign(res,Tt(keyinfo),info(KEYS(x)));
+		res=assign(res,Tt(valinfo),info(VALS(x)));
+	}
+	if(TABLE(x)) {
+		res=assign(res,Tt(keyinfo),info(KEYS(x)));
+		res=assign(res,Tt(valinfo),each(VALS(x),x1(&info)));
+	}
 	return res;
 }
 VP type(VP x) {
