@@ -382,6 +382,10 @@ static inline int _equalm(const VP x,const int xi,const VP y,const int yi) {
 	if(memcmp(ELi(x,xi),ELi(y,yi),x->itemsz)==0) return 1;
 	else return 0;
 }	
+int _equal_container(const VP x,const VP y) {
+	ITERV(x,{ IF_RET(_equal(ELl(x,_i),ELl(y,_i))==0, 0); }); 
+	return 1; 
+}
 int _equal(const VP x,const VP y) {
 	// this is the most common call in the code
 	// TODO _equal() needs to handle comparison tolerance and type conversion
@@ -393,7 +397,7 @@ int _equal(const VP x,const VP y) {
 	if(LIST(a) && SCALAR(a)) a=ELl(a,0);
 	if(LIST(b) && SCALAR(b)) b=ELl(b,0);
 	IF_RET(a->n != b->n, 0);
-	if(CONTAINER(a) && CONTAINER(b)) { ITERV(a,{ IF_RET(_equal(ELl(a,_i),ELl(b,_i))==0, 0); }); return 1; }
+	if(CONTAINER(a) && CONTAINER(b)) return _equal_container(a,b);
 	if(a->t == b->t) {
 		return memcmp(BUF(a),BUF(b),a->itemsz*a->n)==0;
 	} else if (COMPARABLE(a)&&COMPARABLE(b)) {
