@@ -246,7 +246,7 @@
 	xfree(a);xfree(b);
 
 	c=xi(100);
-	a=xln(3,xi(0),c,xi(0)); // my favorite show
+	a=xln(3,xi(0),c,xi(0));
 	b=clone(a);
 	c=amend(c,xln(2,xi(0),xi(5)));
 	ASSERT(_equal(a,a)&&!_equal(a,b)&&_equal(ELl(b,1),xi(100)),"clone1");
