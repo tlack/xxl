@@ -163,7 +163,7 @@
 	if(0) printf("exception: %s\n", bfromx(repr(exc))); \
 	exc; }) 
 #define IF_EXC(cond,type,msg,x,y) if((cond)) return EXC(type,msg,x,y)
-#define IS_EXC(x) (x==0 || (x)->tag==Ti(exception))
+#define IS_EXC(x) (x==0 || (x)->tag==TIEXCEPTION)
 // TODO if_exc doesnt give us a chance to free memory :-/
 #define RETURN_IF_EXC(x) if(IS_EXC(x)) return x;
 
@@ -236,6 +236,7 @@ struct xxl_index_t {                   // index of exported values for shared li
 // GLOBALS FROM xxl.c --------------------------------------------------
 
 extern VP XB0; extern VP XB1; extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; 
+extern tag_t TIEXCEPTION;
 extern THREADLOCAL I8 IN_OUTPUT_HANDLER; 
 extern I8 MEM_WATCH;
 

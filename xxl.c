@@ -11,6 +11,7 @@
 
 // commonly used "static" values, set in init()
 VP XB0=NULL,XB1=NULL,XI0=NULL,XI1=NULL;
+tag_t TIEXCEPTION=0;
 THREADLOCAL VP XXL_SYS=NULL; 
 
 I8 PF_ON=0; I8 PF_LVL=0;               // controls debugging output on/off/nesting depth
@@ -2379,7 +2380,7 @@ VP xor(VP x,VP y) {
 
 VP key(VP x) {
 	if(IS_EXC(x)) return x;
-	if(DICT(x)||TABLE(x)) return KEYS(x);
+	if(DICT(x)||TABLE(x)) return clone(KEYS(x));
 	if(IS_x(x)) { // locals for context
 		int xn=LEN(x), i; VP acc=xlsz(xn);
 		for(i=xn-1; i>=0; i--) {
@@ -3483,6 +3484,7 @@ void init_thread_locals() {
 void init() {
 	XB0=xb(0); XB1=xb(1);
 	XI0=xi(0); XI1=xi(1);
+	TIEXCEPTION=Ti(exception);
 	init_thread_locals();
 	thr_start();
 }
