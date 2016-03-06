@@ -2984,7 +2984,7 @@ VP mkworkspace() {
 	char name[8];
 	VP root,res,locals;
 	snprintf(name,sizeof(name),"wk%-6d", rand());
-	res=xx0(2);
+	res=xxsz(2);
 	ELl(res,0)=rootctx();
 	res->n=1;
 	return res;
