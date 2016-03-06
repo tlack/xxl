@@ -140,7 +140,15 @@
 
 #define Ti(n) (_tagnums(#n))                             // int value for tag n (literal not string)
 #define Tt(n) (xt(_tagnums(#n)))                         // tag n (literal not string) as a scalar of type tag
+
 #define TAG_is_class(tag) (((char)tag>='A') && ((char)tag<='Z'))
+#define CLASS_call(ctx,verb,val) \
+	if(val->tag!=0 && TAG_is_class(val->tag)) { \
+		VP verbtag=Tt(verb); \
+		VP tmp=callclass(ctx,verbtag,val); \
+		xfree(verbtag); \
+		if(tmp) return tmp; \
+	}
 
 #define BEST_NUM_FIT(val) ({ int t; \
 	if(val<MAX_i)t=T_i; else if (val<MAX_j)t=T_j; else t=T_o; \

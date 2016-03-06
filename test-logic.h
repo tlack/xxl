@@ -60,7 +60,7 @@ DUMP(b);
 ASSERT(_equal(b,x1(&fileget)),"stdlib file reference");
 xfree(c);xfree(b);
 c=mkworkspace();
-b=evalstrin(". get (\"def.h\"$'File)",c);
+b=evalstrin(". get ('File#\"def.h\")",c);
 DUMP(b);
 ASSERT(IS_c(b)&&b->n>5000,"stdlib modular get def.h");
 xfree(c);xfree(b);

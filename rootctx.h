@@ -80,6 +80,7 @@
 	res=assign(res,Tt(:),x2(&dict)); 
 	res=assign(res,Tt(?),x2(&find1));
 	res=assign(res,Tt($),x2(&make));
+	res=assign(res,Tt(#),x2(&pin));
 	res=assign(res,Tt(~),x2(&matcheasy));
 	res=assign(res,xt(_tagnums(",")),x2(&catenate)); 
 	// named infix verbs:
@@ -110,6 +111,7 @@
 	res=assign(res,Tt(make),x2(&make));
 	res=assign(res,Tt(nest),x2(&nest));
 	res=assign(res,Tt(pick),x2(&pick));
+	res=assign(res,Tt(pin),x2(&pin));
 	res=assign(res,Tt(or),x2(&or));
 	res=assign(res,Tt(orelse),x2(&orelse));
 	res=assign(res,Tt(over),x2(&over));

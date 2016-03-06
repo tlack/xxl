@@ -83,6 +83,7 @@ VP or(VP x,VP y);
 VP parse(VP x);
 VP parseloopoper(VP x);
 VP parsestr(const char* str);
+VP pin(VP x,VP y);
 VP plus(VP x,VP y);
 VP range_(int start, int end);
 VP range(VP x,VP y);
