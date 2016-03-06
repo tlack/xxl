@@ -411,14 +411,14 @@ int _equal(const VP x,const VP y) {
 VP equal(const VP x,const VP y) {
 	return xb(_equal(x,y));
 }
-MEMO_make(CLONE);
-VP clone0(const VP obj) {
-	if(IS_EXC(obj)) return obj;
-	// PF("clone0 %p\n",obj);DUMP(obj);
+// MEMO_make(CLONE);
+VP clone0(const VP obj,int iterleft) {
+	if(IS_EXC(obj) || iterleft < 0) return obj;
+	// printf("clone0 %p\n%s\n",obj,reprA(obj));
 	int i, objn=obj->n; 
-	MEMO_check(CLONE,obj,({ PF("found memoized %p\n", memo_val); return memo_val; }),i);
+	// MEMO_check(CLONE,obj,({ printf("found memoized %p after %d iters\n", memo_val, i); return memo_val; }),i);
 	VP res=ALLOC_LIKE(obj);
-	MEMO_set(CLONE,obj,res,i);
+	// MEMO_set(CLONE,obj,res,i);
 	if(objn) {
 		if(CONTAINER(obj)) {
 			res->n=objn;
@@ -426,7 +426,7 @@ VP clone0(const VP obj) {
 				VP elem=LIST_item(obj,i);
 				if(elem==0) { res->n--; continue; };
 				if(IS_t(elem) || IS_1(elem) || IS_2(elem)) EL(res,VP,i)=xref(elem);
-				else EL(res,VP,i)=clone0(elem);
+				else EL(res,VP,i)=clone0(elem,iterleft-1);
 			}
 		} else 
 			res=appendbuf(res,BUF(obj),objn);
@@ -437,8 +437,8 @@ VP clone(const VP obj) {
 	// TODO keep a counter of clone events for performance reasons - these represent a concrete
 	// loss over mutable systems
 	PF("clone\n");DUMP(obj);
-	MEMO_clear(CLONE);
-	return clone0(obj);
+	// MEMO_clear(CLONE);
+	return clone0(obj, MAXSTACK);
 }
 
 // RUNTIME 
@@ -1070,11 +1070,11 @@ VP make_table(VP keys,VP vals) {
 	// approach: create empty table, then apply all these row values to it.
 	// catenate_table already handles lists-of-lists correctly.
   res=xasz(2);
-	EL(res,VP,0)=clone(keys);
+	EL(res,VP,0)=MUTATE_CLONE(keys);
 	int sz=vals && LEN(vals) ? LEN(ELl(vals,0)) : 0;
 	EL(res,VP,1)=xlsz(sz);
 	res->n=2;
-	return catenate_table(res, clone(vals));
+	return catenate_table(res, MUTATE_CLONE(vals));
 }
 VP make(VP x, VP y) { 
 	// TODO cast() should short cut matching kind casts 
@@ -1575,7 +1575,7 @@ VP apply_table(VP x, VP y) {
 			return table_row_dict_(x, yi);
 		} else {
 			VP newtbl=xasz(2), newvals=xlsz(LEN(y)), vec; int j;
-			EL(newtbl,VP,0)=clone(KEYS(x));
+			EL(newtbl,VP,0)=MUTATE_CLONE(KEYS(x));
 			for(i=0; i<tc; i++) {
 				vec=TABLE_col(x,i);
 				PF("apply_table doing\n");DUMP(vec);
@@ -1600,7 +1600,7 @@ VP apply_table(VP x, VP y) {
 			}
 			VP row=xlsz(tc);
 			for(i=0; i<tc; i++) row=append(row,apply(TABLE_col(x,i),y));
-			return dict(clone(KEYS(x)),row);
+			return dict(MUTATE_CLONE(KEYS(x)),row);
 		}
 	}
 }
