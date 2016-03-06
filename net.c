@@ -16,49 +16,52 @@ VP netw(int sock,VP buf) {
 	if(write(sock,BUF(buf),buf->n)<buf->n) PERR("netw");
 	return 0;
 }
+#define NETLOOPBLK IOBLOCKSZ
+VP netserve(VP sockcb) {
+	int sock=AS_i(LIST_item(sockcb,0),0), nread;
+	VP cb=LIST_item(sockcb,1);
+	VP resp, t1, t2, t3;
+	char input[NETLOOPBLK];
+	/*
+	if(remotea.sa_family==AF_INET) 
+		ip = inet_ntoa(((struct sockaddr_in *)&remotea)->sin_addr);
+	else
+		ip = "n/a";
+	*/
+	PF("new connection %d\n",sock);
+	memset(input, 0, NETLOOPBLK);
+	nread=netr(sock, input, NETLOOPBLK-1);
+	PF("read result %d\n", nread); 
+	if(nread > 0) {
+		t1=xfroms(input); t2=xfroms("n/a"); t3=xln(2,t1,t2);
+		resp=apply(cb,t3);
+		xfree(t3);xfree(t2);xfree(t1);
+		PF("netloop handler resp for %d\n",sock); DUMP(resp);
+		if(!IS_c(resp)) {
+			PF("massaging\n");DUMP(resp);
+			resp=repr(resp);
+		}
+		netw(sock,resp);
+		xfree(resp);
+	}
+	shutdown(sock,SHUT_RDWR);
+	PF("netloop closing %d\n",sock);
+	close(sock);
+	return NULL;
+}
 VP netloop(VP xsock,VP cb) {
-	#define NETLOOPBLK 1024*65
 	int cons;
 	struct sockaddr remotea={0};
 	socklen_t remotel={0};
-	char* ip;
-	char* rep;
-	char input[NETLOOPBLK];
 	int sock=AS_i(xsock,0);
-	VP t1,t2,t3;
-	VP resp;
-	int nread, n=0;
+	int n;
 	printf("netloop starting..\n");
 	DUMP(xsock);
 	DUMP(cb);
 	for(;;) {
 		printf(".");
 		cons=accept(sock, &remotea, &remotel);
-		/*
-		if(remotea.sa_family==AF_INET) 
-			ip = inet_ntoa(((struct sockaddr_in *)&remotea)->sin_addr);
-		else
-			ip = "n/a";
-		*/
-		PF("new connection %d, #%d\n",cons, n);
-		memset(input,0,NETLOOPBLK);
-		nread=netr(cons,input,NETLOOPBLK-1);
-		PF("read result %d\n", nread); 
-		if(nread <= 0) { PF("closing socket\n"); close(cons); continue; }
-
-		t1=xfroms(input);t2=xfroms("n/a");t3=xln(2,t1,t2);
-		resp=apply(cb,t3);
-		xfree(t3);xfree(t2);xfree(t1);
-		PF("netloop handler resp for %d\n",n); DUMP(resp);
-		if(!IS_c(resp)) {
-			PF("massaging\n");DUMP(resp);
-			resp=repr(resp);
-		}
-		netw(cons,resp);
-		shutdown(cons,SHUT_RDWR);
-		xfree(resp);
-		PF("netloop closing %d, #%d\n",cons,n);
-		close(cons);
+		thr_run1(x1(&netserve),xln(2,xi(cons),cb));
 		n++;
 	}
 	PF("netloop closing sock after %d\n",n);

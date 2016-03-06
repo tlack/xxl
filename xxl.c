@@ -3250,26 +3250,32 @@ void thr_start() {
 	#endif
 	return;
 }
-void* thr_run0(void* VPctx) {
+void* thr_run0(void* VPctxargs) {
 	#ifndef THREAD
 	#else
 	init_thread_locals();
-	VP ctx=clone(VPctx);
-	// printf("thr_run %s\n", reprA(ctx));
-	ctx=apply(ctx,0);
+	VP val=(VP)VPctxargs;
+	VP ctx=LIST_item(val,0);
+	VP arg=LIST_item(val,1);
+	ctx=apply(ctx,arg);
 	// printf("thr_run0 done\n"); DUMP(ctx);
+	xfree(val);
 	pthread_exit(NULL);
 	#endif
 	return 0;
 }
-void thr_run(VP ctx) {
+void thr_run1(VP ctx,VP arg) {
 	#ifndef THREAD
-	apply(ctx,xl0());
+	apply(ctx,arg);
 	#else
+	VP ctx_with_args=xln(2, ctx, arg);
 	pthread_attr_t a; pthread_attr_init(&a); pthread_attr_setdetachstate(&a, PTHREAD_CREATE_JOINABLE);
 	// nthr=sysconf(_SC_NPROCESSORS_ONLN);if(nthr<2)nthr=2;
-	WITHLOCK(thr,if(pthread_create(&THR[NTHR++], &a, &thr_run0, ctx)!=0)PERR("pthread_create"));
+	WITHLOCK(thr,if(pthread_create(&THR[NTHR++], &a, &thr_run0, ctx_with_args)!=0)PERR("pthread_create"));
 	#endif
+}
+void thr_run(VP ctx) {
+	thr_run1(ctx,xl0());
 	return;
 }
 void thr_wait() {
@@ -3288,7 +3294,7 @@ void test_basics() {
 }
 void test_ctx() {
 	VP ctx,tmp1,tmp2;
-	
+
 	printf("TEST_CTX\n");
 	#include "test-ctx.h"	
 }

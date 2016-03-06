@@ -120,7 +120,6 @@ VP take(VP x,VP y);
 static inline tag_t _tagnum(VP name);
 /*static inline */
 tag_t _tagnums(const char* name);
-void thr_run(VP ctx);
 static type_info_t typeinfo(type_t n); 
 static type_info_t typechar(char c);
 VP type(VP x);
@@ -133,6 +132,11 @@ VP xor(VP x,VP y);
 VP xrealloc(VP x,I32 newn);
 VP xray(VP x);
 VP xref(VP x);
+
+#ifdef THREAD
+void thr_run(VP ctx);
+void thr_run1(VP ctx,VP arg);
+#endif
 
 #ifdef STDLIBNET
 // from net.c
