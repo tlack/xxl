@@ -804,7 +804,7 @@ int _flat(const VP x) { // returns 1 if vector, or a list composed of vectors (a
 	if(!CONTAINER(x)) return 1;
 	else return 0; // lists are never flat
 }
-VP flatten(VP x) {
+VP flatten0(VP x, int cont) {
 	int i,t=-1;VP item,res=NULL;
 	PF("flatten\n");DUMP(x);
 	if(!LIST(x))return x;
@@ -812,7 +812,7 @@ VP flatten(VP x) {
 		for(i=0;i<x->n;i++) {
 			item=ELl(x,i);
 			if(item==NULL) continue;
-			if(LIST(item)) item=flatten(item);
+			if(LIST(item) && cont) item=flatten0(item,cont-1);
 			if(!res) {
 				t=item->t; res=ALLOC_LIKE(item);
 			} else if(item->t!=t) {
@@ -824,6 +824,9 @@ VP flatten(VP x) {
 		PF("flatten returning\n");DUMP(res);
 		return res;
 	} else return xl0();
+}
+VP flatten(VP x) {
+	return flatten0(x, 1);
 }
 VP identity(VP x) {
 	return x;
