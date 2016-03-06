@@ -25,5 +25,5 @@
 'a,'b,'c,'d,'e,'f,'g,'h,'i as 'tree; 
 0,0,1,1,0,4,5,5,5 as 'p; 
 'leaves is {x len count except x}; 
-'paths is {x as 'p len count :: {iftrue {x,(x recurse p)flat}}};
+'paths is {x as 'p len count :: {x,(x recurse p$'int)flat}};
 
