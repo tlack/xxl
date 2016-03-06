@@ -7,7 +7,7 @@
 
 pt show;
 pt :: {as 'el type case 
-	('comment,{el fmt_cmnt}, 'int,{el fmt_int}, 'raw,{el fmt_raw}, 'char,fmt_ws)}
+	('comment,{el fmt_cmnt}, 'int,{el fmt_int}, 'raw,{el fmt_raw}, 'char,fmt_ws, el)}
 
 
 
