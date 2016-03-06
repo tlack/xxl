@@ -94,8 +94,9 @@ char* reprA(VP x);
 VP reverse(VP x);
 VP rootctx();
 VP selftest(VP x);
-VP set(VP x,VP y);                     // used for 'as'
-VP set2(VP x,VP y);                    // same as set, but input arg order switched (for 'is')
+VP set(VP ctx,VP k,VP v);
+VP set_as(VP x,VP y);                  // as
+VP set_is(VP x,VP y);                  // is
 char* sfromxA(VP x);
 VP shift_(VP x,int i);
 VP shift(VP x,VP y);

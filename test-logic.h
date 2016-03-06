@@ -44,14 +44,6 @@ b=evalstrin("['a:(1,2,3),'b:(4,5,6)]@['b,2]",c);
 ASSERT(_equal(b,xi(6)),"test apply at depth in dict");
 xfree(c);xfree(b);
 
-c=mkworkspace();
-b=evalstrin("777 as 'last;last",c);
-d=evalstrin("777 as 'last;.last",c);
-DUMP(b);
-DUMP(d);
-ASSERT(!_equal(b,d) && _equal(b,xi(777)) && _equal(d,x1(&last)), "names derived from root");
-xfree(b);xfree(d);xfree(c);
-
 /* 
 this doesnt work yet - probably rightfully.. 
 c=mkworkspace();
@@ -61,27 +53,29 @@ xfree(c);xfree(b);
 */
 
 #ifdef STDLIBFILE
+PFW(({
 c=mkworkspace();
-b=evalstrin(".file.get",c);
+b=evalstrin("File.get",c);
 DUMP(b);
 ASSERT(_equal(b,x1(&fileget)),"stdlib file reference");
 xfree(c);xfree(b);
 c=mkworkspace();
-b=evalstrin(". get['file,\"def.h\"]",c);
+b=evalstrin(". get (\"def.h\"$'File)",c);
 DUMP(b);
 ASSERT(IS_c(b)&&b->n>5000,"stdlib modular get def.h");
 xfree(c);xfree(b);
 c=mkworkspace();
-b=evalstrin("[\"a\",\"b\",\".x\"] .file.path",c);
-ASSERT(_equal(b,xfroms("a/b.x")),".file.path");
+b=evalstrin("[\"a\",\"b\",\".x\"] File.path",c);
+ASSERT(_equal(b,xfroms("a/b.x")),"File.path");
 c=mkworkspace();
-b=evalstrin("\"/a/b/c\" .file.basename",c);
-ASSERT(_equal(b,xfroms("c")),".file.basename");
+b=evalstrin("\"/a/b/c\" File.basename",c);
+ASSERT(_equal(b,xfroms("c")),"File.basename");
 xfree(b);xfree(c);
 c=mkworkspace();
-b=evalstrin("\"/a/b/c\" .file.dirname",c);
-ASSERT(_equal(b,xfroms("/a/b/")),".file.dirname");
+b=evalstrin("\"/a/b/c\" File.dirname",c);
+ASSERT(_equal(b,xfroms("/a/b/")),"File.dirname");
 xfree(b);xfree(c);
+}));
 #endif
 
 c=mkworkspace();

@@ -202,18 +202,9 @@ char* repr_t(VP x,char* s,size_t sz) {
 }
 char* repr_x(VP x,char* s,size_t sz) {
 	int i;VP a;
-	APF(sz,"'ctx#%p[\n",x);
-	for(i=0;i<x->n;i++){
-		a = ELl(x,i);
-		if(!a) APF(sz,"/*null*/",0);
-		else if(IS_d(a)) {
-			APF(sz,"'scope %p",a);
-			repr0(KEYS(a),s,sz);
-		} else
-			repr0(a,s,sz);
-		if(i!=x->n-1)
-			APF(sz,"\n",0);
-		// repr0(*(EL(x,VP*,i)),s,sz);
+	APF(sz,"'ctx#%p[",x);
+	if(x->n==2) {
+		repr0(VALS(x),s,sz);
 	}
 	APF(sz,"]",0);
 	return s;
@@ -1081,7 +1072,10 @@ VP make(VP x, VP y) {
 	PF("make\n");DUMP(x);DUMP(y);
 	VP res=0; type_t typenum=-1; tag_t typetag=-1;
 	// right arg is tag naming a type, use that.. otherwise use y's type
-	if(IS_t(y)) typetag=AS_t(y,0); else typenum=y->t;
+	if(IS_t(y)) {
+		typetag=AS_t(y,0); 
+		if(LEN(x)==0) return make(xi(0),y);
+	} else typenum=y->t;
 	if(typetag==Ti(table)) {
 		if(!DICT(x)) return EXC(Tt(type), "can only create table from dict", x, y);
 		return make_table(KEYS(x),VALS(x));
@@ -1163,9 +1157,7 @@ VP deal(VP range, VP amt) {
 // APPLICATION, ITERATION AND ADVERBS
 
 static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
-	// PF_LVL++;
-	PF("applyexpr (code, xarg, yarg):\n");DUMP(code);DUMP(xarg);DUMP(yarg);
-	// PF_LVL--;
+	PF("applyexpr (code %p, xarg %p, yarg %p):\n", code, xarg, yarg);DUMP(code);DUMP(xarg);DUMP(yarg);
 	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
 	if(SIMPLE(code) || !LIST(code)) return code;
 	char ch; int i; 
@@ -1277,19 +1269,12 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		if(tag==tws) continue;
 		if(tag==tcom) continue;
 		if(tag==tlam) { // create a context for lambdas
-			VP newctx,this; int j;
-			newctx=xx0();
-			item=list(item);
-			for(j=0;j<parent->n;j++) {
-				this=ELl(parent,j);
-				//if(j!=parent->n-1 || !LIST(this)) append(newctx,clone(ELl(parent,j)));
-				if(j!=parent->n-1 || !LIST(this)) append(newctx,LIST_item(parent,j));
-			}
-			append(newctx,item); 
+			VP newctx=CTX_make_subctx(parent,item); 
 			item=newctx;
 			PF("created new lambda context item=\n");DUMP(item);
 		// } else if (tag==texpr || tag==tlistexpr) {
-		} else if (LIST(item) && !(LEN(item) && IS_c(LIST_first(item)) && LEN(LIST_first(item))==0)) { // tag==texpr || tag==tlistexpr) {
+		// } else if (LIST(item) && !(LEN(item) && IS_c(LIST_first(item)) && LEN(LIST_first(item))==0)) { 
+		} else if (LIST(item) && (item->tag==texpr || item->tag==tlistexpr)) {
 			// we've reached a paren expr or list expr that we must resolve before considering
 			// what to do with this term of the parse tree. many expressions are simple and
 			// don't require complex evaluation.. but some do require recursion
@@ -1344,13 +1329,13 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 				}
 			}
 			else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
-				left=proj(2,&set,xln(2,parent,left),NULL);
+				left=proj(2,&set_as,xln(2,parent,left),NULL);
 				left->tag=Ti(as);
 				PF("created set projection (as)\n");
 				DUMP(left);
 				continue;
 			} else if(item->n==2 && ch=='i' && AS_c(item,1)=='s') {
-				left=proj(2,&set2,xln(2,parent,left),NULL);
+				left=proj(2,&set_is,xln(2,parent,left),NULL);
 				left->tag=Ti(is);
 				PF("created set projection (is)\n");
 				DUMP(left);
@@ -1522,32 +1507,10 @@ VP applyctx(VP ctx,const VP x,const VP y) {
 	int i,tlam=Ti(lambda);
 	VP code,res=NULL;
 	PF("applyctx\n");DUMP(ctx);DUMP(x);DUMP(y);
-	code=ELl(ctx,ctx->n-1);
-	if(LIST(code))
-		res=applyexpr(ctx,code,x,y);
+	code=VALS(ctx);
+	if(LIST(code)) res=applyexpr(ctx,code,x,y);
 	PF("applyctx returning\n"); DUMP(res);
 	return res;
-	/*
-	for(i=x->n-1;i>=0;i--) {
-		this=ELl(x,i);
-		PF("applyctx #%d\n", i);
-		DUMP(this);
-		if(LIST(this)) { // code bodies are lists - maybe use 'code tag instead? 
-			PF("CTX CODE BODY\n");DUMP(this);
-			res=applyexpr(x,this,y,0);
-			if(!res) return res;
-		}
-		// NB. if the function body returns an empty list, we try the scopes (dictionaries).
-		// this may not be what we want in the long run.
-		if(res==NULL || (LIST(res) && res->n == 0))
-			res=apply(this,y);
-		PF("callctx apply result was\n");DUMP(res);
-		if(!LIST(res) || res->n > 0) {
-			PF("callctx returning\n"); DUMP(res); 
-			return res;
-		}
-	}
-	*/
 	return EXC(Tt(undef),"undefined in applyctx",x,y);
 }
 VP apply_simple_(VP x,int i) {   // a faster way to select just one item of x
@@ -1752,12 +1715,12 @@ VP deepinplace(const VP obj,const VP f) {
 	}
 	PFIN();
 	FOR(0,obj->n,({
-		// PF("deep %d\n", _i);
 		subobj=ELl(obj,_i);
 		if(LIST(subobj)) subobj=deepinplace(subobj,f);
 		else subobj=apply(f,subobj);
-		// append(acc,subobj);
-		EL(obj,VP,_i) = subobj; // this may not be safe, but append() is overriden for dicts, so we cant simply append the list
+		EL(obj,VP,_i) = subobj; 
+		// NB. this may not be safe, but append() is overriden for dicts, so we cant simply append the list
+		// NB. check this for ref count or clone errors.
 	}));
 	PFOUT();
 	PF("deep returning\n");DUMP(obj);
@@ -1770,7 +1733,6 @@ VP deep(const VP obj,const VP f) {
 	VP acc,subobj;
 	if(!CONTAINER(obj)) return each(obj,f);
 	if(_flat(obj)) {
-		// PF("deep flat\n");
 		acc=apply(f,obj);
 		if(obj->tag) acc->tag=obj->tag;
 		return acc;
@@ -1778,12 +1740,12 @@ VP deep(const VP obj,const VP f) {
 	acc=ALLOC_LIKE(obj);
 	PFIN();
 	FOR(0,obj->n,({
-		// PF("deep %d\n", _i);
 		subobj=ELl(obj,_i);
 		if(LIST(subobj)) subobj=deep(subobj,f);
 		else subobj=apply(f,subobj);
-		// append(acc,subobj);
-		EL(acc,VP,_i) = subobj; // this may not be safe, but append() is overriden for dicts, so we cant simply append the list
+		EL(acc,VP,_i) = subobj; 
+		// NB. this may not be safe, but append() is overriden for dicts, so we cant simply append the list
+		// NB. check this for ref count or clone errors.
 	}));
 	acc->n=obj->n;
 	PFOUT();
@@ -2056,7 +2018,9 @@ VP base(VP x,VP y) {
 	// 2. convert an XXL number x to a string in base y
 	int b=NUM_val(y), xn=LEN(x), i;
 	if(IS_c(x)) {
-		VP xr=reverse(x); I128 acc;
+		if(b==16 && (xn < 3 || AS_c(x,0)!='0' || AS_c(x,1)!='x')) {
+			return str2num(catenate(xfroms("0x"),x));
+		} 
 		if(b==10 || b==16) return str2num(x);
 		return EXC(Tt(nyi), "base not yet implemented", x, y);
 	}
@@ -2394,48 +2358,30 @@ VP xor(VP x,VP y) {
 VP key(VP x) {
 	if(IS_EXC(x)) return x;
 	if(DICT(x)||TABLE(x)) return clone(KEYS(x));
-	if(IS_x(x)) { // locals for context
-		int xn=LEN(x), i; VP acc=xlsz(xn);
-		for(i=xn-1; i>=0; i--) {
-			VP tmp=ELl(x,i);
-			if(tmp && DICT(tmp)) acc=append(acc,clone(tmp));
-		}
-		return acc;
-	}
+	if(IS_x(x)) return clone(KEYS(x)); // locals for context
 	if(SIMPLE(x)) return count(xi(x->n));
 	return EXC(Tt(type),"key can't operate on that type",x,0);
 }
 VP val(VP x) {
 	if(TABLE(x) || DICT(x)) return clone(VALS(x));
-	if(IS_x(x)) { // func body for context
-		int xn=LEN(x), i; VP acc=xlsz(xn);
-		for(i=xn-1; i>=0; i--) {
-			VP tmp=ELl(x,i);
-			if(tmp && LIST(tmp)) {
-				if(tmp->tag==Ti(lambda)) return ELl(tmp,0);
-				else return tmp;
-			}
-		}
-		return NULL;
-	}
+	if(IS_x(x)) return clone(VALS(x)); // func body for context
 	return EXC(Tt(type),"val can't operate on that type",x,0);
 }
-VP _getmodular(VP x,VP y) {
-	ASSERT((DICT(x)||IS_x(x))&&LIST(y),"_getmodular");
-	PF("_getmodular");DUMP(y);
+
+VP _callclass(VP ctx,VP verbname, VP value) {
+	ASSERT((DICT(ctx)||IS_x(ctx)) && value->tag!=0,"_getmodular");
+	PF("_getmodular");DUMP(ctx);DUMP(verbname);DUMP(value);
 	VP rootscope;
-	if(DICT(x))
-		rootscope=x;
-	else {
-	 	rootscope=KEYS(x);
-		if(!DICT(rootscope)) return 0;
-	}
-	VP tag=ELl(y,0);
+	if(IS_x(ctx)) rootscope=KEYS(ctx);
+	else rootscope=ctx;
+	if(!DICT(rootscope)) return 0;
+	VP tag=xt(value->tag);
 	VP res=apply(rootscope,tag); // need a fast-path dict lookup
+	xfree(tag);
 	if(res==NULL) return 0;
-	res=apply(res,Tt(get));
+	res=apply(res,verbname);
 	if(res==NULL) return 0;
-	return apply(res,ELl(y,1));
+	return apply(res,value);
 }
 
 VP get(VP x,VP y) {
@@ -2450,104 +2396,76 @@ VP get(VP x,VP y) {
 	// see _getmodular()
 	int xn=LEN(x),yn=LEN(y),i,j;VP item,res;
 	PF("get\n");DUMP(x);DUMP(y);
-	if((DICT(x)||IS_x(x)) && LIST(y) && yn >= 2 && IS_t(ELl(y,0))) {
-		res=_getmodular(x,y);
-		if(res!=0) return res;
-	}
 	if(IS_x(x)) {
-		if(LIKELY(IS_c(y) || (LIST(y) && IS_c(ELl(y,0))))) {
+		if(x->n != 2) return EXC(Tt(value),"context not fully formed",x,y);
+		if(LIKELY(y->tag==0 || !TAG_is_class(y->tag)) 
+			 && LIKELY(IS_c(y) || (LIST(y) && IS_c(ELl(y,0))))) {
+			// convert 'name(['raw("file"),'raw("get")]) to ('file,'get)
+			PF("converting\n");DUMP(y);
 			y=str2tag(y); yn=LEN(y);
+		}
+		if(y->tag!=0 && TAG_is_class(y->tag)) {
+			PF("applying class\n");DUMP(y);
+			VP verbname=Tt(get);
+			res=_callclass(x,verbname,y);
+			xfree(verbname);
+			if(res!=0) return res;
+		} else {
+			PF("not a class\n");DUMP(y);
 		}
 		if(IS_t(y) && AS_t(y,0)==Ti(.)) {
 			//return clone(curtail(x)); // clone(KEYS(x));
-			return curtail(x);
-		} else if(IS_t(y) && yn > 1 && AS_t(y,0)==0) { // empty first element = start from root
-			PF("get starting from root\n");
-			i=0;y=list(behead(y));
-			for(;i<xn;i++) {
-				PF("get r#%d\n", i);
-				if(LIST(ELl(x,i))) continue; // skip code bodies - maybe should use tags for this?
-				res=apply(ELl(x,i),y);
-				if(res!=NULL) return res;
-			}
+			return x;
 		} else {
 			i=xn-1;
-			if(IS_t(y) && yn>1) y=list(y); // support depth queries with scalars like thing.item
-			for(;i>=0;i--) {
-				PF("get t#%d\n", i);
-				item=ELl(x,i);
-				DUMP(item);
-				if(SIMPLE(y) && DICT(item)) {
-					if((res=DICT_find(item,y))) return res;
-				} else {
-					if(LIST(item)) continue; // skip code bodies - maybe should use tags for this?
-					res=apply(item,y);
-					if(res!=NULL) return res;
-				}
+			if(IS_t(y) && yn>1) {
+				y=list(y); // support depth queries with scalars like thing.item
+				return apply(KEYS(x), y);
+			} else {
+				item=KEYS(x);
+				res=DICT_find(item,y);
+				if(res!=NULL) return res;
 			}
 		}
 		return EXC(Tt(undef),"undefined",y,x);
 	}
 	return apply(x,y);
 }
-VP set(VP x,VP y) {
+VP set(VP ctx,VP key,VP val) {
+	PF("set\n");DUMP(ctx);DUMP(key);DUMP(val);
+	if(val==NULL) return val;
+	if(!IS_t(key)) return EXC(Tt(type),"set val must be symbol",key,val);
+	if(IS_t(key) && key->n > 1) { // set-at-depth
+		PF("set-at-depth\n");
+		key=list(behead(key));
+	}
+	ARG_MUTATING(ctx);
+	VP dest=KEYS(ctx);
+	PF("set assigning in\n");DUMP(dest);
+	dest=assign(dest,key,clone(val));
+	PF("set in %p\n",dest);
+	DUMP(dest);
+	return val;
+}
+VP set_as(VP x,VP y) {
 	// TODO set needs to support nesting
 	int i; VP res,ctx,val;
-	PF("set\n");DUMP(x);DUMP(y);
+	PF("set_as\n");DUMP(x);DUMP(y);
 	if(x==NULL || y==NULL) return x;
-	if(LIST(x)) {
-		if(!IS_x(AS_l(x,0))) return EXC(Tt(type),"set x must be (context,value)",x,y);
-		if(x->n!=2) return EXC(Tt(type),"set x must be (context,value)",x,y);
-		if(!IS_t(y)) return EXC(Tt(type),"set y must be symbol",x,y);
-		ctx=AS_l(x,0);val=AS_l(x,1); i=ctx->n-1;
-		if(val==NULL) return val;
-
-		// TODO rewrite these to share logic in the body of loop .. must be an easy
-		// way without using a helper func or macro
-		if(IS_t(y) && y->n > 1 && AS_t(y,0)==0) { // empty first element = start from root
-			PF("set starting from root\n");
-			i=0;y=list(behead(y));
-			for(;i<ctx->n;i++) {
-				VP dest = AS_x(ctx,i);
-				if(LIST(dest) || CALLABLE(dest)) // skip code bodies
-					continue;
-				if(DICT(dest)) {
-					PF("set assigning in %d..\n", i);
-					dest=assign(dest,y,clone(val));
-					PF("set in %p\n",dest);
-					DUMP(dest);
-					return val;
-				}
-			}
-		} else {
-			for(;i>=0;i--) {
-				VP dest = AS_x(ctx,i);
-				if(LIST(dest) || CALLABLE(dest)) // skip code bodies
-					continue;
-				if(DICT(dest)) {
-					PF("set assigning in #%d\n",i);DUMP(dest);
-					dest=assign(dest,y,clone(val));
-					PF("set in %p\n",dest);
-					DUMP(dest);
-					return val;
-				}
-			}
-		}
-		return EXC(Tt(set),"could not set value in parent scope",x,y);
-	}
-	return xl0();
+	if(x->n!= 2 || !IS_x(AS_l(x,0))) return EXC(Tt(type),"as x must be (context,value)",x,y);
+	return set(LIST_item(x,0), y, LIST_item(x,1));
 }
-
-VP set2(VP x,VP y) {                   // exactly like set, but arguments are [[ctx,name],[value]]
-	PF("set2\n");
-	DUMP(x);DUMP(y);
-	VP acc=xln(2,ELl(x,0),y), res=set(acc,ELl(x,1)); xfree(acc); return res;
+VP set_is(VP x,VP y) {                   // exactly like set, but arguments are [[ctx,name],[value]]
+	PF("set_is\n");
+	if(x==NULL || y==NULL) return x;
+	if(x->n!= 2 || !IS_x(AS_l(x,0))) return EXC(Tt(type),"is x must be (context,value)",x,y);
+	return set(LIST_item(x,0), LIST_item(x,1), y);
 }
-
 VP numelem2base(VP num,int i,int base) {
 	// NB. this is called from repr_o. NO DUMP() ALLOWED!
 	if(!NUM(num)) return EXC(Tt(type),"numelem2base can't operate on that type",num,0);
-	if(base > 36) return EXC(Tt(value),"numelem2base can't produce that base",num,0);
+	char ch[]=CH_SET_na;
+	if(base > sizeof(ch)) return EXC(Tt(value),"numelem2base can't produce that base",num,0);
 	if(i > LEN(num)) return EXC(Tt(value),"numelem2base bad index",num,xi(i));
 	if(IS_f(num)) {
 		char buf[20];
@@ -2557,7 +2475,6 @@ VP numelem2base(VP num,int i,int base) {
 	int typerr=-1; I8 buf; I128 rem; 	
 	VARY_EL_NOFLOAT(num,i,({ rem = _x; }),typerr);
 	VP res=xcsz(5);
-	char ch[]=CH_SET_na;
 	do {
 		// PF("%lld\n", rem);
 		buf=ch[rem % base];
@@ -3064,10 +2981,9 @@ VP mkworkspace() {
 	char name[8];
 	VP root,res,locals;
 	snprintf(name,sizeof(name),"wk%-6d", rand());
-	res=xx0(); root=rootctx(); locals=xd0();
-	assign(root,Tt(name),locals);
-	assign(locals,Tt(wkspc),xfroms(name));
-	res=append(res,root); res=append(res,locals);
+	res=xx0(2);
+	ELl(res,0)=rootctx();
+	res->n=1;
 	return res;
 }
 VP eval(VP code) {
@@ -3284,7 +3200,7 @@ VP parseallexprs(VP tree) {
 	return tree;
 }
 VP parsestr(const char* str) {
-	VP ctx,lex,pats,acc,t1,t2;size_t l=strlen(str);int i;
+	VP lex,pats,acc,t1,t2;size_t l=strlen(str);int i;
 	PF("parsestr '%s'\n",str);
 	if(l==0) return NULL;
 	acc=xlsz(l);
@@ -3420,10 +3336,14 @@ VP evalinwith(VP tree,VP ctx,VP xarg) {
 		free(buf);
 		return res;
 	}
+	ARG_MUTATING(ctx);
 	if(!IS_x(ctx)) ctx=xxn(2,ctx,tree);  // try to make context ouf of dict (hopefully) and parse tree
-	else append(ctx,tree);               // parse tree is last item of context (a list, basically)
+	else {
+		if(ctx->n==1) { ctx=xrealloc(ctx,2); }
+		VALS(ctx)=tree;                 // parse tree is last item of context (a list, basically)
+		ctx->n=2;
+	}
 	VP res=applyctx(ctx,xarg,NULL);
-	ctx=curtail(ctx);
 	return res;
 }
 VP evalin(VP tree,VP ctx) {
@@ -3451,20 +3371,37 @@ VP evalfile(VP ctx,const char* fn) {
 	return res;
 	*/
 }
+VP resolve(VP ctx,VP name) {
+	PF("resolve\n");DUMP(name);
+	if(IS_c(name) && name->tag==Ti(raw)) {
+		VP tag=xt(_tagnum(name));
+		VP val=DICT_find(KEYS(ctx),tag);
+		if(val!=NULL) { 
+			PF("resolved\n");DUMP(val); 
+			//val=entag(val,tag);  //hmm
+			return val;
+		}
+		xfree(tag);
+	}
+	return name;
+}
 VP loadin(VP fn,VP ctx) {
-	char* str;
-	if(!IS_x(ctx) || !IS_c(fn)) return EXC(Tt(type),"loadin x is filename and y is ctx",fn,ctx);
-	VP subctx,res,parsetree,acc = fileget(fn);
-	RETURN_IF_EXC(acc);
-	subctx=clone(ctx);
-	VP tmp=xln(2,subctx,filedirname(fn));
-	set(tmp,Tt(_dir)); // set() returns y value, not x context - dont preserve
-	xfree(tmp);
-	str=sfromxA(acc);
-	parsetree=parsestr(str);
-	subctx=append(subctx,parsetree);
-	res=applyctx(subctx,NULL,NULL);
-	xfree(subctx); free(str);
+	if(!IS_c(fn) || !IS_x(ctx)) return EXC(Tt(type),"loadin x is filename and y is ctx",fn,ctx);
+	VP contents = fileget(fn);
+	RETURN_IF_EXC(contents);
+	char* str=sfromxA(contents);
+	VP parsetree=parsestr(str);
+	int i; VP k=KEYS(ctx);
+	/*
+	VP parsetree2=deep(parsetree,proj(2,&resolve,ctx,0));
+	DUMP(parsetree2);
+	*/
+	VP subctx=CTX_make_subctx(ctx,parsetree);
+	xfree(parsetree);
+	free(str);
+	set(subctx,Tt(_dir),filedirname(fn)); // set() returns y value, not x context - dont preserve
+	VP res=applyctx(subctx,NULL,NULL);
+	xfree(subctx);
 	return res;
 }
 VP selftest(VP dummy) {
@@ -3525,7 +3462,7 @@ void args(VP ctx, int argc, char* argv[]) {
 			}
 			a=append(a,item);
 		}
-		set(xln(2,ctx,a),Tt(argv));
+		set(ctx,Tt(argv),a);
 	} else selftest(NULL);
 }
 int main(int argc, char* argv[]) {

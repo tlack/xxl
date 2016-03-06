@@ -59,13 +59,12 @@ void repl(VP ctx) {
 	int i;
 	clock_t st,en;
 
-	t1=xfroms("wkspc");
 	in=xl0();
-	assign(ELl(ctx,1),Tt(inputs),in);
+	set(ctx,Tt(inputs),in);
 	out=xl0();
-	assign(ELl(ctx,1),Tt(outputs),out);
+	set(ctx,Tt(outputs),out);
 	#ifdef STDLIBFILE
-	assign(ELl(ctx,1),Tt(_dir),filecwd(XI0));
+	set(ctx,Tt(_dir),filecwd(XI0));
 	#endif
 
 	i=0;
@@ -112,11 +111,8 @@ void repl(VP ctx) {
 		st=clock();
 		t2=parsestr(line);
 		in=append(in,t2);
-		// DUMP(t2);
-		// PF("APPENDING!!\n");
-		ctx=append(ctx,t2);
-		t3=applyctx(ctx,0,0);
-		ctx=curtail(ctx);
+		VP subctx=CTX_make_subctx(ctx, t2);
+		t3=applyctx(subctx,0,0);
 		en=clock();
 		printf("(%0.04f sec)\ninputs@%d: %s", ((double)(en-st)/CLOCKS_PER_SEC), i, line);
 		if(t3==NULL) {

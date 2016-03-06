@@ -133,26 +133,26 @@
 	d=assign(d,Tt(get),x1(&fileget));
 	d=assign(d,Tt(path),x1(&filepath));
 	d=assign(d,Tt(set),x2(&fileset));
-	res=assign(res,Tt(file),d);
+	res=assign(res,Tt(File),d);
 	xfree(d);
 	#endif
 	#ifdef STDLIBSHAREDLIB
 	d=xd0();
 	d=assign(d,Tt(get),x1(&sharedlibget));
 	d=assign(d,Tt(set),x2(&sharedlibset));
-	res=assign(res,Tt(sharedlib),d);
+	res=assign(res,Tt(Sharedlib),d);
 	xfree(d);
 	#endif
 	#ifdef STDLIBSHELL
 	d=xd0();
 	d=assign(d,Tt(get),x1(&shellget));
-	res=assign(res,Tt(shell),d);
+	res=assign(res,Tt(Shell),d);
 	xfree(d);
 	#endif
 	#ifdef STDLIBNET
 	d=xd0();
 	d=assign(d,Tt(bind),x2(&netbind));
-	res=assign(res,Tt(net),d);
+	res=assign(res,Tt(Net),d);
 	xfree(d);
 	#endif
 

@@ -19,15 +19,15 @@ _dir,"/ui.xxl" load as 'pagetmpl;      // load html interface from ui.xxl (and c
 		lines first split" " as 'method;       // separate request line.. GET /file HTTP/1.0
 		method@1 behead as 'uri show           // pull out uri for further inspection and strip leading /
     case [
-			{uri show & uri@0="?"},{uri drop 1 urldec show evalin . show},
-			{uri iftrue {_dir,"pub/",(uri![(uri~"/"condense),"_"]) show .file.get as 'content show}},{content},
+			{uri show & uri@0="?"},{uri drop 1 urldec show evalin .},
+			{uri iftrue {_dir,"pub/",(uri![(uri~"/"condense),"_"]) show File.get as 'content}},{content},
 			{[method,lines] handlecb}
-		] wrapresp show
+		] wrapresp
 	}
 };
 'workbench is {;
 	['inhandler,x] noshow;"Welcome" pagetmpl ""
 };
 workbench makehttpserver as 'mywebapp;
-(port,host) show .net.bind mywebapp as 'handle;
+(port,host) show Net.bind mywebapp as 'handle;
 
