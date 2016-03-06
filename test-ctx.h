@@ -223,9 +223,7 @@
 	*/
 
 	ctx=mkworkspace();
-	tmp1=xd0();
-	assign(tmp1,Tt(y),xi(7));
-	append(ctx,tmp1);
+	assign(KEYS(ctx),Tt(y),xi(7));
 	append(ctx,parsestr("x as 'n * 2 as 'doublen"));
 	tmp1=apply(ctx,xi(2));
 	DUMP(tmp1);
@@ -396,18 +394,6 @@
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
-	append(ctx,parsestr(";10 as 'z;17 as '.z;z"));
-	tmp1=apply(ctx,xl0());
-	ASSERT(_equal(tmp1,xi(10)),"test assign at depth 0");
-	xfree(ctx);xfree(tmp1);
-
-	ctx=mkworkspace();
-	append(ctx,parsestr(";10 as 'z;17 as '.z;.z"));
-	tmp1=apply(ctx,xl0());
-	ASSERT(_equal(tmp1,xi(17)),"test assign at depth 1");
-	xfree(ctx);xfree(tmp1);
-
-	ctx=mkworkspace();
 	append(ctx,parsestr("\"a\\\"b\\\"c\r\n\""));
 	tmp1=apply(ctx,xl0());
 	ASSERT(_equal(tmp1,xcn(7,'a','"','b','"','c',13,10)),"parse quoted string");
@@ -461,3 +447,4 @@ ASSERT(b->n==8 &&
 			 ELl(b,5)->tag==Ti(name) && 
 			 ELl(b,6)->tag==Ti(raw), "long oper");
 xfree(c);xfree(b);
+

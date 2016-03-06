@@ -135,10 +135,12 @@
 #define LAMBDAISH(ctxmem) (LIST(ctxmem)&&(CALLABLE(ELl(ctxmem,0))||(ctxmem)->tag==Ti(lambda))) 
 // is this member a dictionary of scope definitions (resolvable identifiers)
 #define LAMBDAARITY(x) (AS_i(ELl(x,1),0))
+#define CTX_make_subctx(parentctx,newcode) \
+	({ VP res=xxsz(2); res->n=2; ELl(res,0)=xref(KEYS(parentctx)); ELl(res,1)=xref(newcode); res; })
 
 #define Ti(n) (_tagnums(#n))                             // int value for tag n (literal not string)
 #define Tt(n) (xt(_tagnums(#n)))                         // tag n (literal not string) as a scalar of type tag
-#define TAG_class(tag) (((char)tag>='A') && ((char)tag<='Z'))
+#define TAG_is_class(tag) (((char)tag>='A') && ((char)tag<='Z'))
 
 #define BEST_NUM_FIT(val) ({ int t; \
 	if(val<MAX_i)t=T_i; else if (val<MAX_j)t=T_j; else t=T_o; \
