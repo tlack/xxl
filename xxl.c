@@ -64,9 +64,8 @@ char* repr0(VP x,char* s,size_t sz) {
 			x->itemsz,x->n,x->rc);
 	}
 	IN_OUTPUT_HANDLER++;
-	if(x->tag!=0) APF(sz, "'%s(", tagnames(x->tag));
+	if(x->tag!=0) APF(sz, "'%s#", tagnames(x->tag));
 	if(t.repr) (*(t.repr)(x,s,sz));
-	if(x->tag!=0) APF(sz, ")", 0);
 	if(!SIMPLE(x)) {
 		MEMO_set(REPR_SEEN,x,(VP)s,i);
 	}
@@ -174,7 +173,7 @@ char* repr_o(VP x,char* s,size_t sz) {
 }
 char* repr_p(VP x,char* s,size_t sz) {
 	Proj p = EL(x,Proj,0);
-	APF(sz,"'projection(%p,%d,",x,p.type);
+	APF(sz,"'projection#(%p,%d,",x,p.type);
 	if(p.left!=NULL) 
 		repr0(p.left, s, sz);
 	else
@@ -184,7 +183,6 @@ char* repr_p(VP x,char* s,size_t sz) {
 		repr0(p.right, s, sz);
 	else
 		APF(sz,"()",0);
-	APF(sz,")",0);
 	return s;
 }
 char* repr_t(VP x,char* s,size_t sz) {
@@ -202,11 +200,13 @@ char* repr_t(VP x,char* s,size_t sz) {
 }
 char* repr_x(VP x,char* s,size_t sz) {
 	int i;VP a;
-	APF(sz,"'ctx#%p[",x);
+	APF(sz,"'context#%p[",x);
 	if(x->n==2) {
+		APF(sz,"'scope#%p",KEYS(x));
+		APF(sz,",",0);
 		repr0(VALS(x),s,sz);
 	}
-	APF(sz,"]",0);
+	APF(sz,"]",x);
 	return s;
 }
 #include "repr.h"
@@ -703,7 +703,7 @@ VP catenate(VP x,VP y) {
 		if(TABLE(x)) { return catenate_table(MUTATE_CLONE(x),y); }
 		if(DICT(x)) { return dict(MUTATE_CLONE(x),y); }
 		else if(LIST(x) && LEN(x)==0) { return xl(y); }
-		else if(LIST(x)) { res=append(x,y); }
+		else if(LIST(x)) { res=append(MUTATE_CLONE(x),y); }
 		else {
 			PF("catenate4 - create 2-item list with both items in it\n");
 			res=xlsz(2);
@@ -1092,6 +1092,26 @@ VP make(VP x, VP y) {
 	}
 	return x;
 }
+VP pin(VP x, VP y) { 
+	// TODO cast() should short cut matching kind casts 
+	PF("pin\n");DUMP(x);DUMP(y);
+	tag_t newt = 0;
+	if(IS_t(x)) 
+		newt=AS_t(x,0);
+	else if(x->tag != 0)
+		newt=x->tag;
+	if (newt) {
+		if (newt==Ti(Pointer) && NUM(y)) {
+			x=(VP)NUM_val(y);
+			xref(x);
+			return x;
+		}
+		ARG_MUTATING(y);
+		y->tag=newt;
+		return y;
+	} else 
+		return EXC(Tt(type),"pin x arg should be tag name or tagged value",x,y);
+}
 int _len(VP x) {
 	int n = LEN(x);
 	if(TABLE(x)) n=TABLE_nrows(x);
@@ -1350,7 +1370,8 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			} else if(item->n == 4 && ch == 's' 
 							&& AS_c(item,1)=='e' && AS_c(item,2)=='l' && AS_c(item,3)=='f') {
 				PF("using self");
-				item=clone(parent);
+				// item=clone(parent);
+				item=parent;
 			} else
 				item=get(parent,item);
 			PF("decoded string identifier\n");DUMP(item);
@@ -1359,23 +1380,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			if(IS_EXC(item)) { MAYBE_RETURN(item); }
 		} else if(tag==tname) {
 			PF("non-string name encountered");
-			VP getparent=parent;
-			/*
-			if(LIST(item) && LEN(item) > 1 && LIST_first(item)->tag==traw) {
-				// since 'x' and 'y' arent actually assigned identifiers, we have to look through
-				// the first items of this non-string name and replace 'x' and 'y'
-				// probably . too, somehow.. ultimately, this should be solved in get, but get
-				// would need some concept of x and y 
-				VP firstpart = LIST_first(item);
-				if(IS_c(firstpart) && LEN(firstpart)==1 && AS_c(firstpart,0)=='x') {
-					getparent=xarg; item=behead(item);
-				}
-				if(IS_c(firstpart) && LEN(firstpart)==1 && AS_c(firstpart,0)=='y') {
-					getparent=yarg; item=behead(item);
-				}
-			}
-			*/
-			item=get(getparent,item);
+			item=get(parent,item);
 			RETURN_IF_EXC(item);
 		} else if(tag==tstr) {
 			// strip off the 'string tag right before we use this value. this is because the
@@ -1497,16 +1502,9 @@ VP applyctx(VP ctx,const VP x,const VP y) {
 	if(!IS_x(ctx)) return EXC(Tt(type),"context not a context",x,y);
 	int a=_arity(ctx);
 	if(a > 0) {
-		if(a == 2 && (x==0 || y==0))
-			return proj(a*-1, ctx, x, y);
-		if(a == 1 && (x==0 && y==0))
-			return proj(a*-1, ctx, x, y);
+		if(a == 2 && (x==0 || y==0)) return proj(a*-1, ctx, x, y);
+		if(a == 1 && (x==0 && y==0)) return proj(a*-1, ctx, x, y);
 	}
-	// structure of a context. like a general list conforming to:
-	// first: root context
-	// second: nested context
-	// third: ...
-	// last: list of projections or lambda
 	int i,tlam=Ti(lambda);
 	VP code,res=NULL;
 	PF("applyctx\n");DUMP(ctx);DUMP(x);DUMP(y);
@@ -1514,7 +1512,6 @@ VP applyctx(VP ctx,const VP x,const VP y) {
 	if(LIST(code)) res=applyexpr(ctx,code,x,y);
 	PF("applyctx returning\n"); DUMP(res);
 	return res;
-	return EXC(Tt(undef),"undefined in applyctx",x,y);
 }
 VP apply_simple_(VP x,int i) {   // a faster way to select just one item of x
 	if(x==0 || x->tag==Ti(exception)) return x;
@@ -2370,10 +2367,11 @@ VP val(VP x) {
 	if(IS_x(x)) return clone(VALS(x)); // func body for context
 	return EXC(Tt(type),"val can't operate on that type",x,0);
 }
-
-VP _callclass(VP ctx,VP verbname, VP value) {
-	ASSERT((DICT(ctx)||IS_x(ctx)) && value->tag!=0,"_getmodular");
-	PF("_getmodular");DUMP(ctx);DUMP(verbname);DUMP(value);
+VP callclass(VP ctx,VP verbname, VP value) {
+	ASSERT(DICT(ctx)||IS_x(ctx),"callclass");
+	if(!IS_t(verbname)) { return EXC(Tt(type),"callclass verb not name",verbname,value); }
+	if(value->tag==0) { return EXC(Tt(type),"callclass value has no class",verbname,value); }
+	PF("callclass\n");DUMP(ctx);DUMP(verbname);DUMP(value);
 	VP rootscope;
 	if(IS_x(ctx)) rootscope=KEYS(ctx);
 	else rootscope=ctx;
@@ -2386,7 +2384,6 @@ VP _callclass(VP ctx,VP verbname, VP value) {
 	if(res==NULL) return 0;
 	return apply(res,value);
 }
-
 VP get(VP x,VP y) {
 	// get is used to resolve names in applyctx(). x is context, y is thing to
 	// look up. scans tree of scopes/closures to get value. 
@@ -2407,15 +2404,7 @@ VP get(VP x,VP y) {
 			PF("converting\n");DUMP(y);
 			y=str2tag(y); yn=LEN(y);
 		}
-		if(y->tag!=0 && TAG_is_class(y->tag)) {
-			PF("applying class\n");DUMP(y);
-			VP verbname=Tt(get);
-			res=_callclass(x,verbname,y);
-			xfree(verbname);
-			if(res!=0) return res;
-		} else {
-			PF("not a class\n");DUMP(y);
-		}
+		CLASS_call(x,get,y);
 		if(IS_t(y) && AS_t(y,0)==Ti(.)) {
 			//return clone(curtail(x)); // clone(KEYS(x));
 			return x;
@@ -2435,7 +2424,7 @@ VP get(VP x,VP y) {
 	return apply(x,y);
 }
 VP set(VP ctx,VP key,VP val) {
-	PF("set\n");DUMP(ctx);DUMP(key);DUMP(val);
+	PF("set in %p\n",ctx);DUMP(ctx);DUMP(key);DUMP(val);
 	if(val==NULL) return val;
 	if(!IS_t(key)) return EXC(Tt(type),"set val must be symbol",key,val);
 	if(IS_t(key) && key->n > 1) { // set-at-depth
@@ -2445,8 +2434,10 @@ VP set(VP ctx,VP key,VP val) {
 	ARG_MUTATING(ctx);
 	VP dest=KEYS(ctx);
 	PF("set assigning in\n");DUMP(dest);
-	dest=assign(dest,key,clone(val));
-	PF("set in %p\n",dest);
+	// dest=assign(dest,key,clone(val));
+	if(!IS_x(val)) val=clone(val);
+	dest=assign(dest,key,val);
+	PF("set dest=%p val=%p\n",dest,val);
 	DUMP(dest);
 	return val;
 }

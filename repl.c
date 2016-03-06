@@ -102,9 +102,7 @@ void repl(VP ctx) {
 			VP cmd;
 			if(PF_LVL) cmd=xfroms("0 xray");
 			else cmd=xfroms("1 xray");
-			show(cmd);
 			show(evalin(cmd,ctx));
-			ctx=curtail(ctx);
 			xfree(cmd);
 			continue;
 		}
