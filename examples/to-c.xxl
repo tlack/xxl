@@ -1,18 +1,21 @@
-1 as 'valctr;
-[""] as 'ids;
 'id is {valctr as 'c+1 as 'valctr; x str,(c str) as 'id; id,ids as 'ids; id};
 'codebody is "//hello\n512 * 20 count sum";
-'pt is (codebody parse);
-'fmt_cmnt is {x}; // comments already have the leading / included
-'fmt_val  is {"VP val",(y id),"=",x,";"};
-'fmt_int  is {"ANONVAL(xi(",(x str),"))" fmt_val 'num};
-'fmt_get  is {"getctx(CURCTX,ANONSTR(\"",(x str),"\"))" fmt_val 'ref};
-'fmt_ws   is {;};
-'fmt_str  is {as 'el tag case('comment,{el fmt_cmnt}, 'raw,{el fmt_get}, 'name,{el fmt_get}, fmt_ws) flat};
+1 as 'valctr;                                                          // identifier # counter 
+[""] as 'ids;                                                          // list of generated IDs
+'pt is (codebody parse);                                               // create parse tree from code string
 pt show;
-pt :: {as 'el type case ('char,{el fmt_str}, 'int,{el fmt_int}, el)} show;
-ids show;
-ids :: {"apply(",x,", "}
+'fmt_cmnt is {x};                                                      // comments contain leading //
+'fmt_val  is {"VP val",(y id),"=",x,";"};                              // assign literal value to tmp VP
+'fmt_int  is {"ANONVAL(xi(",(x str),"))" fmt_val 'num};                // an integer
+'fmt_name is {"getctx(CURCTX,ANONSTR(\"",(x str),"\"))" fmt_val 'ref}; // resolve in current ctx
+'fmt_ws   is {;};                                                      // drop whitespace
+'fmt_str  is {x as 'el                                                 // different types of tagged strings
+ tag case('comment,{el fmt_cmnt},                                      // depending on the tag: dispatch comments
+	        'raw,{el fmt_resolve_name}, 'name,{el fmt_resolve_name},     // ..tagged names and unresolved literals,
+					 fmt_ws) flat};                                              // ..or whitespace
+pt :: {as 'el type case ('char,{el fmt_str}, 'int,{el fmt_int}, el)} join "\n" show; // generate/join code strings
+ids :: {"apply(",x,", "}               // create expression (using reversed ids list) here
+
 
 
 
