@@ -6,17 +6,17 @@
  
  Sample data below:
 
- tree	 path
- ----- --------
- A     A
- B     A B
-  C    A B C
-   D   A B D
-  E    A E
-   F   A E F
-    G  A E F G
-    H  A E F H
-    I  A E F I
+ # tree	 path
+ - ----- --------
+ 0 A     A
+ 1  B    A B
+ 2   C   A B C
+ 3   D   A B D
+ 4  E    A E
+ 5   F   A E F
+ 6    G  A E F G
+ 7    H  A E F H
+ 8    I  A E F I
 
  Arthur has some interesting examples as well:
  http://kx.com/q/tree.q
