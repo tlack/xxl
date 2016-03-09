@@ -94,6 +94,7 @@
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));
 	res=assign(res,Tt(deal),x2(&deal));
 	res=assign(res,Tt(deep),x2(&deep));
+	res=assign(res,Tt(del),x2(&del));
 	res=assign(res,Tt(drop),x2(&drop));
 	res=assign(res,Tt(each),x2(&each));
 	res=assign(res,Tt(eachb),x2(&eachboth));

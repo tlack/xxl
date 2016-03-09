@@ -719,6 +719,35 @@ VP curtail(VP x) {
 	// PF("curtail\n");DUMP(x);
 	return drop_(x,-1);
 }
+VP del_list_(VP x,int i) {
+	if(!LIST(x) || i >= LEN(x)) return x;
+	ARG_MUTATING(x);
+	if(ELl(x,i)!=NULL) xfree(ELl(x,i));
+	memcpy(ELi(x,i),ELi(x,i+1),(sizeof(VP)*(LEN(x)-i-1)));
+	x->n--;
+	return x;
+}
+VP del_dict(VP x,VP y) {
+	int i=_find1(x,y);
+	if(i==-1) return x;
+	KEYS(x)=del_list_(KEYS(x),i);
+	VALS(x)=del_list_(VALS(x),i);
+	return x;
+}
+VP del_ctx(VP x,VP y) {
+	PF("del_ctx\n");DUMP(x);DUMP(y);
+	KEYS(x)=del_dict(KEYS(x),y);
+	PF("del_ctx returning\n");DUMP(x);
+	return x;
+}
+VP del(VP x,VP y) {
+	PF("del\n");DUMP(x);DUMP(y);
+	if(IS_EXC(x) || IS_EXC(y)) return x;
+	if(IS_d(x) && IS_t(y)) return del_dict(x,y);
+	if(IS_x(x) && IS_t(y)) return del_ctx(x,y);
+	if(IS_l(x) && NUM(y) && !IS_c(y)) return del_list_(x,NUM_val(y));
+	return EXC(Tt(nyi),"del not yet implemented for this type",x,y);
+}
 VP dict(VP x,VP y) {
 	PF("dict\n");DUMP(x);DUMP(y);
 	if(DICT(x)) {

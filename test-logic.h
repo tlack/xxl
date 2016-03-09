@@ -213,3 +213,30 @@ b=evalstrin("45325235 base 16",c); //arb
 ASSERT(_equal(repr(b),repr(xfroms("2b39bb3"))),"base 16 1");
 b=evalstrin("45325235 as 'z base 16 base 16 = z",c); //arb
 ASSERT(_equal(b,xi(1)),"base 16 2");
+xfree(c);
+
+c=mkworkspace();
+b=evalstrin("[1,2,3]del0",c);
+a=evalstrin("[2,3]",c);
+ASSERT(_equal(repr(b),repr(a)),"del list 0");
+
+c=mkworkspace();
+b=evalstrin("[1,2,3]del2",c);
+a=evalstrin("[1,2]",c);
+ASSERT(_equal(repr(b),repr(a)),"del list 1");
+
+c=mkworkspace();
+b=evalstrin("[1,2,3]del4",c);
+a=evalstrin("[1,2,3]",c);
+ASSERT(_equal(repr(b),repr(a)),"del list 2");
+
+c=mkworkspace();
+b=evalstrin("['a:1,'b:2,'c:3]del 'b",c);
+a=evalstrin("['a:1,'c:3]",c);
+ASSERT(_equal(repr(b),repr(a)),"del dict 0");
+
+c=mkworkspace();
+b=evalstrin("['a:1,'b:2,'c:3]del 'z",c);
+a=evalstrin("['a:1,'b:2,'c:3]",c);
+ASSERT(_equal(repr(b),repr(a)),"del dict 1");
+
