@@ -1130,8 +1130,8 @@ VP pin(VP x, VP y) {
 	else if(x->tag != 0)
 		newt=x->tag;
 	if (newt) {
-		if (newt==Ti(Pointer) && NUM(y)) {
-			x=(VP)NUM_val(y);
+		if (newt==Ti(Pointer) && IS_j(y)) {
+			x=(VP)AS_j(y,0);
 			xref(x);
 			return x;
 		}
@@ -1167,8 +1167,8 @@ VP info(VP x) {
 	res=assign(res,Tt(capacity),capacity(x));
 	res=assign(res,Tt(itemsz),itemsz(x));
 	res=assign(res,Tt(alloced),xi(x->alloc));
-	res=assign(res,Tt(baseptr),xi((int)x));
-	res=assign(res,Tt(memptr),xi((int)BUF(x)));
+	res=assign(res,Tt(baseptr),xj((long long)BUF(x)));
+	res=assign(res,Tt(dataptr),xj((long long)BUF(x)));
 	if(DICT(x)) {
 		res=assign(res,Tt(keyinfo),info(KEYS(x)));
 		res=assign(res,Tt(valinfo),info(VALS(x)));
