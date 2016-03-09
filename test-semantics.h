@@ -7,7 +7,6 @@ xfree(b);
 b=evalstrin("[1,2]as 'z!z,3 as 'b;z len=(b len)",a);
 ASSERT(NUM_val(b)==0,"list not shadowed");
 xfree(b);
-PFW(({
 b=evalstrin("['a:1]as 'z,['b,2]as 'b;z len=(b len)",a);
 c=evalstrin("z len*(b len)",a);
 DUMP(b);
@@ -15,7 +14,6 @@ DUMP(c);
 ASSERT(NUM_val(b)==0 && NUM_val(c)==2,"dict not shadowed");
 xfree(b);
 xfree(c);
-}));
 b=evalstrin("['a:1]$'table as 'z,['b:2]as 'b;z len=(b len)",a);
 DUMP(key(a));
 ASSERT(NUM_val(b)==0,"table not shadowed");

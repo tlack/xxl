@@ -53,7 +53,6 @@ xfree(c);xfree(b);
 */
 
 #ifdef STDLIBFILE
-PFW(({
 c=mkworkspace();
 b=evalstrin("File.get",c);
 DUMP(b);
@@ -75,7 +74,6 @@ c=mkworkspace();
 b=evalstrin("\"/a/b/c\" File.dirname",c);
 ASSERT(_equal(b,xfroms("/a/b/")),"File.dirname");
 xfree(b);xfree(c);
-}));
 #endif
 
 c=mkworkspace();

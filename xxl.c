@@ -2384,19 +2384,19 @@ VP xor(VP x,VP y) {
 
 // MANIPULATING LISTS AND VECTORS (misc):
 
-VP key(VP x) {
+VP key(const VP x) {
 	if(IS_EXC(x)) return x;
 	if(DICT(x)||TABLE(x)) return clone(KEYS(x));
 	if(IS_x(x)) return clone(KEYS(x)); // locals for context
 	if(SIMPLE(x)) return count(xi(x->n));
 	return EXC(Tt(type),"key can't operate on that type",x,0);
 }
-VP val(VP x) {
+VP val(const VP x) {
 	if(TABLE(x) || DICT(x)) return clone(VALS(x));
 	if(IS_x(x)) return clone(VALS(x)); // func body for context
 	return EXC(Tt(type),"val can't operate on that type",x,0);
 }
-VP callclass(VP ctx,VP verbname, VP value) {
+VP callclass(const VP ctx,const VP verbname,const VP value) {
 	ASSERT(DICT(ctx)||IS_x(ctx),"callclass");
 	if(!IS_t(verbname)) { return EXC(Tt(type),"callclass verb not name",verbname,value); }
 	if(value->tag==0) { return EXC(Tt(type),"callclass value has no class",verbname,value); }
@@ -2603,6 +2603,8 @@ VP proj(int type, void* func, VP left, VP right) {
 	return pv;
 }
 VP unionn(VP x,VP y) {
+	PF("unionn\n");DUMP(x);DUMP(y);
+	if(IS_EXC(x)) return x; if(IS_EXC(y)) return y;
 	if(DICT(x) && DICT(y)) return catenate(x, y);
 	return EXC(Tt(nyi), "union not yet implemented for that type", x, y);
 }
@@ -3507,8 +3509,5 @@ int main(int argc, char* argv[]) {
 	TODO diff: (1,2,3,4)diff(1,2,55) = [['set,2,55],['del,3]] (plus an easy way to map that diff to funcs to perform)
 	TODO mailboxes
 	TODO some kind of backing store for contexts cant stand losing my work
-	TODO decide operator for typeof
-	TODO decide operator for tagof
-	TODO decide operator for applytag
 	TODO can we auto-parallelize some loops?
 */ 
