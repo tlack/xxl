@@ -3281,7 +3281,32 @@ VP parseallexprs(VP tree) {
 		tree=nest(tree,xln(5, entags(bracket,"raw"), entags(xfroms("]"),"raw"), xfroms(""), Tt(listexpr), x1(&parseexpr)));
 	return tree;
 }
-VP parsestr(const char* str) {
+VP resolve(VP ctx,VP ptree) {
+	PF("resolve\n");DUMP(ptree);
+	if(!IS_x(ctx) && !LIST(ptree)) return EXC(Tt(type),"resolve",ctx,ptree);
+	VP name; int i, tname=Ti(name), traw=Ti(raw);
+	PF_LVL++;
+	for(i=0;i <LEN(ptree); i++) {
+		name=LIST_item(ptree,i);
+		if(IS_c(name) && (name->tag==tname || name->tag==traw)) {
+			VP tag=xt(_tagnum(name));
+			VP val=DICT_find(KEYS(ctx),tag);
+			if(val!=NULL) {
+				xfree(name);
+				val=entag(val,tag);  //hmm
+				EL(ptree,VP,i)=xref(val);
+				// printf("resolved\n");DUMP(val); 
+			} else {
+				// PF("couldnt resolve\n");DUMP(tag);
+			}
+			xfree(tag);
+		}
+	}
+	PF("returning\n");DUMP(ptree);
+	PF_LVL--;
+	return ptree;
+}
+VP parseresolvestr(const char* str,VP ctx) {
 	VP lex,pats,acc,t1,t2;size_t l=strlen(str);int i;
 	PF("parsestr '%s'\n",str);
 	if(l==0) return NULL;
@@ -3310,9 +3335,13 @@ VP parsestr(const char* str) {
 	t1=matchexec(acc,pats);
 	xfree(pats);
 	PF("matchexec results\n");DUMP(t1);
-	t2=t1;
+	if(ctx!=NULL) t2=resolve(ctx,t1);
+	else t2=t1;
 	t2=wide(t2,x1(&parseallexprs));
 	return t2;
+}
+VP parsestr(const char* str) {
+	return parseresolvestr(str,NULL);
 }
 
 VP parse(VP x) {
@@ -3448,42 +3477,14 @@ VP evalstrinwith(const char* str, VP ctx, VP xarg) {
 }
 VP evalfile(VP ctx,const char* fn) {
 	return loadin(xfroms(fn), ctx);
-	/*
-	VP res,parse,acc = fileget(xfroms(fn));
-	PF("evalfile executing\n"); DUMP(acc);
-	parse=parsestr(bfromx(acc));
-	append(ctx,parse);
-	res=applyctx(ctx,NULL,NULL); // TODO define global constant XNULL=xl0(), XI1=xi(1), XI0=xi(0), etc..
-	ctx=curtail(ctx);
-	xfree(parse);
-	return res;
-	*/
-}
-VP resolve(VP ctx,VP name) {
-	PF("resolve\n");DUMP(name);
-	if(IS_c(name) && name->tag==Ti(raw)) {
-		VP tag=xt(_tagnum(name));
-		VP val=DICT_find(KEYS(ctx),tag);
-		if(val!=NULL) { 
-			PF("resolved\n");DUMP(val); 
-			//val=entag(val,tag);  //hmm
-			return val;
-		}
-		xfree(tag);
-	}
-	return name;
 }
 VP loadin(VP fn,VP ctx) {
 	if(!IS_c(fn) || !IS_x(ctx)) return EXC(Tt(type),"loadin x is filename and y is ctx",fn,ctx);
 	VP contents = fileget(fn);
 	RETURN_IF_EXC(contents);
 	char* str=sfromxA(contents);
-	VP parsetree=parsestr(str);
+	VP parsetree=parseresolvestr(str,ctx);
 	int i; VP k=KEYS(ctx);
-	/*
-	VP parsetree2=deep(parsetree,proj(2,&resolve,ctx,0));
-	DUMP(parsetree2);
-	*/
 	VP subctx=CTX_make_subctx(ctx,parsetree);
 	xfree(parsetree);
 	free(str);
