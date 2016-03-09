@@ -3463,6 +3463,7 @@ void init_thread_locals() {
 	XXL_SYS=assign(XXL_SYS,Tt(buildshared),xfroms(XXL_BUILDSHARED));
 }
 void init() {
+	srand(time(NULL)); // TODO need verb to srand
 	XB0=xb(0); XB1=xb(1);
 	XI0=xi(0); XI1=xi(1);
 	TIEXCEPTION=Ti(exception);
