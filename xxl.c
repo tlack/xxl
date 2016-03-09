@@ -2056,20 +2056,54 @@ VP base(VP x,VP y) {
 	// two different functions in one:
 	// 1. convert string x to number, assuming it's a number formatted in base y.
 	// 2. convert an XXL number x to a string in base y
-	int b=NUM_val(y), xn=LEN(x), i;
-	if(IS_c(x)) {
-		if(b==16 && (xn < 3 || AS_c(x,0)!='0' || AS_c(x,1)!='x')) {
-			return str2num(catenate(xfroms("0x"),x));
-		} 
-		if(b==10 || b==16) return str2num(x);
-		return EXC(Tt(nyi), "base not yet implemented", x, y);
-	}
-	if(NUM(x)) {
-		VP res=xcsz(5); // ARB
-		for(i=0; i<xn; i++) res=append(res,numelem2base(x, i, b));
+	if(NUM(y) && !IS_c(y)) {
+		int b=NUM_val(y), xn=LEN(x), i;
+		if(IS_c(x)) {
+			if(b==16 && (xn < 3 || AS_c(x,0)!='0' || AS_c(x,1)!='x')) {
+				return str2num(catenate(xfroms("0x"),x));
+			} 
+			if(b==10 || b==16) return str2num(x);
+			return EXC(Tt(nyi), "base not yet implemented", x, y);
+		}
+		if(NUM(x)) {
+			VP res=xcsz(5); // ARB
+			for(i=0; i<xn; i++) res=append(res,numelem2base(x, i, b));
+			return res;
+		}
+		return NULL;
+	} else {
+		int yn=LEN(y);
+		DUMP(x);
+		DUMP(y);
+		VP res;
+		if(NUM(x) && !IS_c(x)) {
+			res=ALLOC_LIKE_SZ(y,5); //arb
+			VP tmp;
+			auto n=NUM_val(x);
+			do {
+				tmp=apply_simple_(y,n%yn);
+				res=append(res,tmp);
+				n=n/yn;
+				xfree(tmp);
+			} while (n>0);
+			res=reverse(res);
+		} else {
+			int i, n;
+			VP tmp;
+			I128 acc=0;
+			for(i=0; i<LEN(x); i++) {
+				tmp=apply_simple_(x,i);
+				n=_find1(y, tmp);
+				xfree(tmp);
+				if(n==-1) {
+					xfree(res); return EXC(Tt(value),"base can't decode token",x,y);
+				}
+				acc=(acc*yn)+n;
+			}
+			res=xo(acc);
+		}
 		return res;
 	}
-	return NULL;
 }
 VP casee(VP x,VP y) {
 	if(!LIST(y) || LEN(y) < 2) return EXC(Tt(type),"case y arg should be [cond1,result1,cond2,result2,elseresult]",x,y);
