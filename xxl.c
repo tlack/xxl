@@ -413,7 +413,7 @@ VP clone0(const VP obj) {
 	MEMO_check(CLONE,obj,({ PF("found memoized %p\n", memo_val); return memo_val; }),i);
 	if(i==MEMO_sz) { return EXC(Tt(stack),__func__,0,0); }
 	VP res=ALLOC_LIKE(obj);
-	MEMO_set(CLONE,obj,res,i);
+	// MEMO_set(CLONE,obj,res,i);
 	if(objn) {
 		if(CONTAINER(obj)) {
 			res->n=objn;
@@ -432,7 +432,7 @@ VP clone(const VP obj) {
 	// TODO keep a counter of clone events for performance reasons - these represent a concrete
 	// loss over mutable systems
 	PF("clone\n");DUMP(obj);
-	MEMO_clear(CLONE);
+	// MEMO_clear(CLONE);
 	return clone0(obj);
 }
 
@@ -1104,11 +1104,11 @@ VP make_table(VP keys,VP vals) {
 	// approach: create empty table, then apply all these row values to it.
 	// catenate_table already handles lists-of-lists correctly.
   res=xasz(2);
-	EL(res,VP,0)=clone(keys);
+	EL(res,VP,0)=MUTATE_CLONE(keys);
 	int sz=vals && LEN(vals) ? LEN(ELl(vals,0)) : 0;
 	EL(res,VP,1)=xlsz(sz);
 	res->n=2;
-	return catenate_table(res, clone(vals));
+	return catenate_table(res, MUTATE_CLONE(vals));
 }
 VP make(VP x, VP y) { 
 	// TODO cast() should short cut matching kind casts 
@@ -1578,7 +1578,7 @@ VP apply_table(VP x, VP y) {
 			return table_row_dict_(x, yi);
 		} else {
 			VP newtbl=xasz(2), newvals=xlsz(LEN(y)), vec; int j;
-			EL(newtbl,VP,0)=clone(KEYS(x));
+			EL(newtbl,VP,0)=MUTATE_CLONE(KEYS(x));
 			for(i=0; i<tc; i++) {
 				vec=TABLE_col(x,i);
 				PF("apply_table doing\n");DUMP(vec);
@@ -1603,7 +1603,7 @@ VP apply_table(VP x, VP y) {
 			}
 			VP row=xlsz(tc);
 			for(i=0; i<tc; i++) row=append(row,apply(TABLE_col(x,i),y));
-			return dict(clone(KEYS(x)),row);
+			return dict(MUTATE_CLONE(KEYS(x)),row);
 		}
 	}
 }
@@ -2073,8 +2073,6 @@ VP base(VP x,VP y) {
 		return NULL;
 	} else {
 		int yn=LEN(y);
-		DUMP(x);
-		DUMP(y);
 		VP res;
 		if(NUM(x) && !IS_c(x)) {
 			res=ALLOC_LIKE_SZ(y,5); //arb
@@ -2095,9 +2093,7 @@ VP base(VP x,VP y) {
 				tmp=apply_simple_(x,i);
 				n=_find1(y, tmp);
 				xfree(tmp);
-				if(n==-1) {
-					xfree(res); return EXC(Tt(value),"base can't decode token",x,y);
-				}
+				if(n==-1) return EXC(Tt(value),"base can't decode token",x,y);
 				acc=(acc*yn)+n;
 			}
 			res=xo(acc);
@@ -3061,11 +3057,8 @@ VP mkworkspace() {
 	char name[8];
 	VP root,res,locals;
 	snprintf(name,sizeof(name),"wk%-6d", rand());
-	printf("mkworkspace %s\n", name);
 	res=xxsz(2); res->n=2;
 	ELl(res,0)=rootctx(); ELl(res,1)=xl0();
-	// NB. we should be returning a fully formed ctx but some old tests rely on append()ing to
-	// the workspace
 	return res;
 }
 VP eval(VP code) {
