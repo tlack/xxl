@@ -136,7 +136,10 @@
 // is this member a dictionary of scope definitions (resolvable identifiers)
 #define LAMBDAARITY(x) (AS_i(ELl(x,1),0))
 #define CTX_make_subctx(parentctx,newcode) \
-	({ VP res=xxsz(2); res->n=2; ELl(res,0)=xref(KEYS(parentctx)); ELl(res,1)=xref(newcode); res; })
+	({ VP res=xxsz(2); res->n=2; \
+	   EL(res,VP,0)=xd0(); \
+	   EL(res,VP,0)=assign(KEYS(res),TTPARENT,parentctx); \
+		 EL(res,VP,1)=xref(newcode); res; })
 
 #define Ti(n) (_tagnums(#n))                             // int value for tag n (literal not string)
 #define Tt(n) (xt(_tagnums(#n)))                         // tag n (literal not string) as a scalar of type tag
@@ -177,12 +180,13 @@
 // TODO if_exc doesnt give us a chance to free memory :-/
 #define RETURN_IF_EXC(x) if(IS_EXC(x)) return x;
 
-#define MEMO_sz 100
+#define MEMO_sz 2048
 #define MEMO_make(varname) THREADLOCAL VP varname##_key[MEMO_sz]; THREADLOCAL VP varname##_val[MEMO_sz]
+#define MEMO_free(varname) xfree(varname##_key); xfree(varname##_val);
 #define MEMO_clear(varname) memset(varname##_key,0,MEMO_sz*sizeof(VP)); memset(varname##_val,0,MEMO_sz*sizeof(VP))
 #define MEMO_check(varname,val,body,ctr) for(ctr=0; ctr<MEMO_sz; ctr++) { \
 	if(val==0||varname##_key[ctr]==0)break; \
-	if(varname##_key[ctr]==val){ VP memo_val=varname##_val[ctr]; body; }}
+	if(varname##_key[ctr]==val){ VP memo_val=varname##_val[ctr]; body; } }
 #define MEMO_set(varname,key,val,ctr) for(ctr=0; ctr<MEMO_sz; ctr++) { \
 	if(varname##_key[ctr]==key || varname##_key[ctr]==NULL){ varname##_key[ctr]=key; varname##_val[ctr]=val; break; }}
 
@@ -246,7 +250,7 @@ struct xxl_index_t {                   // index of exported values for shared li
 // GLOBALS FROM xxl.c --------------------------------------------------
 
 extern VP XB0; extern VP XB1; extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; 
-extern tag_t TIEXCEPTION;
+extern tag_t TIEXCEPTION; extern VP TTPARENT;
 extern THREADLOCAL I8 IN_OUTPUT_HANDLER; 
 extern I8 MEM_WATCH;
 

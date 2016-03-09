@@ -10,7 +10,7 @@
 // GLOBALS (dangggerous)
 
 // commonly used "static" values, set in init()
-VP XB0=NULL,XB1=NULL,XI0=NULL,XI1=NULL;
+VP TTPARENT=NULL, XB0=NULL,XB1=NULL,XI0=NULL,XI1=NULL;
 tag_t TIEXCEPTION=0;
 THREADLOCAL VP XXL_SYS=NULL; 
 
@@ -202,9 +202,12 @@ char* repr_x(VP x,char* s,size_t sz) {
 	int i;VP a;
 	APF(sz,"'context#%p[",x);
 	if(x->n==2) {
-		APF(sz,"'scope#%p",KEYS(x));
-		APF(sz,",",0);
+		APF(sz,"'scope#%p:",KEYS(x));
+		repr0(KEYS(x),s,sz);
+		APF(sz,",'lambda#%p:",VALS(x));
 		repr0(VALS(x),s,sz);
+	} else {
+		APF(sz,"(err: %d members)",x->n);
 	}
 	APF(sz,"]",x);
 	return s;
@@ -405,9 +408,10 @@ VP equal(const VP x,const VP y) {
 MEMO_make(CLONE);
 VP clone0(const VP obj) {
 	if(IS_EXC(obj)) return obj;
-	// PF("clone0 %p\n",obj);DUMP(obj);
+	PF("clone0 %p\n",obj);DUMP(obj);
 	int i, objn=obj->n; 
 	MEMO_check(CLONE,obj,({ PF("found memoized %p\n", memo_val); return memo_val; }),i);
+	if(i==MEMO_sz) { return EXC(Tt(stack),__func__,0,0); }
 	VP res=ALLOC_LIKE(obj);
 	MEMO_set(CLONE,obj,res,i);
 	if(objn) {
@@ -448,13 +452,19 @@ inline VP appendbuf(VP x,const buf_t buf,const size_t nelem) {
 }
 VP append(VP x,VP y) { 
 	// append all items of y to x. if x is a general list, append pointer to y, and increase refcount.
-	// PF("append %p %p\n",x,y); DUMP(x); DUMP(y);
+	PF("append %p %p\n",x,y); DUMP(x); DUMP(y);
 	if(IS_EXC(x)) return x;
 	if(!CONTAINER(x) && !(x->t==y->t)) { return EXC(Tt(type),"append x must be container or types must match", x, y); }
 	if(TABLE(x)) return catenate_table(x,y);
+	if(IS_x(x)) {
+		// if(VALS(x)) xfree(VALS(x));
+		VALS(x)=y;
+		return x;
+	}
 	if(IS_d(x)) {
 		ASSERT(y->n % 2 == 0, "append to a dict with ['key;value]");
 		VP k=KEYS(x),v=VALS(x),y1,y2; int i;
+		PF("append dict\n"); DUMP(x); DUMP(v); DUMP(y);
 		y1=ELl(y,0);
 		y2=ELl(y,1);
 		if(k==NULL) {                      // create dict
@@ -469,14 +479,15 @@ VP append(VP x,VP y) {
 		} else {
 			xref(y2); ELl(v,i)=y2;
 		}
+		PF("append returning\n");DUMP(x);
 		return x;
 	}
 	if(CONTAINER(x)) { 
-		// PF("append %p to list %p\n", y, x); DUMP(x);
+		PF("append %p to list %p\n", y, x); DUMP(x);
 		xref(y);
 		x=XREALLOC(x,x->n+1); 
 		EL(x,VP,x->n)=y; x->n++;
-		// PF("afterward:\n"); DUMP(x);
+		PF("afterward:\n"); DUMP(x);
 	} else {
 		// PF("append disaster xn %d xc %d xi %d xsz %d yn %d yc %d yi %d ysz %d\n",x->n,x->cap,x->itemsz,x->sz,y->n,y->cap,y->itemsz,y->sz);
 		// DUMP(info(x));DUMP(x);DUMP(info(y));DUMP(y);
@@ -544,7 +555,7 @@ VP amend(VP x,VP y) {
 	return x;
 }
 inline VP assign(VP x,VP k,VP val) {
-	// PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
+	PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
 	if (LIST(k) && k->n) {
 		int i=0;VP res=x;
 		for(;i<k->n-1;i++) {
@@ -1323,7 +1334,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		if(tag==tlam) { // create a context for lambdas
 			VP newctx=CTX_make_subctx(parent,item); 
 			item=newctx;
-			PF("created new lambda context item=\n");DUMP(item);
+			printf("created new lambda context %p for item=\n%s\n",newctx,reprA(item));DUMP(item);
 		// } else if (tag==texpr || tag==tlistexpr) {
 		// } else if (LIST(item) && !(LEN(item) && IS_c(LIST_first(item)) && LEN(LIST_first(item))==0)) { 
 		} else if (LIST(item) && (item->tag==texpr || item->tag==tlistexpr)) {
@@ -2424,6 +2435,7 @@ VP get(VP x,VP y) {
 	// 'tag in the root scope, and then try to call its "get" member. 
 	// see _getmodular()
 	int xn=LEN(x),yn=LEN(y),i,j;VP item,res;
+	printf("get %s in %p\n", reprA(y), x);
 	PF("get\n");DUMP(x);DUMP(y);
 	if(IS_x(x)) {
 		if(x->n != 2) return EXC(Tt(value),"context not fully formed",x,y);
@@ -2436,6 +2448,7 @@ VP get(VP x,VP y) {
 		CLASS_call(x,get,y);
 		if(IS_t(y) && AS_t(y,0)==Ti(.)) {
 			//return clone(curtail(x)); // clone(KEYS(x));
+			ASSERT(1,"get root reference");
 			return x;
 		} else {
 			i=xn-1;
@@ -2447,6 +2460,13 @@ VP get(VP x,VP y) {
 				res=DICT_find(item,y);
 				if(res!=NULL) return res;
 			}
+		}
+		res=DICT_find(KEYS(x),TTPARENT);
+		if(res!=NULL) {
+			res=get(res,y);
+			if(!IS_EXC(res)) return res;
+			// if this is an exception, free it because we return our own to maintain context ref:
+			else if (res) xfree(res); 
 		}
 		return EXC(Tt(undef),"undefined",y,x);
 	}
@@ -2464,10 +2484,11 @@ VP set(VP ctx,VP key,VP val) {
 	VP dest=KEYS(ctx);
 	PF("set assigning in\n");DUMP(dest);
 	// dest=assign(dest,key,clone(val));
-	if(!IS_x(val)) val=clone(val);
+	// if(!IS_x(val)) val=clone(val);
+	// val=clone(val);
 	dest=assign(dest,key,val);
-	PF("set dest=%p val=%p\n",dest,val);
-	DUMP(dest);
+	// PF("set dest=%p val=%p\n",dest,val);
+	// DUMP(dest);
 	return val;
 }
 VP set_as(VP x,VP y) {
@@ -3006,9 +3027,11 @@ VP mkworkspace() {
 	char name[8];
 	VP root,res,locals;
 	snprintf(name,sizeof(name),"wk%-6d", rand());
-	res=xx0(2);
-	ELl(res,0)=rootctx();
-	res->n=1;
+	printf("mkworkspace %s\n", name);
+	res=xxsz(2); res->n=2;
+	ELl(res,0)=rootctx(); ELl(res,1)=xl0();
+	// NB. we should be returning a fully formed ctx but some old tests rely on append()ing to
+	// the workspace
 	return res;
 }
 VP eval(VP code) {
@@ -3467,6 +3490,7 @@ void init() {
 	XB0=xb(0); XB1=xb(1);
 	XI0=xi(0); XI1=xi(1);
 	TIEXCEPTION=Ti(exception);
+	TTPARENT=Tt(parent);
 	init_thread_locals();
 	thr_start();
 }
