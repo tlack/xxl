@@ -905,7 +905,7 @@ VP replaceleft(VP x,int n,VP replace) { // replace first i values with just 'rep
 	return x;
 }
 VP reverse(VP x) {
-	if(!SIMPLE(x)||CONTAINER(x)) return EXC(Tt(type),"reverse arg must be simple or container",x,NULL);
+	if(!(SIMPLE(x)||CONTAINER(x))) return EXC(Tt(type),"reverse arg must be simple or container",x,NULL);
 	int i,typerr=-1; VP acc=ALLOC_LIKE(x);
 	for(i=x->n-1;i>=0;i--) appendbuf(acc,ELi(x,i),1);
 	return acc;

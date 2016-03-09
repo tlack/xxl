@@ -65,6 +65,7 @@ VP len(VP x);
 VP lesser(VP x,VP y); 
 VP list2vec(VP obj);
 VP loadin(VP fn,VP ctx);
+VP key(const VP x);
 VP match(VP obj,VP pat);
 VP matchany(VP obj,VP pat);
 VP matcheasy(VP obj,VP pat);
