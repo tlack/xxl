@@ -54,7 +54,7 @@ VP netloop(VP xsock,VP cb) {
 	struct sockaddr remotea={0};
 	socklen_t remotel={0};
 	int sock=AS_i(xsock,0);
-	int n;
+	int n=0;
 	printf("netloop starting..\n");
 	DUMP(xsock);
 	DUMP(cb);
