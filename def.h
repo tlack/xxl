@@ -169,7 +169,7 @@
 // of the semantic and structural changes that immutability might require
 #define ARG_MUTATING(x) 
 // at some point this will be intelligent about not cloning values for mapped types
-#define MUTATE_CLONE(x) (x->rc==1 ? x : clone(x))
+#define MUTATE_CLONE(x) (clone(x)) // (x->rc==1 ? x : clone(x))
 
 #define EXC(type,lbl,x,y) ({ \
 	VP exc; exc = entag(xln(4,type,xfroms(lbl),x,y),Tt(exception));  \
