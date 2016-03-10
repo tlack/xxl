@@ -112,7 +112,7 @@
 	append(ctx,parsestr("2,4 over +"));
 	tmp1=apply(ctx,xi(1));
 	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xi(6)),"test parsestr 6b");
+	ASSERT(_equal(tmp1,xi(6)),"test parsestr 6b - adverb over with + ref");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();
@@ -168,7 +168,7 @@
 	append(ctx,parsestr("{x*3}"));
 	tmp1=apply(ctx,xi(2));
 	DUMP(tmp1);
-	ASSERT(_equal(tmp1,xi(6)),"test parsestr 14");
+	ASSERT(_equal(tmp1,xi(6)),"test parsestr 14 - x value in closure");
 	xfree(ctx);xfree(tmp1);
 
 	ctx=mkworkspace();

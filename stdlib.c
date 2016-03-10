@@ -26,7 +26,7 @@ VP filedirname(VP fn) {
 	char* str=sfromxA(fname);
 	VP res=xfroms(dirname(str)), slash=xc('/');
 	res=append(res,slash);
-	xfree(fname); free(str);
+	free(str);
 	return res;
 }
 VP filecwd(VP dummy) {

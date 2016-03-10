@@ -53,9 +53,10 @@ char* repr0(VP x,char* s,size_t sz) {
 		if(existing!=NULL) {
 			s=(char*)existing;
 			// printf("cycle %p found after %d iters\n", x, i);
-			APF(sz,"..cycle..",0);
+			APF(sz,"..cycle%p..",x);
 			return s;
 		}
+		MEMO_set(REPR_SEEN,x,(VP)s,i);
 	}
 	t=typeinfo(x->t);
 	if(0 && DEBUG) {
@@ -76,7 +77,7 @@ char* reprA(VP x) {
 	MEMO_clear(REPR_SEEN);
 	#define BS 1024*65
 	char* s = calloc(1,BS);
-	s = repr0(x,s,BS);
+	s = repr0(x,s,BS-1);
 	//APF(BS,"\n",0);
 	return s;
 }
@@ -124,8 +125,6 @@ char* repr_a(VP x,char* s,size_t sz) { // table
 	kn=k->n; vn=LEN(v) ? ELl(v,0)->n : 0;
 	repr0(k, s, sz-1);
 	APF(sz,"\n",0);
-	// printf("table raw keys: %s\n",reprA(KEYS(x)));
-	// printf("table raw values: %s\n",reprA(VALS(x)));
 	for(i=0; i<vn; i++) {
 		APF(sz,"%d:[",i);
 		for(j=0; j<kn; j++) {
@@ -410,10 +409,10 @@ VP clone0(const VP obj) {
 	if(IS_EXC(obj)) return obj;
 	PF("clone0 %p\n",obj);DUMP(obj);
 	int i, objn=obj->n; 
-	MEMO_check(CLONE,obj,({ PF("found memoized %p\n", memo_val); return memo_val; }),i);
+	MEMO_check(CLONE,obj,({ PF("found memoized %p\n", memo_val); return xref(memo_val); }),i);
 	if(i==MEMO_sz) { return EXC(Tt(stack),__func__,0,0); }
 	VP res=ALLOC_LIKE(obj);
-	// MEMO_set(CLONE,obj,res,i);
+	MEMO_set(CLONE,obj,res,i);
 	if(objn) {
 		if(CONTAINER(obj)) {
 			res->n=objn;
@@ -432,7 +431,7 @@ VP clone(const VP obj) {
 	// TODO keep a counter of clone events for performance reasons - these represent a concrete
 	// loss over mutable systems
 	PF("clone\n");DUMP(obj);
-	// MEMO_clear(CLONE);
+	MEMO_clear(CLONE);
 	return clone0(obj);
 }
 
@@ -734,7 +733,7 @@ VP del_list_(VP x,int i) {
 	if(!LIST(x) || i >= LEN(x)) return x;
 	ARG_MUTATING(x);
 	if(ELl(x,i)!=NULL) xfree(ELl(x,i));
-	memcpy(ELi(x,i),ELi(x,i+1),(sizeof(VP)*(LEN(x)-i-1)));
+	memmove(ELi(x,i),ELi(x,i+1),(sizeof(VP)*(LEN(x)-i-1)));
 	x->n--;
 	return x;
 }
@@ -2320,7 +2319,7 @@ static inline VP str2num(VP x) {
 	// TODO optimize str2int
 	// NB. str2num creates int at the minimum
 	double d; I128 buf=0; const char* s=bfromx(flatten(x));
-	PF("str2num %s\n",s);DUMP(x);
+	PF("str2num %p\n",s);DUMP(x);
 	IF_EXC(!IS_c(x),Tt(type),"str2int arg should be char vector",x,0);
 	if(strchr(s,'.')!=0 && (d=strtod(s,NULL))!=0) {
 		return xf(d);
