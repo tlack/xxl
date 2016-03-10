@@ -47,8 +47,10 @@ void showexc(VP ctx,VP exc) {
 	xfree(clue);xfree(csel);
 	*/
 	for(i=0;i<exc->n;i++) {
-		printf("%s: ",bfromx(ELl(labels,i)));
+		char* s=sfromxA(ELl(labels,i));
+		printf("%s: ",s);
 		show(ELl(exc,i));
+		free(s);
 	}
 	xfree(labels); xfree(strs);
 }

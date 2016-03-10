@@ -4,7 +4,7 @@
 [""] as 'ids;                                                          // list of generated IDs
 'pt is (codebody parse);                                               // create parse tree from code string
 pt show;
-'fmt_cmnt is {x};                                                      // comments contain leading //
+'fmt_cmnt is {x};                                                      // comments contain leading
 'fmt_val  is {"VP val",(y id),"=",x,";"};                              // assign literal value to tmp VP
 'fmt_int  is {"ANONVAL(xi(",(x str),"))" fmt_val 'num};                // an integer
 'fmt_name is {"getctx(CURCTX,ANONSTR(\"",(x str),"\"))" fmt_val 'ref}; // resolve in current ctx
