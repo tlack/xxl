@@ -9,10 +9,9 @@ char* repr_b(VP x,char* s,size_t sz) { int i;
 			APF(sz,".. (%d omitted) ..", (x->n)-REPR_MAX_ITEMS);
 			i+=REPR_MAX_ITEMS;
 			continue;}
-		snprintf(s+strlen(s),sz-strlen(s)-1,"%d,",AS_b(x,i)); 
+		APF(sz,"%d,",AS_b(x,i));
 	}
-	if(SIMPLE(x)) snprintf(s+strlen(s),sz-strlen(s)-1,"%db",AS_b(x,i)); 
-		else snprintf(s+strlen(s),sz-strlen(s)-1,"...",AS_b(x,i)); 
+	if(SIMPLE(x)) APF(sz,"%db",AS_b(x,i));
 if(!SIMPLE(x) || x->n>1) APF(sz,")",0);
 return s; }
 
