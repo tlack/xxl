@@ -11,7 +11,7 @@
 
 // commonly used "static" values, set in init()
 VP TTPARENT=NULL, XB0=NULL,XB1=NULL,XI0=NULL,XI1=NULL;
-tag_t TIEXCEPTION=0;
+tag_t TIEXCEPTION=0, TINULL=0;
 THREADLOCAL VP XXL_SYS=NULL; 
 
 I8 PF_ON=0; I8 PF_LVL=0;               // controls debugging output on/off/nesting depth
@@ -3517,7 +3517,7 @@ void init() {
 	srand(time(NULL)); // TODO need verb to srand
 	XB0=xb(0); XB1=xb(1);
 	XI0=xi(0); XI1=xi(1);
-	TIEXCEPTION=Ti(exception);
+	TIEXCEPTION=Ti(exception); TINULL=_tagnums(""); 
 	TTPARENT=Tt(parent);
 	init_thread_locals();
 	thr_start();
