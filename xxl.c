@@ -2340,13 +2340,15 @@ VP plus(VP x,VP y) {
 static inline VP str2num(VP x) {
 	// TODO optimize str2int
 	// NB. str2num creates int at the minimum
-	double d; I128 buf=0; const char* s=bfromx(flatten(x));
+	double d; I128 buf=0; char* s=sfromxA(flatten(x));
 	PF("str2num %p\n",s);DUMP(x);
 	IF_EXC(!IS_c(x),Tt(type),"str2int arg should be char vector",x,0);
 	if(strchr(s,'.')!=0 && (d=strtod(s,NULL))!=0) {
+		free(s);
 		return xf(d);
 	} else if(LEN(x)>2 && s[0]=='0' && s[1]=='x') {
 		if (sscanf(s,"%llx",&buf)==1) {
+			free(s);
 			if(buf<MAX_i)
 				return xi((CTYPE_i)buf);
 			if(buf<MAX_j)
@@ -2355,16 +2357,20 @@ static inline VP str2num(VP x) {
 		} else 
 			return x;
 	} else if (sscanf(s,"%lld",&buf)==1) { // should probably use atoi or strtol
+		free(s);
 		if(buf<MAX_i)
 			return xi((CTYPE_i)buf);
 		if(buf<MAX_j)
 			return xj((CTYPE_j)buf);
 		return xo((CTYPE_o)buf);
 	} 
-	else if(strncmp(s,"0.0",3)==0)
+	else if(strncmp(s,"0.0",3)==0) {
+		free(s);
 		return xf(0.0);
-	else 
+	} else  {
+		free(s);
 		return x;
+	}
 	// return EXC(Tt(value),"str2int value could not be converted",x,0);
 }
 VP sum(VP x) {
