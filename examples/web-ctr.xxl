@@ -1,6 +1,6 @@
-0 as '.ctr; 
+0 as 'ctr; 
 (8080,"") Net.bind {
-	.ctr + 1 as '.ctr repr as 'cr; 
+	ctr+1 as '.ctr repr as 'cr; 
 	"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n",
 	"Server: xxl v0.0\r\n\r\n",
 	"Hello ",ctr,"\r\n" flat}
