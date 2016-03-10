@@ -24,6 +24,14 @@ ASSERT(_len(b)==129,"table append a few");
 c=evalstrin("t@'b sum",a);
 ASSERT(NUM_val(c)==56898,"table count a few");
 */
+b=evalstrin("'blah is 6; 10 {x as '.blah}; blah",a);
+ASSERT(_equal(b,xi(10)), "assign global in anonymous lambda");
+b=evalstrin("'blah is 6; {x as '.blah} as 'cb; 10 cb; blah",a);
+ASSERT(_equal(b,xi(10)), "assign global in assigned lambda");
+b=evalstrin("'addermaker is {10+x as 'a; {x+a as '.a}}; 100 addermaker as 'myadd; 1 range 5 :: myadd",a);
+ASSERT(_equal(b,xin(5,111,113,116,120,125)),"test adder");
+b=evalstrin("'fun is {'addermaker is {10+x as 'a; {x+a as '.a}}; x addermaker as 'myadd; 1 range 5 :: { myadd }}; 100 fun",a);
+ASSERT(_equal(b,xin(5,111,113,116,120,125)),"test adder nested");
 xfree(a);
 
 // TODO scope tests

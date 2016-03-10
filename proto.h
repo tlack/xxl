@@ -50,6 +50,7 @@ int _find1(VP x,VP y);
 int _findbuf(const VP x,const buf_t y); // returns index or -1 on not found
 VP first(VP x);
 VP flatten(VP x);
+VP get0(VP dict,VP key,int checkparents);
 VP get(VP x,VP y);
 VP greater(VP x,VP y); 
 VP identity(VP x);

@@ -109,15 +109,8 @@ void repl(VP ctx) {
 		st=clock();
 		t2=parsestr(line);
 		in=append(in,t2);
-		VP subctx=CTX_make_subctx(ctx, t2);
-		t3=applyctx(subctx,0,0);	
-		// PF_LVL++;
-		// DUMP(subctx);
-		KEYS(subctx)=del(KEYS(subctx),TTPARENT);
-		// DUMP(subctx);
-		// PF_LVL--;
-		KEYS(ctx)=unionn(KEYS(ctx),KEYS(subctx));
-		xfree(subctx);
+		ctx=append(ctx,t2); // set code body for this context - doesnt actually append
+		t3=applyctx(ctx,0,0);	
 		en=clock();
 		printf("(%0.04f sec)\ninputs@%d: %s", ((double)(en-st)/CLOCKS_PER_SEC), i, line);
 		if(t3==NULL) {

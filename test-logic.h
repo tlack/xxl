@@ -237,4 +237,16 @@ c=mkworkspace();
 b=evalstrin("['a:1,'b:2,'c:3]del 'z",c);
 a=evalstrin("['a:1,'b:2,'c:3]",c);
 ASSERT(_equal(repr(b),repr(a)),"del dict 1");
+xfree(c);xfree(b);xfree(a);
+
+c=mkworkspace();
+b=evalstrin("['a:1;'b:2]as 'z;4 as 'z.b;z",c);
+a=evalstrin("['a:1;'b:4]",c);
+ASSERT(_equal(repr(b),repr(a)),"set at depth 0");
+b=evalstrin("'inner is ['bb:['c:10]]; 'outer is ['b:['ba:5,'bb:inner]]; ['z:10,outer] as 't; t.b.bb.c",c);
+ASSERT(_equal(b,xi(10)),"index at very deep 0");
+
+b=evalstrin("(1,2)from(4,5,6)",c);
+ASSERT(_equal(b,xin(2,5,6)),"from 0");
+
 

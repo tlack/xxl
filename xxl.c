@@ -67,9 +67,7 @@ char* repr0(VP x,char* s,size_t sz) {
 	IN_OUTPUT_HANDLER++;
 	if(x->tag!=0) APF(sz, "'%s#", tagnames(x->tag));
 	if(t.repr) (*(t.repr)(x,s,sz));
-	if(!SIMPLE(x)) {
-		MEMO_set(REPR_SEEN,x,(VP)s,i);
-	}
+	//APF(sz,"(r%d)",x->rc);
 	IN_OUTPUT_HANDLER--;
 	return s;
 }
@@ -346,6 +344,18 @@ VP xfree(VP x) {
 		free(x);
 	} return x; }
 VP xref(VP x) { if(!x) return x; if(MEM_WATCH){MEMPF("ref %p\n",x);} x->rc++; return x; }
+VP xreplace(VP x,VP newval) {
+	PF("xreplace\n");DUMP(x);DUMP(newval);
+	int oldrc=x->rc;
+	if(x->alloc && x->dyn) free(x->dyn);
+	memmove(x,newval,sizeof(struct V));
+	x->dyn=calloc(newval->sz,1);
+	memmove(x->dyn,BUF(newval),newval->sz);
+	x->alloc=1;
+	x->rc=newval->rc+x->rc; // arb
+
+	return x;
+}
 VP xfroms(const char* str) {  
 	// character vector from C string. allocates new VP. free it when done.
 	// NB. returned VP does not contain the final \0 
@@ -451,24 +461,22 @@ inline VP appendbuf(VP x,const buf_t buf,const size_t nelem) {
 }
 VP append(VP x,VP y) { 
 	// append all items of y to x. if x is a general list, append pointer to y, and increase refcount.
-	PF("append %p %p\n",x,y); DUMP(x); DUMP(y);
+	// PF("append %p %p\n",x,y); DUMP(x); DUMP(y);
 	if(IS_EXC(x)) return x;
 	if(!CONTAINER(x) && !(x->t==y->t)) { return EXC(Tt(type),"append x must be container or types must match", x, y); }
 	if(TABLE(x)) return catenate_table(x,y);
 	if(IS_x(x)) {
-		// if(VALS(x)) xfree(VALS(x));
-		VALS(x)=y;
-		return x;
+		if(VALS(x)) xfree(VALS(x)); VALS(x)=y; return x;
 	}
 	if(IS_d(x)) {
+		// PF("append d %p\n", x); DUMP(x);
 		ASSERT(y->n % 2 == 0, "append to a dict with ['key;value]");
 		VP k=KEYS(x),v=VALS(x),y1,y2; int i;
-		PF("append dict\n"); DUMP(x); DUMP(v); DUMP(y);
 		y1=ELl(y,0);
 		y2=ELl(y,1);
 		if(k==NULL) {                      // create dict
 			if(0 && SCALAR(y1)) k=ALLOC_LIKE_SZ(y1, 4);
-			else  k=xl0();
+			else k=xl0();
 			v=xl0(); xref(k); xref(v); 
 			EL(x,VP,0)=k; EL(x,VP,1)=v;
 			x->n=2; i=-1;                    // not found so insert below
@@ -478,15 +486,12 @@ VP append(VP x,VP y) {
 		} else {
 			xref(y2); ELl(v,i)=y2;
 		}
-		PF("append returning\n");DUMP(x);
 		return x;
 	}
 	if(CONTAINER(x)) { 
-		PF("append %p to list %p\n", y, x); DUMP(x);
 		xref(y);
 		x=XREALLOC(x,x->n+1); 
 		EL(x,VP,x->n)=y; x->n++;
-		PF("afterward:\n"); DUMP(x);
 	} else {
 		// PF("append disaster xn %d xc %d xi %d xsz %d yn %d yc %d yi %d ysz %d\n",x->n,x->cap,x->itemsz,x->sz,y->n,y->cap,y->itemsz,y->sz);
 		// DUMP(info(x));DUMP(x);DUMP(info(y));DUMP(y);
@@ -557,15 +562,24 @@ inline VP assign(VP x,VP k,VP val) {
 	PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
 	if (LIST(k) && k->n) {
 		int i=0;VP res=x;
+		if(IS_t(LIST_item(k,0)) && AS_t(LIST_item(k,0),0)==TINULL) {
+			// .name - try to find a matching key somewhere up the stack
+			// and update it with xreplace
+			PF("assign uplevel\n",i);
+			VP newk=LIST_item(k,1), tmp=get0(x,newk,1);
+			DUMP(tmp);
+			if(!IS_EXC(tmp)) return xreplace(tmp,val);
+			else { return EXC(Tt(assign),"assign could not set uplevel",x,k); }
+		}
 		for(;i<k->n-1;i++) {
-			PF("assign-at-depth %d\n",i);
+			PF("assign at depth %d\n",i);
 			ARG_MUTATING(x);
 			res=apply(res,ELl(k,i));
 			DUMP(res);
 			if(UNLIKELY(IS_EXC(res)) || res->n==0)
 				return res;
 		}
-		PF("assign-at-depth setting\n");
+		PF("assign at depth setting\n");
 		assign(res,ELl(k,k->n-1),val);
 		return res;
 	}
@@ -1223,7 +1237,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
 	if(SIMPLE(code) || !LIST(code)) return code;
 	char ch; int i; 
-	VP left=xarg,item=0;
+	VP left=xarg,item=0,oldleft=0;
 	tag_t tag, tcom=Ti(comment), texc=Ti(exception), texpr=Ti(expr), tlam=Ti(lambda), 
 				tlistexpr=Ti(listexpr), tname=Ti(name), toper=Ti(oper),
 				traw=Ti(raw), tstr=Ti(string), tws=Ti(ws);
@@ -1333,7 +1347,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		if(tag==tlam) { // create a context for lambdas
 			VP newctx=CTX_make_subctx(parent,item); 
 			item=newctx;
-			printf("created new lambda context %p for item=\n%s\n",newctx,reprA(item));DUMP(item);
+			// printf("created new lambda context %p for item=\n%s\n",newctx,reprA(item));DUMP(item);
 		// } else if (tag==texpr || tag==tlistexpr) {
 		// } else if (LIST(item) && !(LEN(item) && IS_c(LIST_first(item)) && LEN(LIST_first(item))==0)) { 
 		} else if (LIST(item) && (item->tag==texpr || item->tag==tlistexpr)) {
@@ -1452,14 +1466,18 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			Proj p;
 			PF("applying dangling left callable\n");
 			DUMP(left);
+			oldleft=left;
 			if(left->tag==Ti(proj)) left=apply2(ELl(left,1),ELl(left,0),item);
 			else left=apply(left,item);
+			xfree(oldleft);
 			if(left == 0 || left->tag==texc) { MAYBE_RETURN(left); }
 			if(IS_p(left)) {
 				p=AS_p(left,0);
 				if(yarg && p.type==2 && (!p.left || !p.right)) {
+					oldleft=left;
 					PF("applyexpr consuming y:\n");DUMP(yarg);
-					left=apply(left,yarg);
+					left=apply(oldleft,yarg);
+					xfree(oldleft);
 				}
 			}
 		} else if (0 && !CALLABLE(item) && (left!=0 && IS_t(left))) {
@@ -1467,6 +1485,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			left=entag(item,left);
 		} else if(!CALLABLE(item) && (left!=0 && !CALLABLE(left))) {
 			PF("applyexpr adopting left =\n");DUMP(item);
+			xfree(left);
 			left=item;
 		} else {
 			if(left) {
@@ -1483,7 +1502,9 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 						goto applyexprtop;
 					} else {
 						PFIN();
-						left=apply(item,left);
+						oldleft=left;
+						left=xref(apply(item,left));
+						xfree(oldleft); 
 						PFOUT();
 					}
 					// if(IS_EXC(left)) { MAYBE_RETURN(left); }
@@ -1491,6 +1512,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 				PF("applyexpr apply returned\n");DUMP(left);
 			} else {
 				PF("no left, so continuing with item..\n");
+				xfree(left);
 				left=item;
 			}
 		}
@@ -1670,7 +1692,7 @@ VP apply(VP x,VP y) {
 		res=x;
 		for(;i<y->n;i++) {
 			res=apply(res,ELl(y,i));
-			PF("at-depth result %d\n",i);DUMP(res);
+			PF("index at depth result %d\n",i);DUMP(res);
 			if(UNLIKELY(IS_EXC(res)) || res->n==0) 
 				return res;
 		}
@@ -2047,7 +2069,7 @@ VP aside(VP x,VP y) {
 	// luckily a very simple implementation
 	if(CALLABLE(y)) {
 		VP res=apply(y,x);
-		xfree(res);
+		if(res!=x && res!=y) xfree(res);
 	}
 	return x;
 }
@@ -2453,6 +2475,51 @@ VP callclass(const VP ctx,const VP verbname,const VP value) {
 	if(res==NULL) return 0;
 	return apply(res,value);
 }
+VP get0(const VP x,const VP y,int checkparents) {
+	if(!IS_d(x)) return EXC(Tt(type),"get0 needs dict",x,y);
+	PF("get0 %d\n",checkparents);
+	VP key=y, kremainder=0, res;
+	int xn=LEN(x),kn=LEN(key); 
+	if(LIKELY(key->tag==0 || !TAG_is_class(key->tag)) 
+		 && LIKELY(IS_c(key) || (LIST(key) && IS_c(ELl(key,0))))) {
+		// convert 'name(['raw("file"),'raw("get")]) to ('file,'get)
+		PF("converting\n");DUMP(y);
+		key=str2tag(key); kn=LEN(key);
+	}
+	if(IS_t(key) && kn>1) {
+		key=list(key); // support depth queries with scalars like thing.item
+		// if you are doing a depth query, and we are recursing into parents,
+		// we need to start the query from the first matching item in a parent;
+		// otherwise it is safe to rely on apply() here
+		if(!checkparents) {
+			PF("get depth query\n");DUMP(key);
+			return apply(x, key);
+		} else {
+			kremainder=drop_(key,1); key=first(key);    // separate out the parts
+			res=get0(x,key,1);                          // find the parent containing the first part
+			if(!IS_EXC(res)) res=apply(res,kremainder); // then seek the rest
+			return res;
+		}
+	} else {
+		res=DICT_find(x,key);
+		DUMP(res);
+		if(!IS_EXC(res)) return res;
+	}
+	if(checkparents) {
+		res=DICT_find(x,TTPARENT);
+		if(res!=NULL && res!=x) {
+			PF("trying parent\n");
+			res=get0(KEYS(res),key,1);
+			DUMP(res);
+			if(!IS_EXC(res)) {
+				return res;
+			}
+			// if this is an exception, free it because we return our own to maintain context ref:
+			else if(res) xfree(res); 
+		}
+	}
+	return EXC(Tt(undef),"undefined",y,x);
+}
 VP get(VP x,VP y) {
 	// get is used to resolve names in applyctx(). x is context, y is thing to
 	// look up. scans tree of scopes/closures to get value. 
@@ -2463,51 +2530,24 @@ VP get(VP x,VP y) {
 	// in our case, if you pass in ['tag,arg] on the right, it will look up
 	// 'tag in the root scope, and then try to call its "get" member. 
 	// see _getmodular()
-	int xn=LEN(x),yn=LEN(y),i,j;VP item,res;
-	printf("get %s in %p\n", reprA(y), x);
+	// printf("get %s in %p\n", reprA(y), x);
 	PF("get\n");DUMP(x);DUMP(y);
 	if(IS_x(x)) {
-		if(x->n != 2) return EXC(Tt(value),"context not fully formed",x,y);
-		if(LIKELY(y->tag==0 || !TAG_is_class(y->tag)) 
-			 && LIKELY(IS_c(y) || (LIST(y) && IS_c(ELl(y,0))))) {
-			// convert 'name(['raw("file"),'raw("get")]) to ('file,'get)
-			PF("converting\n");DUMP(y);
-			y=str2tag(y); yn=LEN(y);
-		}
+		if(x->n != 2) { return EXC(Tt(value),"context not fully formed",x,y); }
 		CLASS_call(x,get,y);
-		if(IS_t(y) && AS_t(y,0)==Ti(.)) {
-			//return clone(curtail(x)); // clone(KEYS(x));
-			ASSERT(1,"get root reference");
-			return x;
-		} else {
-			i=xn-1;
-			if(IS_t(y) && yn>1) {
-				y=list(y); // support depth queries with scalars like thing.item
-				return apply(KEYS(x), y);
-			} else {
-				item=KEYS(x);
-				res=DICT_find(item,y);
-				if(res!=NULL) return res;
-			}
-		}
-		res=DICT_find(KEYS(x),TTPARENT);
-		if(res!=NULL) {
-			res=get(res,y);
-			if(!IS_EXC(res)) return res;
-			// if this is an exception, free it because we return our own to maintain context ref:
-			else if (res) xfree(res); 
-		}
-		return EXC(Tt(undef),"undefined",y,x);
+		if(IS_t(y) && AS_t(y,0)==Ti(.)) return x;
+		else return get0(KEYS(x),y,1);
 	}
+	else if(IS_d(x)) return get0(x,y,0);
 	return apply(x,y);
 }
 VP set(VP ctx,VP key,VP val) {
 	PF("set in %p\n",ctx);DUMP(ctx);DUMP(key);DUMP(val);
 	if(val==NULL) return val;
 	if(!IS_t(key)) return EXC(Tt(type),"set val must be symbol",key,val);
-	if(IS_t(key) && key->n > 1) { // set-at-depth
-		PF("set-at-depth\n");
-		key=list(behead(key));
+	if(IS_t(key) && key->n > 1) { 
+		PF("set at depth\n");
+		key=list(key);
 	}
 	ARG_MUTATING(ctx);
 	VP dest=KEYS(ctx);
@@ -2721,9 +2761,6 @@ static inline tag_t _tagnum(const VP s) {
 }
 /* static inline  */
 inline tag_t _tagnums(const char* name) {
-	//printf("_tagnums %s\n",name);
-	//printf("tagnums free\n");
-	// DUMP(TAGS);
 	tag_t res=0;
 	memcpy(&res,name,MIN(strlen(name),sizeof(res)));
 	return res;
@@ -2967,7 +3004,9 @@ VP matcheasy(VP obj,VP pat) {
 		}), typerr);
 		IF_EXC(typerr>-1, Tt(type), "matcheasy could not match those types",obj,pat);
 	}
-	PF("matcheasy result\n"); DUMP(acc);
+	PF("matcheasy result\n"); 
+	DUMP(info(acc));
+	DUMP(acc);
 	return acc;
 }
 VP matchexec(VP obj,VP pats) {
@@ -3285,7 +3324,7 @@ VP resolve(VP ctx,VP ptree) {
 			VP val=DICT_find(KEYS(ctx),tag);
 			if(val!=NULL) {
 				xfree(name);
-				val=entag(val,tag);  //hmm
+				if(!SIMPLE(val)) val=entag(val,tag);  //hmm
 				EL(ptree,VP,i)=xref(val);
 				// printf("resolved\n");DUMP(val); 
 			} else {
@@ -3470,19 +3509,26 @@ VP evalstrinwith(const char* str, VP ctx, VP xarg) {
 VP evalfile(VP ctx,const char* fn) {
 	return loadin(xfroms(fn), ctx);
 }
-VP loadin(VP fn,VP ctx) {
-	if(!IS_c(fn) || !IS_x(ctx)) return EXC(Tt(type),"loadin x is filename and y is ctx",fn,ctx);
+VP load0(VP fn,VP ctx) {
+	if(!IS_c(fn) || !IS_x(ctx)) return EXC(Tt(type),"load0 x is filename and y is ctx",fn,ctx);
 	VP contents = fileget(fn);
 	RETURN_IF_EXC(contents);
 	char* str=sfromxA(contents);
+	set(ctx,Tt(_dir),filedirname(fn)); // set() returns y value, not x context - dont preserve
 	VP parsetree=parseresolvestr(str,ctx);
-	int i; VP k=KEYS(ctx);
-	VP subctx=CTX_make_subctx(ctx,parsetree);
-	xfree(parsetree);
 	free(str);
-	set(subctx,Tt(_dir),filedirname(fn)); // set() returns y value, not x context - dont preserve
-	VP res=applyctx(subctx,NULL,NULL);
-	xfree(subctx);
+	append(ctx,parsetree);
+	xfree(parsetree);
+	VP res=applyctx(ctx,NULL,NULL);
+	return res;
+}
+VP import(VP fn,VP ctx) {              // get, parse, eval in isolated ctx; return last result
+	return ctx;
+}
+VP loadin(VP fn,VP ctx) {              // get, parse, eval in current ctx; return last result
+	VP bkupdir=xref(get(ctx,Tt(_dir)));  // load0 clobbers _dir
+	VP res=load0(fn,ctx);
+	set(ctx,Tt(_dir),bkupdir);
 	return res;
 }
 VP selftest(VP dummy) {
