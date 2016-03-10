@@ -89,7 +89,6 @@
 	res=assign(res,Tt(aside),x2(&aside));
 	res=assign(res,Tt(base),x2(&base));
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
-	res=assign(res,Tt(call),x2(&call));
 	res=assign(res,Tt(case),x2(&casee));
 	res=assign(res,Tt(consecj),x2(&consecutivejoin));
 	res=assign(res,Tt(deal),x2(&deal));
@@ -103,6 +102,7 @@
 	res=assign(res,Tt(evalin),x2(&evalin));
 	res=assign(res,Tt(except),x2(&except));
 	res=assign(res,Tt(exhaust),x2(&exhaust));
+	res=assign(res,Tt(from),x2(&from));
 	res=assign(res,Tt(get),x2(&get));
 	res=assign(res,Tt(iftrue),x2(&iftrue));
 	res=assign(res,Tt(ifelse),x2(&ifelse));

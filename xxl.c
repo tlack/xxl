@@ -602,8 +602,8 @@ VP behead(VP x) {
 	// PF("behead\n");DUMP(x);
 	return drop_(x,1);
 }
-VP call(VP x,VP y) {
-	if(y==0) return EXC(Tt(value),"can't call null",x,y);
+VP from(VP x,VP y) {
+	if(IS_EXC(x) || IS_EXC(y)) return EXC(Tt(value),"from can't use those values",x,y);
 	return apply(y,x);
 }
 VP catenate_table(VP table, VP row) {
