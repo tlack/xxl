@@ -1993,10 +1993,9 @@ VP recurse(const VP x,const VP y) {
 	PF("recurse returning\n");DUMP(res);
 	return res;
 }
-VP wide(const VP obj,const VP f) {
+VP wide0(const VP obj,const VP f,int listsonly) {
 	int i; VP acc;
-	if(IS_EXC(obj)) return obj;
-	PF("wide\n");DUMP(obj);DUMP(f);
+	PF("wide0\n");DUMP(obj);DUMP(f);
 	if(!CONTAINER(obj)) return apply(f, obj);
 	// PF("wide top level\n");DUMP(obj);
 	acc=apply(f,obj);
@@ -2004,11 +2003,17 @@ VP wide(const VP obj,const VP f) {
 	if(CONTAINER(acc)) {
 		for(i=0;i<acc->n;i++) {
 			//PF("wide #%d\n",i);PFIN();
-			EL(acc,VP,i)=wide(AS_l(acc,i),f);
+			if(!listsonly || LIST(ELl(acc,i)))
+				EL(acc,VP,i)=wide(ELl(acc,i),f);
 			//PFOUT();
 		}
 	}
 	return acc;
+}
+VP wide(const VP obj,const VP f) {
+	if(IS_EXC(obj)) return obj;
+	PF("wide\n");DUMP(obj);DUMP(f);
+	return wide0(obj,f,1);
 }
 
 // MATHY/LOGICY STUFF:
