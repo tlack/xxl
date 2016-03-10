@@ -123,6 +123,12 @@ $'table,                               // make dict into start of new table
  ],
  'cat:'values
 ],
+['t:'binary, 
+ 'name:"del", 
+ 'desc:"Similar to `except`, but modifies x in-place. Works with lists and dicts in x. For vectors, consider using except. Use with due care - not changing values this way is clearer.", 
+ 'op:".:",
+ 'ex:[ ["[1,2,3]as 't; t del 0; t",[2,3]] ], 
+ 'cat:'values],
 ['t:'unary,
  'name:"len",
  'desc:"Returns length of list or vector x",
