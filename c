@@ -83,7 +83,7 @@ $COMPILEOBJ \
 $BUILDOBJ xxl \
 	xxl.o repl.o net.o stdlib.o 2>&1 \
 	&& \
-clear && $RUN
+$RUN
 
 
 
