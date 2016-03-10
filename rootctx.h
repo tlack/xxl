@@ -53,7 +53,7 @@
 	res=assign(res,xt(_tagnums("|#")),x2(&drop));
 	res=assign(res,xt(_tagnums("|?")),x2(&except));
 	// .. looping:
-	res=assign(res,xt(_tagnums(".:")),x2(&call));
+	res=assign(res,xt(_tagnums(".:")),x2(&from));
 	res=assign(res,Tt(::),x2(&each));
 	res=assign(res,xt(_tagnums(">:")),x2(&eachboth));
 	res=assign(res,xt(_tagnums("\\:")),x2(&eachleft));
