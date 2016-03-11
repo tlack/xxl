@@ -139,6 +139,12 @@
 	res=assign(res,Tt(File),d);
 	xfree(d);
 	#endif
+	#ifdef STDLIBNET
+	d=xd0();
+	d=assign(d,Tt(bind),x2(&netbind));
+	res=assign(res,Tt(Net),d);
+	xfree(d);
+	#endif
 	#ifdef STDLIBSHAREDLIB
 	d=xd0();
 	d=assign(d,Tt(get),x1(&sharedlibget));
@@ -150,12 +156,6 @@
 	d=xd0();
 	d=assign(d,Tt(get),x1(&shellget));
 	res=assign(res,Tt(Shell),d);
-	xfree(d);
-	#endif
-	#ifdef STDLIBNET
-	d=xd0();
-	d=assign(d,Tt(bind),x2(&netbind));
-	res=assign(res,Tt(Net),d);
 	xfree(d);
 	#endif
 
