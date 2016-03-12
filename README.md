@@ -24,7 +24,6 @@ Android runtime on NDK (contact me if interested).
 
 
 ```
-
 // enclose (c)urly(b)races, (s)quare(b)brackets, (q)uotes:
 'ecb is {"{",x,"}"}; 'esb is {"[",x,"]"}; 'eq is {"\"",x,"\""}; 
 'jc is {join ","}; 'jac is {each y jc};  // join x with commas; apply y to each of x then join with commas
@@ -34,6 +33,7 @@ Android runtime on NDK (contact me if interested).
 // wrap non-scalar values in appropriate way:
 'many is {as 'el type case ('char, {el str eq}, 'dict, {el dict}, {el jac encode esb})};
 'encode is {ravel[many,str]};            // ravel calls x y[0] for arrays (len > 1), x y[1] for scalars
+```
 
 ## Micro Web Counter
 
