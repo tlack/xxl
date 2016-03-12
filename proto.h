@@ -91,6 +91,7 @@ VP plus(VP x,VP y);
 VP range_(int start, int end);
 VP range(VP x,VP y);
 VP recurse(VP x,VP y);
+VP resolve(VP ctx,VP ptree);
 void repl(VP ctx);
 VP repr(VP x);
 char* repr0(VP x,char* s,size_t len);
@@ -146,6 +147,17 @@ void thr_run1(VP ctx,VP arg);
 // from net.c
 VP netbind(VP opts,VP callback);
 VP netloop(VP xsock,VP cb);
+#endif
+
+#ifdef STDLIBMBOX
+// from net.c
+VP mboxnew(VP x);
+VP mboxsend(VP mbox,VP msg);
+VP mboxpeek(VP mbox);
+VP mboxrecv(VP mbox);
+VP mboxquery(VP mbox,VP msg);
+VP mboxwait(VP mbox); // equivalent to recv, but will block until something comes in
+VP mboxwatch(VP mbox,VP cb);
 #endif
 
 #ifdef STDLIBFILE

@@ -1335,19 +1335,22 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			// if(UNLIKELY(IS_EXC(item))) { MAYBE_RETURN(item); }
 			goto evalexpr;
 		} else PF("picking up item from code %d\n", i); 
-		item=ELl(code,i);
+		item=xref(ELl(code,i));
 		PF("item=\n");DUMP(item);
-
-		consideritem:
-
 		tag=item->tag;
 		// consider storing these skip conditions in an array
 		if(tag==tws) continue;
 		if(tag==tcom) continue;
 		if(tag==tlam) { // create a context for lambdas
-			VP newctx=CTX_make_subctx(parent,item); 
+			/*
+			VP itemr;
+			itemr=clone(item);
+			ELl(itemr,0)=wide(ELl(itemr,0),proj(2,&resolve,parent,0));
+			VP newctx=CTX_make_subctx(parent,itemr); 
 			item=newctx;
-			// printf("created new lambda context %p for item=\n%s\n",newctx,reprA(item));DUMP(item);
+			*/
+			item=CTX_make_subctx(parent,item);
+			// printf("created new lambda context %p for item=\n%s\n",item,reprA(item));
 		// } else if (tag==texpr || tag==tlistexpr) {
 		// } else if (LIST(item) && !(LEN(item) && IS_c(LIST_first(item)) && LEN(LIST_first(item))==0)) { 
 		} else if (LIST(item) && (item->tag==texpr || item->tag==tlistexpr)) {
@@ -1382,7 +1385,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			// end of expr; cleanse expression
 			if(ch==';') { 
 				// if something on this line generated an exception, return it 
-				if(IS_EXC(left)) MAYBE_RETURN(left);
+				if(IS_EXC(left)) { MAYBE_RETURN(left); }
 				left=NULL; continue; 
 			}
 			PF("much ado about\n");DUMP(item);
@@ -2003,8 +2006,7 @@ VP wide0(const VP obj,const VP f,int listsonly) {
 	if(CONTAINER(acc)) {
 		for(i=0;i<acc->n;i++) {
 			//PF("wide #%d\n",i);PFIN();
-			if(!listsonly || LIST(ELl(acc,i)))
-				EL(acc,VP,i)=wide(ELl(acc,i),f);
+			if(!listsonly || LIST(ELl(acc,i))) EL(acc,VP,i)=wide0(ELl(acc,i),f,listsonly);
 			//PFOUT();
 		}
 	}
@@ -2514,7 +2516,10 @@ VP get0(const VP x,const VP y,int checkparents) {
 	} else {
 		res=DICT_find(x,key);
 		DUMP(res);
-		if(!IS_EXC(res)) return res;
+		if(!IS_EXC(res)) {
+			// printf("get finally found it\n"); if(SIMPLE(res)) { printf("%s\n",reprA(res)); }
+			return res;
+		}
 	}
 	if(checkparents) {
 		res=DICT_find(x,TTPARENT);
@@ -2553,6 +2558,7 @@ VP get(VP x,VP y) {
 	return apply(x,y);
 }
 VP set(VP ctx,VP key,VP val) {
+	// printf("set %s in %p:%s\n", reprA(key), ctx, reprA(val));
 	PF("set in %p\n",ctx);DUMP(ctx);DUMP(key);DUMP(val);
 	if(val==NULL) return val;
 	if(!IS_t(key)) return EXC(Tt(type),"set val must be symbol",key,val);
@@ -2973,13 +2979,13 @@ VP matchany(VP obj,VP pat) {
 		FOR(0,n,({ 
 			this=ELl(obj,_i);
 			if((pat->tag==0 || pat->tag==this->tag) && _find1(pat,this) != -1) {
-				PF("matchany found list at %d\n", _i);
+				// PF("matchany found list at %d\n", _i);
 				EL(acc,CTYPE_b,_i)=1; }}));
 	} else {
 		VARY_EACHLEFT(obj, pat, ({
 			// TODO matchany(): buggy subscripting:
 			if((pat->tag==0 || pat->tag==obj->tag) && _findbuf(pat, (buf_t)&_x) != -1) {
-				PF("matchany found simple at %d\n", _i);
+				// PF("matchany found simple at %d\n", _i);
 				EL(acc,CTYPE_b,_i) = 1;
 			}
 		}), typerr);
@@ -3055,7 +3061,8 @@ VP matchexec(VP obj,VP pats) {
 				obj=splice(obj,newidx,res2);
 				diff += 1 - idx->n;
 				PF("matchexec new obj, diff=%d", diff); DUMP(obj);
-				xfree(res2);xfree(newidx);
+				// xfree(res2);
+				xfree(newidx);
 				// idx isnt a reference, dont free it.
 			}
 			xfree(indices);
@@ -3324,28 +3331,28 @@ VP parseallexprs(VP tree) {
 	return tree;
 }
 VP resolve(VP ctx,VP ptree) {
-	PF("resolve\n");DUMP(ptree);
+	PF_LVL++;
+	PF("resolve\n");DUMP(ctx);DUMP(ptree);
+	PF_LVL--;
 	if(!IS_x(ctx) && !LIST(ptree)) return EXC(Tt(type),"resolve",ctx,ptree);
 	VP name; int i, tname=Ti(name), traw=Ti(raw);
-	PF_LVL++;
 	for(i=0;i <LEN(ptree); i++) {
 		name=LIST_item(ptree,i);
 		if(IS_c(name) && (name->tag==tname || name->tag==traw)) {
 			VP tag=xt(_tagnum(name));
 			VP val=DICT_find(KEYS(ctx),tag);
 			if(val!=NULL) {
-				xfree(name);
+				printf("resolve replacing %s with %s\n",reprA(name),reprA(val));
 				if(!SIMPLE(val)) val=entag(val,tag);  //hmm
 				EL(ptree,VP,i)=xref(val);
 				// printf("resolved\n");DUMP(val); 
 			} else {
-				// PF("couldnt resolve\n");DUMP(tag);
+				printf("couldnt resolve %s\n",reprA(tag));DUMP(tag);
 			}
 			xfree(tag);
 		}
 	}
 	PF("returning\n");DUMP(ptree);
-	PF_LVL--;
 	return ptree;
 }
 VP parseresolvestr(const char* str,VP ctx) {

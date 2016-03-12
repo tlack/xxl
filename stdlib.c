@@ -143,3 +143,101 @@ VP shellget(VP cmd) {
 }
 #endif
 
+#ifdef STDLIBMBOX
+#ifdef THREAD
+#define IS_mbox(mb) (LIST(mb) && mb->tag==Ti(mbox))
+#define MBOX_tm struct timespec tm;tm.tv_sec=5;tm.tv_nsec=0
+#define MBOX_usleep 5000
+VP mboxnew(VP x) {
+	pthread_mutex_t *rm, *wm; VP res;
+	rm = malloc(sizeof(pthread_mutex_t)); pthread_mutex_init(rm, NULL);
+	wm = malloc(sizeof(pthread_mutex_t)); pthread_mutex_init(wm, NULL);
+	return entags(xln(3, xj((long long)rm), xj((long long)wm), xl0()), "mbox");
+}
+VP mboxsend(VP mbox,VP msg) {
+	if(!IS_mbox(mbox)) { return EXC(Tt(type),"mbox.send needs a mailbox in x",mbox,msg); }
+	pthread_mutex_t* wm=(pthread_mutex_t*)AS_j(LIST_item(mbox, 1),0);
+	MBOX_tm;
+	int ret=pthread_mutex_timedlock(wm, &tm);
+	if(ret!=0) { return Tt(timeout); }
+	VP items=ELl(mbox,2);
+	ELl(mbox,2)=append(items,msg);
+	pthread_mutex_unlock(wm);
+	return msg;
+}
+VP mboxrecv0(VP mbox,int pop) {
+	pthread_mutex_t* rm=(pthread_mutex_t*)AS_j(LIST_item(mbox, 0),0);
+	MBOX_tm;
+	int ret=pthread_mutex_timedlock(rm, &tm);
+	if(ret!=0) { return Tt(timeout); }
+	VP res=0;
+	VP msgs=LIST_item(mbox,2);
+	if(LEN(msgs)) {
+		res=LIST_item(msgs,0);
+		if(pop) ELl(mbox,2)=behead(msgs);
+	}
+	pthread_mutex_unlock(rm);
+	return res;
+}
+VP mboxpeek(VP mbox) {
+	if(!IS_mbox(mbox)) { return EXC(Tt(type),"mbox.recv needs a mailbox in x",mbox,0); }
+	return mboxrecv0(mbox,0);
+}
+VP mboxrecv(VP mbox) {
+	if(!IS_mbox(mbox)) { return EXC(Tt(type),"mbox.recv needs a mailbox in x",mbox,0); }
+	return mboxrecv0(mbox,1);
+}
+VP mboxquery(VP mbox,VP msg) {
+	PF("mboxquery\n");DUMP(mbox);DUMP(msg);
+	VP me=mboxnew(XI0), tmp=xln(2,msg,me);
+	mboxsend(mbox,tmp);
+	while (1) {
+		VP resp=mboxwait(me); if(resp) { xfree(tmp); xfree(me); return resp; }
+	}
+	return NULL; // todo timeouts
+}
+VP mboxwait(VP mbox) {
+	PF("mboxwait\n");DUMP(mbox);
+	VP msg;
+	tag_t ping=Ti(ping);
+	int empties=0,founds=0;
+	do {
+		msg=mboxrecv(mbox);
+		if(msg!=NULL) {
+			if(LIST(msg) && LEN(msg)==2 && IS_t(LIST_item(msg,0)) && IS_mbox(LIST_item(msg,1)) && AS_t(LIST_item(msg,0),0)==ping) {
+				VP tmp=xln(4,Tt(pong),mbox,xi(founds),xi(empties));
+				mboxsend(LIST_item(msg,1),tmp);
+				xfree(tmp);
+			} else return msg;
+		}
+		else {
+			sched_yield();
+			empties++; if(empties>2) usleep(MAX(empties*100,MBOX_usleep)); // arb
+		}
+	} while (1);
+	return NULL; // cant happen
+}
+VP mboxwatch0(VP args) {
+	VP exitmsg=Tt(exit);
+	VP mbox=LIST_item(args,0); 
+	VP cb=LIST_item(args,1);
+	VP state=xl0();
+	VP msg;
+	do {
+		msg=mboxwait(mbox);
+		state=apply2(cb, msg, state);
+		xfree(msg);
+	} while (state!=exitmsg);
+	xfree(exitmsg);
+	xfree(state);
+	return NULL;
+}
+VP mboxwatch(VP mbox,VP callback) {
+	if(!IS_mbox(mbox)) { return EXC(Tt(type),"Mbox.watch needs a mailbox in x",mbox,callback); }
+	if(!CALLABLE(callback)) { return EXC(Tt(type),"Mbox.watch needs a callback in y",mbox,callback); }
+	thr_run1(x1(&mboxwatch0),xln(2,mbox,callback));
+	return mbox;
+}
+#endif
+#endif 
+

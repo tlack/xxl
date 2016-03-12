@@ -139,6 +139,18 @@
 	res=assign(res,Tt(File),d);
 	xfree(d);
 	#endif
+	#ifdef STDLIBMBOX
+	d=xd0();
+	d=assign(d,Tt(new),x1(&mboxnew));
+	d=assign(d,Tt(peek),x1(&mboxpeek));
+	d=assign(d,Tt(query),x2(&mboxquery));
+	d=assign(d,Tt(recv),x1(&mboxrecv));
+	d=assign(d,Tt(send),x2(&mboxsend));
+	d=assign(d,Tt(wait),x1(&mboxwait));
+	d=assign(d,Tt(watch),x2(&mboxwatch));
+	res=assign(res,Tt(Mbox),d);
+	xfree(d);
+	#endif
 	#ifdef STDLIBNET
 	d=xd0();
 	d=assign(d,Tt(bind),x2(&netbind));
