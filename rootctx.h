@@ -104,8 +104,8 @@
 	res=assign(res,Tt(exhaust),x2(&exhaust));
 	res=assign(res,Tt(from),x2(&from));
 	res=assign(res,Tt(get),x2(&get));
-	res=assign(res,Tt(iftrue),x2(&iftrue));
 	res=assign(res,Tt(ifelse),x2(&ifelse));
+	res=assign(res,Tt(iftrue),x2(&iftrue));
 	res=assign(res,Tt(in),x2(&matchany));
 	res=assign(res,Tt(join),x2(&join));
 	res=assign(res,Tt(loadin),x2(&loadin));
@@ -117,6 +117,7 @@
 	res=assign(res,Tt(orelse),x2(&orelse));
 	res=assign(res,Tt(over),x2(&over));
 	res=assign(res,Tt(range),x2(&range));
+	res=assign(res,Tt(ravel),x2(&ravel));
 	res=assign(res,Tt(recurse),x2(&recurse));
 	res=assign(res,Tt(rot),x2(&shift));
 	res=assign(res,Tt(scan),x2(&scan));

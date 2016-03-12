@@ -9,7 +9,8 @@ General file stuff:
 
 `fname File.get`
 
-`"hello world" File.set "file.txt"`. File.set works only with strings. This is for writing text files.
+`"hello world" File.set "file.txt"`. File.set works only with strings. This is
+for writing text files.
 
 XXL data files (XD):
 
@@ -24,6 +25,7 @@ or boxing on vector data.
 
 Performance notes:
 
-As of March 2016, I can write 50 million ints to disk with Xd in 2 seconds. I can read them back in 0.4sec. 
-This file is almost perfectly efficient at 201MB. I think that is sufficient for now.
+As of March 2016, I can write 50 million ints to disk with Xd in 2 seconds. I
+can read them back in 0.4sec.  This file is almost perfectly efficient at
+201MB. I think that is sufficient for now.
 

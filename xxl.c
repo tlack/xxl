@@ -59,8 +59,8 @@ char* repr0(VP x,char* s,size_t sz) {
 		MEMO_set(REPR_SEEN,x,(VP)s,i);
 	}
 	t=typeinfo(x->t);
-	if(0 && DEBUG) {
-		APF(sz," /*%p %s tag=%d#%s itemsz=%d n=%d rc=%d*/ ",x,t.name,
+	if(DEBUG) {
+		printf("/*%p %s tag=%d#%s itemsz=%d n=%d rc=%d*/\n",x,t.name,
 			x->tag,(x->tag!=0 ? bfromx(tagname(x->tag)) : ""),
 			x->itemsz,x->n,x->rc);
 	}
@@ -2350,6 +2350,14 @@ VP plus(VP x,VP y) {
 	IF_EXC(typerr > -1, Tt(type), "plus arg wrong type", x, y);
 	// PF("plus result\n"); DUMP(acc);
 	return acc;
+}
+VP ravel(VP x,VP y) {
+	if(!LIST(y) || LEN(y)!=2) return EXC(Tt(type), "ravel y should be [many,single]", x, y);
+	VP cond;
+	if(LEN(x)!=1 || DICT(x)) cond=LIST_item(y,0);
+	else cond=LIST_item(y,1);
+	if(CALLABLE(cond)) return apply(cond,x);
+	else return cond;
 }
 static inline VP str2num(VP x) {
 	// TODO optimize str2int
