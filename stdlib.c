@@ -221,11 +221,13 @@ VP mboxwatch0(VP args) {
 	VP exitmsg=Tt(exit);
 	VP mbox=LIST_item(args,0); 
 	VP cb=LIST_item(args,1);
-	VP state=xl0();
+	VP state=xl0(), newstate;
 	VP msg;
 	do {
 		msg=mboxwait(mbox);
-		state=apply2(cb, msg, state);
+		newstate=apply2(cb, msg, state);
+		xfree(state);
+		state=newstate;
 		xfree(msg);
 	} while (state!=exitmsg);
 	xfree(exitmsg);
