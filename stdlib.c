@@ -76,7 +76,7 @@ VP fileset(VP str,VP fn) {
 	if(!IS_c(fname)) return EXC(Tt(type),"writefile filename must be string or pathlist",fn,0);
 	if(!IS_c(str)) return EXC(Tt(type),"writefile only deals writes strings right now",str,fn);
 	char* fns=sfromxA(fname);
-	int fd=open(fns,O_WRONLY);
+	int fd=open(fns,O_CREAT|O_WRONLY);
 	free(fns);
 	if(fd<0) return EXC(Tt(open),"could not open file for writing",str,fname);
 	if(write(fd,ELb(str,0),str->n)<str->n) return EXC(Tt(write),"could not write file contents",str,fname);
@@ -242,4 +242,61 @@ VP mboxwatch(VP mbox,VP callback) {
 }
 #endif
 #endif 
+
+#ifdef STDLIBXD
+VP xdget0_(VP fname,int fd) {
+	int sz;
+	if(read(fd,&sz,4)<4) return EXC(Tt(write),"could not read file size",fname,0);
+	if(sz!=sizeof(struct V)) return EXC(Tt(read),"could not read file structure due to size",fname,0);
+	VP data=calloc(sz,1);
+	if(read(fd,data,sz)<sz) return EXC(Tt(read),"could not read file structure",fname,0);
+	data->rc=1;
+	data->alloc=1;
+	data->dyn=calloc(data->sz,1);
+	if(CONTAINER(data)) {
+		int i=0, dn=LEN(data);
+		for(i=0; i<dn; i++) ELl(data,i)=xdget0_(fname,fd);
+	} else read(fd,BUF(data),data->sz);
+	return data;
+}
+VP xdget(const VP fn) {
+	VP fname=fn;
+	if(!IS_c(fname)) fname=filepath(fn);
+	if(!IS_c(fname)) return EXC(Tt(type),"xdget filename must be string or pathlist",fn,0);
+	char* fns=sfromxA(fname);
+	int fd=open(fns,O_RDONLY);
+	if(!fd) perror("open");
+	free(fns);
+	if(fd<0) return EXC(Tt(open),"could not open file for reading",fname,0);
+	char hdr[4];
+	if(read(fd,hdr,4)<4) return EXC(Tt(read),"could not write file header",fname,0);
+	VP res=xdget0_(fname,fd);
+	close(fd);
+	return res;
+}
+VP xdset0_(VP fname,int fd, const VP data) {
+	int sz=sizeof(struct V);
+	if(write(fd,&sz,4)<4) return EXC(Tt(write),"could not write file size",fname,data);
+	if(write(fd,data,sz)<sz) return EXC(Tt(write),"could not write file structure",fname,data);
+	if(CONTAINER(data)) {
+		int i=0, dn=LEN(data);
+		for(i=0; i<dn; i++) xdset0_(fname,fd,LIST_item(data,i));
+	} else write(fd,BUF(data),data->sz);
+}
+VP xdset(const VP data,const VP fn) {
+	VP fname=fn;
+	if(!IS_c(fname)) fname=filepath(fn);
+	if(!IS_c(fname)) return EXC(Tt(type),"xdset filename must be string or pathlist",fn,0);
+	char* fns=sfromxA(fname);
+	int fd=open(fns,O_CREAT|O_WRONLY);
+	if(!fd) perror("open");
+	free(fns);
+	if(fd<0) return EXC(Tt(open),"could not open file for writing",fname,data);
+	if(write(fd,"XXL0",4)<4) return EXC(Tt(write),"could not write file header",fname,data);
+	VP res=xdset0_(fname,fd,data);
+	close(fd);
+	if(IS_EXC(res)) return res;
+	else return data;
+}
+#endif
 

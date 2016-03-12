@@ -1,0 +1,29 @@
+"
+General file stuff:
+
+`fname File.exists`
+
+`fname File.dirname`
+
+`fname File.path`
+
+`fname File.get`
+
+`"hello world" File.set "file.txt"`. File.set works only with strings. This is for writing text files.
+
+XXL data files (XD):
+
+These work great with vectors, but are compatible (and slower) with lists.
+
+```
+1024*1024*50 count Xd.set "/tmp/mil.xd"
+```
+
+Data is written directly with a small header. There is no unnecessary padding
+or boxing on vector data.
+
+Performance notes:
+
+As of March 2016, I can write 50 million ints to disk with Xd in 2 seconds. I can read them back in 0.4sec. 
+This file is almost perfectly efficient at 201MB. I think that is sufficient for now.
+

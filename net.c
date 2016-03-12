@@ -69,6 +69,7 @@ VP netloop(VP xsock,VP cb) {
 	return xl0();
 }
 VP netbind(VP opts,VP cb) {
+	PF("netbind\n");DUMP(opts);DUMP(cb);
 	if(!LIST(opts)) return EXC(Tt(type),"bad network bind options",opts,cb);
 	int sock, opt, port;
 	char host[64]; 

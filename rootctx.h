@@ -170,4 +170,11 @@
 	res=assign(res,Tt(Shell),d);
 	xfree(d);
 	#endif
+	#ifdef STDLIBXD
+	d=xd0();
+	d=assign(d,Tt(get),x1(&xdget));
+	d=assign(d,Tt(set),x2(&xdset));
+	res=assign(res,Tt(Xd),d);
+	xfree(d);
+	#endif
 

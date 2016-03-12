@@ -178,3 +178,9 @@ VP sharedlibset(VP fn,VP funs);
 #ifdef STDLIBSHELL
 VP shellget(VP cmd);
 #endif
+
+#ifdef STDLIBXD
+VP xdget(VP fname);
+VP xdset(VP fname,VP data);
+#endif
+
