@@ -442,7 +442,9 @@ VP clone(const VP obj) {
 	// loss over mutable systems
 	PF("clone\n");DUMP(obj);
 	MEMO_clear(CLONE);
-	return clone0(obj);
+	VP res=clone0(obj);
+	PF("clone returning %p\n",res);DUMP(res);
+	return res;
 }
 
 // RUNTIME 
@@ -559,7 +561,7 @@ VP amend(VP x,VP y) {
 	return x;
 }
 inline VP assign(VP x,VP k,VP val) {
-	PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
+	// PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
 	if (LIST(k) && k->n) {
 		int i=0;VP res=x;
 		if(IS_t(LIST_item(k,0)) && AS_t(LIST_item(k,0),0)==TINULL) {
@@ -572,14 +574,14 @@ inline VP assign(VP x,VP k,VP val) {
 			else { return EXC(Tt(assign),"assign could not set uplevel",x,k); }
 		}
 		for(;i<k->n-1;i++) {
-			PF("assign at depth %d\n",i);
+			// PF("assign at depth %d\n",i);
 			ARG_MUTATING(x);
 			res=apply(res,ELl(k,i));
 			DUMP(res);
 			if(UNLIKELY(IS_EXC(res)) || res->n==0)
 				return res;
 		}
-		PF("assign at depth setting\n");
+		// PF("assign at depth setting\n");
 		assign(res,ELl(k,k->n-1),val);
 		return res;
 	}
@@ -1755,6 +1757,7 @@ VP apply(VP x,VP y) {
 			return res;
 		}
 	}
+	// sleep(3);printf("%s %s\n",reprA(x),reprA(y));
 	return EXC(Tt(apply),"apply failure",x,y);
 }
 VP apply2(const VP f,const VP x,const VP y) {
@@ -2489,6 +2492,7 @@ VP callclass(const VP ctx,const VP verbname,const VP value) {
 	return apply(res,value);
 }
 VP get0(const VP x,const VP y,int checkparents) {
+	// printf("get %s from %p\n", reprA(y), x);
 	if(!IS_d(x)) return EXC(Tt(type),"get0 needs dict",x,y);
 	PF("get0 %d\n",checkparents);
 	VP key=y, kremainder=0, res;
