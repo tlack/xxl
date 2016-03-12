@@ -104,12 +104,16 @@ char* repr_d(VP x,char* s,size_t sz) {
 	if (!k || !v) { APF(sz,"[null]",0); return s; }
 	APF(sz,"[",0);
 	n=k->n;
-	for(i=0;i<n;i++) {
-		repr0(DICT_key_n(x,i), s, sz-1);
+	if(n==0) {
 		APF(sz,":",0);
-		repr0(DICT_val_n(x,i), s, sz-2);
-		if(i!=n-1)
-			APF(sz,", ",0);
+	} else {
+		for(i=0;i<n;i++) {
+			repr0(DICT_key_n(x,i), s, sz-1);
+			APF(sz,":",0);
+			repr0(DICT_val_n(x,i), s, sz-2);
+			if(i!=n-1)
+				APF(sz,", ",0);
+		}
 	}
 	APF(sz,"]",0);
 	return s;
@@ -3170,6 +3174,8 @@ VP parseexpr(VP x) {
 	if(!LIST(x)) return x;               // confuzzling..
 	if(IS_c(ELl(x,0)) && AS_c(ELl(x,0),0)=='[') {
 		if(LEN(x)==2) return xl0();        // empty
+		if(LEN(x)==3 && IS_c(ELl(x,1)) && AS_c(ELl(x,1),0)==':')
+			return dict(xl0(),xl0()); // empty
 		VP res=xlsz(LEN(x)+1);
 		res=append(res,xl0());
 		if(LEN(x)>2) {
