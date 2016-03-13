@@ -1138,6 +1138,9 @@ VP make(VP x, VP y) {
 		typetag=AS_t(y,0); 
 		if(LEN(x)==0) return make(xi(0),y);
 	} else typenum=y->t;
+	if(IS_c(x) && (typetag==TINULL || typetag==Ti(tag))) {
+		return xt(_tagnum(x));
+	}
 	if(typetag==Ti(table)) {
 		if(!DICT(x)) return EXC(Tt(type), "can only create table from dict", x, y);
 		return make_table(KEYS(x),VALS(x));
