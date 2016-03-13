@@ -18,6 +18,13 @@ b=evalstrin("['a:1]$'table as 'z,['b:2]as 'b;z len=(b len)",a);
 DUMP(key(a));
 ASSERT(NUM_val(b)==0,"table not shadowed");
 xfree(b);
+
+b=evalstrin("['a:1]$'table,['a:5],['a:7]@'a over +",a);
+ASSERT(NUM_val(b)==13,"table get sym");
+
+b=evalstrin("[\"abc\":1]$'table,[\"abc\":5],[\"abc\":7]@\"abc\" over +",a);
+ASSERT(NUM_val(b)==13,"table get string col");
+
 /*
  * b=evalstrin("['a:1,'b:2] make 'table as 't; 128 count :: {t,['a:x,'b:(7*x)] as 't};t",a);
 ASSERT(_len(b)==129,"table append a few");
