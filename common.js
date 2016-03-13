@@ -16,7 +16,7 @@ m.types = [
 	[3,"b","byte","int8_t","int","%d",false,"SCHAR_MAX",false],
 	[4,"i","int","int","int","%d",false,"INT_MAX",false],
 	[5,"j","long","__int64_t","int","%ld",false,"LONG_MAX",false],
-	[6,"o","octo","__int128_t","int","%llld",true,"LONG_LONG_MAX",false],/* TODO custom printf for octowords */
+	[6,"o","octa","__int128_t","int","%llld",true,"LONG_LONG_MAX",false],/* TODO custom printf for octowords */
 	[7,"f","float","double","double","%0.5f",false,"DBL_MAX",false],/* TODO custom printf for octowords */
 	[8,"d","dict","VP","VP","%p",true,"0",true],// a dict is a general list with two items [keys,vals]
 	[9,"a","table","VP","VP","%p",true,"0",true],// a table is a dict whose vectors happen to contain more than 1 value (usually)

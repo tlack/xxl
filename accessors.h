@@ -95,7 +95,7 @@ static inline VP xjan(VP a, int nargs,...) { va_list args; int i; __int64_t x; a
 	for(i=0;i<nargs;i++){ x=va_arg(args,int);
 	EL(a,__int64_t,(a->n)+i)=x; }\
 	a->n+=nargs; return a; }
-/* accessors for simple type #6 or o (octo) implemented as __int128_t */
+/* accessors for simple type #6 or o (octa) implemented as __int128_t */
 #define MAX_o LONG_LONG_MAX
 #define CTYPE_o __int128_t
 #define T_o 6
