@@ -124,81 +124,85 @@ heavy.
 
 ### Minimal, easy to grasp syntax
 
-	XXL may seem odd at first glance but it's much simpler than other languages
-	which suffer from complex grammars and rules.
+XXL may seem odd at first glance but it's much simpler than other languages
+which suffer from complex grammars and rules.
 
-	Clean, very easy to understand and parse left-to-right syntax with only three 
-	special forms: comments, strings, and grouping (i.e., `( )`, `[ ]` and `{ }`).
+Clean, very easy to understand and parse left-to-right syntax with only three 
+special forms: comments, strings, and grouping (i.e., `( )`, `[ ]` and `{ }`).
 
-	Everything else is either a noun or a verb.
+Everything else is either a noun or a verb.
 
-	Verbs are either postfix (unary, one variable, called `x`) or infix (binary,
-	two variables, called `x` and `y`).
+Verbs are either postfix (unary, one variable, called `x`) or infix (binary,
+two variables, called `x` and `y`).
 
-	Tags like `'mything` are used as names.
+Tags like `'mything` are used as names.
 
-	Agnostic about whitespace. Don't let invisible special characters ruin your day.
+Agnostic about whitespace. Don't let invisible special characters ruin your day.
 
 ### Trees
 
-	We don't yet have a full tree data type yet, but operations on list-of-lists
-  are pretty diverse. After all, XXL is written in terms of its own verbs and values.
-	
-	`x nest [open,close]` creates sublists in x between matching open
-	and close tags. Create parsers like an animal.
+We don't yet have a full tree data type yet, but operations on list-of-lists
+are pretty diverse. After all, XXL is written in terms of its own verbs and values.
 
-	```
-	0. 1,4,4,0,5,5,6 nest [4,5]
-	[1i, [4i, (4,0,5i), 5i], 6i]
-	```
+`x nest [open,close]` creates sublists in x between matching open
+and close tags. Create parsers like an animal.
 
-	`x ravel [funmany, funone]` calls funone if x is scalar, many otherwise. Pair with
-	`self` to recurse. A napkin sketch of a markdown parser:
+```
+0. 1,4,4,0,5,5,6 nest [4,5]
+[1i, [4i, (4,0,5i), 5i], 6i]
+```
 
-	```
-	1. 'body is {behead curtail};
-	2. 'mdtxt is "My *Markdown* parser";
-	3. 'html is ['b:{"<b>",x,"</b>"}]; // define some formatting templates
-	3. mdtxt nest ["*","*"] :: {ravel [{x body html.b},str]} flat
-	"My <b>Markdown</b> parser"
-	```
+`x ravel [funmany, funone]` calls funone if x is scalar, many otherwise. Pair with
+`self` to recurse. A napkin sketch of a markdown parser:
 
-	The contents of the html callbacks, the nest control parameters, are all just
-	data that you can build up or pull in from anywhere. Compare with traditional
-	control structures used to manipulate data which exist inside the source code
-	only and are not mutable at runtime.
-	
-	Or use `deep` and `wide` for more explicit macro-control of
-	recursion. 
+```
+1. 'body is {behead curtail};
+2. 'mdtxt is "My *Markdown* parser";
+3. 'html is ['b:{"<b>",x,"</b>"}]; // define some formatting templates
+3. mdtxt nest ["*","*"] :: {ravel [{x body html.b},str]} flat
+"My <b>Markdown</b> parser"
+```
+
+The contents of the html callbacks, the nest control parameters, are all just
+data that you can build up or pull in from anywhere. Compare with traditional
+control structures used to manipulate data which exist inside the source code
+only and are not mutable at runtime.
+
+Or use `deep` and `wide` for more explicit macro-control of
+recursion. 
 
 ### Erlang-inspired mailboxes
 
-	Thread safe. Fast enough to be usable for basic purposes (800 request/reply
-	cycles a second on a $5 Digital Ocean box). 
+Thread safe for both readers and writers (at some cost to performance of
+course). Fast enough to be usable for basic purposes (800 request/reply cycles
+a second on a $5 Digital Ocean box). 
 
-	```
-	0. [] Mbox.new as 'myservice;
-	1. myservice Mbox.watch {x show}
-	2. myservice Mbox.send 55;
-	55
-	```
-	`watch` spawns a thread to act on mailbox messages. The `55` seen here is
-	from the `show` statement in the lambda.
+```
+0. [] Mbox.new as 'myservice;
+1. myservice Mbox.watch {x show}
+2. myservice Mbox.send 55;
+55
+```
 
-	See `doc/sect_mbox.xxl` for more.
+`watch` spawns a thread to act on mailbox messages. The `55` seen here is from
+the `show` statement in the lambda. A `y` variable is available inside the
+callback to maintain state; it starts as [] and it set to whatever your
+function returns.
+
+See `doc/sect_mbox.xxl` for more.
 
 ### Tables
 
-	Well, the beginnings of them anyway.
+Well, the beginnings of them anyway.
 
-	```
-	0. "name,age,job\nBob,30,Programmer\nJane,25,CFO\nTyler,2,Dinosaur Hunter" as 'data
-	1. data split "\n" each {split ","} as 'fields      // in a fantasy world where csv is never escaped
-	2. fields first:(fields behead) as 'emp             // : creates dicts or tables 
-	3. emp
-	```
+```
+0. "name,age,job\nBob,30,Programmer\nJane,25,CFO\nTyler,2,Dinosaur Hunter" as 'data
+1. data split "\n" each {split ","} as 'fields      // in a fantasy world where csv is never escaped
+2. fields first:(fields behead) as 'emp             // : creates dicts or tables 
+3. emp
+```
 
-	Still no joins, many rough edges, untested performance.
+Still no joins, many rough edges, untested performance.
 
 ### Other
 
