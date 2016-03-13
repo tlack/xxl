@@ -140,6 +140,7 @@ are pretty diverse. After all, XXL is written in terms of its own verbs and valu
 and close tags. Create parsers like an animal.
 
 *Note:* In the examples below, `0.`, `1.`, etc are the XXL command line prompt.
+Abridged output shown on the line below.
 
 ```
 0. 1,4,4,0,5,5,6 nest [4,5]
