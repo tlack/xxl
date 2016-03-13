@@ -8,7 +8,8 @@ attain these goals.
 
 ## Status
 
-Not yet implemented, but passes tests. Not yet suitable for real work.
+Pretty buggy but passes tests. Useful for writing small utilities, for me. Not
+yet suitable for real work.
 
 Tested so far on Linux (x86/GCC), OS X (Clang), Windows (Cygwin64). Soliciting
 Android runtime on NDK (contact me if interested).
