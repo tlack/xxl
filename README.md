@@ -104,15 +104,6 @@ See the various tests for more examples. In particular, you may appreciate
 
 These goals have not yet been attained.
 
-## Inspiration
-
-K4/Q by [Kx Systems&trade;](http://kx.com), the quirky
-[Klong by Nils Holm](http://t3x.org/klong/), Erlang
-(process model, introspection, parse tree/transforms), 
-[Kerf's approachablity](http://kerfsoftware.com), 
-Io (self-similarity of objects and asceticism) 
-and C (simplicity, performance, rectangularity of data).
-
 ## Motivation
 
 I need a swiss army knife for data manipulation with predictable performance and concise
@@ -147,18 +138,20 @@ are pretty diverse. After all, XXL is written in terms of its own verbs and valu
 `x nest [open,close]` creates sublists in x between matching open
 and close tags. Create parsers like an animal.
 
+*Note:* In the examples below, `0.`, `1.`, etc are the XXL command line prompt.
+
 ```
 0. 1,4,4,0,5,5,6 nest [4,5]
 [1i, [4i, (4,0,5i), 5i], 6i]
 ```
 
-`x ravel [funmany, funone]` calls funone if x is scalar, many otherwise. Pair with
-`self` to recurse. A napkin sketch of a markdown parser:
+`x ravel [funmany, funone]` calls funone if x is scalar, funmany otherwise.
+Pair with `self` to recurse. A napkin sketch of a markdown parser:
 
 ```
-1. 'body is {behead curtail};
-2. 'mdtxt is "My *Markdown* parser";
-3. 'html is ['b:{"<b>",x,"</b>"}]; // define some formatting templates
+0. 'body is {behead curtail};
+1. 'mdtxt is "My *Markdown* parser";
+2. 'html is ['b:{"<b>",x,"</b>"}]; // define some formatting templates
 3. mdtxt nest ["*","*"] :: {ravel [{x body html.b},str]} flat
 "My <b>Markdown</b> parser"
 ```
@@ -340,6 +333,15 @@ I believe XXL could be reduced to 1,000 lines or less of JavaScript or another
 language that offers a more flexible type system than C's. I also wrote different
 versions of similar code a lot for speed; implementing everything in terms
 of each() (and other forms of iteration) would probably require much less code.
+
+## Inspiration
+
+K4/Q by [Kx Systems&trade;](http://kx.com), the quirky
+[Klong by Nils Holm](http://t3x.org/klong/), Erlang
+(process model, introspection, parse tree/transforms), 
+[Kerf's approachablity](http://kerfsoftware.com), 
+Io (self-similarity of objects and asceticism) 
+and C (simplicity, performance, rectangularity of data).
 
 ## Disclaimer
 
