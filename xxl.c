@@ -564,6 +564,17 @@ VP amend(VP x,VP y) {
 	PF("amend returning\n");DUMP(x);
 	return x;
 }
+VP assign_table(VP x,VP k,VP val) {
+	if(NUMSTRICT(k)) return EXC(Tt(nyi),"table numeric assign not yet implemented",x,k);
+	PF("assign_table\n");DUMP(x);DUMP(k);DUMP(val);
+	int i=TABLE_col_num_for_name(x,k);
+	int nr=TABLE_nrows(x);
+	if(LEN(val)!=nr) return EXC(Tt(value),"table assign value length doesnt match table rows",x,val);
+	VP oldcol=TABLE_col(x,i);
+	TABLE_col(x,i)=clone(val);
+	xfree(oldcol);
+	return x;
+}
 inline VP assign(VP x,VP k,VP val) {
 	// PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
 	if (LIST(k) && k->n) {
@@ -587,9 +598,10 @@ inline VP assign(VP x,VP k,VP val) {
 		}
 		// PF("assign at depth setting\n");
 		assign(res,ELl(k,k->n-1),val);
-		return res;
+		return res; // TODO: should this return the inner context affected? seems wrong
 	}
-	if(DICT(x)) {
+	if(TABLE(x)) return assign_table(x,k,val);
+	else if(DICT(x)) {
 		xref(k); xref(val); return append(x,xln(2,k,val));
 	} else if(SIMPLE(x) && NUM(k)) {
 		// PF("assign");DUMP(x);DUMP(k);DUMP(val);
@@ -1130,7 +1142,8 @@ VP make_table(VP keys,VP vals) {
 	return catenate_table(res, MUTATE_CLONE(vals));
 }
 VP make(VP x, VP y) { 
-	// TODO cast() should short cut matching kind casts 
+	// TODO make() should short cut matching kind casts 
+	// TODO make() should be smarter about lists in x
 	PF("make\n");DUMP(x);DUMP(y);
 	VP res=0; type_t typenum=-1; tag_t typetag=-1;
 	// right arg is tag naming a type, use that.. otherwise use y's type

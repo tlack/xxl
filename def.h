@@ -128,6 +128,7 @@
 #define DICT_val_n(x,y) (ELl(VALS(x),y))
 
 #define TABLE_col(x,n) (ELl(VALS(x),n))
+#define TABLE_col_num_for_name(x,n) (_find1(KEYS(x),n))
 #define TABLE_col_named(x,n) ({ int i = _find1(KEYS(x),n); i==-1 ? ((VP)NULL) : (TABLE_col(x,i)); })
 #define TABLE_ncols(x) (LEN(KEYS(x)))
 #define TABLE_nrows(x) (LEN(VALS(x))==0 ? 0 : TABLE_col(x,0)->n)
