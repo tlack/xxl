@@ -59,11 +59,6 @@ char* repr0(VP x,char* s,size_t sz) {
 		MEMO_set(REPR_SEEN,x,(VP)s,i);
 	}
 	t=typeinfo(x->t);
-	if(DEBUG) {
-		printf("/*%p %s tag=%d#%s itemsz=%d n=%d rc=%d*/\n",x,t.name,
-			x->tag,(x->tag!=0 ? bfromx(tagname(x->tag)) : ""),
-			x->itemsz,x->n,x->rc);
-	}
 	IN_OUTPUT_HANDLER++;
 	if(x->tag!=0) APF(sz, "'%s#", tagnames(x->tag));
 	if(t.repr) (*(t.repr)(x,s,sz));
