@@ -3296,6 +3296,8 @@ VP parsestrlit(VP x) {
 							res=append(res,xc(10)); i++;
 						} else if(nextch=='r') {
 							res=append(res,xc(13)); i++;
+						} else if(nextch=='t') {
+							res=append(res,xc(9)); i++;
 						}
 					}
 				} else  
