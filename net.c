@@ -61,7 +61,8 @@ VP netloop(VP xsock,VP cb) {
 	for(;;) {
 		printf(".");
 		cons=accept(sock, &remotea, &remotel);
-		thr_run1(x1(&netserve),xln(2,xi(cons),cb));
+		netserve(xln(2,xi(cons),cb));
+		// thr_run1(x1(&netserve),xln(2,xi(cons),cb));
 		n++;
 	}
 	PF("netloop closing sock after %d\n",n);

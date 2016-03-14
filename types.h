@@ -7,7 +7,7 @@ static type_info_t TYPES[] = {
 { 3, 'b', sizeof(int8_t), "byte", &repr_b },
 { 4, 'i', sizeof(int), "int", &repr_i },
 { 5, 'j', sizeof(__int64_t), "long", &repr_j },
-{ 6, 'o', sizeof(__int128_t), "octo", &repr_o },
+{ 6, 'o', sizeof(__int128_t), "octa", &repr_o },
 { 7, 'f', sizeof(double), "float", &repr_f },
 { 8, 'd', sizeof(VP), "dict", &repr_d },
 { 9, 'a', sizeof(VP), "table", &repr_a },

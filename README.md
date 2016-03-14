@@ -8,9 +8,8 @@ attain these goals.
 
 ## Status
 
-Gross, crumbly work in progress. Kinda works when it compiles, but mostly a
-proof of concept. Definitely *not suitable* for serious work just yet. See also
-"not yet implemented" below.
+Pretty buggy but passes tests. Useful for writing small utilities, for me. Not
+yet suitable for real work.
 
 Tested so far on Linux (x86/GCC), OS X (Clang), Windows (Cygwin64). Soliciting
 Android runtime on NDK (contact me if interested).
@@ -18,7 +17,6 @@ Android runtime on NDK (contact me if interested).
 ## Examples
 
 ### JSON encoder
-
 
 ![json encoder screenshot with syntax highlighting](http://www.modernmethod.com/send/files/jsonencode.png)
 
@@ -35,15 +33,15 @@ Android runtime on NDK (contact me if interested).
 'encode is {ravel[many,str]};            // ravel calls x y[0] for arrays (len > 1), x y[1] for scalars
 ```
 
-## Micro Web Counter
+### Micro Web Counter
 
 Here's an example web server application that acts as a counter. You can run
 this as`./c examples/web-ctr.xxl`. Source code in full:
 
 ```
-0 as '.ctr;
+0 as 'ctr;
 (8080,"localhost").net.bind{
-	x show; .ctr + 1 as '.ctr;
+	x show; .ctr + 1 as '.ctr;  // dot in front of name means "parent"
 	"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n",
 	"Connection: close\r\nServer: xxl v0.0\r\n\r\nHello ",
 		(.ctr repr),"\r\n" flat}
@@ -83,7 +81,7 @@ Voila!
 This inchoate document is no excuse for real documentation, which is coming soon.
 
 See the various tests for more examples. In particular, you may appreciate
-`test-ctx.h` and `test-logic.h`.
+`test-logic.h`, and `test-semantics.h`.
 
 ## Philosophy
 
@@ -105,26 +103,104 @@ See the various tests for more examples. In particular, you may appreciate
 	in the way the computer wants to be programmed. Those with a background in assembly
 	might see some familiar tones in XXL.
 
-## Inspiration
-
-K4/Q by [Kx Systems&trade;](http://kx.com), the quirky
-[Klong by Nils Holm](http://t3x.org/klong/), Erlang
-(process model, introspection, parse tree/transforms), 
-[Kerf's approachablity](http://kerfsoftware.com), 
-Io (self-similarity of
-objects) and C (simplicity, performance, rectangularity of data).
+These goals have not yet been attained.
 
 ## Motivation
 
 I need a swiss army knife for data manipulation with predictable performance and concise
-syntax.
+syntax. I want to use some of the more exotic features I've tasted in other languages,
+but not all of them. In particular, I feel like programming has gotten a little too stack-
+heavy. 
 
 ## Features
 
-- Minimalist syntax. Clean, very easy to understand and parse left-to-right
-	syntax with only three special forms: comments, strings, and grouping (i.e.,
-	`( )`, `[ ]` and `{ }`)
-- Agnostic about whitespace. Don't let invisible special characters ruin your day.
+### Minimal, easy to grasp syntax
+
+XXL may seem odd at first glance but it's much simpler than other languages
+which suffer from complex grammars and rules.
+
+Clean, very easy to understand and parse left-to-right syntax with only three 
+special forms: comments, strings, and grouping (i.e., `( )`, `[ ]` and `{ }`).
+
+Everything else is either a noun or a verb.
+
+Verbs are either postfix (unary, one variable, called `x`) or infix (binary,
+two variables, called `x` and `y`).
+
+Tags like `'mything` are used as names.
+
+Agnostic about whitespace. Don't let invisible special characters ruin your day.
+
+### Trees
+
+We don't yet have a full tree data type yet, but operations on list-of-lists
+are pretty diverse. After all, XXL is written in terms of its own verbs and values.
+
+`x nest [open,close]` creates sublists in x between matching open
+and close tags. Create parsers like an animal.
+
+*Note:* In the examples below, `0.`, `1.`, etc are the XXL command line prompt.
+Abridged output shown on the line below.
+
+```
+0. 1,4,4,0,5,5,6 nest [4,5]
+[1i, [4i, (4,0,5i), 5i], 6i]
+```
+
+`x ravel [funmany, funone]` calls funone if x is scalar, funmany otherwise.
+Pair with `self` to recurse. A napkin sketch of a markdown parser:
+
+```
+0. 'body is {behead curtail};
+1. 'mdtxt is "My *Markdown* parser";
+2. 'html is ['b:{"<b>",x,"</b>"}]; // define some formatting templates
+3. mdtxt nest ["*","*"] :: {ravel [{x body html.b},str]} flat
+"My <b>Markdown</b> parser"
+```
+
+The contents of the html callbacks, the nest control parameters, are all just
+data that you can build up or pull in from anywhere. Compare with traditional
+control structures used to manipulate data which exist inside the source code
+only and are not mutable at runtime.
+
+Or use `deep` and `wide` for more explicit macro-control of
+recursion. 
+
+### Erlang-inspired mailboxes
+
+Thread safe for both readers and writers (at some cost to performance of
+course). Fast enough to be usable for basic purposes (800 request/reply cycles
+a second on a $5 Digital Ocean box). 
+
+```
+0. [] Mbox.new as 'myservice;
+1. myservice Mbox.watch {x show}
+2. myservice Mbox.send 55;
+55
+```
+
+`watch` spawns a thread to act on mailbox messages. The `55` seen here is from
+the `show` statement in the lambda. A `y` variable is available inside the
+callback to maintain state; it starts as [] and it set to whatever your
+function returns.
+
+See `doc/sect_mbox.xxl` for more.
+
+### Tables
+
+Well, the beginnings of them anyway.
+
+```
+0. "name,age,job\nBob,30,Programmer\nJane,25,CFO\nTyler,2,Dinosaur Hunter" as 'data
+1. data split "\n" each {split ","} as 'fields      // in a fantasy world where csv is never escaped
+2. fields first:(fields behead) as 'emp             // : creates dicts or tables 
+3. emp
+```
+
+Still no joins, many rough edges, untested performance.
+
+### Other
+
 - Variable names can't contain numbers, so you can build up some pretty clean and
   short expressions that mirror mathematics. `3u b5` means `3 * u b 5`, assuming
 	u is a single argument (unary) function and b is a two argument (binary) function.
@@ -136,15 +212,25 @@ syntax.
 	OOP-like concept of structure within data, while all regular operations work
 	seamlessly as if you were using the underlying data type. Consider the
 	classic OOP example of a "point", which in XXL would just be a tagged int
-	vector like `'point(100,150)`
-- Very fast operations on arrays of values, especially large ones (don't get
-	too excited - the parser is pretty slow)
+	vector like `'point#(100,150)`.
 - Vector-oriented and convenient manipulation on primitive values. For instance,
   `1,2,3 * (4,5,6)` is perfectly legal and returns 4,10,18. This is a huge time saver
-	and eliminates many loops.
-- Diverse integer type options, including 128bit octoword (denoted with `o`).
-- Threading support, kinda (requires attention)
-- Built in web server (half way there at least)
+	and eliminates many loops. It's also pretty fast, which somewhat makes up for the
+	dangerously slow interpreter.
+- Diverse integer type options, including 128bit octaword (`1 make 'octa`).
+- Fast-enough unboxed binary data files. 50 million ints into 201MB output file on $5/month
+  Digital Ocean SSD via `1024*1024*50 count Xd.set "/tmp/50m.xd"`
+- Threading support, kinda. XXL has the notion of threads available internally, but 
+  the only way they are usable from inside XXL code is via `mb Mbox.watch {..}`.
+	This is because modifications to contexts' data items are not locked or synchronized,
+	So chaos will surely ensue if you modify global data from threads. Thus, the mailbox
+	acts as both a safe communication mechanism for threads, and a way to discourage global
+	state mutation.
+- Built in simple networking. Client-speaks-first protocols are a snap to implement.
+  World's easiest echo server: `[8888,""]Net.bind{"Echo: ",x}`. Net.bind creates one
+	thread to service each port/service.
+- Vim syntax file in tools/syntax/vim-syntax.vim (which is generated by vim-build.xxl
+  in that same directory).
 - No stinkin loops (and no linked lists, either)
 - Supports `\\` to exit the REPL, as god intended (`quit` and `exit` too)
 - BSD license
@@ -154,7 +240,7 @@ syntax.
 XXL is still very much a work in progress and is mostly broken. That said, here are the 
 major features I anticipate finishing soon-ish.
 
-- Currently has severe memory leaks 
+- Currently has severe memory leaks and performance problems
 - ~~Floats!~~ We've got floats now - no comparison tolerance yet tho.
 - ~~Dictionary literals (dictionaries do work and exist as a primitive type, just
 	can't decide on a literal syntax for them)~~
@@ -164,42 +250,41 @@ major features I anticipate finishing soon-ish.
 - FancyRepl(tm)
 - Dates/times (need to figure out core representation and a way to express them as literals
 in code..)
-- In-memory tables
-- Non-pointer tags implementation to avoid logic to enc/decode to binary for disk and IPC
-- I/O (~~sockets~~, mmap) (try `(8080,"localhost").net.bind{"hello world!"}`)
+- ~~In-memory tables~~ Few operations yet, and bugs remain, but the notion of tables has
+  slowly seeped in. See tests.
+- ~~Non-pointer tags implementation to avoid logic to enc/decode to binary for disk and IPC
+  ~~ Temporarily replaced tag representation with 128bit pointer string. Fast to compare,
+	almost as fast as possible to create (memcpy), zero overhead on IPC ingest/excrete, 
+	not terribly large on today's memory sizes.
+- I/O (~~files~~, ~~sockets~~, mmap)
 - Logged updates (I like [Kdb's approach to this](http://code.kx.com/wiki/Cookbook/Logging))
-- Mailboxes/processes (implemented as a writer-blocks general list)
-- Streams (perhaps a mailbox as well; studying other systems now)
-- Tail call optimization in functions using the `self` keyword as 
+- ~~Mailboxes/processes (implemented as a writer-blocks general list)~~ Available in "Mbox"
+  class. 
+- Streams, laziness (perhaps based on mailboxes? studying other systems now)
+- Tail call optimization in functions using the `self` keyword 
 	[as per Kuc's approach](https://github.com/zholos/kuc/blob/1cace4608ba0398de6054349abea9b97100386cd/func.c#L726)
 - Sorted vectors
+- Grouped/index types
+- Well-supported Apter trees ([see also APL's approach](https://dfns.dyalog.com/n_Trees.htm)).
 
 ## Well known bugs
 
 Work in progress on these:
 
-- Comments have some decent tests, but the comment parser/lexer still seems to get confused
-in longer code samples. 
+- Interpreter speed and memory leaks
 
 - The join verb (`,`) is still finnicky about joining like-types of data with
 	general lists. In particular, I often find myself a bit puzzled by results
 	like `['a,2],3` - should this be a two-item list with two items in the first
 	sublist, or a three element list? Before you answer, consider `['a,2] as
 	'q;q,3`.
+	When in doubt, build parts separately and combine.
 
 ## Open questions
 
 - Date and time stamps: Nanosecond precision from uint64 sufficient? What about literal
   representation? Can we use `1997.12.31.09.31.45.333` or something non-pollutey like that?
 	Need to patch up apply() to allow you to index `'day` and similar.
-
-- What syntax for `each`, `eachleft`, `eachright`, `eachboth`, and `eachpair`?
-  Experimenting with `@` at this time, but open to suggestions.
-
-- What's the best way to represent dates/times and time spans? What about datetime literals in
-  source code? 
-
-- Should our tag/symbol implementation work with ints or char pointers? 
 
 ## Maybe later
 
@@ -250,6 +335,15 @@ I believe XXL could be reduced to 1,000 lines or less of JavaScript or another
 language that offers a more flexible type system than C's. I also wrote different
 versions of similar code a lot for speed; implementing everything in terms
 of each() (and other forms of iteration) would probably require much less code.
+
+## Inspiration
+
+K4/Q by [Kx Systems&trade;](http://kx.com), the quirky
+[Klong by Nils Holm](http://t3x.org/klong/), Erlang
+(process model, introspection, parse tree/transforms), 
+[Kerf's approachablity](http://kerfsoftware.com), 
+Io (self-similarity of objects and asceticism) 
+and C (simplicity, performance, rectangularity of data).
 
 ## Disclaimer
 

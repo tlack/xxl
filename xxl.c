@@ -1138,6 +1138,9 @@ VP make(VP x, VP y) {
 		typetag=AS_t(y,0); 
 		if(LEN(x)==0) return make(xi(0),y);
 	} else typenum=y->t;
+	if(IS_c(x) && (typetag==TINULL || typetag==Ti(tag))) {
+		return xt(_tagnum(x));
+	}
 	if(typetag==Ti(table)) {
 		if(!DICT(x)) return EXC(Tt(type), "can only create table from dict", x, y);
 		return make_table(KEYS(x),VALS(x));
@@ -1602,7 +1605,7 @@ VP apply_table(VP x, VP y) {
 	int i;
 	PF("apply_table\n");DUMP(x);DUMP(y);
 	if(x==NULL || y==NULL) return NULL;
-	if(NUM(y)) {
+	if(NUMSTRICT(y)) {
 		if(SCALAR(y)) {
 			int yi=NUM_val(y);
 			return table_row_dict_(x, yi);
@@ -1620,21 +1623,24 @@ VP apply_table(VP x, VP y) {
 			return newtbl;
 		}
 	} else {
-		int yn=LEN(y);
-		if(SCALAR(y)) {
-			return DICT_find(x,y);
-		} else {
-			VP res=xlsz(yn);
-			for(i=0; i<yn; i++) {
-				VP key=apply_simple_(y, i);
-				VP fnd=DICT_find(x,key);
-				if(fnd) res=append(res,fnd);
-				xfree(key);
+		// as usual strings get special treatment.. doh
+		int j, yn=LEN(y);
+		VP res=xlsz(yn);
+		for(j=0; j<yn; j++) {
+			VP tcol;
+			if(IS_c(y)) tcol=TABLE_col_named(x,y);
+			else tcol=TABLE_col_named(x,apply_simple_(y, j));
+			if(!tcol) return EXC(Tt(value),"unknown table column",x,y);
+			DUMP(tcol);
+			int tr=TABLE_nrows(x);
+			VP vals=xlsz(tr);
+			for(i=0; i<tr; i++) {
+				vals=append(vals,apply_simple_(tcol, i));
 			}
-			VP row=xlsz(tc);
-			for(i=0; i<tc; i++) row=append(row,apply(TABLE_col(x,i),y));
-			return dict(MUTATE_CLONE(KEYS(x)),row);
+			if(IS_c(y) || SCALAR(y)) { xfree(res); return vals; }
+			else res=append(res,vals);
 		}
+		return res;
 	}
 }
 VP apply(VP x,VP y) {
@@ -2505,7 +2511,7 @@ VP callclass(const VP ctx,const VP verbname,const VP value) {
 }
 VP get0(const VP x,const VP y,int checkparents) {
 	// printf("get %s from %p\n", reprA(y), x);
-	if(!IS_d(x)) return EXC(Tt(type),"get0 needs dict",x,y);
+	if(!IS_d(x)) return apply(x,y);
 	PF("get0 %d\n",checkparents);
 	VP key=y, kremainder=0, res;
 	int xn=LEN(x),kn=LEN(key); 

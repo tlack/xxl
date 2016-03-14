@@ -6,7 +6,7 @@ int tagchar=Ti(char);
 int tagbyte=Ti(byte);
 int tagint=Ti(int);
 int taglong=Ti(long);
-int tagocto=Ti(octo);
+int tagocta=Ti(octa);
 int tagfloat=Ti(float);
 int tagdict=Ti(dict);
 int tagtable=Ti(table);
@@ -44,7 +44,7 @@ if(x->t==1&&(typenum==5||typetag==taglong)) { // tag -> long
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==1&&(typenum==6||typetag==tagocto)) { // tag -> octo 
+if(x->t==1&&(typenum==6||typetag==tagocta)) { // tag -> octa 
   tag_t from;__int128_t to; res=xalloc(6,x->n); 
   FOR(0,x->n,{from=AS_t(x,_i);
     to=from; 
@@ -86,7 +86,7 @@ if(x->t==2&&(typenum==5||typetag==taglong)) { // char -> long
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==2&&(typenum==6||typetag==tagocto)) { // char -> octo 
+if(x->t==2&&(typenum==6||typetag==tagocta)) { // char -> octa 
   char from;__int128_t to; res=xalloc(6,x->n); 
   FOR(0,x->n,{from=AS_c(x,_i);
     to=from; 
@@ -128,7 +128,7 @@ if(x->t==3&&(typenum==5||typetag==taglong)) { // byte -> long
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==3&&(typenum==6||typetag==tagocto)) { // byte -> octo 
+if(x->t==3&&(typenum==6||typetag==tagocta)) { // byte -> octa 
   int8_t from;__int128_t to; res=xalloc(6,x->n); 
   FOR(0,x->n,{from=AS_b(x,_i);
     to=from; 
@@ -170,7 +170,7 @@ if(x->t==4&&(typenum==5||typetag==taglong)) { // int -> long
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==4&&(typenum==6||typetag==tagocto)) { // int -> octo 
+if(x->t==4&&(typenum==6||typetag==tagocta)) { // int -> octa 
   int from;__int128_t to; res=xalloc(6,x->n); 
   FOR(0,x->n,{from=AS_i(x,_i);
     to=from; 
@@ -212,7 +212,7 @@ if(x->t==5&&(typenum==5||typetag==taglong)) { // long -> long
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==5&&(typenum==6||typetag==tagocto)) { // long -> octo 
+if(x->t==5&&(typenum==6||typetag==tagocta)) { // long -> octa 
   __int64_t from;__int128_t to; res=xalloc(6,x->n); 
   FOR(0,x->n,{from=AS_j(x,_i);
     to=from; 
@@ -224,43 +224,43 @@ if(x->t==5&&(typenum==7||typetag==tagfloat)) { // long -> float
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==6&&(typenum==1||typetag==tagtag)) { // octo -> tag 
+if(x->t==6&&(typenum==1||typetag==tagtag)) { // octa -> tag 
   __int128_t from;tag_t to; res=xalloc(1,x->n); 
   FOR(0,x->n,{from=AS_o(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==6&&(typenum==2||typetag==tagchar)) { // octo -> char 
+if(x->t==6&&(typenum==2||typetag==tagchar)) { // octa -> char 
   __int128_t from;char to; res=xalloc(2,x->n); 
   FOR(0,x->n,{from=AS_o(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==6&&(typenum==3||typetag==tagbyte)) { // octo -> byte 
+if(x->t==6&&(typenum==3||typetag==tagbyte)) { // octa -> byte 
   __int128_t from;int8_t to; res=xalloc(3,x->n); 
   FOR(0,x->n,{from=AS_o(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==6&&(typenum==4||typetag==tagint)) { // octo -> int 
+if(x->t==6&&(typenum==4||typetag==tagint)) { // octa -> int 
   __int128_t from;int to; res=xalloc(4,x->n); 
   FOR(0,x->n,{from=AS_o(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==6&&(typenum==5||typetag==taglong)) { // octo -> long 
+if(x->t==6&&(typenum==5||typetag==taglong)) { // octa -> long 
   __int128_t from;__int64_t to; res=xalloc(5,x->n); 
   FOR(0,x->n,{from=AS_o(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==6&&(typenum==6||typetag==tagocto)) { // octo -> octo 
+if(x->t==6&&(typenum==6||typetag==tagocta)) { // octa -> octa 
   __int128_t from;__int128_t to; res=xalloc(6,x->n); 
   FOR(0,x->n,{from=AS_o(x,_i);
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==6&&(typenum==7||typetag==tagfloat)) { // octo -> float 
+if(x->t==6&&(typenum==7||typetag==tagfloat)) { // octa -> float 
   __int128_t from;double to; res=xalloc(7,x->n); 
   FOR(0,x->n,{from=AS_o(x,_i);
     to=from; 
@@ -296,7 +296,7 @@ if(x->t==7&&(typenum==5||typetag==taglong)) { // float -> long
     to=from; 
     appendbuf(res,(buf_t)&to,1); }); }
 
-if(x->t==7&&(typenum==6||typetag==tagocto)) { // float -> octo 
+if(x->t==7&&(typenum==6||typetag==tagocta)) { // float -> octa 
   double from;__int128_t to; res=xalloc(6,x->n); 
   FOR(0,x->n,{from=AS_f(x,_i);
     to=from; 
