@@ -333,7 +333,7 @@ Make many returns a list of values.",
 // MISC ----------------------------------------------------------------
 
 ['t:'binary, 
- 'name:"aside", 
+ 'name:"aside",'op:"",
  'desc:"
  A convenience function: evaluate y but return x.  This is useful in situations
  where you want to use some verb against the value of the expression you've
@@ -350,6 +350,12 @@ Make many returns a list of values.",
  These can be used as indices into another value or perhaps as a loop counter of sorts.", 
  'ex:[["count 5",(0,1,2,3,4)]], 
  'cat:'misc],
+['t:'binary, 'name:"from", 'op:".:",
+ 'desc:"
+ x from y is equivalent to y@x, or simply x y if y were a function. It's easier to read than
+ x y for some people, and helps the XXL parser from getting confused if y is a list, dict, or
+ table. :)
+ ", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"info", 
  'desc:"Returns a dictionary of information about x", 
  'ex:[
@@ -436,7 +442,6 @@ Make many returns a list of values.",
 ['t:'unary, 'name:"selftest", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"tag", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"xray", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"::", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"and", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"bracketj", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"consecj", 'desc:"", 'ex:[], 'cat:'misc],
@@ -444,7 +449,6 @@ Make many returns a list of values.",
 ['t:'binary, 'name:"eachl", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"eachr", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"evalin", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"from", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"get", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"in", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"loadin", 'desc:"", 'ex:[], 'cat:'misc],

@@ -206,14 +206,54 @@ See `doc/sect_mbox.xxl` for more.
 
 ### Tables
 
-Well, the beginnings of them anyway.
+Well, the beginnings of them anyway. 
 
 ```
-0. "name,age,job\nBob,30,Programmer\nJane,25,CFO\nTyler,2,Dinosaur Hunter" as 'data
-1. data split "\n" each {split ","} as 'fields      // in a fantasy world where csv is never escaped
+0. "name,age,job\nBob,30,Programmer\nJane,25,CFO\nTyler,2,Dinosaur Hunter" as 'data;
+1. data split "\n" each {split ","} as 'fields;     // in a fantasy world where csv is never escaped
 2. fields first:(fields behead) as 'emp             // : creates dicts or tables 
-3. emp
+["name", "age", "job"]:[
+["Bob", "30", "Programmer"],
+["Jane", "25", "CFO"],
+["Tyler", "2", "Dinosaur Hunter"]]
 ```
+
+This is similar to the MySQL example above in that we are unpacking data and making a table out of it.
+
+Notice that the printed representation of the table is similar to what you'd type in to regenerate it.
+
+The in-memory table works very much like a regular value, and you can join it with more dictionaries
+to append rows with `,` as you'd expect. 
+
+```
+3. emp,["name":"Steve","age":"42","job":"Fact Checker"]
+["name", "age", "job"]:[
+["Bob", "30", "Programmer"],
+["Jane", "25", "CFO"],
+["Tyler", "2", "Dinosaur Hunter"],
+["Steve", "42", "Fact Checker"]]
+```
+
+Or join it with a list that has a value for each column:
+
+```
+4. emp,["Arca","2","Tiny Dog"]
+["name", "age", "job"]:[
+["Bob", "30", "Programmer"],
+["Jane", "25", "CFO"],
+["Tyler", "2", "Dinosaur Hunter"],
+["Arca", "2", "Tiny Dog"]]
+```
+
+Notice that we did not save the result of expression 3 (where we joined with a dictionary)
+so the change was not saved. Like most verbs in XXL, `,` does not modify the x argument, 
+it creates and returns a new value.
+
+Use `amend` (or equivalent the short operator `!`) to update `emp` in place.
+
+Get individual rows with `emp@0` or `0,2 from emp`.
+
+Search for matching values using `match` (or `~`) or filter rows with `emp except {..}`.
 
 Still no joins, many rough edges, untested performance.
 
