@@ -33,6 +33,21 @@ Android runtime on NDK (contact me if interested).
 'encode is {ravel[many,str]};            // ravel calls x y[0] for arrays (len > 1), x y[1] for scalars
 ```
 
+### MySQL Slow Query Watcher
+
+Use command-line MySQL to get process list, turn into table, find interesting slow queries:
+
+```
+0. 'slowtime is 2;
+1. "mysql -e \"show full processlist\" --batch" Shell.get split "\n" each {split "\t"} as 'lines; 
+2. lines first each {make '} : (lines behead curtail each {make "issstiss"}) as 'procs;
+3. procs except {@'Time<slowtime | (x@'State="")}
+['Id:194128i, 'User:"destructoid", 'Host:"localhost", 'db:"destructoid", 'Command:'Execute, 'Time:3i, 'State:"Sending data", 
+  'Info:"SELECT * from ... "]
+```
+
+Originally used as a one-liner.
+
 ### Micro Web Counter
 
 Here's an example web server application that acts as a counter. You can run
