@@ -2637,7 +2637,11 @@ VP numelem2base(VP num,int i,int base) {
 }
 VP str(VP x) {
 	PF("str\n");DUMP(x);
-	if(IS_c(x)) return x;
+	if(IS_c(x)) {
+		VP res=clone(x);
+		res->tag=0;
+		return res;
+	}
 	if(NUM(x) || IS_t(x)) {
 		int xn=LEN(x), i;
 		VP acc=xlsz(xn),final;
