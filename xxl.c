@@ -118,12 +118,11 @@ char* repr_a(VP x,char* s,size_t sz) { // table
 	VP k=KEYS(x), v=VALS(x), tmp, tmp2;
 	// if(!sz) return s;
 	if (!k || !v) { APF(sz,"[null]",0); return s; }
-	APF(sz,"+",0);
 	kn=k->n; vn=LEN(v) ? ELl(v,0)->n : 0;
 	repr0(k, s, sz-1);
-	APF(sz,"\n",0);
+	APF(sz,":[\n",0);
 	for(i=0; i<vn; i++) {
-		APF(sz,"%d:[",i);
+		APF(sz,"[",i);
 		for(j=0; j<kn; j++) {
 			tmp=apply_simple_(ELl(v,j),i);
 			repr0(tmp, s, sz-2);
@@ -132,7 +131,7 @@ char* repr_a(VP x,char* s,size_t sz) { // table
 		}
 		if(i!=vn-1) APF(sz,"],\n",0);
 	}
-	APF(sz,"]",0);
+	APF(sz,"]]",0);
 	return s;
 }
 char* repr_l(VP x,char* s,size_t sz) {
@@ -919,11 +918,7 @@ VP join(VP list,VP sep) {
 	return acc;
 }
 VP last(VP x) {
-	VP res=ALLOC_LIKE_SZ(x,1);
-	if(x->n==0) return res;
-	if(CONTAINER(x)) return xref(ELl(x,x->n-1));
-	else res=appendbuf(res,ELi(x,x->n-1),1);
-	return res;
+	return take_(x,-1);
 }
 static inline VP list(VP x) { // convert x to general list
 	if(x==0) return xl0();

@@ -130,28 +130,28 @@ DUMP(b);
 ASSERT(_equal(b,xi(600)),"is vs as");
 
 c=mkworkspace();
-b=evalstrin("['a:1,'b:2] make 'table,[3,4],[5,6],[7,8],[[9,10],[11,12]]",c);
-ASSERT(_equal(repr(b),xfroms("+['a, 'b]\n0:[1i, 2i],\n1:[3i, 4i],\n2:[5i, 6i],\n3:[7i, 8i],\n4:[9i, 10i],\n5:[11i, 12i]")),"table 0");
+b=evalstrin("['a:1,'b:2] make 'table,[3,4],[5,6],[7,8],[[9,10],[11,12]] as 't; t@'a vec + (t@'b vec) = (3,7,11,15,19,23)",c);
+ASSERT(_equal(b,XI1), "table 0");
 
 c=mkworkspace();
-b=evalstrin("['a:1,'b:'j] make 'table,[3,'z],[5,'q],[7,'m],[[9,'b],[11,'m]]",c);
-ASSERT(_equal(repr(b),xfroms("+['a, 'b]\n0:[1i, 'j],\n1:[3i, 'z],\n2:[5i, 'q],\n3:[7i, 'm],\n4:[9i, 'b],\n5:[11i, 'm]")),"table 1");
+b=evalstrin("['a:1,'b:'j] make 'table,[3,'z],[5,'q],[7,'m],[[9,'b],[11,'m]] as 't; [(t@'b)],(t@'a) >: {x str,(y str)} join \"\"",c);
+ASSERT(_equal(b,xfroms("j1z3q5m7b9m11")), "table 1");
 
 c=mkworkspace();
 b=evalstrin("['a:1,'b:'j] make 'table,[3,'z],[5,'q],[7,'m],[[9,'b],[11,'m]]@0",c);
 ASSERT(_equal(repr(b),xfroms("['a:1i, 'b:'j]")),"table scalar subscript");
 
 c=mkworkspace();
-b=evalstrin("['a:1,'b:'j] make 'table,[3,'z],[5,'q],[7,'m],[[9,'b],[11,'m]]@(1,2)",c);
-ASSERT(_equal(repr(b),xfroms("+['a, 'b]\n0:[3i, 'z],\n1:[5i, 'q]")),"table vector subscript");
+b=evalstrin("['a:1,'b:'j] make 'table,[3,'z],[5,'q],[7,'m],[[9,'b],[11,'m]]@(1,2)@'a vec sum",c);
+ASSERT(_equal(b,xi(8)),"table vector subscript");
 
 c=mkworkspace();
 b=evalstrin("('a,'b,'c):[]",c);
 ASSERT(IS_EXC(b), "unlike vectors check when making table");
 
 c=mkworkspace();
-b=evalstrin("('a,'b,'c):[ ['a,2,4], ['b,4,6] ]",c);
-ASSERT(_equal(repr(b),xfroms("+('a,'b,'c)\n0:['a, 2i, 4i],\n1:['b, 4i, 6i]")),"table built with list of lists");
+b=evalstrin("('a,'b,'c):[['a,2,4], ['b,4,6]]as 't len*(t@'c vec)sum",c);
+ASSERT(_equal(b,xi(20)),"table built with a list of lists");
 
 c=mkworkspace();
 b=apply_simple_(evalstrin("1,2,3",c),0);
