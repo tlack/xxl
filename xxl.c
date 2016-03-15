@@ -901,7 +901,7 @@ VP flatten(VP x) {
 VP identity(VP x) {
 	return x;
 }
-VP join(VP list,VP sep) {
+VP join(const VP list,const VP sep) {
 	VP acc=NULL,x; int ln=LEN(list), i;
 	if(IS_EXC(list) || ln==0) return list;
 	if(SCALAR(list)) return apply_simple_(list,0);
@@ -917,43 +917,27 @@ VP join(VP list,VP sep) {
 	xfree(x);
 	return acc;
 }
-VP last(VP x) {
+VP last(const VP x) {
 	return take_(x,-1);
 }
-static inline VP list(VP x) { // convert x to general list
+static inline VP list(const VP x) { // convert x to general list
 	if(x==0) return xl0();
 	if(LIST(x))return x;
 	return split(x,xi0());
 }
-VP list2(VP x,VP y) { // helper for [ - convert y to general list, drop x
-	return xl(y);
-}
-VP nullfun(VP x) {
-	return xl0();
-}
-VP replaceleft(VP x,int n,VP replace) { // replace first i values with just 'replace'
-	int i;
-	ASSERT(LIST(x),"replaceleft arg must be list");
-	ARG_MUTATING(x);
-	for(i=0;i<n;i++) xfree(ELl(x,i));
-	if(n>1) { memmove(ELi(x,1),ELi(x,n),x->itemsz*(x->n-n)); }
-	EL(x,VP,0)=replace;
-	x->n=x->n-i;
-	return x;
-}
-VP reverse(VP x) {
+VP reverse(const VP x) {
 	if(!(SIMPLE(x)||CONTAINER(x))) return EXC(Tt(type),"reverse arg must be simple or container",x,NULL);
 	int i,typerr=-1; VP acc=ALLOC_LIKE(x);
 	for(i=x->n-1;i>=0;i--) appendbuf(acc,ELi(x,i),1);
 	return acc;
 }
-VP shift_(VP x,int i) {
+VP shift_(const VP x,int i) {
 	// PF("shift_ %d\n",i);DUMP(x);
 	int n=x->n;
 	if(i<0) return catenate(take_(x,i%n),drop_(x,i%n));
 	else return catenate(drop_(x,i%n),take_(x,i%n));
 }
-VP shift(VP x,VP y) {
+VP shift(const VP x,const VP y) {
 	PF("shift\n");DUMP(x);DUMP(y);
 	if(!SIMPLE(x)) return EXC(Tt(type),"shr x must be a simple type",x,y);
 	if(!NUM(y)) return EXC(Tt(type),"shr y must be numeric",x,y);
@@ -961,7 +945,7 @@ VP shift(VP x,VP y) {
 	VARY_EL(y,0,({return shift_(x,_x);}),typerr);
 	return NULL;
 }
-VP show(VP x) {
+VP show(const VP x) {
 	char* p;
 	PF("show\n");DUMP(x);
 	if(x==NULL) { printf("null\n"); return x; }
@@ -970,7 +954,7 @@ VP show(VP x) {
 	printf("%s\n",p); free(p);
 	return x;
 }
-VP splice(VP x,VP idx,VP replace) {
+VP splice(const VP x,const VP idx,const VP replace) {
 	int i, first=AS_i(idx,0), last=first+idx->n;
 	VP acc;
 	PF("splice (%d len) %d..%d",x->n, first,last);DUMP(x);DUMP(idx);DUMP(replace);
@@ -992,10 +976,9 @@ VP splice(VP x,VP idx,VP replace) {
 	PF("splice returning\n"); DUMP(acc);
 	return acc;
 }
-VP split(VP x,VP tok) {
+VP split(const VP x,const VP tok) {
 	PF("split\n");DUMP(x);DUMP(tok);
 	int typerr=-1;
-
 	// special case for empty or null tok.. split vector into list
 	if(tok->n==0) {
 		VP tmp, tmp2;
@@ -1090,7 +1073,7 @@ inline int _find1(const VP x, const VP y) {        // returns index or -1 on not
 	}
 	return -1;    // The code of this function reminds me of Armenia, or some war torn place
 }
-VP find1(VP x, VP y) {
+VP find1(const VP x, const VP y) {
 	if(!x || !(LISTDICT(x) || x->t==y->t))
 		return EXC(Tt(type),"find x must be list, or types must match",x,y);
 	return xi(_find1(x,y));
