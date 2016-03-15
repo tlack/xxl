@@ -246,8 +246,9 @@ Or join it with a list that has a value for each column:
 ```
 
 Notice that we did not save the result of expression 3 (where we joined with a dictionary)
-so the change was not saved. Like most verbs in XXL, `,` does not modify the x argument, 
-it creates and returns a new value.
+so the change was not saved. Looks like Steve is going to have to check someone else's facts
+from here on out. Like most verbs in XXL, `,` does not modify the x argument, it creates and 
+returns a new value.
 
 Use `amend` (or equivalent the short operator `!`) to update `emp` in place.
 
