@@ -8,6 +8,7 @@ endif
 syn keyword xxlTodo TODO FIXME FIX XXX "NB." NOTE GOTCHA contained
 syn match xxlComment "/\*.*\*/" contains=xxlTodo
 syn match xxlComment "//.*$" contains=xxlTodo
+syn region xxlComment start="/\*" end="\*/" contains=xxlTodo
 syn region xxlString start=+"+ skip=+\\.+ end=+"+
 syn region xxlBlock start="{" end="}" fold transparent
 syn match xxlSym "'[A-Za-z_\?\.]\+\s*" 
