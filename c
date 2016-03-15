@@ -37,6 +37,13 @@ if [ -x /bin/x86_64-pc-cygwin-gcc.exe ]; then
 	CC="/bin/x86_64-pc-cygwin-gcc.exe"
 fi
 
+if [ -f /etc/os-release ]; then
+	if grep "Ubuntu" /etc/os-release >/dev/null; then
+		errcho using ubuntu -Wl,--no-as-needed 
+		LIBS="-Wl,--no-as-needed $LIBS"
+	fi
+fi
+
 if which rlwrap >/dev/null; then
 	errcho using rlwrap
 	RUN="rlwrap $RUN"

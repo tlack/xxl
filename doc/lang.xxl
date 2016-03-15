@@ -136,8 +136,39 @@ $'table,                               // make dict into start of new table
  'cat:'values],
 ['t:'binary, 
  'name:"make", 
- 'desc:"transforms x into typed denoted by tag in y (such as float)", 
- 'ex:[], 
+ 'desc:"transforms x into typed denoted by tag in y (such as float).
+
+See `types` for full list of types. Common ones include 'tag, 'char, 
+'byte, 'int, 'long, 'float.
+
+`make` casts values of similar types to one another. If you are working
+with strings and want to convert them to other types, you may be looking
+for:
+
+If you have a string containing a number and you want to convert it
+to a numeric value, you probably want to use `base`, like:
+```\"1234\"base10|||1234```
+
+If you have a numeric value and want to convert it to a string, you
+probably want `str`:
+```1234 str|||\"1234\"```
+ 
+`make` can also be used with a list of values on the left and a string indicating
+the types to cast them to on the right. This is useful for decoding rows
+of data such as csv. This is called \"make many\".
+
+Each character in the format string identifies a type to convert the matching
+item from the x to. 
+
+Use `s` for string, `i` for integer, `t` for tags, and `_` to skip the element
+from x entirely.
+
+Make many returns a list of values.", 
+ 'op:"$",
+ 'ex:[
+	["4.5$'int",4],
+	["[\"123\",\"abc\",\"def\",\"xyz\"]$\"is_t\"",[123,"abc",'xyz]]
+ ], 
  'cat:'values],
 ['t:'unary, 
  'name:"rev", 

@@ -59,11 +59,6 @@ char* repr0(VP x,char* s,size_t sz) {
 		MEMO_set(REPR_SEEN,x,(VP)s,i);
 	}
 	t=typeinfo(x->t);
-	if(DEBUG) {
-		printf("/*%p %s tag=%d#%s itemsz=%d n=%d rc=%d*/\n",x,t.name,
-			x->tag,(x->tag!=0 ? bfromx(tagname(x->tag)) : ""),
-			x->itemsz,x->n,x->rc);
-	}
 	IN_OUTPUT_HANDLER++;
 	if(x->tag!=0) APF(sz, "'%s#", tagnames(x->tag));
 	if(t.repr) (*(t.repr)(x,s,sz));
@@ -174,7 +169,7 @@ char* repr_o(VP x,char* s,size_t sz) {
 }
 char* repr_p(VP x,char* s,size_t sz) {
 	Proj p = EL(x,Proj,0);
-	APF(sz,"'projection#(%p,%d,",x,p.type);
+	APF(sz,"'projection#[%p,%d,",x,p.type);
 	if(p.left!=NULL) 
 		repr0(p.left, s, sz);
 	else
@@ -184,6 +179,7 @@ char* repr_p(VP x,char* s,size_t sz) {
 		repr0(p.right, s, sz);
 	else
 		APF(sz,"()",0);
+	APF(sz,"]",0);
 	return s;
 }
 char* repr_t(VP x,char* s,size_t sz) {
@@ -564,6 +560,17 @@ VP amend(VP x,VP y) {
 	PF("amend returning\n");DUMP(x);
 	return x;
 }
+VP assign_table(VP x,VP k,VP val) {
+	if(NUMSTRICT(k)) return EXC(Tt(nyi),"table numeric assign not yet implemented",x,k);
+	PF("assign_table\n");DUMP(x);DUMP(k);DUMP(val);
+	int i=TABLE_col_num_for_name(x,k);
+	int nr=TABLE_nrows(x);
+	if(LEN(val)!=nr) return EXC(Tt(value),"table assign value length doesnt match table rows",x,val);
+	VP oldcol=TABLE_col(x,i);
+	TABLE_col(x,i)=clone(val);
+	xfree(oldcol);
+	return x;
+}
 inline VP assign(VP x,VP k,VP val) {
 	// PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
 	if (LIST(k) && k->n) {
@@ -587,9 +594,10 @@ inline VP assign(VP x,VP k,VP val) {
 		}
 		// PF("assign at depth setting\n");
 		assign(res,ELl(k,k->n-1),val);
-		return res;
+		return res; // TODO: should this return the inner context affected? seems wrong
 	}
-	if(DICT(x)) {
+	if(TABLE(x)) return assign_table(x,k,val);
+	else if(DICT(x)) {
 		xref(k); xref(val); return append(x,xln(2,k,val));
 	} else if(SIMPLE(x) && NUM(k)) {
 		// PF("assign");DUMP(x);DUMP(k);DUMP(val);
@@ -844,10 +852,14 @@ VP drop(const VP x,const VP y) {
 	return res;
 }
 VP except(const VP x,const VP y) {
+	PF("except\n");DUMP(x);DUMP(y);
 	VP where=matchany(x,y);
+	if(IS_EXC(where)) return where;
 	if(LIST(where)) where=list2vec(where);
 	VP invw=not(where);
 	VP wherec=condense(invw);
+	if(IS_EXC(wherec)) return wherec;
+	PF("except indices to apply for result\n");DUMP(wherec);
 	VP res=apply(x,wherec);
 	xfree(wherec); xfree(invw); xfree(where);
 	return res;
@@ -1129,15 +1141,34 @@ VP make_table(VP keys,VP vals) {
 	res->n=2;
 	return catenate_table(res, MUTATE_CLONE(vals));
 }
+VP make_many(VP x,VP y) {
+	int i, j;
+	int xn=LEN(x), yn=LEN(y);
+	VP chars=xfroms("it"), funs=xln(2,proj(2,&base,0,xi(10)),proj(2,&make,0,Tt(tag)));
+	VP d=dict(chars,funs), row=xlsz(yn);
+	for(j=0; j<yn; j++) {
+		char ch=AS_c(y,j);
+		if(ch=='_') continue;
+		VP tmpc=xc(ch); VP fun=DICT_find(d,tmpc); xfree(tmpc);
+		VP item=apply_simple_(x,j);
+		if(fun!=NULL) { VP newitem=apply(fun, item); xfree(item); item=newitem; }
+		row=append(row,item); xfree(item);
+	}
+	return row;
+}
 VP make(VP x, VP y) { 
-	// TODO cast() should short cut matching kind casts 
+	// TODO make() should short cut matching kind casts 
+	// TODO make() should be smarter about lists in x
 	PF("make\n");DUMP(x);DUMP(y);
 	VP res=0; type_t typenum=-1; tag_t typetag=-1;
 	// right arg is tag naming a type, use that.. otherwise use y's type
 	if(IS_t(y)) {
-		typetag=AS_t(y,0); 
+		if(LEN(y)==0) typetag=TINULL;
+		else typetag=AS_t(y,0); 
 		if(LEN(x)==0) return make(xi(0),y);
 	} else typenum=y->t;
+	// convenience mode: ["123","abc","xyz"] $ "ist" -> [123,"abc",'xyz]
+	if(LIST(x) && IS_c(y)) return make_many(x,y);
 	if(IS_c(x) && (typetag==TINULL || typetag==Ti(tag))) {
 		return xt(_tagnum(x));
 	}
@@ -1149,8 +1180,7 @@ VP make(VP x, VP y) {
 	// DUMPRAW(buf,BUFSZ);
 	if(res) return res;
 	if(typetag!=-1) {
-		ARG_MUTATING(x);
-		x->tag=typetag;
+		ARG_MUTATING(x); x->tag=typetag;
 	}
 	return x;
 }
@@ -1610,11 +1640,15 @@ VP apply_table(VP x, VP y) {
 			int yi=NUM_val(y);
 			return table_row_dict_(x, yi);
 		} else {
+			// create a new table using the keys in y we could do this with less code
+			// by using apply table with scalar indices (returning a dict) and then
+			// joining them, but this code is pretty performance critical for some
+			// operations
 			VP newtbl=xasz(2), newvals=xlsz(LEN(y)), vec; int j;
 			EL(newtbl,VP,0)=MUTATE_CLONE(KEYS(x));
 			for(i=0; i<tc; i++) {
+				PF("apply_table column #%d\n",i);
 				vec=TABLE_col(x,i);
-				PF("apply_table doing\n");DUMP(vec);
 				newvals=append(newvals,apply(vec,y));
 			}
 			EL(newtbl,VP,1)=newvals;
@@ -2397,7 +2431,7 @@ static inline VP str2num(VP x) {
 		return xf(0.0);
 	} else  {
 		free(s);
-		return x;
+		return xref(x);
 	}
 	// return EXC(Tt(value),"str2int value could not be converted",x,0);
 }
@@ -2992,11 +3026,11 @@ VP nest(VP x,VP y) {
 	return out;
 }
 VP matchany(VP obj,VP pat) {
-	IF_EXC(!SIMPLE(obj) && !LIST(obj),Tt(type),"matchany only works with simple or list types in x",obj,pat);
+	IF_EXC(!SIMPLE(obj) && !LIST(obj) && !TABLE(obj),Tt(type),"matchany only works with simple or list types in x",obj,pat);
 	// IF_EXC(!SIMPLE(pat),Tt(type),"matchany only works with simple types in y",obj,pat);
 	IF_EXC(SIMPLE(obj) && obj->t != pat->t, Tt(type),"matchany only works with matching simple types",obj,pat);
 	int j,n=obj->n,typerr=-1;VP item, acc;
-	// PF("matchany\n"); DUMP(obj); DUMP(pat);
+	PF("matchany\n"); DUMP(obj); DUMP(pat);
 	if(CALLABLE(pat)) return each(obj, pat);
 	acc=xbsz(n); 
 	acc->n=n;
@@ -3292,6 +3326,8 @@ VP parsestrlit(VP x) {
 							res=append(res,xc(10)); i++;
 						} else if(nextch=='r') {
 							res=append(res,xc(13)); i++;
+						} else if(nextch=='t') {
+							res=append(res,xc(9)); i++;
 						}
 					}
 				} else  
