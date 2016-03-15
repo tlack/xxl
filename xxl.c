@@ -852,10 +852,14 @@ VP drop(const VP x,const VP y) {
 	return res;
 }
 VP except(const VP x,const VP y) {
+	PF("except\n");DUMP(x);DUMP(y);
 	VP where=matchany(x,y);
+	if(IS_EXC(where)) return where;
 	if(LIST(where)) where=list2vec(where);
 	VP invw=not(where);
 	VP wherec=condense(invw);
+	if(IS_EXC(wherec)) return wherec;
+	PF("except indices to apply for result\n");DUMP(wherec);
 	VP res=apply(x,wherec);
 	xfree(wherec); xfree(invw); xfree(where);
 	return res;
