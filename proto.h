@@ -16,6 +16,7 @@ static inline int _arity(VP x);
 static inline VP arity(VP x);
 VP aside(VP x,VP y); 
 VP assign(VP x,VP k,VP val);
+VP base(VP x,VP y);
 VP behead(VP x); // everything except the first element
 const char* bfromx(VP x);
 VP casee(VP x,VP y);
