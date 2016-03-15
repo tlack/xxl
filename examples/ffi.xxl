@@ -1,37 +1,36 @@
-{ 'srcpath sys as 'sp; .file.path as 'path;
+'incl is { 'srcpath sys as 'sp; 
 	["def.h","proto.h","accessors.h"] each { "#include \"",sp,"/",x,"\"\n" } 
-} as 'incl;
-
-{ // write unary or binary function header, ex: VP xxlffi_myfuncname(VP x,VP y) { .. }
-	x as 'lbl; y as 'code;
-	(code~"y"ifelse(("VP xxlffi_",lbl,"(VP x,VP y){"),("VP xxlffi_",lbl,"(VP x){")))
-} as 'fhdr;
-
-{
-	x fhdr y,
-	"\n ", code, "\}\n\n"
-} as 'fbody;
-
-{ 
-	x as 'fn; y as 'funcs; 
-	x incl,
-	([{key},{val}] show ,[funcs] show >: @ fbody)
-} as 'src;
-
-{
-	[x,".c"] .file.path as 'outfn;
-	x src y as 'code;
+};
+'arity is {y~"y" any + 1};  // if the source mentions 'y' its arity 2! idiocy..
+// write unary or binary function header, ex: VP xxlffi_myfuncname(VP x,VP y) { .. }
+'funchdr is { 
+	x str as 'lbl; y as 'code;
+	code arity = 2 ifelse [("VP xxlffi_",lbl,"(VP x,VP y){"),("VP xxlffi_",lbl,"(VP x){")]
+};
+// write function body - header n code
+'funcbody is { x funchdr y,
+	"\n ",y,"\}\n\n"
+};
+'gensrc is { x as 'modn; y as 'funcs; 
+	[]incl,
+	(y key as 'k; y val as 'v; [k,v] >: funcbody)
+	flat
+};
+'compile is { x as 'modulename; y as 'funcs;
+	[modulename,".c"] File.path as 'outfn show;
+	modulename gensrc funcs as 'code show;
 	[outfn,code] show;
 	code
 	// .file.set ([x,".c"] as 'cfn);
 	// 'buildshared sys ,cfn shell show
-} as 'comp;
+};
 
-['incl:incl,'src:src,'comp:comp]
+['compile:compile]
 
 /*
 	example:
-	"/tmp/mymodule" .ffi.comp ['double:"x * y"]
+	"examples/ffi.xxl" load as 'ffi;
+	"/tmp/mymodule" ffi.comp ['double:"x * y"]
 */
 
 
