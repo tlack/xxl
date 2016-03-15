@@ -1141,6 +1141,21 @@ VP make_table(VP keys,VP vals) {
 	res->n=2;
 	return catenate_table(res, MUTATE_CLONE(vals));
 }
+VP make_many(VP x,VP y) {
+	int i, j;
+	int xn=LEN(x), yn=LEN(y);
+	VP chars=xfroms("it"), funs=xln(2,proj(2,&base,0,xi(10)),proj(2,&make,0,Tt(tag)));
+	VP d=dict(chars,funs), row=xlsz(yn);
+	for(j=0; j<yn; j++) {
+		char ch=AS_c(y,j);
+		if(ch=='_') continue;
+		VP tmpc=xc(ch); VP fun=DICT_find(d,tmpc); xfree(tmpc);
+		VP item=apply_simple_(x,j);
+		if(fun!=NULL) { VP newitem=apply(fun, item); xfree(item); item=newitem; }
+		row=append(row,item); xfree(item);
+	}
+	return row;
+}
 VP make(VP x, VP y) { 
 	// TODO make() should short cut matching kind casts 
 	// TODO make() should be smarter about lists in x
@@ -1148,9 +1163,12 @@ VP make(VP x, VP y) {
 	VP res=0; type_t typenum=-1; tag_t typetag=-1;
 	// right arg is tag naming a type, use that.. otherwise use y's type
 	if(IS_t(y)) {
-		typetag=AS_t(y,0); 
+		if(LEN(y)==0) typetag=TINULL;
+		else typetag=AS_t(y,0); 
 		if(LEN(x)==0) return make(xi(0),y);
 	} else typenum=y->t;
+	// convenience mode: ["123","abc","xyz"] $ "ist" -> [123,"abc",'xyz]
+	if(LIST(x) && IS_c(y)) return make_many(x,y);
 	if(IS_c(x) && (typetag==TINULL || typetag==Ti(tag))) {
 		return xt(_tagnum(x));
 	}
