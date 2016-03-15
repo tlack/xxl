@@ -204,7 +204,7 @@ char* repr_x(VP x,char* s,size_t sz) {
 	APF(sz,"'context#%p[",x);
 	if(x->n==2) {
 		APF(sz,"'scope#%p:",KEYS(x));
-		repr0(KEYS(x),s,sz);
+		// repr0(KEYS(x),s,sz);
 		APF(sz,",'lambda#%p:",VALS(x));
 		repr0(VALS(x),s,sz);
 	} else {
