@@ -251,6 +251,9 @@ from here on out. Like most verbs in XXL, `,` does not modify the x argument, it
 returns a new value.
 
 Use `amend` (or equivalent the short operator `!`) to update `emp` in place.
+`emp![["age"],{::{base 10}}]` would convert the ages to numbers so you can ruthlessly compute
+them. "age" has to be put into a list here because otherwise it would think you want to update
+three indices - "a", "g", and "e". 
 
 Get individual rows with `emp@0` or `0,2 from emp`.
 
