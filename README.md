@@ -220,10 +220,10 @@ Still no joins, many rough edges, untested performance.
 ### Other
 
 - Variable names can't contain numbers, so you can build up some pretty clean and
-  short expressions that mirror mathematics. `3u b5` means `3 * u b 5`, assuming
-	u is a single argument (unary) function and b is a two argument (binary) function.
+  short expressions that mirror mathematics. `3u b5` means `3 u b 5`, or 
+	`b(u(3),5)`, assuming u is a single argument (unary) function and b is a two argument (binary) function.
 	If you're recoiling in horror right now at losing your precious numerals in variable
-	names, consider how often you're just poorly naming a temp variable.
+	names, consider how often you're just poorly naming a temp variable. 
 - Variable names can contain `?`, so you can name your predicate functions in a
 	pleasant manner.
 - Values can have "tags" associated with them, allowing you to create an

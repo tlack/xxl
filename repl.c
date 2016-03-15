@@ -8,7 +8,7 @@
 #include "vary.h"
 
 void banner() {
-	printf("XXL %s by @tlack; http://github.com/tlack/xxl/\n",XXL_VER);
+	printf("XXL %s by @tlack; http://github.com/tlack/xxl/\n\n",XXL_VER);
 }
 
 VP randtip() {
