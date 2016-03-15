@@ -39,8 +39,11 @@ Use command-line MySQL to get process list, turn into table, find interesting sl
 
 ```
 0. 'slowtime is 2;
+// get output, split it by line, then by column, save
 1. "mysql -e \"show full processlist\" --batch" Shell.get split "\n" each {split "\t"} as 'lines; 
+// the first line is column headings, massage data for each row, create table with keys:data
 2. lines first each {make '} : (lines behead curtail each {make "issstiss"}) as 'procs;
+// Use  except  with an anonymous function to filter rows we don't care about
 3. procs except {@'Time<slowtime | (x@'State="")}
 ['Id:194128i, 'User:"destructoid", 'Host:"localhost", 'db:"destructoid", 'Command:'Execute, 'Time:3i, 'State:"Sending data", 
   'Info:"SELECT * from ... "]
