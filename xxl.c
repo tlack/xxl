@@ -1180,8 +1180,7 @@ VP make(VP x, VP y) {
 	// DUMPRAW(buf,BUFSZ);
 	if(res) return res;
 	if(typetag!=-1) {
-		ARG_MUTATING(x);
-		x->tag=typetag;
+		ARG_MUTATING(x); x->tag=typetag;
 	}
 	return x;
 }
@@ -1641,11 +1640,15 @@ VP apply_table(VP x, VP y) {
 			int yi=NUM_val(y);
 			return table_row_dict_(x, yi);
 		} else {
+			// create a new table using the keys in y we could do this with less code
+			// by using apply table with scalar indices (returning a dict) and then
+			// joining them, but this code is pretty performance critical for some
+			// operations
 			VP newtbl=xasz(2), newvals=xlsz(LEN(y)), vec; int j;
 			EL(newtbl,VP,0)=MUTATE_CLONE(KEYS(x));
 			for(i=0; i<tc; i++) {
+				PF("apply_table column #%d\n",i);
 				vec=TABLE_col(x,i);
-				PF("apply_table doing\n");DUMP(vec);
 				newvals=append(newvals,apply(vec,y));
 			}
 			EL(newtbl,VP,1)=newvals;
@@ -2428,7 +2431,7 @@ static inline VP str2num(VP x) {
 		return xf(0.0);
 	} else  {
 		free(s);
-		return x;
+		return xref(x);
 	}
 	// return EXC(Tt(value),"str2int value could not be converted",x,0);
 }
@@ -3019,11 +3022,11 @@ VP nest(VP x,VP y) {
 	return out;
 }
 VP matchany(VP obj,VP pat) {
-	IF_EXC(!SIMPLE(obj) && !LIST(obj),Tt(type),"matchany only works with simple or list types in x",obj,pat);
+	IF_EXC(!SIMPLE(obj) && !LIST(obj) && !TABLE(obj),Tt(type),"matchany only works with simple or list types in x",obj,pat);
 	// IF_EXC(!SIMPLE(pat),Tt(type),"matchany only works with simple types in y",obj,pat);
 	IF_EXC(SIMPLE(obj) && obj->t != pat->t, Tt(type),"matchany only works with matching simple types",obj,pat);
 	int j,n=obj->n,typerr=-1;VP item, acc;
-	// PF("matchany\n"); DUMP(obj); DUMP(pat);
+	PF("matchany\n"); DUMP(obj); DUMP(pat);
 	if(CALLABLE(pat)) return each(obj, pat);
 	acc=xbsz(n); 
 	acc->n=n;
