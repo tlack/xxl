@@ -135,17 +135,39 @@ heavy.
 ### Minimal, easy to grasp syntax
 
 XXL may seem odd at first glance but it's much simpler than other languages
-which suffer from complex grammars and rules.
+which suffer from complex grammars, rules, and special cases.
 
 Clean, very easy to understand and parse left-to-right syntax with only three 
 special forms: comments, strings, and grouping (i.e., `( )`, `[ ]` and `{ }`).
 
-Everything else is either a noun or a verb.
+Everything else is either a noun or a verb. Learn the verbs and you know the 
+language.
 
-Verbs are either postfix (unary, one variable, called `x`) or infix (binary,
-two variables, called `x` and `y`).
+Values and variables are called nouns. The first time you create a noun,
+you usually refer to it using a tag: `'z is 1`. You can use `as` if you
+want to build up an expression and save it: `1,2,3+1 as 'numbers`.
 
-Tags like `'mything` are used as names.
+If you didn't use a tag name (like 'numbers) and instead just wrote `numbers`,
+XXL would try to find an existing noun named numbers, and insert the contents
+of that instead, which probably isn't what you want.
+
+Verbs are either postfix (also called unary: having one variable, called `x`):
+```1,2,3 len```
+or infix (binary: two variables, called `x` and `y`)
+```1,2,3 + (4,5,6)```.
+
+Verbs work with the things immediately to the left or left and right. There is
+no grouping or precedence. This is much easier to keep track of mentally
+and allows you to much easily scan code. Use (), [], or {} to group values
+if you must, but many times you can write long expressions with few groupings.
+
+There is nothing special about `len`, or `+`, or any of the built-in verbs.
+They are simply verbs that have been created for you already. You can create
+your own system-level verbs or replace ones that already exist.
+
+You can create nouns in the middle of expressions and refer to them later, such
+as this in this tedious example:
+```1,2,3+2 as 'num + num```
 
 Agnostic about whitespace. Don't let invisible special characters ruin your day.
 
@@ -218,12 +240,14 @@ Well, the beginnings of them anyway.
 ["Tyler", "2", "Dinosaur Hunter"]]
 ```
 
-This is similar to the MySQL example above in that we are unpacking data and making a table out of it.
+This is similar to the MySQL example above in that we are unpacking data and
+making a table out of it.
 
-Notice that the printed representation of the table is similar to what you'd type in to regenerate it.
+Notice that the printed representation of the table is similar to what you'd
+type in to regenerate it.
 
-The in-memory table works very much like a regular value, and you can join it with more dictionaries
-to append rows with `,` as you'd expect. 
+The in-memory table works very much like a regular value, and you can join it
+with more dictionaries to append rows with `,` as you'd expect. 
 
 ```
 3. emp,["name":"Steve","age":"42","job":"Fact Checker"]
@@ -245,15 +269,17 @@ Or join it with a list that has a value for each column:
 ["Arca", "2", "Tiny Dog"]]
 ```
 
-Notice that we did not save the result of expression 3 (where we joined with a dictionary)
-so the change was not saved. Looks like Steve is going to have to check someone else's facts
-from here on out. Like most verbs in XXL, `,` does not modify the x argument, it creates and 
-returns a new value.
+Notice that we did not save the result of expression 3 (where we joined `emp`
+with a dictionary containing Steve's record) so the change was not saved to
+`emp`.  Like most verbs in XXL, `,` does not modify the x argument, it creates
+and returns a new value. Looks like Steve is going to have to check someone
+else's facts from here on out. 
 
 Use `amend` (or equivalent the short operator `!`) to update `emp` in place.
-`emp![["age"],{::{base 10}}]` would convert the ages to numbers so you can ruthlessly compute
-them. "age" has to be put into a list here because otherwise it would think you want to update
-three indices - "a", "g", and "e". 
+`emp![["age"],{::{base 10}}]` would convert the ages to numbers so you can
+ruthlessly compute them. In this example, "age" has to be put into a list here
+because otherwise it would think you want to update three indices - "a", "g",
+and "e". 
 
 Get individual rows with `emp@0` or `0,2 from emp`.
 
