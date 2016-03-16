@@ -45,8 +45,8 @@ Use command-line MySQL to get process list, turn into table, find interesting sl
 2. lines first each {make '} : (lines behead curtail each {make "issstiss"}) as 'procs;
 // Use  except  with an anonymous function to filter rows we don't care about
 3. procs except {@'Time<slowtime | (x@'State="")}
-['Id:194128i, 'User:"destructoid", 'Host:"localhost", 'db:"destructoid", 'Command:'Execute, 'Time:3i, 'State:"Sending data", 
-  'Info:"SELECT * from ... "]
+['Id:194128i, 'User:"destructoid", 'Host:"localhost", 'db:"destructoid", 'Command:'Execute, 
+  'Time:3i, 'State:"Sending data", 'Info:"SELECT * from ... "]
 ```
 
 Originally used as a one-liner.
@@ -58,29 +58,35 @@ this as`./c examples/web-ctr.xxl`. Source code in full:
 
 ```
 0 as 'ctr;
-(8080,"localhost").net.bind{
-	x show; .ctr + 1 as '.ctr;  // dot in front of name means "parent"
+(8080,"localhost") Net.bind {
+	ctr+1 as '.ctr;  // dot in front of name means "parent"
 	"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n",
 	"Connection: close\r\nServer: xxl v0.0\r\n\r\nHello ",
-		(.ctr repr),"\r\n" flat}
+	(.ctr repr),"\r\n" flat}
 ```
 
-The first line declares a global variable named `ctr`. Variables are defined
-using a symbol (also called a tag) containing their name. Symbols start with
-apostrophe `'`.  Names starting with `.` are referenced from the root of the
-XXL context tree, rather than being resolved in the locals context to start, which makes
-them behave something like globals in traditional languages.
+The first line declares a variable or noun named `ctr`. Variables are defined
+using a tag. After they are defined, you can refer to them without the tag.
+Tags start with apostrophe `'` and can contain anything in the range `[A-Za-z_?]`.
+Names may not contain numbers.
 
-The second line invokes the built in `.net.bind` verb. On the left is the configuration
-options. In this case, port 8080 on localhost.
+Names starting with `.` are referenced from the root of the XXL context tree,
+rather than being resolved in the locals context to start, which makes them
+behave something like globals in other languages.
 
-On the right side of the `.net.bind` verb we supply an anonymous function body
+The second line invokes the built in `Net.bind` verb, which creates a network socket
+and calls the code you supply to handle the request after it comes in. 
+
+On the left of the verb come the listening socket configuration options. In this case, 
+port 8080 on localhost.
+
+On the right side of the `Net.bind` verb we supply an anonymous function body
 to act as the callback to be invoked when a connection is made and a request is
 received. This callback is invoked with one argument, which is a list
 containing the request body in the first member and the remote IP address in
 the second.
 
-At the moment, `.net.bind` only supports client-speaks-first-style network
+At the moment, `Net.bind` only supports client-speaks-first-style network
 protocols, such as HTTP.
 
 Inside the callback, we display the request on the server's screen (`x show`), increase
