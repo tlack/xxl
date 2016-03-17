@@ -2636,14 +2636,12 @@ VP set_as(VP x,VP y) {
 	int i; VP res,ctx,val;
 	PF("set_as\n");DUMP(x);DUMP(y);
 	if(x==NULL || y==NULL) return x;
-	if(x->n!= 2 || !IS_x(AS_l(x,0))) return EXC(Tt(type),"as x must be (context,value)",x,y);
-	return set(LIST_item(x,0), y, LIST_item(x,1));
+	return set(XXL_CUR_CTX, y, x);
 }
 VP set_is(VP x,VP y) {                   // exactly like set, but arguments are [[ctx,name],[value]]
 	PF("set_is\n");
 	if(x==NULL || y==NULL) return x;
-	if(x->n!= 2 || !IS_x(AS_l(x,0))) return EXC(Tt(type),"is x must be (context,value)",x,y);
-	return set(LIST_item(x,0), LIST_item(x,1), y);
+	return set(XXL_CUR_CTX, x, y);
 }
 VP numelem2base(VP num,int i,int base) {
 	// NB. this is called from repr_o. NO DUMP() ALLOWED!

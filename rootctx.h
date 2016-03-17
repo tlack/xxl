@@ -87,6 +87,7 @@
 	// named infix verbs:
 	res=assign(res,Tt(amend),x2(&amend));
 	res=assign(res,Tt(and),x2(&and));
+	res=assign(res,Tt(as),x2(&set_as));
 	res=assign(res,Tt(aside),x2(&aside));
 	res=assign(res,Tt(base),x2(&base));
 	res=assign(res,Tt(bracketj),x2(&bracketjoin));
@@ -107,6 +108,7 @@
 	res=assign(res,Tt(ifelse),x2(&ifelse));
 	res=assign(res,Tt(iftrue),x2(&iftrue));
 	res=assign(res,Tt(in),x2(&matchany));
+	res=assign(res,Tt(is),x2(&set_is));
 	res=assign(res,Tt(join),x2(&join));
 	res=assign(res,Tt(loadin),x2(&loadin));
 	res=assign(res,Tt(make),x2(&make));
