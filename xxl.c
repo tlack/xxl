@@ -1601,14 +1601,12 @@ static inline VP arity(const VP x) {
 }
 VP applyctx(VP ctx,const VP x,const VP y) {
 	if(!IS_x(ctx)) return EXC(Tt(type),"context not a context",x,y);
+	PF("applyctx\n");DUMP(ctx);DUMP(x);DUMP(y);
 	int a=_arity(ctx);
-	if(a > 0) {
-		if(a == 2 && (x==0 || y==0)) return proj(a*-1, ctx, x, y);
-		if(a == 1 && (x==0 && y==0)) return proj(a*-1, ctx, x, y);
-	}
+	if(a == 2 && (x==0 || y==0)) return proj(a*-1, ctx, x, y);
+	if(a == 1 && (x==0 && y==0)) return proj(a*-1, ctx, x, y);
 	int i,tlam=Ti(lambda);
 	VP code,res=NULL;
-	PF("applyctx\n");DUMP(ctx);DUMP(x);DUMP(y);
 	code=VALS(ctx);
 	if(LIST(code)) res=applyexpr(ctx,code,x,y);
 	PF("applyctx returning\n"); DUMP(res);
