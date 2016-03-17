@@ -1029,8 +1029,22 @@ VP split(const VP x,const VP tok) {
 		}
 		if(acc){ acc=append(acc,rest); return acc; }
 		else return x;
-	}
-	return EXC(Tt(nyi),"split with that type of data not yet implemented",x,tok);
+	} else if(LIST(tok) && LIST_item(tok,0)->t == x->t) {
+		// "/add?item=mongoose&sex=male" split "?" :: {split "&" :: {split "="}}
+		// "/add?item=mongoose&sex=male" split ["?", "&", "="]
+		VP res, newres, item; int i;
+		/*
+		res=split(x,LIST_item(tok,0));
+		for(i=1; i<LEN(tok); i++) {
+			item=LIST_item(tok,i);
+			newres=each(res,proj(2,&split,0,item));
+			xfree(res);
+			res=newres;
+		}
+		*/
+		return res;
+	} else 
+		return EXC(Tt(nyi),"split with that type of data not yet implemented",x,tok);
 }
 VP take_(const VP x, const int i) {
 	VP res;
