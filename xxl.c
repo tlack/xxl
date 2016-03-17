@@ -449,6 +449,30 @@ VP clone(const VP obj) {
 	PF("clone returning %p\n",res);DUMP(res);
 	return res;
 }
+VP wherepred_(const VP x,const VP y,int removematches) {
+	VP where=matchany(x,y);
+	if(IS_EXC(where)) return where;
+	if(LIST(where)) where=list2vec(where);
+	VP invw;
+	if(removematches) invw=not(where);
+	else invw=where;
+	VP wherec=condense(invw);
+	if(IS_EXC(wherec)) return wherec;
+	PF("except indices to apply for result\n");DUMP(wherec);
+	VP res=apply(x,wherec);
+	xfree(wherec);
+	xfree(where);
+	if(removematches) xfree(invw); 
+	if(TABLE(x) && DICT(res)) { 
+		// tables when indexed with one int, like x@0, return
+		// a single row as a dict. For our purposes, we want that
+		// to remain a list.
+		VP k=KEYS(res), v=xl(VALS(res)), t=dict(k,v);
+		xfree(res); xfree(v);
+		return t;
+	} else 
+		return res;
+}
 
 // RUNTIME 
 
@@ -628,12 +652,13 @@ inline VP assign(VP x,VP k,VP val) {
 static inline VP assigns(VP x,const char* key,VP val) {
 	return assign(x,xfroms(key),val);
 }
-VP behead(VP x) {
+VP behead(const VP x) {
 	// PF("behead\n");DUMP(x);
 	return drop_(x,1);
 }
-VP from(VP x,VP y) {
+VP from(const VP x,const VP y) {
 	if(IS_EXC(x) || IS_EXC(y)) return EXC(Tt(value),"from can't use those values",x,y);
+	if(CALLABLE(x)) return wherepred_(y,x,0);
 	return apply(y,x);
 }
 VP catenate_table(VP table, VP row) {
@@ -856,16 +881,7 @@ VP drop(const VP x,const VP y) {
 }
 VP except(const VP x,const VP y) {
 	PF("except\n");DUMP(x);DUMP(y);
-	VP where=matchany(x,y);
-	if(IS_EXC(where)) return where;
-	if(LIST(where)) where=list2vec(where);
-	VP invw=not(where);
-	VP wherec=condense(invw);
-	if(IS_EXC(wherec)) return wherec;
-	PF("except indices to apply for result\n");DUMP(wherec);
-	VP res=apply(x,wherec);
-	xfree(wherec); xfree(invw); xfree(where);
-	return res;
+	return wherepred_(x,y,1);
 }
 VP first(const VP x) {
 	VP i,r;
