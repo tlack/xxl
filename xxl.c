@@ -3410,12 +3410,12 @@ VP resolve(VP ctx,VP ptree) {
 			VP tag=xt(_tagnum(name));
 			VP val=DICT_find(KEYS(ctx),tag);
 			if(val!=NULL) {
-				printf("resolve replacing %s with %s\n",reprA(name),reprA(val));
+				// printf("resolve replacing %s with %s\n",reprA(name),reprA(val));
 				if(!SIMPLE(val)) val=entag(val,tag);  //hmm
 				EL(ptree,VP,i)=xref(val);
 				// printf("resolved\n");DUMP(val); 
 			} else {
-				printf("couldnt resolve %s\n",reprA(tag));DUMP(tag);
+				// printf("couldnt resolve %s\n",reprA(tag));DUMP(tag);
 			}
 			xfree(tag);
 		}
