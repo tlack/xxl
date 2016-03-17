@@ -1,3 +1,4 @@
+_dir,"charclass.xxl" load as 'chclass;
 'incl is { 'srcpath sys as 'sp; 
 	["def.h","proto.h","accessors.h"] each { "#include \"",sp,"/",x,"\"\n" } 
 };

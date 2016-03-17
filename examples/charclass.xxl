@@ -1,0 +1,13 @@
+[
+'lower    : "abcdefghijklmnopqrstuvwxyz",
+'upper    : "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+'alpha    : (upper,lower),
+'digit    : "0123456789",
+'alnum    : (alpha,digit),
+'fnsafe   : (alnum,"._-"),
+'urlsafe  : (alnum,".,-+!$*'()"),
+'xdigit   : (digit,"ABCDEFabcdef"),
+'space    : " \r\n\t",
+'blank    : " \t",
+]
+
