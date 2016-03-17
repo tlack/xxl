@@ -16,11 +16,15 @@
 	(y key as 'k; y val as 'v; [k,v] >: funcbody)
 	flat
 };
-'compile is { x as 'modulename; y as 'funcs;
-	[modulename,".c"] File.path as 'outfn show;
+'fnsafe {x split [] amend [{not in chclass.fnsafe},"_"] join ""};
+'compile is { y as 'modulename; y as 'funcs;
+	["/tmp/xxlffi-",(modulename fnsafe),".c"] 
+		File.path as 'outfn;
 	modulename gensrc funcs as 'code show;
 	[outfn,code] show;
-	code
+	code file.set outfn;
+	'compshared from sys," ",outfn as 'cmd
+	show
 	// .file.set ([x,".c"] as 'cfn);
 	// 'buildshared sys ,cfn shell show
 };
