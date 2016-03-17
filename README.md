@@ -287,9 +287,12 @@ ruthlessly compute them. In this example, "age" has to be put into a list here
 because otherwise it would think you want to update three indices - "a", "g",
 and "e". 
 
-Get individual rows with `emp@0` or `0,2 from emp`.
+Get individual rows with `emp@0` or `0,2 from emp`, or rows with `"age" from
+emp` or `emp@"age"` or, if the key "age" was a tag like `'age`, you could use
+simply `emp.age`. 
 
-Search for matching values using `match` (or `~`) or filter rows with `emp except {..}`.
+Search for matching values using `match` (or `~`) or filter rows with 
+`{..} from emp` or `emp except {..}`.
 
 Still no joins, many rough edges, untested performance.
 
@@ -365,14 +368,25 @@ in code..)
 
 Work in progress on these:
 
-- Interpreter speed and memory leaks
+- Interpreter speed and memory leaks. These are at times severe.
+
+- The interpreter still recurses too much in some scenarios, even though its
+	main loop is self-managed on the heap. C call stack depth gets too deep. I
+	have a simple plan to resolve this, but it requires a (much needed) rewrite
+	to `applyexpr()`, which can be thought of as the interpreter loop.
 
 - The join verb (`,`) is still finnicky about joining like-types of data with
 	general lists. In particular, I often find myself a bit puzzled by results
 	like `['a,2],3` - should this be a two-item list with two items in the first
 	sublist, or a three element list? Before you answer, consider `['a,2] as
-	'q;q,3`.
-	When in doubt, build parts separately and combine.
+	'q;q,3`. When in doubt, build parts separately and combine.
+
+- You can't name a variable you define `x` or `y`, since the interpreter treats
+	those specially. There's no real reason for this other than the idea that
+	it's faster to resolve this short literal symbol manually using what we know
+	about the calling frame, rather than setting it as a regular variable in the
+	dictionary that is used by the context to resolve symbols. The setting part
+	works, it's just resolving `x` afterward doesn't consider the dictionary.
 
 ## Open questions
 
