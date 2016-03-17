@@ -12,7 +12,7 @@
 // commonly used "static" values, set in init()
 VP TTPARENT=NULL, XB0=NULL,XB1=NULL,XI0=NULL,XI1=NULL;
 tag_t TIEXCEPTION=0, TINULL=0;
-THREADLOCAL VP XXL_SYS=NULL; 
+THREADLOCAL VP XXL_SYS=NULL, XXL_CUR_CTX=NULL; 
 
 I8 PF_ON=0; I8 PF_LVL=0;               // controls debugging output on/off/nesting depth
 THREADLOCAL I8 IN_OUTPUT_HANDLER=0;       // used to prevent some debugging info while debugging
@@ -1345,6 +1345,8 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		// if(left!=0 && UNLIKELY(IS_EXC(left))) { MAYBE_RETURN(left); }
 		use_existing_left=0;
 	}
+
+	XXL_CUR_CTX=parent;
 
 	if(SIMPLE(code)) { MAYBE_RETURN(code); }
 
@@ -3635,6 +3637,7 @@ void init_thread_locals() {
 	XXL_SYS=assign(XXL_SYS,Tt(compshared),xfroms(XXL_COMPILESHARED));
 	XXL_SYS=assign(XXL_SYS,Tt(buildobj),xfroms(XXL_BUILDOBJ));
 	XXL_SYS=assign(XXL_SYS,Tt(buildshared),xfroms(XXL_BUILDSHARED));
+	XXL_CUR_CTX=NULL;
 }
 void init() {
 	srand(time(NULL)); // TODO need verb to srand
