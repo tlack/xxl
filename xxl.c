@@ -3616,6 +3616,7 @@ VP load0(VP fn,VP ctx) {
 	char* str=sfromxA(contents);
 	set(ctx,Tt(_dir),filedirname(fn)); // set() returns y value, not x context - dont preserve
 	VP parsetree=parseresolvestr(str,ctx);
+	if(IS_EXC(parsetree)) return parsetree;
 	free(str);
 	append(ctx,parsetree);
 	xfree(parsetree);
