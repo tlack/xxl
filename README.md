@@ -312,8 +312,8 @@ Still no joins, many rough edges, untested performance.
 	and eliminates many loops. It's also pretty fast, which somewhat makes up for the
 	dangerously slow interpreter.
 - Diverse integer type options, including 128bit octaword (`1 make 'octa`).
-- Fast-enough unboxed binary data files. 50 million ints into 201MB output file on $5/month
-  Digital Ocean SSD via `1024*1024*50 count Xd.set "/tmp/50m.xd"`
+- Fast-enough unboxed binary data files. 25 million int/s to disk per second on $5/mo
+	Digital Ocean droplet via `1024*1024*50 count Xd.set "/tmp/50m.xd"`
 - Threading support, kinda. XXL has the notion of threads available internally, but 
   the only way they are usable from inside XXL code is via `mb Mbox.watch {..}`.
 	This is because modifications to contexts' data items are not locked or synchronized,
