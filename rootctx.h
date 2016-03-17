@@ -18,6 +18,7 @@
 	res=assign(res,Tt(info),x1(&info));
 	res=assign(res,Tt(first),x1(first));
 	res=assign(res,Tt(flat),x1(&flatten));
+	res=assign(res,Tt(get),x1(&get));
 	res=assign(res,Tt(last),x1(&last));
 	res=assign(res,Tt(list),x1(&list));
 	res=assign(res,Tt(len),x1(&len));
@@ -103,7 +104,6 @@
 	res=assign(res,Tt(except),x2(&except));
 	res=assign(res,Tt(exhaust),x2(&exhaust));
 	res=assign(res,Tt(from),x2(&from));
-	res=assign(res,Tt(get),x2(&get));
 	res=assign(res,Tt(ifelse),x2(&ifelse));
 	res=assign(res,Tt(iftrue),x2(&iftrue));
 	res=assign(res,Tt(in),x2(&matchany));

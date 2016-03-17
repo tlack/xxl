@@ -606,7 +606,7 @@ inline VP assign(VP x,VP k,VP val) {
 			// .name - try to find a matching key somewhere up the stack
 			// and update it with xreplace
 			PF("assign uplevel\n",i);
-			VP newk=LIST_item(k,1), tmp=get0(x,newk,1);
+			VP newk=LIST_item(k,1), tmp=resolvekey(x,newk,1);
 			DUMP(tmp);
 			if(!IS_EXC(tmp)) return xreplace(tmp,val);
 			else { return EXC(Tt(assign),"assign could not set uplevel",x,k); }
@@ -1468,14 +1468,14 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 				// item=clone(parent);
 				item=parent;
 			} else
-				item=get(parent,item);
+				item=lookup(parent,item);
 			PF("decoded string identifier\n");DUMP(item);
 			// if(IS_EXC(item)) { MAYBE_RETURN(left!=NULL && CALLABLE(left)?left:item); }
 			// NB. i dont remember why we did the callable check there :/ note to self dont be evil
 			if(IS_EXC(item)) { MAYBE_RETURN(item); }
 		} else if(tag==tname) {
 			PF("non-string name encountered");
-			item=get(parent,item);
+			item=lookup(parent,item);
 			RETURN_IF_EXC(item);
 		} else if(tag==tstr) {
 			// strip off the 'string tag right before we use this value. this is because the
@@ -1522,9 +1522,6 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 					xfree(oldleft);
 				}
 			}
-		} else if (0 && !CALLABLE(item) && (left!=0 && IS_t(left))) {
-			PF("applying tag\n");
-			left=entag(item,left);
 		} else if(!CALLABLE(item) && (left!=0 && !CALLABLE(left))) {
 			PF("applyexpr adopting left =\n");DUMP(item);
 			xfree(left);
@@ -2541,10 +2538,10 @@ VP callclass(const VP ctx,const VP verbname,const VP value) {
 	if(res==NULL) return 0;
 	return apply(res,value);
 }
-VP get0(const VP x,const VP y,int checkparents) {
+VP resolvekey(const VP x,const VP y,int checkparents) {
 	// printf("get %s from %p\n", reprA(y), x);
 	if(!IS_d(x)) return apply(x,y);
-	PF("get0 %d\n",checkparents);
+	PF("resolvekey %d\n",checkparents);
 	VP key=y, kremainder=0, res;
 	int xn=LEN(x),kn=LEN(key); 
 	if(LIKELY(key->tag==0 || !TAG_is_class(key->tag)) 
@@ -2559,11 +2556,11 @@ VP get0(const VP x,const VP y,int checkparents) {
 		// we need to start the query from the first matching item in a parent;
 		// otherwise it is safe to rely on apply() here
 		if(!checkparents) {
-			PF("get depth query\n");DUMP(key);
+			PF("resolvekey depth query\n");DUMP(key);
 			return apply(x, key);
 		} else {
 			kremainder=drop_(key,1); key=first(key);    // separate out the parts
-			res=get0(x,key,1);                          // find the parent containing the first part
+			res=resolvekey(x,key,1);                          // find the parent containing the first part
 			if(!IS_EXC(res)) res=apply(res,kremainder); // then seek the rest
 			return res;
 		}
@@ -2579,7 +2576,7 @@ VP get0(const VP x,const VP y,int checkparents) {
 		res=DICT_find(x,TTPARENT);
 		if(res!=NULL && res!=x) {
 			PF("trying parent\n");
-			res=get0(KEYS(res),key,1);
+			res=resolvekey(KEYS(res),key,1);
 			DUMP(res);
 			if(!IS_EXC(res)) {
 				return res;
@@ -2590,7 +2587,7 @@ VP get0(const VP x,const VP y,int checkparents) {
 	}
 	return EXC(Tt(undef),"undefined",y,x);
 }
-VP get(VP x,VP y) {
+VP lookup(VP x,VP y) {
 	// get is used to resolve names in applyctx(). x is context, y is thing to
 	// look up. scans tree of scopes/closures to get value. 
 	//
@@ -2601,15 +2598,18 @@ VP get(VP x,VP y) {
 	// 'tag in the root scope, and then try to call its "get" member. 
 	// see _getmodular()
 	// printf("get %s in %p\n", reprA(y), x);
-	PF("get\n");DUMP(x);DUMP(y);
+	PF("lookup\n");DUMP(x);DUMP(y);
 	if(IS_x(x)) {
 		if(x->n != 2) { return EXC(Tt(value),"context not fully formed",x,y); }
 		CLASS_call(x,get,y);
 		if(IS_t(y) && AS_t(y,0)==Ti(.)) return x;
-		else return get0(KEYS(x),y,1);
+		else return resolvekey(KEYS(x),y,1);
 	}
-	else if(IS_d(x)) return get0(x,y,0);
+	else if(IS_d(x)) return resolvekey(x,y,0);
 	return apply(x,y);
+}
+VP get(VP x) {
+	return lookup(XXL_CUR_CTX,x);
 }
 VP set(VP ctx,VP key,VP val) {
 	// printf("set %s in %p:%s\n", reprA(key), ctx, reprA(val));
@@ -3606,7 +3606,7 @@ VP import(VP fn,VP ctx) {              // get, parse, eval in isolated ctx; retu
 	return ctx;
 }
 VP loadin(VP fn,VP ctx) {              // get, parse, eval in current ctx; return last result
-	VP bkupdir=xref(get(ctx,Tt(_dir)));  // load0 clobbers _dir
+	VP bkupdir=xref(lookup(ctx,Tt(_dir)));  // load0 clobbers _dir
 	VP res=load0(fn,ctx);
 	set(ctx,Tt(_dir),bkupdir);
 	return res;

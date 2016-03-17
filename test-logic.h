@@ -59,7 +59,7 @@ DUMP(b);
 ASSERT(_equal(b,x1(&fileget)),"stdlib file reference");
 xfree(c);xfree(b);
 c=mkworkspace();
-b=evalstrin(". get ('File#\"def.h\")",c);
+b=evalstrin("'File#\"def.h\" get",c);
 DUMP(b);
 ASSERT(IS_c(b)&&b->n>5000,"stdlib modular get def.h");
 xfree(c);xfree(b);
@@ -77,7 +77,7 @@ xfree(b);xfree(c);
 #endif
 
 c=mkworkspace();
-b=evalstrin("543 as 'zebra; . get 'zebra",c);
+b=evalstrin("543 as 'zebra; 'zebra get",c);
 ASSERT(IS_i(b) && AS_i(b,0) == 543,"test . get");
 xfree(c);xfree(b);
 
