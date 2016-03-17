@@ -1994,14 +1994,22 @@ VP exhaust(const VP x,const VP y) {
 }
 VP over(const VP x,const VP y) {
 	//PF("over\n");DUMP(x);DUMP(y);
-	IF_RET(!INDEXABLE(y), EXC(Tt(type),"over y must be indexable",x,y));
-	IF_RET(x->n==0, xalloc(x->t, 0));
-	VP last,next;
-	last=apply(x,xi(0));
-	FOR(1,x->n,({
-		next=apply(x, xi(_i));
-		last=apply(apply(y,last),next);    // TODO over should use apply2
+	if(!INDEXABLE(y)) { return EXC(Tt(type),"over y must be indexable",x,y); }
+	if(LEN(x)==0) return ALLOC_LIKE_SZ(x,0);
+	VP first=NULL,values,last,next;
+	if(LIST(x) && x->tag!=0) {
+		if(LEN(x)==2 && x->tag==Ti(init)) {
+			first=LIST_item(x,0); values=LIST_item(x,1);
+		}
+	}
+	if(!first) { values=behead(x); first=apply_simple_(x,0); }
+	last=first;
+	FOR(0,values->n,({
+		next=apply_simple_(values, _i);
+		last=apply2(y,last,next);    // TODO over should use apply2
+		xfree(next);
 	}));
+	// TODO free first if alloced
 	return last;
 }
 VP scan(const VP x,const VP y) {       // returns a list if result vals dont match
