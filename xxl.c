@@ -169,6 +169,10 @@ char* repr_o(VP x,char* s,size_t sz) {
 char* repr_p(VP x,char* s,size_t sz) {
 	Proj p = EL(x,Proj,0);
 	APF(sz,"'projection#[%p,%d,",x,p.type);
+	if(p.type<0) {
+		repr0(p.ctx, s, sz);
+		APF(sz,",",0);
+	}
 	if(p.left!=NULL) 
 		repr0(p.left, s, sz);
 	else
