@@ -49,7 +49,7 @@
 					if(IS_i(x)&&IS_i(y)) { \
 						int _x = EL(x,int,_i); \
 						int _y = EL(y,int,_i); \
-						PF("_x %d,_y %d\n", _x, _y); \
+						XRAY_log("_x %d,_y %d\n", _x, _y); \
 						body; \
 					} \
 				} \
@@ -61,21 +61,21 @@
 
 // DEBUGGING HELPER MACROS ---------------------------------------------
 
-#define APF(sz,fmt,...) ({ int len=strlen(s); if(sz-len>5) { snprintf(s+len,sz-len,fmt,__VA_ARGS__); } s; })
+#define FMT_into_s(sz,fmt,...) ({ int len=strlen(s); if(sz-len>5) { snprintf(s+len,sz-len,fmt,__VA_ARGS__); } s; })
 #define ASSERT(cond,txt) ({ if (!(cond)) { printf("ASSERT: %s\n", txt); raise(SIGABRT); exit(1); } })
-#define P0(fmt,x) ({ typeof(x) xx=x; char* s=malloc(1024);snprintf(fmt,1024,xx); xx; })
-#define _PF(...) ({ FOR(0,PF_LVL,printf("  ")); printf(__VA_ARGS__);})
-#define PF(...) (DEBUG && PF_LVL && _PF(__VA_ARGS__))
-#define PFIN() (DEBUG && PF_LVL > 0 && PF_LVL++)
-#define PFOUT() (DEBUG && PF_LVL > 0 && PF_LVL--)
-#define PFW(stmt) ({ int opf=PF_LVL; PF_LVL++; PFIN(); stmt; PFOUT(); PF_LVL=opf; })
-#define MEMPF(...) (MEM_WATCH && IN_OUTPUT_HANDLER==0 && _PF(__VA_ARGS__))
+#define FMT_strA(fmt,x) ({ typeof(x) xx=x; char* s=malloc(1024);snprintf(fmt,1024,xx); xx; })
+#define _XRAY_log(...) ({ FOR(0,XRAY_LVL,printf("  ")); printf(__VA_ARGS__);})
+#define XRAY_log(...) (DEBUG && XRAY_LVL && _XRAY_log(__VA_ARGS__))
+#define XRAY_in() (DEBUG && XRAY_LVL > 0 && XRAY_LVL++)
+#define XRAY_out() (DEBUG && XRAY_LVL > 0 && XRAY_LVL--)
+#define XRAY_toggle(stmt) ({ int opf=XRAY_LVL; XRAY_LVL++; XRAY_in(); stmt; XRAY_out(); XRAY_LVL=opf; })
+#define XRAY_memlog(...) (MEM_WATCH && IN_OUTPUT_HANDLER==0 && _XRAY_log(__VA_ARGS__))
 #if DEBUG 
-	#define DUMP(x) ({ if (PF_LVL) { char* s = reprA(x); PF("%s\n", s); free(s); } x; })
-	#define DUMPRAW(x,sz) ({ printf("%p ",x); FOR(0,sz,printf("%d ",x[_i])); printf("\n"); x; })
+	#define XRAY_emit(x) ({ if (XRAY_LVL) { char* s = reprA(x); XRAY_log("%s\n", s); free(s); } x; })
+	#define XRAY_emitRAW(x,sz) ({ printf("%p ",x); FOR(0,sz,printf("%d ",x[_i])); printf("\n"); x; })
 #else
-	#define DUMP(x) ({})
-	#define DUMPRAW(x,sz) ({})
+	#define XRAY_emit(x) ({})
+	#define XRAY_emitRAW(x,sz) ({})
 #endif
 #ifdef DEBUG
 	#define TRACELBL(x,lbl) ( (x)->tag=lbl, x )
@@ -251,7 +251,7 @@ struct xxl_index_t {                   // index of exported values for shared li
 
 // GLOBALS FROM xxl.c --------------------------------------------------
 
-extern VP XB0; extern VP XB1; extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 PF_LVL; 
+extern VP XB0; extern VP XB1; extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 XRAY_LVL; 
 extern tag_t TIEXCEPTION,TINULL; extern VP TTPARENT;
 extern THREADLOCAL I8 IN_OUTPUT_HANDLER; 
 extern I8 MEM_WATCH;

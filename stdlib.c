@@ -38,7 +38,7 @@ VP fileget(VP fn) {
 	int r, fd; char buf[IOBLOCKSZ]; VP fname=fn;
 	if(!IS_c(fname)) fname=filepath(fn);
 	if(!IS_c(fname)) return EXC(Tt(type),"readfile filename must be string or pathlist",fn,0);
-	//PF_LVL++;PF("fileget\n");DUMP(fn);PF_LVL--;
+	//XRAY_LVL++;XRAY_log("fileget\n");XRAY_emit(fn);XRAY_LVL--;
 	if(LEN(fname)==1 && AS_c(fname,0)=='-') fd=STDIN_FILENO; 
 	else {
 		char* str=sfromxA(fname);
@@ -67,7 +67,7 @@ VP filepath(VP pathlist) {
 		appendbuf(acc,BUF(item),item->n);
 	}
 	xfree(sep);
-	PF("filepath returning\n");DUMP(acc);
+	XRAY_log("filepath returning\n");XRAY_emit(acc);
 	return acc;
 }
 VP fileset(VP str,VP fn) {
@@ -106,7 +106,7 @@ VP sharedlibget(VP fn) {
 	void* indexp;
 	indexp=dlsym(fp,"XXL_INDEX");
 	if(indexp==NULL) return EXC(Tt(read),".sharedlib.get could not read index",fn,0);
-	// PF_LVL=10;
+	// XRAY_LVL=10;
 	struct xxl_index_t* idx;
 	idx=indexp;
 	int i=0;
@@ -121,7 +121,7 @@ VP sharedlibget(VP fn) {
 			contents=assign(contents,xt(_tagnums(idx[0].name)),x2(itemp));
 		idx++;
 	}
-	DUMP(contents);
+	XRAY_emit(contents);
 	return contents;
 }
 VP sharedlibset(VP fn,VP funcs) {
@@ -188,7 +188,7 @@ VP mboxrecv(VP mbox) {
 	return mboxrecv0(mbox,1);
 }
 VP mboxquery(VP mbox,VP msg) {
-	PF("mboxquery\n");DUMP(mbox);DUMP(msg);
+	XRAY_log("mboxquery\n");XRAY_emit(mbox);XRAY_emit(msg);
 	VP me=mboxnew(XI0), tmp=xln(2,msg,me);
 	mboxsend(mbox,tmp);
 	while (1) {
@@ -197,7 +197,7 @@ VP mboxquery(VP mbox,VP msg) {
 	return NULL; // todo timeouts
 }
 VP mboxwait(VP mbox) {
-	PF("mboxwait\n");DUMP(mbox);
+	XRAY_log("mboxwait\n");XRAY_emit(mbox);
 	VP msg;
 	tag_t ping=Ti(ping);
 	int empties=0,founds=0;

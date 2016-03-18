@@ -12,46 +12,46 @@
 	a=xin(3,1,2,3);
 	b=xin(2,1,3);
 	c=nest(a,b);
-	DUMP(c);
-	DUMP(info(c));
+	XRAY_emit(c);
+	XRAY_emit(info(c));
 	if(LIST(c))
-		DUMP(info(ELl(c,0)));
+		XRAY_emit(info(ELl(c,0)));
 	ASSERT(_equal(c, xl(xin(3, 1, 2, 3))), "nest 0");
 	
 	a=xin(5,9,0,0,0,8);
 	b=xin(2,9,8);
 	c=nest(a,b);
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(_equal(c,xl(xin(5,9,0,0,0,8))),"nest 1");
 
 	a=xin(5,9,0,0,0,8);
 	b=xin(2,6,6);
 	c=nest(a,b);
-	PF("nest2:\n");
-	DUMP(c);
-	DUMP(info(c));
+	XRAY_log("nest2:\n");
+	XRAY_emit(c);
+	XRAY_emit(info(c));
 	ASSERT(_equal(c,xin(5,9,0,0,0,8)),"nest 2");
 
 	a=xin(5,9,1,0,2,8);
 	b=xin(2,1,2);
-	PF("nest3 call:\n");
+	XRAY_log("nest3 call:\n");
 	c=nest(a,b);
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(_equal(c,xln(3,xi(9),xl(xin(3,1,0,2)),xi(8))),"nest 3");
 
 	a=xin(5,9,1,0,2,8);
 	b=xin(2,2,8);
-	PF("nest4 call:\n");
+	XRAY_log("nest4 call:\n");
 	c=nest(a,b);
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(_equal(c,xln(4,xi(9),xi(1),xi(0),xin(2,2,8))),"nest 4");
 
 	a=xin(7,9,1,1,0,2,2,8);
 	b=xin(2,1,2);
-	PF("nest5 call:\n");
+	XRAY_log("nest5 call:\n");
 	c=exhaust(a,proj(2,&nest,0,b));
 	//c=nest(a,b);
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(_equal(c,xln(3, 
 		xi(9), 
 			xln(3, xi(1), 
@@ -62,8 +62,8 @@
 	a=xin(5,7,7,0,8,8);
 	b=xln(2, xin(2,7,7), xin(2,8,8));
 	c=nest(a,b);
-	DUMP(c);
-	DUMP(info(c));
-	DUMP(each(c,x1(&info)));
+	XRAY_emit(c);
+	XRAY_emit(info(c));
+	XRAY_emit(each(c,x1(&info)));
 	ASSERT(_equal(c, xl( xin(5,7,7,0,8,8) )), "nest multi 0");
 

@@ -61,7 +61,7 @@ lib.each(lib.types,function(tx) {
 console.log("})");
 
 console.log("#define VARY_EACH(x,stmt,failvar) ({ \\\n" +
-	"\tint _i=0,_xn=x->n,_xt=x->t; /*PF(\"VE\");DUMP(x);*/\\");
+	"\tint _i=0,_xn=x->n,_xt=x->t; /*XRAY_log(\"VE\");DUMP(x);*/\\");
 var tmpl="\tif(_xt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
 lib.each(lib.types,function(tx) {
 	if(skip(tx)){
@@ -83,7 +83,7 @@ lib.each(lib.types,function(tx) {
 console.log("})");
 
 console.log("#define VARY_EACH_NOFLOAT(x,stmt,failvar) ({ \\\n" +
-	"\tint _i=0,_xn=x->n,_xt=x->t; /*PF(\"VE\");DUMP(x);*/\\");
+	"\tint _i=0,_xn=x->n,_xt=x->t; /*XRAY_log(\"VE\");DUMP(x);*/\\");
 var tmpl="\tif(_xt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
 lib.each(lib.types,function(tx) {
 	if(skip(tx) || tx[1]=="f"){
@@ -105,7 +105,7 @@ lib.each(lib.types,function(tx) {
 console.log("})");
 
 console.log("#define VARY_EACHLIST(x,stmt,failvar) ({ \\\n" +
-	"\tint _i=0,_xn=x->n,_xt=x->t; /*PF(\"VE\");DUMP(x);*/\\");
+	"\tint _i=0,_xn=x->n,_xt=x->t; /*XRAY_log(\"VE\");DUMP(x);*/\\");
 var tmpl="\tif(_xt=={{x0}}){/*cant vary {{x2}}*/ failvar={{x0}}; }\\";
 lib.each(lib.types,function(tx) {
 	if(tx[1] != 'l' && skip(tx)){

@@ -11,7 +11,7 @@ int netr(int sock,void* b,size_t maxl) {
 	return read(sock,b,maxl);
 }
 VP netw(int sock,VP buf) {
-	PF("netw %d\n",sock);DUMP(buf);
+	XRAY_log("netw %d\n",sock);XRAY_emit(buf);
 	if(!IS_b(buf)&&!IS_c(buf)) return EXC(Tt(type),"netw only strings",xi(sock),buf);
 	if(write(sock,BUF(buf),buf->n)<buf->n) PERR("netw");
 	return 0;
@@ -28,24 +28,24 @@ VP netserve(VP sockcb) {
 	else
 		ip = "n/a";
 	*/
-	PF("new connection %d\n",sock);
+	XRAY_log("new connection %d\n",sock);
 	memset(input, 0, NETLOOPBLK);
 	nread=netr(sock, input, NETLOOPBLK-1);
-	PF("read result %d\n", nread); 
+	XRAY_log("read result %d\n", nread); 
 	if(nread > 0) {
 		t1=xfroms(input); t2=xfroms("n/a"); t3=xln(2,t1,t2);
 		resp=apply(cb,t3);
 		xfree(t3);xfree(t2);xfree(t1);
-		PF("netloop handler resp for %d\n",sock); DUMP(resp);
+		XRAY_log("netloop handler resp for %d\n",sock); XRAY_emit(resp);
 		if(!IS_c(resp)) {
-			PF("massaging\n");DUMP(resp);
+			XRAY_log("massaging\n");XRAY_emit(resp);
 			resp=repr(resp);
 		}
 		netw(sock,resp);
 		xfree(resp);
 	}
 	shutdown(sock,SHUT_RDWR);
-	PF("netloop closing %d\n",sock);
+	XRAY_log("netloop closing %d\n",sock);
 	close(sock);
 	return NULL;
 }
@@ -56,8 +56,8 @@ VP netloop(VP xsock,VP cb) {
 	int sock=AS_i(xsock,0);
 	int n=0;
 	printf("netloop starting..\n");
-	DUMP(xsock);
-	DUMP(cb);
+	XRAY_emit(xsock);
+	XRAY_emit(cb);
 	for(;;) {
 		printf(".");
 		cons=accept(sock, &remotea, &remotel);
@@ -65,12 +65,12 @@ VP netloop(VP xsock,VP cb) {
 		// thr_run1(x1(&netserve),xln(2,xi(cons),cb));
 		n++;
 	}
-	PF("netloop closing sock after %d\n",n);
+	XRAY_log("netloop closing sock after %d\n",n);
 	close(sock);
 	return xl0();
 }
 VP netbind(VP opts,VP cb) {
-	PF("netbind\n");DUMP(opts);DUMP(cb);
+	XRAY_log("netbind\n");XRAY_emit(opts);XRAY_emit(cb);
 	if(!LIST(opts)) return EXC(Tt(type),"bad network bind options",opts,cb);
 	int sock, opt, port;
 	char host[64]; 
@@ -107,7 +107,7 @@ VP netbind(VP opts,VP cb) {
 	xref(xsock);
 	thr_run(proj(2,&netloop,xsock,cb));
 	printf("net booted\n");
-	DUMP(cb);
+	XRAY_emit(cb);
 	return opts;
 }
 #endif

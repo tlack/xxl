@@ -14,7 +14,7 @@ VP TTPARENT=NULL, XB0=NULL,XB1=NULL,XI0=NULL,XI1=NULL;
 tag_t TIEXCEPTION=0, TINULL=0;
 THREADLOCAL VP XXL_SYS=NULL, XXL_CUR_CTX=NULL; 
 
-I8 PF_ON=0; I8 PF_LVL=0;               // controls debugging output on/off/nesting depth
+I8 PF_ON=0; I8 XRAY_LVL=0;               // controls debugging output on/off/nesting depth
 THREADLOCAL I8 IN_OUTPUT_HANDLER=0;       // used to prevent some debugging info while debugging
 
 #define N_RETAINS 30
@@ -44,25 +44,25 @@ static pthread_t THR[MAXTHR]={0};
 MEMO_make(REPR_SEEN);
 char* repr0(VP x,char* s,size_t sz) {
 	type_info_t t; int i;
-	// PF("repr0\n");
-	if(x==NULL) { APF(sz,"null",0); return s; }
-	if(x->t < 0 || x->t > MAX_TYPE) { APF(sz,"/*unknown*/",0); return s; }
+	// XRAY_log("repr0\n");
+	if(x==NULL) { FMT_into_s(sz,"null",0); return s; }
+	if(x->t < 0 || x->t > MAX_TYPE) { FMT_into_s(sz,"/*unknown*/",0); return s; }
 	if(!SIMPLE(x)) {
 		VP existing=NULL;
 		MEMO_check(REPR_SEEN, x, ({ existing=memo_val; }), i);
 		if(existing!=NULL) {
 			s=(char*)existing;
 			// printf("cycle %p found after %d iters\n", x, i);
-			APF(sz,"..cycle%p..",x);
+			FMT_into_s(sz,"..cycle%p..",x);
 			return s;
 		}
 		MEMO_set(REPR_SEEN,x,(VP)s,i);
 	}
 	t=typeinfo(x->t);
 	IN_OUTPUT_HANDLER++;
-	if(x->tag!=0) APF(sz, "'%s#", tagnames(x->tag));
+	if(x->tag!=0) FMT_into_s(sz, "'%s#", tagnames(x->tag));
 	if(t.repr) (*(t.repr)(x,s,sz));
-	//APF(sz,"(r%d)",x->rc);
+	//FMT_into_s(sz,"(r%d)",x->rc);
 	IN_OUTPUT_HANDLER--;
 	return s;
 }
@@ -71,7 +71,7 @@ char* reprA(VP x) {
 	#define BS 1024*65
 	char* s = calloc(1,BS);
 	s = repr0(x,s,BS-1);
-	//APF(BS,"\n",0);
+	//FMT_into_s(BS,"\n",0);
 	return s;
 }
 VP repr(VP x) {
@@ -80,136 +80,136 @@ VP repr(VP x) {
 }
 char* repr_c(VP x,char* s,size_t sz) {
 	int i=0,n=x->n,ch;
-	APF(sz,"\"",0);
+	FMT_into_s(sz,"\"",0);
 	for(;i<n;i++){
 		ch = AS_c(x,i);
-		if(ch=='"') APF(sz,"\\\"", 0);
-		else if(ch=='\n') APF(sz,"\\n", 0);
-		else if(ch=='\r') APF(sz,"\\r", 0);
-		else APF(sz,"%c",ch);
+		if(ch=='"') FMT_into_s(sz,"\\\"", 0);
+		else if(ch=='\n') FMT_into_s(sz,"\\n", 0);
+		else if(ch=='\r') FMT_into_s(sz,"\\r", 0);
+		else FMT_into_s(sz,"%c",ch);
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
-	APF(sz,"\"",0);
+	FMT_into_s(sz,"\"",0);
 	return s;
 }
 char* repr_d(VP x,char* s,size_t sz) {
 	int i, n;
 	VP k=KEYS(x),v=VALS(x);
 	// if(!sz) return s;
-	if (!k || !v) { APF(sz,"[null]",0); return s; }
-	APF(sz,"[",0);
+	if (!k || !v) { FMT_into_s(sz,"[null]",0); return s; }
+	FMT_into_s(sz,"[",0);
 	n=k->n;
 	if(n==0) {
-		APF(sz,":",0);
+		FMT_into_s(sz,":",0);
 	} else {
 		for(i=0;i<n;i++) {
 			repr0(DICT_key_n(x,i), s, sz-1);
-			APF(sz,":",0);
+			FMT_into_s(sz,":",0);
 			repr0(DICT_val_n(x,i), s, sz-2);
 			if(i!=n-1)
-				APF(sz,", ",0);
+				FMT_into_s(sz,", ",0);
 		}
 	}
-	APF(sz,"]",0);
+	FMT_into_s(sz,"]",0);
 	return s;
 }
 char* repr_a(VP x,char* s,size_t sz) { // table
 	int i, j, kn, vn;
 	VP k=KEYS(x), v=VALS(x), tmp, tmp2;
 	// if(!sz) return s;
-	if (!k || !v) { APF(sz,"[null]",0); return s; }
+	if (!k || !v) { FMT_into_s(sz,"[null]",0); return s; }
 	kn=k->n; vn=LEN(v) ? ELl(v,0)->n : 0;
 	repr0(k, s, sz-1);
-	APF(sz,":[\n",0);
+	FMT_into_s(sz,":[\n",0);
 	for(i=0; i<vn; i++) {
-		APF(sz,"[",i);
+		FMT_into_s(sz,"[",i);
 		for(j=0; j<kn; j++) {
 			tmp=apply_simple_(ELl(v,j),i);
 			repr0(tmp, s, sz-2);
-			if(j!=kn-1) APF(sz,", ",0);
+			if(j!=kn-1) FMT_into_s(sz,", ",0);
 			xfree(tmp);
 		}
-		if(i!=vn-1) APF(sz,"],\n",0);
+		if(i!=vn-1) FMT_into_s(sz,"],\n",0);
 	}
-	APF(sz,"]]",0);
+	FMT_into_s(sz,"]]",0);
 	return s;
 }
 char* repr_l(VP x,char* s,size_t sz) {
 	int i=0, n=x->n;VP a;
-	APF(sz,"[",0);
+	FMT_into_s(sz,"[",0);
 	for(i=0;i<n;i++){
 		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
-			APF(sz,".. (%d omitted) ..", n-REPR_MAX_ITEMS);
+			FMT_into_s(sz,".. (%d omitted) ..", n-REPR_MAX_ITEMS);
 			i+=REPR_MAX_ITEMS;
 			continue;
 		}
 		a = ELl(x,i);
-		if (a==NULL) APF(sz,"null",0); 
+		if (a==NULL) FMT_into_s(sz,"null",0); 
 		else repr0(a,s,sz);
 		if(i!=n-1)
-			APF(sz,", ",0);
+			FMT_into_s(sz,", ",0);
 	}
-	APF(sz,"]",0);
+	FMT_into_s(sz,"]",0);
 	return s;
 }
 char* repr_o(VP x,char* s,size_t sz) {
 	int i=0,n=x->n;tag_t tag;
-	if(n>1) APF(sz,"(",0);
+	if(n>1) FMT_into_s(sz,"(",0);
 	for(;i<n;i++){
 		char* buf=sfromxA(numelem2base(x,i,10));
-		APF(sz,"%s",buf);
+		FMT_into_s(sz,"%s",buf);
 		free(buf);
 		if(i!=n-1)
-			APF(sz,",",0);
+			FMT_into_s(sz,",",0);
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
-	if(n>1) APF(sz,")",0);
+	if(n>1) FMT_into_s(sz,")",0);
 	return s;
 }
 char* repr_p(VP x,char* s,size_t sz) {
 	Proj p = EL(x,Proj,0);
-	APF(sz,"'projection#[%p,%d,",x,p.type);
+	FMT_into_s(sz,"'projection#[%p,%d,",x,p.type);
 	if(p.type<0) {
 		repr0(p.ctx, s, sz);
-		APF(sz,",",0);
+		FMT_into_s(sz,",",0);
 	}
 	if(p.left!=NULL) 
 		repr0(p.left, s, sz);
 	else
-		APF(sz,"()",0);
-	APF(sz,",",0);
+		FMT_into_s(sz,"()",0);
+	FMT_into_s(sz,",",0);
 	if(p.right!=NULL) 
 		repr0(p.right, s, sz);
 	else
-		APF(sz,"()",0);
-	APF(sz,"]",0);
+		FMT_into_s(sz,"()",0);
+	FMT_into_s(sz,"]",0);
 	return s;
 }
 char* repr_t(VP x,char* s,size_t sz) {
 	int i=0,n=x->n;tag_t tag;
-	if(n>1) APF(sz,"(",0);
+	if(n>1) FMT_into_s(sz,"(",0);
 	for(;i<n;i++){
 		tag = AS_t(x,i);
-		APF(sz,"'%s",tagnames(tag));
+		FMT_into_s(sz,"'%s",tagnames(tag));
 		if(i!=n-1)
-			APF(sz,",",0);
+			FMT_into_s(sz,",",0);
 		// repr0(*(EL(x,VP*,i)),s,sz);
 	}
-	if(n>1) APF(sz,")",0);
+	if(n>1) FMT_into_s(sz,")",0);
 	return s;
 }
 char* repr_x(VP x,char* s,size_t sz) {
 	int i;VP a;
-	APF(sz,"'context#%p[",x);
+	FMT_into_s(sz,"'context#%p[",x);
 	if(x->n==2) {
-		APF(sz,"'scope#%p:",KEYS(x));
+		FMT_into_s(sz,"'scope#%p:",KEYS(x));
 		// repr0(KEYS(x),s,sz);
-		APF(sz,",'lambda#%p:",VALS(x));
+		FMT_into_s(sz,",'lambda#%p:",VALS(x));
 		repr0(VALS(x),s,sz);
 	} else {
-		APF(sz,"(err: %d members)",x->n);
+		FMT_into_s(sz,"(err: %d members)",x->n);
 	}
-	APF(sz,"]",x);
+	FMT_into_s(sz,"]",x);
 	return s;
 }
 #include "repr.h"
@@ -229,7 +229,7 @@ VP xalloc(const type_t t,const I32 initn) {
 	VP a; int g,i,itemsz,sz; 
 	int finaln = initn < 4 ? 4 : initn;
 	itemsz = typeinfo(t).sz; sz=itemsz*finaln;
-	//PF("%d\n",sz);
+	//XRAY_log("%d\n",sz);
 	a=NULL;g=0;
 	if (sz < RETAIN_MAX && N_RETAINS > 0) {
 		WITHLOCK(mem, {
@@ -240,8 +240,8 @@ VP xalloc(const type_t t,const I32 initn) {
 					MEM_RETAIN[_i]=0;
 					MEM_RETAINED++;
 					g=_i;
-					PF("xalloc recycling retained %p\n",a);
-					// DUMP(a);
+					XRAY_log("xalloc recycling retained %p\n",a);
+					// XRAY_emit(a);
 					memset(a,0,sizeof(struct V)+a->sz);
 					break;
 				}
@@ -261,7 +261,7 @@ VP xalloc(const type_t t,const I32 initn) {
 	a->cap=a->sz / itemsz;
 	if (MEM_WATCH) {
 		WITHLOCK(mem, {
-			MEMPF("%salloc %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",(g==1?"GOBBLED! ":""),t,a,sizeof(struct V)+sz,finaln,itemsz,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
+			XRAY_memlog("%salloc %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",(g==1?"GOBBLED! ":""),t,a,sizeof(struct V)+sz,finaln,itemsz,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
 			MEM_ALLOC_SZ += sizeof(struct V)+sz;
 			MEM_ALLOCS++;
 			for(i=0;i<N_MEM_PTRS;i++) {
@@ -291,38 +291,38 @@ VP xprofile_end() {
 	return xl0();
 }
 VP xrealloc(VP x,I32 newn) {
-	// PF("xrealloc %p t=%d isz=%d %d/%d n=%d a=%d\n",x,x->t,x->itemsz,newn,x->cap,x->n,x->alloc);
+	// XRAY_log("xrealloc %p t=%d isz=%d %d/%d n=%d a=%d\n",x,x->t,x->itemsz,newn,x->cap,x->n,x->alloc);
 	if(newn>=x->cap) {
 		buf_t newp; I32 newsz;
 		newn = (newn < 10*1024) ? newn * 4 : newn * 1.25; // TODO there must be research about realloc bins no?
 		newsz = newn * x->itemsz;
 		if(x->alloc && x->dyn) {
-			// PF("realloc %p %d %d %d\n", x->dyn, x->sz, newn, newsz);
+			// XRAY_log("realloc %p %d %d %d\n", x->dyn, x->sz, newn, newsz);
 			newp = realloc(x->dyn, newsz);
 		} else {
-			// PF("calloc sz=%d, n=%d, newn=%d, newsz=%d\n", x->sz, x->n, newn, newsz);
+			// XRAY_log("calloc sz=%d, n=%d, newn=%d, newsz=%d\n", x->sz, x->n, newn, newsz);
 			newp = calloc(newsz,1);
 			memmove(newp,BUF(x),x->sz);
 		}
 		if(MEM_WATCH) {
-			// MEMPF("realloc %d %p -> %d\n", x->t, x, newsz);
+			// XRAY_memlog("realloc %d %p -> %d\n", x->t, x, newsz);
 			MEM_ALLOC_SZ += newsz;
 			MEM_REALLOCS++;
 		}
-		// PF("realloc new ptr = %p\n", newp);
+		// XRAY_log("realloc new ptr = %p\n", newp);
 		if(newp==NULL) PERR("realloc");
 		x->dyn=newp;
 		x->cap=newn;
 		x->sz=newsz;
 		x->alloc=1;
-		// PF("post realloc\n"); DUMP(x);
+		// XRAY_log("post realloc\n"); XRAY_emit(x);
 	}
 	return x;
 }
 VP xfree(VP x) {
 	int i;
 	if(UNLIKELY(x==NULL)) return x;
-	//PF("XFREE (%p)\n",x);//DUMP(x);//DUMP(info(x));
+	//XRAY_log("XFREE (%p)\n",x);//XRAY_emit(x);//XRAY_emit(info(x));
 	x->rc--; 
 	if(LIKELY(x->rc==0)) {
 		if(CONTAINER(x)) {
@@ -332,7 +332,7 @@ VP xfree(VP x) {
 		if(MEM_WATCH) {
 			MEM_FREED_SZ+=sizeof(struct V) + x->sz;
 			MEM_FREES+=1;
-			MEMPF("free %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",x->t,x,x->sz,x->itemsz,x->cap,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
+			XRAY_memlog("free %d %p %d (%d * %d) (total=%d, freed=%d, bal=%d)\n",x->t,x,x->sz,x->itemsz,x->cap,MEM_ALLOC_SZ,MEM_FREED_SZ,MEM_ALLOC_SZ-MEM_FREED_SZ);
 		}
 		if (x->alloc==0 && x->sz < RETAIN_MAX && N_RETAINS > 0) {
 			for(i=0;i<N_RETAINS;i++)
@@ -341,14 +341,14 @@ VP xfree(VP x) {
 					return x;
 				}
 		}
-		PF("xfree(%p) really dropping type=%d n=%d alloc=%d\n",x,x->t,x->n,x->alloc);
-		// DUMP(x);
+		XRAY_log("xfree(%p) really dropping type=%d n=%d alloc=%d\n",x,x->t,x->n,x->alloc);
+		// XRAY_emit(x);
 		if(x->alloc && x->dyn) free(x->dyn);
 		free(x);
 	} return x; }
-VP xref(VP x) { if(!x) return x; if(MEM_WATCH){MEMPF("ref %p\n",x);} x->rc++; return x; }
+VP xref(VP x) { if(!x) return x; if(MEM_WATCH){XRAY_memlog("ref %p\n",x);} x->rc++; return x; }
 VP xreplace(VP x,VP newval) {
-	PF("xreplace\n");DUMP(x);DUMP(newval);
+	XRAY_log("xreplace\n");XRAY_emit(x);XRAY_emit(newval);
 	int oldrc=x->rc;
 	if(x->alloc && x->dyn) free(x->dyn);
 	memmove(x,newval,sizeof(struct V));
@@ -377,12 +377,12 @@ char* sfromxA(VP x) {
 	return buf; }
 static inline int _equalm(const VP x,const int xi,const VP y,const int yi) {
 	if(x==NULL||y==NULL) return 0;
-	// PF("comparing %p to %p\n", ELi(x,xi), ELi(y,yi));
-	// PF("_equalm\n"); DUMP(x); DUMP(y);
-	if(ENLISTED(x)) { PF("equalm descend x");
+	// XRAY_log("comparing %p to %p\n", ELi(x,xi), ELi(y,yi));
+	// XRAY_log("_equalm\n"); XRAY_emit(x); XRAY_emit(y);
+	if(ENLISTED(x)) { XRAY_log("equalm descend x");
 		return _equalm(ELl(x,xi),0,y,yi);
 	}
-	if(ENLISTED(y)) { PF("equalm descend y");
+	if(ENLISTED(y)) { XRAY_log("equalm descend y");
 		return _equalm(x,xi,ELl(y,yi),0);
 	}
 	if(memcmp(ELi(x,xi),ELi(y,yi),x->itemsz)==0) return 1;
@@ -396,7 +396,7 @@ int _equal(const VP x,const VP y) {
 	// this is the most common call in the code
 	// TODO _equal() needs to handle comparison tolerance and type conversion
 	// TODO _equal should use the new VARY_*() macros, except for general lists
-	// PF("_equal\n"); DUMP(x); DUMP(y);
+	// XRAY_log("_equal\n"); XRAY_emit(x); XRAY_emit(y);
 	// if the list is a container for one item, we probably want to match the inner one
 	if(x==NULL||y==NULL) return 0;
 	VP a=x,b=y;
@@ -420,9 +420,9 @@ VP equal(const VP x,const VP y) {
 MEMO_make(CLONE);
 VP clone0(const VP obj) {
 	if(IS_EXC(obj)) return obj;
-	PF("clone0 %p\n",obj);DUMP(obj);
+	XRAY_log("clone0 %p\n",obj);XRAY_emit(obj);
 	int i, objn=obj->n; 
-	MEMO_check(CLONE,obj,({ PF("found memoized %p\n", memo_val); return xref(memo_val); }),i);
+	MEMO_check(CLONE,obj,({ XRAY_log("found memoized %p\n", memo_val); return xref(memo_val); }),i);
 	if(i==MEMO_sz) { return EXC(Tt(stack),__func__,0,0); }
 	VP res=ALLOC_LIKE(obj);
 	MEMO_set(CLONE,obj,res,i);
@@ -443,10 +443,10 @@ VP clone0(const VP obj) {
 VP clone(const VP obj) { 
 	// TODO keep a counter of clone events for performance reasons - these represent a concrete
 	// loss over mutable systems
-	PF("clone\n");DUMP(obj);
+	XRAY_log("clone\n");XRAY_emit(obj);
 	MEMO_clear(CLONE);
 	VP res=clone0(obj);
-	PF("clone returning %p\n",res);DUMP(res);
+	XRAY_log("clone returning %p\n",res);XRAY_emit(res);
 	return res;
 }
 VP wherepred_(const VP x,const VP y,int removematches) {
@@ -458,7 +458,7 @@ VP wherepred_(const VP x,const VP y,int removematches) {
 	else invw=where;
 	VP wherec=condense(invw);
 	if(IS_EXC(wherec)) return wherec;
-	PF("except indices to apply for result\n");DUMP(wherec);
+	XRAY_log("except indices to apply for result\n");XRAY_emit(wherec);
 	VP res=apply(x,wherec);
 	xfree(wherec);
 	xfree(where);
@@ -478,19 +478,19 @@ VP wherepred_(const VP x,const VP y,int removematches) {
 
 inline VP appendbuf(VP x,const buf_t buf,const size_t nelem) {
 	int newn;buf_t dest;
-	//PF("appendbuf %d\n", nelem);DUMP(x);
+	//XRAY_log("appendbuf %d\n", nelem);XRAY_emit(x);
 	newn=x->n+nelem;
 	x=XREALLOC(x,newn);
-	// PF("after realloc"); DUMP(x);
+	// XRAY_log("after realloc"); XRAY_emit(x);
 	dest=ELi(x,x->n);
 	memmove(dest,buf,x->itemsz * nelem);
 	x->n=newn;
-	// PF("appendbuf newn %d\n", newn); DUMPRAW(dest, x->itemsz * newn);
+	// XRAY_log("appendbuf newn %d\n", newn); XRAY_emitRAW(dest, x->itemsz * newn);
 	return x;
 }
 VP append(VP x,VP y) { 
 	// append all items of y to x. if x is a general list, append pointer to y, and increase refcount.
-	// PF("append %p %p\n",x,y); DUMP(x); DUMP(y);
+	// XRAY_log("append %p %p\n",x,y); XRAY_emit(x); XRAY_emit(y);
 	if(IS_EXC(x)) return x;
 	if(!CONTAINER(x) && !(x->t==y->t)) { return EXC(Tt(type),"append x must be container or types must match", x, y); }
 	if(TABLE(x)) return catenate_table(x,y);
@@ -498,7 +498,7 @@ VP append(VP x,VP y) {
 		if(VALS(x)) xfree(VALS(x)); VALS(x)=y; return x;
 	}
 	if(IS_d(x)) {
-		// PF("append d %p\n", x); DUMP(x);
+		// XRAY_log("append d %p\n", x); XRAY_emit(x);
 		ASSERT(y->n % 2 == 0, "append to a dict with ['key;value]");
 		VP k=KEYS(x),v=VALS(x),y1,y2; int i;
 		y1=ELl(y,0);
@@ -522,8 +522,8 @@ VP append(VP x,VP y) {
 		x=XREALLOC(x,x->n+1); 
 		EL(x,VP,x->n)=y; x->n++;
 	} else {
-		// PF("append disaster xn %d xc %d xi %d xsz %d yn %d yc %d yi %d ysz %d\n",x->n,x->cap,x->itemsz,x->sz,y->n,y->cap,y->itemsz,y->sz);
-		// DUMP(info(x));DUMP(x);DUMP(info(y));DUMP(y);
+		// XRAY_log("append disaster xn %d xc %d xi %d xsz %d yn %d yc %d yi %d ysz %d\n",x->n,x->cap,x->itemsz,x->sz,y->n,y->cap,y->itemsz,y->sz);
+		// XRAY_emit(info(x));XRAY_emit(x);XRAY_emit(info(y));XRAY_emit(y);
 		// dest = BUF(x) + (x->n*x->itemsz);
 		x=XREALLOC(x,x->n + y->n);
 		memmove(ELsz(x,x->itemsz,x->n),BUF(y),y->n*y->itemsz);
@@ -551,7 +551,7 @@ VP amend_dict_dict(VP x,VP y) {
 	return x;
 }
 VP amend(VP x,VP y) {
-	PF("amend\n");DUMP(x);DUMP(y);
+	XRAY_log("amend\n");XRAY_emit(x);XRAY_emit(y);
 	// TODO amend should create a new structure rather than modifying one in-place
 	if(!SIMPLE(x) && !CONTAINER(x)) return EXC(Tt(type),"amend x must be a simple or container type",x,y);
 	if(DICT(x) && DICT(y)) return amend_dict_dict(x,y);
@@ -565,15 +565,15 @@ VP amend(VP x,VP y) {
 	for(i=0;i<idx->n;i++) { 
 		idxv=apply_simple_(idx,i); // TODO really need a fast 0 alloc version of apply(simple,int)!
 		if(UNLIKELY(CALLABLE(val))) {
-			PF("amend calling val cb\n");DUMP(val);
-			PFIN();
+			XRAY_log("amend calling val cb\n");XRAY_emit(val);
+			XRAY_in();
 			tmp=apply(val,apply(x,idxv));
-			PFOUT();
+			XRAY_out();
 		} else {
 			// handle the case of assigning one vector (ie a string) to a given index
 			// or the case of assigning many indices to one value
 			if (SCALAR(idx) || SCALAR(val)) tmp=xref(val); 
-			else { PFIN(); tmp=apply_simple_(val,i); PFOUT(); }
+			else { XRAY_in(); tmp=apply_simple_(val,i); XRAY_out(); }
 		}
 		RETURN_IF_EXC(tmp);
 		if(IS_EXC(tmp)) { xfree(idxv); return tmp; }
@@ -584,12 +584,12 @@ VP amend(VP x,VP y) {
 		assign(x,idxv,tmp);
 		xfree(idxv); xfree(tmp);
 	}
-	PF("amend returning\n");DUMP(x);
+	XRAY_log("amend returning\n");XRAY_emit(x);
 	return x;
 }
 VP assign_table(VP x,VP k,VP val) {
 	if(NUMSTRICT(k)) return EXC(Tt(nyi),"table numeric assign not yet implemented",x,k);
-	PF("assign_table\n");DUMP(x);DUMP(k);DUMP(val);
+	XRAY_log("assign_table\n");XRAY_emit(x);XRAY_emit(k);XRAY_emit(val);
 	int i=TABLE_col_num_for_name(x,k);
 	int nr=TABLE_nrows(x);
 	if(LEN(val)!=nr) return EXC(Tt(value),"table assign value length doesnt match table rows",x,val);
@@ -599,27 +599,27 @@ VP assign_table(VP x,VP k,VP val) {
 	return x;
 }
 inline VP assign(VP x,VP k,VP val) {
-	// PF("assign\n");DUMP(x);DUMP(k);DUMP(val);
+	// XRAY_log("assign\n");XRAY_emit(x);XRAY_emit(k);XRAY_emit(val);
 	if (LIST(k) && k->n) {
 		int i=0;VP res=x;
 		if(IS_t(LIST_item(k,0)) && AS_t(LIST_item(k,0),0)==TINULL) {
 			// .name - try to find a matching key somewhere up the stack
 			// and update it with xreplace
-			PF("assign uplevel\n",i);
+			XRAY_log("assign uplevel\n",i);
 			VP newk=LIST_item(k,1), tmp=resolvekey(x,newk,1);
-			DUMP(tmp);
+			XRAY_emit(tmp);
 			if(!IS_EXC(tmp)) return xreplace(tmp,val);
 			else { return EXC(Tt(assign),"assign could not set uplevel",x,k); }
 		}
 		for(;i<k->n-1;i++) {
-			// PF("assign at depth %d\n",i);
+			// XRAY_log("assign at depth %d\n",i);
 			ARG_MUTATING(x);
 			res=apply(res,ELl(k,i));
-			DUMP(res);
+			XRAY_emit(res);
 			if(UNLIKELY(IS_EXC(res)) || res->n==0)
 				return res;
 		}
-		// PF("assign at depth setting\n");
+		// XRAY_log("assign at depth setting\n");
 		assign(res,ELl(k,k->n-1),val);
 		return res; // TODO: should this return the inner context affected? seems wrong
 	}
@@ -627,7 +627,7 @@ inline VP assign(VP x,VP k,VP val) {
 	else if(DICT(x)) {
 		xref(k); xref(val); return append(x,xln(2,k,val));
 	} else if(SIMPLE(x) && NUM(k)) {
-		// PF("assign");DUMP(x);DUMP(k);DUMP(val);
+		// XRAY_log("assign");XRAY_emit(x);XRAY_emit(k);XRAY_emit(val);
 		if(val->n == 0) return EXC(Tt(value),"assignment with empty values not supported on simple types",x,val);
 		if(x->t != val->t) return EXC(Tt(type),"assign value and target types don't match",x,val);
 		int typerr=-1, i=NUM_val(k);
@@ -636,7 +636,7 @@ inline VP assign(VP x,VP k,VP val) {
 		VARY_EACHRIGHT_NOFLOAT(x,k,({
 			EL(x,typeof(_x),_y) = EL(val,typeof(_x),_y%val->n); // TODO assign should create new return value
 		}),typerr);
-		// PF("assign num returning");DUMP(x);
+		// XRAY_log("assign num returning");XRAY_emit(x);
 		return x;
 	} else if(LIST(x) && NUM(k)) {
 		int i=NUM_val(k);
@@ -653,7 +653,7 @@ static inline VP assigns(VP x,const char* key,VP val) {
 	return assign(x,xfroms(key),val);
 }
 VP behead(const VP x) {
-	// PF("behead\n");DUMP(x);
+	// XRAY_log("behead\n");XRAY_emit(x);
 	return drop_(x,1);
 }
 VP from(const VP x,const VP y) {
@@ -662,10 +662,10 @@ VP from(const VP x,const VP y) {
 	return apply(y,x);
 }
 VP catenate_table(VP table, VP row) {
-	PF("catenate_table\n"); DUMP(table); DUMP(row);
+	XRAY_log("catenate_table\n"); XRAY_emit(table); XRAY_emit(row);
 	int trows, tcols;
 	if(table==NULL || LEN(table)==0 || LEN(KEYS(table))==0) {
-		PF("table seems to be blank; creating table from this row");
+		XRAY_log("table seems to be blank; creating table from this row");
 		if(DICT(row)) return make_table(MUTATE_CLONE(KEYS(row)),MUTATE_CLONE(VALS(row)));
 		else return EXC(Tt(value),"can't catenate an empty table with that",table,row);
 	} else {
@@ -673,7 +673,7 @@ VP catenate_table(VP table, VP row) {
 	}
 	if(TABLE(row)) {
 		VP tmp; int i; 
-		PF("catenating table\n");
+		XRAY_log("catenating table\n");
 		for(i=0; i<trows; i++) {
 			tmp=table_row_dict_(row, i);
 			ARG_MUTATING(table);
@@ -687,36 +687,36 @@ VP catenate_table(VP table, VP row) {
 		ASSERT(LIST(KEYS(row))&&LIST(VALS(row)),"catenate_table: row keys or vals not list");
 		VP fullrow;
 		if(tcols != 0 && !_equal(rk,KEYS(table))) { // mismatching columns on existing table!
-			PF("row keys/table keys mismatch, loading old row defaults\n");
+			XRAY_log("row keys/table keys mismatch, loading old row defaults\n");
 			VP lastrow=table_row_dict_(table,trows-1);
 			fullrow=catenate(lastrow,row);
-			DUMP(fullrow);
+			XRAY_emit(fullrow);
 		} else fullrow=MUTATE_CLONE(row);
 		rk=KEYS(fullrow);
 		VP rv=VALS(fullrow), rktmp, rvtmp, vec; int i=0;
 		for(; i<rk->n; i++) {
 			rktmp=ELl(rk,i); rvtmp=ELl(rv,i);
-			PF("catenate col\n");
-			DUMP(rktmp);
-			DUMP(rvtmp);
-			DUMP(KEYS(table));
-			DUMP(VALS(table));
-			DUMP(table);
+			XRAY_log("catenate col\n");
+			XRAY_emit(rktmp);
+			XRAY_emit(rvtmp);
+			XRAY_emit(KEYS(table));
+			XRAY_emit(VALS(table));
+			XRAY_emit(table);
 			vec=TABLE_col_named(table,rktmp);
-			PF("vec %p\n",vec);DUMP(vec);
+			XRAY_log("vec %p\n",vec);XRAY_emit(vec);
 			ARG_MUTATING(table);
 			if(vec==NULL) {
 				// NB. unknown columns are added, but old rows
 				// will get the same value as this one!
 				KEYS(table)=append(KEYS(table),rktmp);
 				VALS(table)=append(VALS(table),take_(rvtmp,trows+1));
-				PF("new keys and vals:\n");
-				DUMP(KEYS(table));
-				DUMP(VALS(table));
+				XRAY_log("new keys and vals:\n");
+				XRAY_emit(KEYS(table));
+				XRAY_emit(VALS(table));
 			} else {
 				vec=append(vec,rvtmp);
-				PF("new vec\n");
-				DUMP(vec);
+				XRAY_log("new vec\n");
+				XRAY_emit(vec);
 			}
 		}
 		return table;
@@ -728,7 +728,7 @@ VP catenate_table(VP table, VP row) {
 		// or a list of lists, meaning a list of individual lists of simple types. we'll
 		// check if the first member is a list to determine which we think it is.
 		if(LIST_of_lists(row) && LEN(LIST_first(row)) == tcols) {
-			PF("LOL\n");DUMP(row);
+			XRAY_log("LOL\n");XRAY_emit(row);
 			// TODO probably important not to recurse here
 			for(; i<row->n; i++) table=catenate_table(table,MUTATE_CLONE(LIST_item(row,i)));
 			return table;
@@ -758,31 +758,31 @@ VP catenate_table(VP table, VP row) {
 }
 VP catenate(VP x,VP y) {
 	VP res=0;
-	PF("catenate\n");DUMP(x);DUMP(y);
+	XRAY_log("catenate\n");XRAY_emit(x);XRAY_emit(y);
 	int n = x->n + y->n;
 	if(!CONTAINER(x) && x->tag==0 && x->t==y->t) {
-		PF("catenate2 - like simple objects\n");
+		XRAY_log("catenate2 - like simple objects\n");
 		res=ALLOC_LIKE_SZ(x, n);
 		appendbuf(res, BUF(x), x->n); appendbuf(res, BUF(y), y->n);
 	} else {
-		PF("catenate3 - container as x, or unlike objects\n");
+		XRAY_log("catenate3 - container as x, or unlike objects\n");
 		if(TABLE(x)) { return catenate_table(MUTATE_CLONE(x),y); }
 		if(DICT(x)) { return dict(MUTATE_CLONE(x),y); }
 		else if(LIST(x) && LEN(x)==0) { return xl(y); }
 		else if(LIST(x)) { res=append(MUTATE_CLONE(x),y); }
 		else {
-			PF("catenate4 - create 2-item list with both items in it\n");
+			XRAY_log("catenate4 - create 2-item list with both items in it\n");
 			res=xlsz(2);
 			res=append(res,x);
 			res=append(res,y);
 		}
 	}
 	//res=list2vec(res);
-	PF("catenate result");DUMP(res);
+	XRAY_log("catenate result");XRAY_emit(res);
 	return res;
 }
 VP curtail(VP x) {
-	// PF("curtail\n");DUMP(x);
+	// XRAY_log("curtail\n");XRAY_emit(x);
 	return drop_(x,-1);
 }
 VP del_list_(VP x,int i) {
@@ -801,13 +801,13 @@ VP del_dict(VP x,VP y) {
 	return x;
 }
 VP del_ctx(VP x,VP y) {
-	PF("del_ctx\n");DUMP(x);DUMP(y);
+	XRAY_log("del_ctx\n");XRAY_emit(x);XRAY_emit(y);
 	KEYS(x)=del_dict(KEYS(x),y);
-	PF("del_ctx returning\n");DUMP(x);
+	XRAY_log("del_ctx returning\n");XRAY_emit(x);
 	return x;
 }
 VP del(VP x,VP y) {
-	PF("del\n");DUMP(x);DUMP(y);
+	XRAY_log("del\n");XRAY_emit(x);XRAY_emit(y);
 	if(IS_EXC(x) || IS_EXC(y)) return x;
 	if(IS_d(x) && IS_t(y)) return del_dict(x,y);
 	if(IS_x(x) && IS_t(y)) return del_ctx(x,y);
@@ -815,7 +815,7 @@ VP del(VP x,VP y) {
 	return EXC(Tt(nyi),"del not yet implemented for this type",x,y);
 }
 VP dict(VP x,VP y) {
-	PF("dict\n");DUMP(x);DUMP(y);
+	XRAY_log("dict\n");XRAY_emit(x);XRAY_emit(y);
 	if(DICT(x)) {
 		ARG_MUTATING(x);
 		if(DICT(y)) {
@@ -833,7 +833,7 @@ VP dict(VP x,VP y) {
 				append(KEYS(x),y);
 			}
 		}
-		PF("dict already dict returning\n");DUMP(x);
+		XRAY_log("dict already dict returning\n");XRAY_emit(x);
 		return x;
 	} else {
 		if(x->n > 1 && LIST_of_lists(y)) return make_table(x,y);
@@ -851,7 +851,7 @@ VP dict(VP x,VP y) {
 			}
 		}
 		d->n=2;
-		PF("dict new returning\n");DUMP(d);
+		XRAY_log("dict new returning\n");XRAY_emit(d);
 		return d;
 	}
 }
@@ -861,26 +861,26 @@ VP drop_(VP x,int i) {
 	if(!x || x->n==0) return x;
 	if(i<0) { st = 0; end=x->n+i; }
 	else { st = i; end=x->n; }
-	// PF("drop_(,%d) %d %d %d\n", i, x->n, st, end); DUMP(x);
+	// XRAY_log("drop_(,%d) %d %d %d\n", i, x->n, st, end); XRAY_emit(x);
 	res=ALLOC_LIKE_SZ(x,end-st);
-	// DUMP(info(res));
+	// XRAY_emit(info(res));
 	if(end-st > 0) {
 		appendbuf(res, ELi(x,st), end-st);
 	}
-	PF("drop_ result\n"); DUMP(res);
+	XRAY_log("drop_ result\n"); XRAY_emit(res);
 	return res;
 }
 VP drop(const VP x,const VP y) {
 	VP res=0;
 	int typerr=-1;
-	// PF("drop args\n"); DUMP(x); DUMP(y);
+	// XRAY_log("drop args\n"); XRAY_emit(x); XRAY_emit(y);
 	IF_RET(!NUM(y) || !SCALAR(y), EXC(Tt(type),"drop y arg must be single numeric",x,y));	
 	if(TABLE(x)) return each(VALS(x),proj(2,x2(&drop),0,y));
 	VARY_EL(y, 0, ({ return drop_(x,_x); }), typerr);
 	return res;
 }
 VP except(const VP x,const VP y) {
-	PF("except\n");DUMP(x);DUMP(y);
+	XRAY_log("except\n");XRAY_emit(x);XRAY_emit(y);
 	return wherepred_(x,y,1);
 }
 VP first(const VP x) {
@@ -890,13 +890,13 @@ VP first(const VP x) {
 	else return apply_simple_(x,0);
 }
 int _flat(const VP x) { // returns 1 if vector, or a list composed of vectors (and not other lists)
-	// PF("flat\n");DUMP(x);
+	// XRAY_log("flat\n");XRAY_emit(x);
 	if(!CONTAINER(x)) return 1;
 	else return 0; // lists are never flat
 }
 VP flatten0(VP x, int cont) {
 	int i,t=-1;VP item,res=NULL;
-	PF("flatten\n");DUMP(x);
+	XRAY_log("flatten\n");XRAY_emit(x);
 	if(!LIST(x))return x;
 	if(x->n) {
 		for(i=0;i<x->n;i++) {
@@ -906,12 +906,12 @@ VP flatten0(VP x, int cont) {
 			if(!res) {
 				t=item->t; res=ALLOC_LIKE(item);
 			} else if(item->t!=t) {
-				PF("gave up on");DUMP(item);
+				XRAY_log("gave up on");XRAY_emit(item);
 				xfree(res); return x;
 			}
 			res=append(res,item);
 		}
-		PF("flatten returning\n");DUMP(res);
+		XRAY_log("flatten returning\n");XRAY_emit(res);
 		return res;
 	} else return xl0();
 }
@@ -952,13 +952,13 @@ VP reverse(const VP x) {
 	return acc;
 }
 VP shift_(const VP x,int i) {
-	// PF("shift_ %d\n",i);DUMP(x);
+	// XRAY_log("shift_ %d\n",i);XRAY_emit(x);
 	int n=x->n;
 	if(i<0) return catenate(take_(x,i%n),drop_(x,i%n));
 	else return catenate(drop_(x,i%n),take_(x,i%n));
 }
 VP shift(const VP x,const VP y) {
-	PF("shift\n");DUMP(x);DUMP(y);
+	XRAY_log("shift\n");XRAY_emit(x);XRAY_emit(y);
 	if(!SIMPLE(x)) return EXC(Tt(type),"shr x must be a simple type",x,y);
 	if(!NUM(y)) return EXC(Tt(type),"shr y must be numeric",x,y);
 	int typerr=-1;
@@ -967,7 +967,7 @@ VP shift(const VP x,const VP y) {
 }
 VP show(const VP x) {
 	char* p;
-	PF("show\n");DUMP(x);
+	XRAY_log("show\n");XRAY_emit(x);
 	if(x==NULL) { printf("null\n"); return x; }
 	if(IS_c(x)) p=sfromxA(x);
 	else p=reprA(x);
@@ -977,7 +977,7 @@ VP show(const VP x) {
 VP splice(const VP x,const VP idx,const VP replace) {
 	int i, first=AS_i(idx,0), last=first+idx->n;
 	VP acc;
-	PF("splice (%d len) %d..%d",x->n, first,last);DUMP(x);DUMP(idx);DUMP(replace);
+	XRAY_log("splice (%d len) %d..%d",x->n, first,last);XRAY_emit(x);XRAY_emit(idx);XRAY_emit(replace);
 	if(first==0 && last==x->n) return replace;
 	acc=xl0();
 	if(LIST(x)) {
@@ -990,14 +990,14 @@ VP splice(const VP x,const VP idx,const VP replace) {
 		if(first > 0) acc=append(acc, take_(x, first));
 		acc=append(acc, replace);
 		if (last < x->n) acc=append(acc, drop_(x, last));
-		PF("splice calling over\n");DUMP(acc);
+		XRAY_log("splice calling over\n");XRAY_emit(acc);
 		return over(acc, x2(&catenate));
 	}
-	PF("splice returning\n"); DUMP(acc);
+	XRAY_log("splice returning\n"); XRAY_emit(acc);
 	return acc;
 }
 VP split(const VP x,const VP tok) {
-	PF("split\n");DUMP(x);DUMP(tok);
+	XRAY_log("split\n");XRAY_emit(x);XRAY_emit(tok);
 	int typerr=-1;
 	// special case for empty or null tok.. split vector into list
 	if(tok->n==0) {
@@ -1005,13 +1005,13 @@ VP split(const VP x,const VP tok) {
 		tmp=xl0();
 		if(LIST(x)) return x;
 		VARY_EACHLIST(x,({
-			// PF("in split vary_each %c\n",_x);
+			// XRAY_log("in split vary_each %c\n",_x);
 			tmp2=ALLOC_LIKE_SZ(x, 1);
 			tmp2=appendbuf(tmp2,(buf_t)&_x,1);
 			tmp=append(tmp,tmp2);
 		}),typerr);
 		IF_RET(typerr>-1, EXC(Tt(type),"can't split that type", x, tok));
-		PF("split returning\n");DUMP(tmp);
+		XRAY_log("split returning\n");XRAY_emit(tmp);
 		return tmp;
 	} else if(x->t == tok->t) {
 		int j, i=0, last=0, tokn=tok->n;
@@ -1033,15 +1033,17 @@ VP split(const VP x,const VP tok) {
 		// "/add?item=mongoose&sex=male" split "?" :: {split "&" :: {split "="}}
 		// "/add?item=mongoose&sex=male" split ["?", "&", "="]
 		VP res, newres, item; int i;
-		/*
-		res=split(x,LIST_item(tok,0));
-		for(i=1; i<LEN(tok); i++) {
+		if(!LIST(x)) res=xl(x);
+		else res=x;
+		for(i=0; i<LEN(tok); i++) {
 			item=LIST_item(tok,i);
 			newres=each(res,proj(2,&split,0,item));
-			xfree(res);
-			res=newres;
+			XRAY_log("split-deep loop\n");XRAY_emit(newres);
+			if(newres!=res) xfree(res);
+			if(IS_EXC(newres)) { return newres; }
+			if(ENLISTED(newres)) { res=xref(LIST_item(newres,0)); xfree(newres); }
+			else res=newres;
 		}
-		*/
 		return res;
 	} else 
 		return EXC(Tt(nyi),"split with that type of data not yet implemented",x,tok);
@@ -1060,19 +1062,19 @@ VP take_(const VP x, const int i) {
 		VP tmp;
 		FOR(st,end,({ tmp=apply_simple_(x,_i%xn); res=append(res,tmp); xfree(tmp); }));
 	}
-	PF("take_ returning\n");DUMP(res);
+	XRAY_log("take_ returning\n");XRAY_emit(res);
 	return res;
 }
 VP take(const VP x, const VP y) {
 	int typerr=-1;
 	size_t st, end; //TODO slice() support more than 32bit indices
-	PF("take args\n"); DUMP(x); DUMP(y);
+	XRAY_log("take args\n"); XRAY_emit(x); XRAY_emit(y);
 	IF_RET(!NUM(y) || !SCALAR(y), EXC(Tt(type),"take y arg must be single numeric",x,y));	
 	VARY_EL(y, 0, ({ return take_(x,_x); }), typerr);
 	return NULL;
 }
 int _findbuf(const VP x, const buf_t y) {   // returns index or -1 on not found
-	// PF("findbuf\n");DUMP(x);
+	// XRAY_log("findbuf\n");XRAY_emit(x);
 	if(LISTDICT(x)) { ITERV(x,{ 
 		IF_RET(_findbuf(ELl(x,_i),y)!=-1,_i);
 	}); } else {
@@ -1082,7 +1084,7 @@ int _findbuf(const VP x, const buf_t y) {   // returns index or -1 on not found
 }
 inline int _find1(const VP x, const VP y) {        // returns index or -1 on not found
 	// probably the most common, core call in the code. worth trying to optimize.
-	// PF("_find1\n",x,y); DUMP(x); DUMP(y);
+	// XRAY_log("_find1\n",x,y); XRAY_emit(x); XRAY_emit(y);
 	ASSERT(x && (LISTDICT(x) || x->t==y->t), "_find1(): x must be list, or types must match");
 	VP scan;
 	if(UNLIKELY(DICT(x))) scan=KEYS(x);
@@ -1122,9 +1124,9 @@ VP condense(VP x) {
 	// equivalent to k's & / where - condenses non-zeroes into their positions (ugh english)
 	// always returns an int vector for now; we generally rely on ints too much for this
 	int typerr=-1; int j; VP acc=xi0();
-	// PF("condense\n");DUMP(x);
+	// XRAY_log("condense\n");XRAY_emit(x);
 	VARY_EACH(x,({ if(_x) { j=_i; FOR(0,_x,appendbuf(acc,(buf_t)&j,1)); } }),typerr);
-	// PF("condense returning\n");DUMP(acc);
+	// XRAY_log("condense returning\n");XRAY_emit(acc);
 	return acc;
 }
 VP table_row_list_(VP tbl, int row) { 
@@ -1134,8 +1136,8 @@ VP table_row_list_(VP tbl, int row) {
 		res=apply_simple_(TABLE_col(tbl,i), row); 
 		lst=append(lst,DISCLOSE(res)); 
 	}
-	PF("table_row_list_ #%d returning\n");
-	DUMP(lst);
+	XRAY_log("table_row_list_ #%d returning\n");
+	XRAY_emit(lst);
 	return lst;
 }
 VP table_row_dict_(VP tbl, int row) {
@@ -1143,7 +1145,7 @@ VP table_row_dict_(VP tbl, int row) {
 }
 VP make_table(VP keys,VP vals) {
   VP res, newvals; int i;
-	PF("make_table\n");DUMP(keys);DUMP(vals);
+	XRAY_log("make_table\n");XRAY_emit(keys);XRAY_emit(vals);
 	// approach: create empty table, then apply all these row values to it.
 	// catenate_table already handles lists-of-lists correctly.
   res=xasz(2);
@@ -1171,7 +1173,7 @@ VP make_many(VP x,VP y) {
 VP make(VP x, VP y) { 
 	// TODO make() should short cut matching kind casts 
 	// TODO make() should be smarter about lists in x
-	PF("make\n");DUMP(x);DUMP(y);
+	XRAY_log("make\n");XRAY_emit(x);XRAY_emit(y);
 	VP res=0; type_t typenum=-1; tag_t typetag=-1;
 	// right arg is tag naming a type, use that.. otherwise use y's type
 	if(IS_t(y)) {
@@ -1189,7 +1191,7 @@ VP make(VP x, VP y) {
 		return make_table(KEYS(x),VALS(x));
 	}
 	#include"cast.h"
-	// DUMPRAW(buf,BUFSZ);
+	// XRAY_emitRAW(buf,BUFSZ);
 	if(res) return res;
 	if(typetag!=-1) {
 		ARG_MUTATING(x); x->tag=typetag;
@@ -1198,7 +1200,7 @@ VP make(VP x, VP y) {
 }
 VP pin(VP x, VP y) { 
 	// TODO cast() should short cut matching kind casts 
-	PF("pin\n");DUMP(x);DUMP(y);
+	XRAY_log("pin\n");XRAY_emit(x);XRAY_emit(y);
 	tag_t newt = 0;
 	if(IS_t(x)) 
 		newt=AS_t(x,0);
@@ -1261,7 +1263,7 @@ VP type(VP x) {
 	return xt(_tagnums(t.name));
 }
 VP deal(VP range, VP amt) {
-	PF("deal\n");DUMP(range);DUMP(amt);
+	XRAY_log("deal\n");XRAY_emit(range);XRAY_emit(amt);
 	IF_EXC(!LIST(range) && !NUM(range),Tt(type),"deal: left arg must be numeric", range, amt);
 	IF_EXC(!IS_i(amt) || !SCALAR(amt),Tt(type),"deal: single right arg must be int", range, amt);
 	int typerr=-1;
@@ -1284,7 +1286,7 @@ VP deal(VP range, VP amt) {
 // APPLICATION, ITERATION AND ADVERBS
 
 static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
-	PF("applyexpr (code %p, xarg %p, yarg %p):\n", code, xarg, yarg);DUMP(code);DUMP(xarg);DUMP(yarg);
+	XRAY_log("applyexpr (code %p, xarg %p, yarg %p):\n", code, xarg, yarg);XRAY_emit(code);XRAY_emit(xarg);XRAY_emit(yarg);
 	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
 	if(SIMPLE(code) || !LIST(code)) return code;
 	char ch; int i; 
@@ -1299,15 +1301,15 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 
 	#define MAYBE_RETURN(value) \
 		if (return_to!=-1) { \
-			PF("applyexpr returning to frame %d\n",return_to); \
-			DUMP(value); \
+			XRAY_log("applyexpr returning to frame %d\n",return_to); \
+			XRAY_emit(value); \
 			if(return_expr_type==1) { \
-				PF("setting left in caller frame..\n"); \
+				XRAY_log("setting left in caller frame..\n"); \
 				use_existing_left=1; \
 				left=value; \
 			} else if (return_expr_type==2) { \
-				PF("setting item and left in caller frame..\n"); \
-				DUMP(value); DUMP(restore_left); \
+				XRAY_log("setting item and left in caller frame..\n"); \
+				XRAY_emit(value); XRAY_emit(restore_left); \
 				use_existing_left=1; \
 				use_existing_item=1; \
 				if(code->tag==tlistexpr && !(value && DICT(value))) \
@@ -1321,9 +1323,9 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			start_i=AS_i(ELl(curframe,5),0); \
 			goto applyexprtop; \
 		} else { \
-			PF("applyexpr actually returning\n"); \
-			if(value==NULL) { PF("null\n"); } \
-			else DUMP(value); \
+			XRAY_log("applyexpr actually returning\n"); \
+			if(value==NULL) { XRAY_log("null\n"); } \
+			else XRAY_emit(value); \
 			return value; \
 		} 
 
@@ -1331,14 +1333,14 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 
 	if (stack_i==-1) {
 		stack_i=stack->n-1;
-		PF("applyexpr picking fresh stack_i=%d of %d\n", stack_i, stack->n-1);
+		XRAY_log("applyexpr picking fresh stack_i=%d of %d\n", stack_i, stack->n-1);
 	} else {
-		PF("applyexpr returning to stack #%d, i%d.. left/item:\n", stack_i, start_i);
-		DUMP(left);
-		DUMP(item);
+		XRAY_log("applyexpr returning to stack #%d, i%d.. left/item:\n", stack_i, start_i);
+		XRAY_emit(left);
+		XRAY_emit(item);
 	}
 	curframe=ELl(stack,stack_i);
-	DUMP(curframe);
+	XRAY_emit(curframe);
 
 	parent=ELl(curframe,0);
 	code=ELl(curframe,1);
@@ -1355,7 +1357,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		start_i=0;	
 	if(!use_existing_left) left=ELl(curframe,4);
 	else {
-		PF("using existing left\n");DUMP(left);
+		XRAY_log("using existing left\n");XRAY_emit(left);
 		// if(left!=0 && UNLIKELY(IS_EXC(left))) { MAYBE_RETURN(left); }
 		use_existing_left=0;
 	}
@@ -1365,7 +1367,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 	if(SIMPLE(code)) { MAYBE_RETURN(code); }
 
 	if(LIST(code) && code->tag==tlam && code->n == 2) {
-		PF("unpacking lambda\n");
+		XRAY_log("unpacking lambda\n");
 		int arity=LAMBDAARITY(code);
 		if(arity==1 && xarg==0) {
 			item=proj(-1,parent,xarg,yarg); MAYBE_RETURN(item);
@@ -1376,20 +1378,20 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		code=ELl(code,0);
 	}
 	
-	PF("applyexpr code body:\n");
-	DUMP(code);
+	XRAY_log("applyexpr code body:\n");
+	XRAY_emit(code);
 
 	for(i=start_i;i<code->n;i++) {
-		PF("applyexpr #%d/%d\n",i,code->n-1);
+		XRAY_log("applyexpr #%d/%d\n",i,code->n-1);
 		if (use_existing_item) {
-			PF("using existing item\n"); DUMP(item);
+			XRAY_log("using existing item\n"); XRAY_emit(item);
 			use_existing_item=0;
 			if(item==0) continue;
 			// if(UNLIKELY(IS_EXC(item))) { MAYBE_RETURN(item); }
 			goto evalexpr;
-		} else PF("picking up item from code %d\n", i); 
+		} else XRAY_log("picking up item from code %d\n", i); 
 		item=xref(ELl(code,i));
-		PF("item=\n");DUMP(item);
+		XRAY_log("item=\n");XRAY_emit(item);
 		tag=item->tag;
 		// consider storing these skip conditions in an array
 		if(tag==tws) continue;
@@ -1411,10 +1413,10 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			// what to do with this term of the parse tree. many expressions are simple and
 			// don't require complex evaluation.. but some do require recursion
 			if (!SIMPLE(item) && LEN(item)>1) {
-				PF("applying subexpression\n");
+				XRAY_log("applying subexpression\n");
 				VP newframe = xln(9,parent,item,xarg,yarg,NULL,xi(i),xi(stack_i),xi(2),left);
-				PF("trying stack hack for expression (expr/listexpr)\n");
-				DUMP(newframe);
+				XRAY_log("trying stack hack for expression (expr/listexpr)\n");
+				XRAY_emit(newframe);
 				stack=append(stack,newframe);
 				stack_i=-1;
 				goto applyexprtop;
@@ -1441,7 +1443,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 				if(IS_EXC(left)) { MAYBE_RETURN(left); }
 				left=NULL; continue; 
 			}
-			PF("much ado about\n");DUMP(item);
+			XRAY_log("much ado about\n");XRAY_emit(item);
 			if(item->n==1 && ch=='x') {
 				if (LIKELY(xarg!=0)) 
 					item=xarg;
@@ -1450,7 +1452,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 				}
 			} else if(item->n==1 && ch=='y') {
 				if (LIKELY(yarg!=0)) {
-					PF("picking up y arg\n");DUMP(yarg);
+					XRAY_log("picking up y arg\n");XRAY_emit(yarg);
 					item=yarg;
 				} else {
 					// should return a projection here, but right now there is no way
@@ -1461,34 +1463,30 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 				}
 			}
 			else if(item->n==2 && ch=='a' && AS_c(item,1)=='s') {
-				left=proj(2,&set_as,xln(2,parent,left),NULL);
-				left->tag=Ti(as);
-				PF("created set projection (as)\n");
-				DUMP(left);
+				left=proj(2,&set_as,left,NULL);
+				XRAY_log("created set projection (as)\n"); XRAY_emit(left);
 				continue;
 			} else if(item->n==2 && ch=='i' && AS_c(item,1)=='s') {
-				left=proj(2,&set_is,xln(2,parent,left),NULL);
-				left->tag=Ti(is);
-				PF("created set projection (is)\n");
-				DUMP(left);
+				left=proj(2,&set_is,left,NULL);
+				XRAY_log("created set projection (is)\n"); XRAY_emit(left);
 				continue;
 			} else if(item->n == 4 && ch == 'l' 
 							&& AS_c(item,1)=='o' && AS_c(item,2)=='a' && AS_c(item,3)=='d') {
-				PF("performing load");
+				XRAY_log("performing load");
 				item=proj(2,&loadin,0,parent);
 			} else if(item->n == 4 && ch == 's' 
 							&& AS_c(item,1)=='e' && AS_c(item,2)=='l' && AS_c(item,3)=='f') {
-				PF("using self");
+				XRAY_log("using self");
 				// item=clone(parent);
 				item=parent;
 			} else
 				item=lookup(parent,item);
-			PF("decoded string identifier\n");DUMP(item);
+			XRAY_log("decoded string identifier\n");XRAY_emit(item);
 			// if(IS_EXC(item)) { MAYBE_RETURN(left!=NULL && CALLABLE(left)?left:item); }
 			// NB. i dont remember why we did the callable check there :/ note to self dont be evil
 			if(IS_EXC(item)) { MAYBE_RETURN(item); }
 		} else if(tag==tname) {
-			PF("non-string name encountered");
+			XRAY_log("non-string name encountered");
 			item=lookup(parent,item);
 			RETURN_IF_EXC(item);
 		} else if(tag==tstr) {
@@ -1500,9 +1498,9 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		
 		evalexpr:
 
-		PF("before evalexpr (left,item):\n");
-		DUMP(left); DUMP(item);
-		if(left!=NULL) PF("left arity=%d\n", _arity(left)); 
+		XRAY_log("before evalexpr (left,item):\n");
+		XRAY_emit(left); XRAY_emit(item);
+		if(left!=NULL) XRAY_log("left arity=%d\n", _arity(left)); 
 
 		if(left!=0 && (left->tag==Ti(proj) || (CALLABLE(left) && _arity(left)>0))) {
 			// they seem to be trying to call a unary function, though it's on the
@@ -1520,8 +1518,8 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			// for that "are we still possibly needing the passed-in (left) value?"
 			// logic to not allow this behavior in first position inside expression
 			Proj p;
-			PF("applying dangling left callable\n");
-			DUMP(left);
+			XRAY_log("applying dangling left callable\n");
+			XRAY_emit(left);
 			oldleft=left;
 			if(left->tag==Ti(proj)) left=apply2(ELl(left,1),ELl(left,0),item);
 			else left=apply(left,item);
@@ -1531,13 +1529,13 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 				p=AS_p(left,0);
 				if(yarg && p.type==2 && (!p.left || !p.right)) {
 					oldleft=left;
-					PF("applyexpr consuming y:\n");DUMP(yarg);
+					XRAY_log("applyexpr consuming y:\n");XRAY_emit(yarg);
 					left=apply(oldleft,yarg);
 					xfree(oldleft);
 				}
 			}
 		} else if(!CALLABLE(item) && (left!=0 && !CALLABLE(left))) {
-			PF("applyexpr adopting left =\n");DUMP(item);
+			XRAY_log("applyexpr adopting left =\n");XRAY_emit(item);
 			xfree(left);
 			left=item;
 		} else {
@@ -1545,26 +1543,26 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 				if (_arity(left)==2) {
 					left=xln(2,left,item); left->tag=Ti(proj);
 				} else {
-					PF("applyexpr calling apply(item,left)\n");DUMP(item);DUMP(left);
+					XRAY_log("applyexpr calling apply(item,left)\n");XRAY_emit(item);XRAY_emit(left);
 					if(IS_x(item)) {
 						VP newframe = xln(9,item,ELl(item,item->n-1),left,NULL,left,xi(i+1),xi(stack_i),XI1,left);
-						PF("trying stack hack\n");
-						DUMP(newframe);
+						XRAY_log("trying stack hack\n");
+						XRAY_emit(newframe);
 						stack=append(stack,newframe);
 						stack_i=-1;
 						goto applyexprtop;
 					} else {
-						PFIN();
+						XRAY_in();
 						oldleft=left;
 						left=xref(apply(item,left));
 						xfree(oldleft); 
-						PFOUT();
+						XRAY_out();
 					}
 					// if(IS_EXC(left)) { MAYBE_RETURN(left); }
 				}
-				PF("applyexpr apply returned\n");DUMP(left);
+				XRAY_log("applyexpr apply returned\n");XRAY_emit(left);
 			} else {
-				PF("no left, so continuing with item..\n");
+				XRAY_log("no left, so continuing with item..\n");
 				xfree(left);
 				left=item;
 			}
@@ -1575,15 +1573,15 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		// that , occurs.. so after the first item, we force it to a list if it isnt one. :)
 		/*
 		if(i==0 && code->tag==tlistexpr && !LIST(left)) {
-			PF("forcing left as list due to listexpr\n");
+			XRAY_log("forcing left as list due to listexpr\n");
 			left=xl(left);
 		}
 		*/
 
-		PF("bottom\n");
+		XRAY_log("bottom\n");
 	}
-	PF("applyexpr done\n");
-	DUMP(left);
+	XRAY_log("applyexpr done\n");
+	XRAY_emit(left);
 	MAYBE_RETURN(left);
 }
 static inline int _arity(const VP x) {
@@ -1608,13 +1606,13 @@ static inline int _arity(const VP x) {
 }
 static inline VP arity(const VP x) {
 	int i=_arity(x);
-	PF("arity = %d\n",i);DUMP(x);
+	XRAY_log("arity = %d\n",i);XRAY_emit(x);
 	VP res=xi(i);
 	return res;
 }
 VP applyctx(VP ctx,const VP x,const VP y) {
 	if(!IS_x(ctx)) return EXC(Tt(type),"context not a context",x,y);
-	PF("applyctx\n");DUMP(ctx);DUMP(x);DUMP(y);
+	XRAY_log("applyctx\n");XRAY_emit(ctx);XRAY_emit(x);XRAY_emit(y);
 	int a=_arity(ctx);
 	if(a == 2 && (x==0 || y==0)) return proj(a*-1, ctx, x, y);
 	if(a == 1 && (x==0 && y==0)) return proj(a*-1, ctx, x, y);
@@ -1622,12 +1620,12 @@ VP applyctx(VP ctx,const VP x,const VP y) {
 	VP code,res=NULL;
 	code=VALS(ctx);
 	if(LIST(code)) res=applyexpr(ctx,code,x,y);
-	PF("applyctx returning\n"); DUMP(res);
+	XRAY_log("applyctx returning\n"); XRAY_emit(res);
 	return res;
 }
 VP apply_simple_(VP x,int i) {   // a faster way to select just one item of x
 	if(x==0 || x->tag==Ti(exception)) return x;
-	// PF("apply_simple_ %d\n", i);
+	// XRAY_log("apply_simple_ %d\n", i);
 	if(TABLE(x)) return table_row_dict_(x,i);
 	if(!LIST(x) && !SIMPLE(x)) { VP ii=xi(i), res=apply(x,ii); xfree(ii); return res; };
 	if(i > LEN(x)) return EXC(Tt(index),"index out of range",x,xi(i));
@@ -1642,7 +1640,7 @@ VP apply_simple_(VP x,int i) {   // a faster way to select just one item of x
 VP apply_table(VP x, VP y) {
 	int tc=TABLE_ncols(x);
 	int i;
-	PF("apply_table\n");DUMP(x);DUMP(y);
+	XRAY_log("apply_table\n");XRAY_emit(x);XRAY_emit(y);
 	if(x==NULL || y==NULL) return NULL;
 	if(NUMSTRICT(y)) {
 		if(SCALAR(y)) {
@@ -1656,13 +1654,13 @@ VP apply_table(VP x, VP y) {
 			VP newtbl=xasz(2), newvals=xlsz(LEN(y)), vec; int j;
 			EL(newtbl,VP,0)=MUTATE_CLONE(KEYS(x));
 			for(i=0; i<tc; i++) {
-				PF("apply_table column #%d\n",i);
+				XRAY_log("apply_table column #%d\n",i);
 				vec=TABLE_col(x,i);
 				newvals=append(newvals,apply(vec,y));
 			}
 			EL(newtbl,VP,1)=newvals;
 			newtbl->n=2;
-			PF("apply_table returning\n");DUMP(newtbl);
+			XRAY_log("apply_table returning\n");XRAY_emit(newtbl);
 			return newtbl;
 		}
 	} else {
@@ -1674,7 +1672,7 @@ VP apply_table(VP x, VP y) {
 			if(IS_c(y)) tcol=TABLE_col_named(x,y);
 			else tcol=TABLE_col_named(x,apply_simple_(y, j));
 			if(!tcol) return EXC(Tt(value),"unknown table column",x,y);
-			DUMP(tcol);
+			XRAY_emit(tcol);
 			int tr=TABLE_nrows(x);
 			VP vals=xlsz(tr);
 			for(i=0; i<tr; i++) {
@@ -1689,7 +1687,7 @@ VP apply_table(VP x, VP y) {
 VP apply(VP x,VP y) {
 	// this function is everything.
 	VP res=NULL;int i=0,typerr=-1;
-	// PF("apply\n");DUMP(x);DUMP(y);
+	// XRAY_log("apply\n");XRAY_emit(x);XRAY_emit(y);
 	if(x==0 || x->tag==Ti(exception))return x;
 	if(IS_p(x)) { 
 		// if its dyadic
@@ -1697,7 +1695,7 @@ VP apply(VP x,VP y) {
 			 // if we have no args, set y as left, and return x
 		// if its monadic
 			// if we have one arg already, call x[left], and then apply result with y
-		PF("apply proj\n");DUMP(x);DUMP(y);
+		XRAY_log("apply proj\n");XRAY_emit(x);XRAY_emit(y);
 		Proj* p; p=(Proj*)ELi(x,0);
 		// this logic needs a simplification and rethink
 		if(p->type < 0) {
@@ -1713,25 +1711,25 @@ VP apply(VP x,VP y) {
 			else
 				return (*p->f1)(y);
 		} else if(p->type==2) {
-			PF("proj2\n"); 
-			PFIN();
+			XRAY_log("proj2\n"); 
+			XRAY_in();
 			if(p->left && p->right) y=(*p->f2)(p->left,p->right);
 			else if(y && p->left) y=(*p->f2)(p->left, y);
 			else if(y && p->right) y=(*p->f2)(y,p->right);
 			else if(y) y=proj(2,p->f2,y,0);
 			else y=x;
-			PFOUT(); PF("proj2 done\n");DUMP(y);
+			XRAY_out(); XRAY_log("proj2 done\n");XRAY_emit(y);
 			return y;
 		}
 		return xp(*p);
 	}
 	if(IS_1(x)) {
-		// PF("apply 1\n");DUMP(x);DUMP(y);
+		// XRAY_log("apply 1\n");XRAY_emit(x);XRAY_emit(y);
 		unaryFunc* f; f=AS_1(x,0); return (*f)(y);
 	}
 	if(IS_2(x)) {
 		res=proj(2,AS_2(x,0),y,0);
-		// PF("apply f2 returning\n");DUMP(res);
+		// XRAY_log("apply f2 returning\n");XRAY_emit(res);
 		return res;
 	}
 	if(TABLE(x)) return apply_table(x,y);
@@ -1744,20 +1742,20 @@ VP apply(VP x,VP y) {
 		// function that takes a general list as an argument (pretty common).
 		// perhaps apply-at-depth should be a different operator, or only work when
 		// using the @ form of apply (f@x rather than f x)
-		PF("indexing at depth\n");
-		DUMP(x);
-		DUMP(y);
+		XRAY_log("indexing at depth\n");
+		XRAY_emit(x);
+		XRAY_emit(y);
 		res=x;
 		for(;i<y->n;i++) {
 			res=apply(res,ELl(y,i));
-			PF("index at depth result %d\n",i);DUMP(res);
+			XRAY_log("index at depth result %d\n",i);XRAY_emit(res);
 			if(UNLIKELY(IS_EXC(res)) || res->n==0) 
 				return res;
 		}
 		return res;
 	}
 	if(IS_x(x)) {
-		// PF("apply ctx\n");DUMP(x);DUMP(y);
+		// XRAY_log("apply ctx\n");XRAY_emit(x);XRAY_emit(y);
 		return applyctx(x,y,0);
 	}
 	if(!y) return NULL; // this is the first point where we require y to be non-null, i believe;
@@ -1768,17 +1766,17 @@ VP apply(VP x,VP y) {
 		res=xi0();
 		if(LIST(k) && IS_c(y)) { // special case for strings as dictionary keys - common
 			int idx;
-			PF("searching for string\n");
+			XRAY_log("searching for string\n");
 			if ((idx=_find1(k,y))>-1)
 				append(res,xi(idx));
 		} else {
 			ITERV(y,{ 
 				int idx;
-				// PF("searching %d\n",_i); DUMP(y); DUMP(k);
+				// XRAY_log("searching %d\n",_i); XRAY_emit(y); XRAY_emit(k);
 				if(LIST(y)) idx = _find1(k,ELl(y,_i));
 				else idx = _findbuf(k,ELi(y,_i));
 				if(idx>-1) {
-					PF("found at idx %d\n", idx); 
+					XRAY_log("found at idx %d\n", idx); 
 					found=1; append(res,xi(idx));
 					break;
 				}
@@ -1798,14 +1796,14 @@ VP apply(VP x,VP y) {
 			// just that item generally you would receive a list back this may
 			// potentially become painful later on 
 			i = AS_i(y,0); 
-			PF("apply with number %d, x is list\n", i);
+			XRAY_log("apply with number %d, x is list\n", i);
 			IF_RET(i>=x->n, ({ EXC(Tt(index),"index out of range",x,y);	}));
 			VP tmp = ELl(x,i); xref(tmp); return tmp;
 		*/
 		} else {
 			res=xalloc(x->t,y->n);
 			VARY_EACH_NOFLOAT(y,appendbuf(res,ELi(x,_x),1),typerr);
-			//PF("apply VARY_EACH after\n"); DUMP(res);
+			//XRAY_log("apply VARY_EACH after\n"); XRAY_emit(res);
 			if(typerr>-1) return EXC(Tt(type),"cant use y as index into x",x,y);
 			return res;
 		}
@@ -1824,16 +1822,16 @@ VP apply2(const VP f,const VP x,const VP y) {
 VP deepinplace(const VP obj,const VP f) {
 	// TODO perhaps deep() should throw an error with non-list args - calls each() now
 	int i;
-	// PF("deep\n");DUMP(info(obj));DUMP(obj);DUMP(f);
+	// XRAY_log("deep\n");XRAY_emit(info(obj));XRAY_emit(obj);XRAY_emit(f);
 	VP acc,subobj;
 	if(!CONTAINER(obj)) return each(obj,f);
 	if(_flat(obj)) {
-		// PF("deep flat\n");
+		// XRAY_log("deep flat\n");
 		acc=apply(f,obj);
 		if(obj->tag) acc->tag=obj->tag;
 		return acc;
 	}
-	PFIN();
+	XRAY_in();
 	FOR(0,obj->n,({
 		subobj=ELl(obj,_i);
 		if(LIST(subobj)) subobj=deepinplace(subobj,f);
@@ -1842,14 +1840,14 @@ VP deepinplace(const VP obj,const VP f) {
 		// NB. this may not be safe, but append() is overriden for dicts, so we cant simply append the list
 		// NB. check this for ref count or clone errors.
 	}));
-	PFOUT();
-	PF("deep returning\n");DUMP(obj);
+	XRAY_out();
+	XRAY_log("deep returning\n");XRAY_emit(obj);
 	return obj;
 }
 VP deep(const VP obj,const VP f) {
 	// TODO perhaps deep() should throw an error with non-list args - calls each() now
 	int i;
-	// PF("deep\n");DUMP(info(obj));DUMP(obj);DUMP(f);
+	// XRAY_log("deep\n");XRAY_emit(info(obj));XRAY_emit(obj);XRAY_emit(f);
 	VP acc,subobj;
 	if(!CONTAINER(obj)) return each(obj,f);
 	if(_flat(obj)) {
@@ -1858,7 +1856,7 @@ VP deep(const VP obj,const VP f) {
 		return acc;
 	}
 	acc=ALLOC_LIKE(obj);
-	PFIN();
+	XRAY_in();
 	FOR(0,obj->n,({
 		subobj=ELl(obj,_i);
 		if(LIST(subobj)) subobj=deep(subobj,f);
@@ -1868,8 +1866,8 @@ VP deep(const VP obj,const VP f) {
 		// NB. check this for ref count or clone errors.
 	}));
 	acc->n=obj->n;
-	PFOUT();
-	// PF("deep returning\n");DUMP(acc);
+	XRAY_out();
+	// XRAY_log("deep returning\n");XRAY_emit(acc);
 	return acc;
 }
 static inline VP eachdict(const VP obj,const VP fun) {
@@ -1880,16 +1878,16 @@ static inline VP eachdict(const VP obj,const VP fun) {
 	return dict(KEYS(obj),vals);
 }
 static inline VP eachtable(const VP obj, const VP fun) {
-	PF("eachtable\n"); DUMP(obj); DUMP(fun);
+	XRAY_log("eachtable\n"); XRAY_emit(obj); XRAY_emit(fun);
 	int objnr=TABLE_nrows(obj);
 	VP acc=NULL, tmpdict=NULL, res, item, tmpi; int i; 
 	for(i=0; i<objnr; i++) {
 		tmpdict=table_row_dict_(obj, i);
-		PF("calling eachtable fun\n"); DUMP(tmpdict);
-		PFIN();
+		XRAY_log("calling eachtable fun\n"); XRAY_emit(tmpdict);
+		XRAY_in();
 		res=apply(fun,tmpdict);
-		PFOUT();
-		PF("eachtable fun result\n"); DUMP(res);
+		XRAY_out();
+		XRAY_log("eachtable fun result\n"); XRAY_emit(res);
 		if(res==NULL) continue;
 		if(IS_EXC(res)) { if(acc) xfree(acc); return res; }
 		if(!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
@@ -1899,7 +1897,7 @@ static inline VP eachtable(const VP obj, const VP fun) {
 		acc=append(acc,res);
 		xfree(res); xfree(tmpdict); 
 	}
-	PF("eachtable returning\n"); DUMP(acc);
+	XRAY_log("eachtable returning\n"); XRAY_emit(acc);
 	return acc;
 }
 VP each(const VP obj,const VP fun) { 
@@ -1913,9 +1911,9 @@ VP each(const VP obj,const VP fun) {
 	// we normally want to try to create vectors from each, but not if the
 	// object isn't a vector in the first place, so pre-set acc here
 	if(!SIMPLE(obj)) acc=xlsz(n); 
-	// PF("each\n");DUMP(obj);DUMP(fun);
+	// XRAY_log("each\n");XRAY_emit(obj);XRAY_emit(fun);
 	for(i=0; i<n; i++) {
-		// PF("each #%d\n",n);
+		// XRAY_log("each #%d\n",n);
 		tmp=apply_simple_(obj, i); 
 		if(IS_EXC(tmp)) { if(acc) xfree(acc); return tmp; }
 		res=apply(fun,tmp); 
@@ -1924,11 +1922,11 @@ VP each(const VP obj,const VP fun) {
 		// delay creating return type until we know what this func produces
 		if (!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
 		else if (!LIST(acc) && res->t != acc->t) acc = xl(acc);
-		// PF("each tmp (rc=%d)\n",tmp->rc);DUMP(tmp);
+		// XRAY_log("each tmp (rc=%d)\n",tmp->rc);XRAY_emit(tmp);
 		append(acc,res);
 		xfree(tmp);
 	}
-	// PF("each returning\n");DUMP(acc);
+	// XRAY_log("each returning\n");XRAY_emit(acc);
 	return acc;
 }
 VP eachboth(const VP obj,const VP fun) { 
@@ -1982,11 +1980,11 @@ VP exhaust0(const VP x,const VP y,int collect) {
 	VP last=x,this=NULL,acc=NULL;
 	if(collect) acc=xl0();
 	for(i=0;i<MAXSTACK;i++) {
-		PF("exhaust calling #%d\n",i);DUMP(y);DUMP(this);DUMP(last);
-		PFIN();
+		XRAY_log("exhaust calling #%d\n",i);XRAY_emit(y);XRAY_emit(this);XRAY_emit(last);
+		XRAY_in();
 		this=apply(y,last);
-		PFOUT();
-		PF("exhaust result #%d\n",i);DUMP(last);DUMP(this);
+		XRAY_out();
+		XRAY_log("exhaust result #%d\n",i);XRAY_emit(last);XRAY_emit(this);
 		if(IS_EXC(this) || UNLIKELY(_equal(this,x) || _equal(this,last))) {
 			xfree(last); 
 			if(collect) return acc;
@@ -2001,13 +1999,13 @@ VP exhaust0(const VP x,const VP y,int collect) {
 }
 VP exhaust(const VP x,const VP y) {
 	int i;
-	PF("+++EXHAUST\n");DUMP(x);DUMP(y);
+	XRAY_log("+++EXHAUST\n");XRAY_emit(x);XRAY_emit(y);
 	VP res=exhaust0(x,y,0);
-	PF("exhaust returning\n");DUMP(res);
+	XRAY_log("exhaust returning\n");XRAY_emit(res);
 	return res;
 }
 VP over(const VP x,const VP y) {
-	//PF("over\n");DUMP(x);DUMP(y);
+	//XRAY_log("over\n");XRAY_emit(x);XRAY_emit(y);
 	if(!INDEXABLE(y)) { return EXC(Tt(type),"over y must be indexable",x,y); }
 	if(LEN(x)==0) return ALLOC_LIKE_SZ(x,0);
 	VP first=NULL,values,last,next;
@@ -2027,7 +2025,7 @@ VP over(const VP x,const VP y) {
 	return last;
 }
 VP scan(const VP x,const VP y) {       // returns a list if result vals dont match
-	// PF("scan\n");DUMP(x);DUMP(y);
+	// XRAY_log("scan\n");XRAY_emit(x);XRAY_emit(y);
 	IF_RET(!INDEXABLE(y), EXC(Tt(type),"scan y must be indexable",x,y));
 	VP last,next,acc=0; int xn=LEN(x),i;
 	if(xn<2) return apply(y,x);
@@ -2038,13 +2036,13 @@ VP scan(const VP x,const VP y) {       // returns a list if result vals dont mat
 		next=apply_simple_(x,i);
 		VP tmp=apply(y,last);              // TODO scan should use apply2
 		last=apply(tmp,next);
-		PF("scan step\n");DUMP(last);
+		XRAY_log("scan step\n");XRAY_emit(last);
 		acc=append(acc,last);
 		xfree(last);
 		xfree(tmp);
 		xfree(next);
 	}
-	PF("scan result\n");DUMP(acc);
+	XRAY_log("scan result\n");XRAY_emit(acc);
 	return acc;
 }
 VP recurse(const VP x,const VP y) {
@@ -2055,30 +2053,30 @@ VP recurse(const VP x,const VP y) {
 	// xxl: 0. 1 recurse neg
 	// -1
 	int i;
-	PF("+++RECURSE\n");DUMP(x);DUMP(y);
+	XRAY_log("+++RECURSE\n");XRAY_emit(x);XRAY_emit(y);
 	VP res=exhaust0(x,y,1);
-	PF("recurse returning\n");DUMP(res);
+	XRAY_log("recurse returning\n");XRAY_emit(res);
 	return res;
 }
 VP wide0(const VP obj,const VP f,int listsonly) {
 	int i; VP acc;
-	PF("wide0\n");DUMP(obj);DUMP(f);
+	XRAY_log("wide0\n");XRAY_emit(obj);XRAY_emit(f);
 	if(!CONTAINER(obj)) return apply(f, obj);
-	// PF("wide top level\n");DUMP(obj);
+	// XRAY_log("wide top level\n");XRAY_emit(obj);
 	acc=apply(f,obj);
 	if(IS_EXC(acc)) return acc;
 	if(CONTAINER(acc)) {
 		for(i=0;i<acc->n;i++) {
-			//PF("wide #%d\n",i);PFIN();
+			//XRAY_log("wide #%d\n",i);XRAY_in();
 			if(!listsonly || LIST(ELl(acc,i))) EL(acc,VP,i)=wide0(ELl(acc,i),f,listsonly);
-			//PFOUT();
+			//XRAY_out();
 		}
 	}
 	return acc;
 }
 VP wide(const VP obj,const VP f) {
 	if(IS_EXC(obj)) return obj;
-	PF("wide\n");DUMP(obj);DUMP(f);
+	XRAY_log("wide\n");XRAY_emit(obj);XRAY_emit(f);
 	return wide0(obj,f,1);
 }
 
@@ -2094,13 +2092,13 @@ VP abss(const VP x) {
 VP and(const VP x,const VP y) {
 	int typerr=-1;
 	VP acc;
-	PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
+	XRAY_log("and\n"); XRAY_emit(x); XRAY_emit(y); // TODO and() and friends should handle type conversion better
 	if(IS_EXC(x) || LEN(x)==0) return x; // NB. IS_EXC checks if x==NULL
 	if(IS_EXC(y) || LEN(y)==0) return y;
 	if(LIST(x) || LIST(y)) return EXC(Tt(nyi),"and on lists not yet implemented",x,y);
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "and arguments should be same length", x, y);	
 	if(SIMPLE(x) && SIMPLE(y)) acc=ALLOC_BEST(x,y);
-	// PF("and acc\n");DUMP(acc);
+	// XRAY_log("and acc\n");XRAY_emit(acc);
 	if(x->t > y->t) {
 		VARY_EACHBOTH(x,y,({ 
 			if (_x > _y) _x=_y; appendbuf(acc, (buf_t)&_x, 1); }), typerr);
@@ -2109,13 +2107,13 @@ VP and(const VP x,const VP y) {
 			if (_x < _y) _y=_x; appendbuf(acc, (buf_t)&_y, 1); }), typerr);
 	}
 	IF_EXC(typerr != -1, Tt(type), "and arg type not valid", x, y);
-	// PF("and result\n"); DUMP(acc);
+	// XRAY_log("and result\n"); XRAY_emit(acc);
 	return acc;
 }
 int _any(VP x) {
 	int typerr=-1;
 	VP acc;
-	PF("_any\n"); DUMP(x);
+	XRAY_log("_any\n"); XRAY_emit(x);
 	if(IS_EXC(x)) return 0;              // IS_EXC checks if it's 0 also
 	if(LIST(x)) x=list2vec(deep(x,x1(&any)));
 	VARY_EACH(x,({ 
@@ -2123,11 +2121,11 @@ int _any(VP x) {
 	}),typerr);
 	// since this routine returns an int we can't return an exception!
 	ASSERT(typerr==-1, "_any noniterable arg");
-	// PF("_any returning 0\n");
+	// XRAY_log("_any returning 0\n");
 	return 0;
 }
 VP any(VP x) {
-	//PF("any\n");DUMP(x);
+	//XRAY_log("any\n");XRAY_emit(x);
 	IF_EXC(!SIMPLE(x) && !LIST(x), Tt(type), "any arg must be list or simple type", x, 0);
 	if(LIST(x)) return deep(x,x1(&any));
 	return xb(_any(x));
@@ -2198,11 +2196,11 @@ VP casee(VP x,VP y) {
 	int i, yn=LEN(y), haselse=(yn%2==1); VP cond=NULL, res=NULL;
 	for(i=0; i<(yn-haselse); i+=2) {
 		cond=LIST_item(y,i);
-		PF("case considering\n");DUMP(cond);
+		XRAY_log("case considering\n");XRAY_emit(cond);
 		if(CALLABLE(cond)) {
 			VP testcond=apply(cond,x);
 			if(_any(testcond)) {
-				PF("case found match\n");
+				XRAY_log("case found match\n");
 				xfree(testcond);
 				res=LIST_item(y,i+1);
 				break;
@@ -2219,7 +2217,7 @@ VP casee(VP x,VP y) {
 }
 static inline VP divv(VP x,VP y) { 
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
-	// PF("div");DUMP(x);DUMP(y);DUMP(acc);
+	// XRAY_log("div");XRAY_emit(x);XRAY_emit(y);XRAY_emit(acc);
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"div argument should be simple types",x,0);
 	VARY_EACHBOTH(x,y,({
 		if(_y==0) return EXC(Tt(divzero),"divide by zero in mod",x,y);
@@ -2228,11 +2226,11 @@ static inline VP divv(VP x,VP y) {
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}),typerr);
 	IF_EXC(typerr > -1, Tt(type), "div arg wrong type", x, y);
-	PF("div result\n"); DUMP(acc);
+	XRAY_log("div result\n"); XRAY_emit(acc);
 	return acc;
 }
 VP ifelse(VP x,VP y) {
-	PF("ifelse\n");DUMP(x);DUMP(y);
+	XRAY_log("ifelse\n");XRAY_emit(x);XRAY_emit(y);
 	if(y->n!=2) return EXC(Tt(len),"ifelse y argument must be (truecond,falsecond)",x,y);
 	VP tcond=apply(y,XI0),fcond=apply(y,XI1),res=0;
 	if(x->n == 0) res=fcond;
@@ -2254,7 +2252,7 @@ VP iftrue(VP x,VP y) {
 VP greater(VP x,VP y) {
 	int typerr=-1;
 	VP acc,v0=xb(0),v1=xb(1);
-	PF("greater\n"); DUMP(x); DUMP(y); 
+	XRAY_log("greater\n"); XRAY_emit(x); XRAY_emit(y); 
 	if(!SIMPLE(x) || !SIMPLE(y)) return EXC(Tt(type), "> args should be simple types", x, y);
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "> arguments should be same length", x, y);	
 	acc=xbsz(MAX(x->n,y->n));
@@ -2264,14 +2262,14 @@ VP greater(VP x,VP y) {
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}), typerr);
 	IF_EXC(typerr != -1, Tt(type), "> arg type not valid", x, y);
-	PF("> result\n"); DUMP(acc);
+	XRAY_log("> result\n"); XRAY_emit(acc);
 	xfree(v0);xfree(v1);
 	return acc;
 }
 VP lesser(VP x,VP y) {
 	int typerr=-1;
 	VP acc,v0=xb(0),v1=xb(1);
-	PF("lesser\n"); DUMP(x); DUMP(y); 
+	XRAY_log("lesser\n"); XRAY_emit(x); XRAY_emit(y); 
 	if(!SIMPLE(x) || !SIMPLE(y)) return EXC(Tt(type), "< args should be simple types", x, y);
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "< arguments should be same length", x, y);	
 	acc=xbsz(MAX(x->n,y->n));
@@ -2281,7 +2279,7 @@ VP lesser(VP x,VP y) {
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}), typerr);
 	IF_EXC(typerr != -1, Tt(type), "< arg type not valid", x, y);
-	PF("< result\n"); DUMP(acc);
+	XRAY_log("< result\n"); XRAY_emit(acc);
 	xfree(v0);xfree(v1);
 	return acc;
 }
@@ -2298,7 +2296,7 @@ VP min(VP x) {
 }
 VP max(VP x) { 
 	// TODO implement max() as loop instead of over - used in parsing
-	// PF("max\n");DUMP(x);
+	// XRAY_log("max\n");XRAY_emit(x);
 	if (!SIMPLE(x)) return over(x, x2(&or));
 	if(x->n==1)return x;
 	VP res=ALLOC_LIKE_SZ(x,1); int typerr=-1;
@@ -2311,7 +2309,7 @@ VP max(VP x) {
 }
 VP minus(VP x,VP y) {
 	int typerr=-1;
-	PF("minus\n");DUMP(x);DUMP(y);
+	XRAY_log("minus\n");XRAY_emit(x);XRAY_emit(y);
 	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "minus args should be simple types", x, y); 
 	VP acc=ALLOC_BEST(x,y);
 	VARY_EACHBOTH(x,y,({
@@ -2320,13 +2318,13 @@ VP minus(VP x,VP y) {
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}),typerr);
 	IF_EXC(typerr > -1, Tt(type), "minus arg wrong type", x, y);
-	// PF("minus result\n"); DUMP(acc);
+	// XRAY_log("minus result\n"); XRAY_emit(acc);
 	return acc;
 }
 VP mod(VP x,VP y) {
 	// TODO mod probably *doesnt* need type promotion
 	int typerr=-1;
-	PF("mod\n");DUMP(x);DUMP(y);
+	XRAY_log("mod\n");XRAY_emit(x);XRAY_emit(y);
 	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "mod args should be simple types", x, y); 
 	VP acc=ALLOC_BEST(x,y);
 	if(LIKELY(x->t > y->t)) {
@@ -2342,37 +2340,37 @@ VP mod(VP x,VP y) {
 		}),typerr);
 	}
 	IF_EXC(typerr > -1, Tt(type), "mod arg wrong type", x, y);
-	PF("mod result\n"); DUMP(acc);
+	XRAY_log("mod result\n"); XRAY_emit(acc);
 	return acc;
 }
 VP neg(VP x) {
 	int typerr=-1;
 	VP acc;
-	// PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
+	// XRAY_log("and\n"); XRAY_emit(x); XRAY_emit(y); // TODO and() and friends should handle type conversion better
 	acc=ALLOC_LIKE(x);
 	VARY_EACH(x,({ 
 		_x=-_x; appendbuf(acc,(buf_t)&_x,1);
 	}),typerr);
 	IF_EXC(typerr != -1, Tt(type), "not arg type not valid", x, 0);
-	// PF("and result\n"); DUMP(acc);
+	// XRAY_log("and result\n"); XRAY_emit(acc);
 	return acc;
 }
 VP not(VP x) {
 	int typerr=-1;
 	VP acc;
-	// PF("and\n"); DUMP(x); DUMP(y); // TODO and() and friends should handle type conversion better
+	// XRAY_log("and\n"); XRAY_emit(x); XRAY_emit(y); // TODO and() and friends should handle type conversion better
 	acc=ALLOC_LIKE(x);
 	VARY_EACH(x,({ 
 		_x=!_x; appendbuf(acc,(buf_t)&_x,1);
 	}),typerr);
 	IF_EXC(typerr != -1, Tt(type), "not arg type not valid", x, 0);
-	// PF("and result\n"); DUMP(acc);
+	// XRAY_log("and result\n"); XRAY_emit(acc);
 	return acc;
 }
 VP or(VP x,VP y) { // TODO most of these primitive functions have the same pattern - abstract?
 	int typerr=-1;
 	VP acc;
-	// PF("or\n"); DUMP(x); DUMP(y); // TODO or() and friends should handle type conversion better
+	// XRAY_log("or\n"); XRAY_emit(x); XRAY_emit(y); // TODO or() and friends should handle type conversion better
 	if(IS_EXC(x) || LEN(x)==0) return y;
 	if(IS_EXC(y) || LEN(y)==0) return x;
 	if(DICT(x) && DICT(y)) return unionn(x,y);
@@ -2382,11 +2380,11 @@ VP or(VP x,VP y) { // TODO most of these primitive functions have the same patte
 	VARY_EACHBOTH(x,y,({ if (_x > _y) appendbuf(acc, (buf_t)&_x, 1); 
 		else appendbuf(acc, (buf_t)&_y, 1); }), typerr);
 	IF_EXC(typerr != -1, Tt(type), "or arg type not valid", x, y);
-	// PF("or result\n"); DUMP(acc);
+	// XRAY_log("or result\n"); XRAY_emit(acc);
 	return acc;
 }
 VP orelse(VP x,VP y) {
-	PF("orelse\n");DUMP(x);DUMP(y);
+	XRAY_log("orelse\n");XRAY_emit(x);XRAY_emit(y);
 	if(!IS_EXC(x) && LEN(x)>0) return x;
 	else if(NUM(x) && _any(x)) return x;
 	else {
@@ -2396,7 +2394,7 @@ VP orelse(VP x,VP y) {
 }
 VP plus(VP x,VP y) {
 	int typerr=-1;
-	// PF("plus\n");DUMP(x);DUMP(y);
+	// XRAY_log("plus\n");XRAY_emit(x);XRAY_emit(y);
 	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "plus args should be simple types", x, y); 
 	VP acc=ALLOC_BEST(x,y);
 	VARY_EACHBOTH(x,y,({
@@ -2405,7 +2403,7 @@ VP plus(VP x,VP y) {
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}),typerr);
 	IF_EXC(typerr > -1, Tt(type), "plus arg wrong type", x, y);
-	// PF("plus result\n"); DUMP(acc);
+	// XRAY_log("plus result\n"); XRAY_emit(acc);
 	return acc;
 }
 VP ravel(VP x,VP y) {
@@ -2420,7 +2418,7 @@ static inline VP str2num(VP x) {
 	// TODO optimize str2int
 	// NB. str2num creates int at the minimum
 	double d; I128 buf=0; char* s=sfromxA(flatten(x));
-	PF("str2num %p\n",s);DUMP(x);
+	XRAY_log("str2num %p\n",s);XRAY_emit(x);
 	IF_EXC(!IS_c(x),Tt(type),"str2int arg should be char vector",x,0);
 	if(strchr(s,'.')!=0 && (d=strtod(s,NULL))!=0) {
 		free(s);
@@ -2453,7 +2451,7 @@ static inline VP str2num(VP x) {
 	// return EXC(Tt(value),"str2int value could not be converted",x,0);
 }
 VP sum(VP x) {
-	PF("sum");DUMP(x);
+	XRAY_log("sum");XRAY_emit(x);
 	I128 val=0;int out,typerr=-1;
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"sum argument should be simple types",x,0);
 	VARY_EACH(x,({ val += _x; }),typerr);
@@ -2467,29 +2465,29 @@ VP sum(VP x) {
 	}
 }
 VP sums(VP x) {
-	PF("sums\n");DUMP(x);
+	XRAY_log("sums\n");XRAY_emit(x);
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"sums argument should be simple types",x,0);
 	VP acc=ALLOC_LIKE(x); int typerr=-1;
 	VARY_EACH(x,({ _xtmp += _x; appendbuf(acc,(buf_t)&_xtmp,1); }),typerr);
 	IF_EXC(typerr > -1, Tt(type), "sums arg wrong type", x, 0);
-	PF("sums result\n"); DUMP(acc);
+	XRAY_log("sums result\n"); XRAY_emit(acc);
 	return acc;
 }
 VP count(VP x) {
 	VP acc=0;int i;int typerr=-1;
-	PF("count\n"); DUMP(x);
+	XRAY_log("count\n"); XRAY_emit(x);
 	VARY_EL_NOFLOAT(x, 0, 
 		{ __typeof__(_x) i; acc=xalloc(x->t,MAX(_x,1)); acc->n=_x; for(i=0;i<_x;i++) { EL(acc,__typeof__(i),i)=i; } }, 
 		typerr);
 	IF_RET(typerr>-1, EXC(Tt(type), "count arg must be numeric", x, 0));
-	DUMP(acc);
+	XRAY_emit(acc);
 	return acc;
 }
 VP range_(int start, int end) {
 	int n=ABS(end-start), i, j;
 	VP res=xisz(n); 
 	int inc=(end<start)?-1:1, realend=end+inc;
-	PF("range_ %d %d %d %d\n", start, end, n, inc);
+	XRAY_log("range_ %d %d %d %d\n", start, end, n, inc);
 	j=0;
 	for(i=start; i!=realend; i+=inc)
 		EL(res,int,j++)=i;
@@ -2503,29 +2501,29 @@ VP range(VP start,VP end) {
 }
 static inline VP times(VP x,VP y) {
 	int typerr=-1; VP acc=ALLOC_BEST(x,y);
-	//PF("times\n");DUMP(x);DUMP(y);DUMP(info(acc));
+	//XRAY_log("times\n");XRAY_emit(x);XRAY_emit(y);XRAY_emit(info(acc));
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"times argument should be simple types",x,0);
 	VARY_EACHBOTH(x,y,({
-		PF("%d %d %d %d\n", _i, _j, _x, _y);
+		XRAY_log("%d %d %d %d\n", _i, _j, _x, _y);
 		if(LIKELY(x->t > y->t)) { _x=_x*_y; appendbuf(acc,(buf_t)&_x,1); }
 		else { _y=_y*_x; appendbuf(acc,(buf_t)&_y,1); }
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}),typerr);
 	IF_EXC(typerr > -1, Tt(type), "times arg wrong type", x, y);
-	PF("times result\n"); DUMP(acc);
+	XRAY_log("times result\n"); XRAY_emit(acc);
 	return acc;
 }
 VP xor(VP x,VP y) { 
 	int typerr=-1;
 	VP acc;
-	PF("xor\n"); DUMP(x); DUMP(y); // TODO or() and friends should handle type conversion better
+	XRAY_log("xor\n"); XRAY_emit(x); XRAY_emit(y); // TODO or() and friends should handle type conversion better
 	if(UNLIKELY(!SIMPLE(x) && !SIMPLE(y))) return EXC(Tt(type),"xor argument should be simple types",x,0);
 	IF_EXC(x->n > 1 && y->n > 1 && x->n != y->n, Tt(len), "xor arguments should be same length", x, y);	
 	if(x->t == y->t) acc=xalloc(x->t, x->n);
 	else acc=xlsz(x->n);
 	VARY_EACHBOTH_NOFLOAT(x,y,({ _x = _x ^ _y; appendbuf(acc, (buf_t)&_x, 1); }), typerr);
 	IF_EXC(typerr != -1, Tt(type), "xor arg type not valid", x, y);
-	// PF("or result\n"); DUMP(acc);
+	// XRAY_log("or result\n"); XRAY_emit(acc);
 	return acc;
 }
 
@@ -2547,7 +2545,7 @@ VP callclass(const VP ctx,const VP verbname,const VP value) {
 	ASSERT(DICT(ctx)||IS_x(ctx),"callclass");
 	if(!IS_t(verbname)) { return EXC(Tt(type),"callclass verb not name",verbname,value); }
 	if(value->tag==0) { return EXC(Tt(type),"callclass value has no class",verbname,value); }
-	PF("callclass\n");DUMP(ctx);DUMP(verbname);DUMP(value);
+	XRAY_log("callclass\n");XRAY_emit(ctx);XRAY_emit(verbname);XRAY_emit(value);
 	VP rootscope;
 	if(IS_x(ctx)) rootscope=KEYS(ctx);
 	else rootscope=ctx;
@@ -2563,13 +2561,13 @@ VP callclass(const VP ctx,const VP verbname,const VP value) {
 VP resolvekey(const VP x,const VP y,int checkparents) {
 	// printf("get %s from %p\n", reprA(y), x);
 	if(!IS_d(x)) return apply(x,y);
-	PF("resolvekey %d\n",checkparents);
+	XRAY_log("resolvekey %d\n",checkparents);
 	VP key=y, kremainder=0, res;
 	int xn=LEN(x),kn=LEN(key); 
 	if(LIKELY(key->tag==0 || !TAG_is_class(key->tag)) 
 		 && LIKELY(IS_c(key) || (LIST(key) && IS_c(ELl(key,0))))) {
 		// convert 'name(['raw("file"),'raw("get")]) to ('file,'get)
-		PF("converting\n");DUMP(y);
+		XRAY_log("converting\n");XRAY_emit(y);
 		key=str2tag(key); kn=LEN(key);
 	}
 	if(IS_t(key) && kn>1) {
@@ -2578,7 +2576,7 @@ VP resolvekey(const VP x,const VP y,int checkparents) {
 		// we need to start the query from the first matching item in a parent;
 		// otherwise it is safe to rely on apply() here
 		if(!checkparents) {
-			PF("resolvekey depth query\n");DUMP(key);
+			XRAY_log("resolvekey depth query\n");XRAY_emit(key);
 			return apply(x, key);
 		} else {
 			kremainder=drop_(key,1); key=first(key);    // separate out the parts
@@ -2588,7 +2586,7 @@ VP resolvekey(const VP x,const VP y,int checkparents) {
 		}
 	} else {
 		res=DICT_find(x,key);
-		DUMP(res);
+		XRAY_emit(res);
 		if(!IS_EXC(res)) {
 			// printf("get finally found it\n"); if(SIMPLE(res)) { printf("%s\n",reprA(res)); }
 			return res;
@@ -2597,9 +2595,9 @@ VP resolvekey(const VP x,const VP y,int checkparents) {
 	if(checkparents) {
 		res=DICT_find(x,TTPARENT);
 		if(res!=NULL && res!=x) {
-			PF("trying parent\n");
+			XRAY_log("trying parent\n");
 			res=resolvekey(KEYS(res),key,1);
-			DUMP(res);
+			XRAY_emit(res);
 			if(!IS_EXC(res)) {
 				return res;
 			}
@@ -2620,7 +2618,7 @@ VP lookup(VP x,VP y) {
 	// 'tag in the root scope, and then try to call its "get" member. 
 	// see _getmodular()
 	// printf("get %s in %p\n", reprA(y), x);
-	PF("lookup\n");DUMP(x);DUMP(y);
+	XRAY_log("lookup\n");XRAY_emit(x);XRAY_emit(y);
 	if(IS_x(x)) {
 		if(x->n != 2) { return EXC(Tt(value),"context not fully formed",x,y); }
 		CLASS_call(x,get,y);
@@ -2635,38 +2633,38 @@ VP get(VP x) {
 }
 VP set(VP ctx,VP key,VP val) {
 	// printf("set %s in %p:%s\n", reprA(key), ctx, reprA(val));
-	PF("set in %p\n",ctx);DUMP(ctx);DUMP(key);DUMP(val);
+	XRAY_log("set in %p\n",ctx);XRAY_emit(ctx);XRAY_emit(key);XRAY_emit(val);
 	if(val==NULL) return val;
 	if(!IS_t(key)) return EXC(Tt(type),"set val must be symbol",key,val);
 	if(IS_t(key) && key->n > 1) { 
-		PF("set at depth\n");
+		XRAY_log("set at depth\n");
 		key=list(key);
 	}
 	ARG_MUTATING(ctx);
 	VP dest=KEYS(ctx);
-	PF("set assigning in\n");DUMP(dest);
+	XRAY_log("set assigning in\n");XRAY_emit(dest);
 	// dest=assign(dest,key,clone(val));
 	// if(!IS_x(val)) val=clone(val);
 	// val=clone(val);
 	dest=assign(dest,key,val);
-	// PF("set dest=%p val=%p\n",dest,val);
-	// DUMP(dest);
+	// XRAY_log("set dest=%p val=%p\n",dest,val);
+	// XRAY_emit(dest);
 	return val;
 }
 VP set_as(VP x,VP y) {
 	// TODO set needs to support nesting
 	int i; VP res,ctx,val;
-	PF("set_as\n");DUMP(x);DUMP(y);
+	XRAY_log("set_as\n");XRAY_emit(x);XRAY_emit(y);
 	if(x==NULL || y==NULL) return x;
 	return set(XXL_CUR_CTX, y, x);
 }
 VP set_is(VP x,VP y) {                   // exactly like set, but arguments are [[ctx,name],[value]]
-	PF("set_is\n");
+	XRAY_log("set_is\n");
 	if(x==NULL || y==NULL) return x;
 	return set(XXL_CUR_CTX, x, y);
 }
 VP numelem2base(VP num,int i,int base) {
-	// NB. this is called from repr_o. NO DUMP() ALLOWED!
+	// NB. this is called from repr_o. NO XRAY_emit() ALLOWED!
 	if(!NUM(num)) return EXC(Tt(type),"numelem2base can't operate on that type",num,0);
 	char ch[]=CH_SET_na;
 	if(base > sizeof(ch)) return EXC(Tt(value),"numelem2base can't produce that base",num,0);
@@ -2680,7 +2678,7 @@ VP numelem2base(VP num,int i,int base) {
 	VARY_EL_NOFLOAT(num,i,({ rem = _x; }),typerr);
 	VP res=xcsz(5);
 	do {
-		// PF("%lld\n", rem);
+		// XRAY_log("%lld\n", rem);
 		buf=ch[rem % base];
 		appendbuf(res,&buf,1);
 		rem = rem / base;
@@ -2688,7 +2686,7 @@ VP numelem2base(VP num,int i,int base) {
 	return reverse(res);
 }
 VP str(VP x) {
-	PF("str\n");DUMP(x);
+	XRAY_log("str\n");XRAY_emit(x);
 	if(IS_c(x)) {
 		VP res=clone(x);
 		res->tag=0;
@@ -2705,7 +2703,7 @@ VP str(VP x) {
 	return repr(x);
 }
 VP sys(VP x) {
-	PF("sys\n");DUMP(x);
+	XRAY_log("sys\n");XRAY_emit(x);
 	if(XXL_SYS) {
 		if(x==NULL || EMPTYLIST(x)) return clone(XXL_SYS); 
 		else return DICT_find(XXL_SYS,x);
@@ -2721,7 +2719,7 @@ VP partgroups(VP x) {
 		if(_i==0) {
 			_xtmp=_x;
 		} else {
-			// PF("pg inner %d %d\n", _xtmp, _x);
+			// XRAY_log("pg inner %d %d\n", _xtmp, _x);
 			if(ABS(_xtmp-_x) != 1) {
 				acc=append(acc,tmp);
 				xfree(tmp);
@@ -2733,7 +2731,7 @@ VP partgroups(VP x) {
 	}),typerr);
 	IF_EXC(typerr>-1, Tt(type), "partgroups args should be simple types", x, 0); 
 	if(tmp->n) append(acc,tmp);
-	// PF("partgroups returning\n");DUMP(acc);
+	// XRAY_log("partgroups returning\n");XRAY_emit(acc);
 	xfree(tmp);
 	return acc;
 }
@@ -2741,26 +2739,26 @@ VP partgroups(VP x) {
 VP pick(VP x,VP y) { // select items of x[0..n] where y[n]=1
 	VP acc;int n=0,typerr=-1;
 	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "pick args should be simple types", x, y); // TODO pick: gen lists
-	PF("pick\n");DUMP(x);DUMP(y);
+	XRAY_log("pick\n");XRAY_emit(x);XRAY_emit(y);
 	acc=ALLOC_LIKE_SZ(x,x->n/2);
 	VARY_EACHBOTHLIST(x,y,({
 		if(_y) {
-			// PF("p %d %d/%d %d %d/%d s%d\n", _x,_i,_xn,_y,_j,_yn,SCALAR(x));
+			// XRAY_log("p %d %d/%d %d %d/%d s%d\n", _x,_i,_xn,_y,_j,_yn,SCALAR(x));
 			acc=appendbuf(acc,(buf_t)&_x,1);
 			n++;
 		}
 	}),typerr);
 	IF_EXC(typerr > -1, Tt(type), "pick arg wrong type", x, y);
-	PF("pick result\n"); DUMP(acc);
+	XRAY_log("pick result\n"); XRAY_emit(acc);
 	return acc;
 }
 VP pickapart(VP x,VP y) { // select items of x[0..n] where y[n]=1, and divide non-consecutive regions
 	VP acc, sub=NULL;int n=0,typerr=-1;
 	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "pickapart args should be simple types", x, y); // TODO pick: gen lists
-	PF("pickapart\n");DUMP(x);DUMP(y);
+	XRAY_log("pickapart\n");XRAY_emit(x);XRAY_emit(y);
 	acc=xlsz(4);
 	VARY_EACHBOTHLIST(x,y,({
-		PF("%d ",_y);
+		XRAY_log("%d ",_y);
 		if(_y) {
 			if (!sub) sub=ALLOC_LIKE_SZ(x,x->n/2);
 			sub=appendbuf(sub,(buf_t)&_x,1);
@@ -2770,7 +2768,7 @@ VP pickapart(VP x,VP y) { // select items of x[0..n] where y[n]=1, and divide no
 	}),typerr);
 	IF_EXC(typerr > -1, Tt(type), "pickapart arg wrong type", x, y);
 	if (sub) { acc=append(acc,sub); xfree(sub); sub=NULL; }
-	PF("pickapart result\n"); DUMP(acc);
+	XRAY_log("pickapart result\n"); XRAY_emit(acc);
 	if(acc->n==0) return ELl(acc,0);
 	else return acc;
 }
@@ -2788,18 +2786,18 @@ VP proj(int type, void* func, VP left, VP right) {
 	return pv;
 }
 VP unionn(VP x,VP y) {
-	PF("unionn\n");DUMP(x);DUMP(y);
+	XRAY_log("unionn\n");XRAY_emit(x);XRAY_emit(y);
 	if(IS_EXC(x)) return x; if(IS_EXC(y)) return y;
 	if(DICT(x) && DICT(y)) return catenate(x, y);
 	return EXC(Tt(nyi), "union not yet implemented for that type", x, y);
 }
 VP xray(VP x) {
-	PF("xray\n");DUMP(x);
+	XRAY_log("xray\n");XRAY_emit(x);
 	if(!_any(x)) {
-		PF_LVL=0;
+		XRAY_LVL=0;
 		return Tt(xrayoff);
 	} else {
-		PF_LVL=2;
+		XRAY_LVL=2;
 		return Tt(xrayon);
 	}
 }
@@ -2808,7 +2806,7 @@ VP xray(VP x) {
 
 static inline VP str2tag(VP str) { // turns string, or list of strings, into tag vector
 	int i=0; VP acc=xtsz(str->n);
-	// PF("str2tag\n");DUMP(str);
+	// XRAY_log("str2tag\n");XRAY_emit(str);
 	if(IS_c(str)) return xt(_tagnum(str));
 	if(LIST(str)) {
 		VP tmp, tagtmp;
@@ -2816,10 +2814,10 @@ static inline VP str2tag(VP str) { // turns string, or list of strings, into tag
 			tmp=ELl(str,i);
 			if(!IS_c(tmp)) return EXC(Tt(type),"str2tag arg not string or list of strings",str,0);
 			tagtmp=xt(_tagnum(tmp));
-			// PF("append tag\n");DUMP(tagtmp);
+			// XRAY_log("append tag\n");XRAY_emit(tagtmp);
 			acc=append(acc,tagtmp);
 		}
-		// PF("str2tag returning\n");DUMP(acc);
+		// XRAY_log("str2tag returning\n");XRAY_emit(acc);
 		return acc;
 	}
 	return EXC(Tt(type),"str2tag arg not string or list of strings",str,0);
@@ -2871,7 +2869,7 @@ VP bracketjoin(VP x,VP y) {
 	// otherwise 0
 	// useful for matching patterns involving more than one entity
 	int i,ctr=0,maxx=0,on=0,typerr=-1; VP y0,y1,res,emptyset;
-	// PF("bracketjoin\n");DUMP(x);DUMP(y);
+	// XRAY_log("bracketjoin\n");XRAY_emit(x);XRAY_emit(y);
 	if(!LIST(y) || y->n!=2) return EXC(Tt(type),"bracketjoin y must be 2-arg list",x,y);
 	y0=ELl(y,0); y1=ELl(y,1);
 	if(y0->t != y1->t) return EXC(Tt(type),"bracketjoin y items must be same type",x,y);
@@ -2888,27 +2886,27 @@ VP bracketjoin(VP x,VP y) {
 	for(i=0;i<y0->n;i++) {
 		if(EL(y0,CTYPE_b,i)==1) ctr++;
 		if(EL(y1,CTYPE_b,i)==1) ctr=MAX(0,ctr-1);
-		// PF("%d %d %d\n", i, ctr, maxx);
+		// XRAY_log("%d %d %d\n", i, ctr, maxx);
 		if(ctr==maxx) {
 			appendbuf(res,(buf_t)&EL(x,CTYPE_b,i%x->n),1);
 		} else
 			appendbuf(res,(buf_t)&b0,1);
 	}
-	// PF("after scanning for maxx\n"); DUMP(res);
+	// XRAY_log("after scanning for maxx\n"); XRAY_emit(res);
 	VP c=ELl(partgroups(condense(res)),0);
-	// PF("partgroups result\n"); DUMP(c);
+	// XRAY_log("partgroups result\n"); XRAY_emit(c);
 	if(c->n) {
 		c=append(c,plus(max(c),xi(1)));
-		// PF("bracket append next\n"); DUMP(c);
+		// XRAY_log("bracket append next\n"); XRAY_emit(c);
 	}
 	res=assign(take(XI0,xi(y0->n)),c,xi(1));
-	// PF("bracketjoin returning\n");DUMP(res);
+	// XRAY_log("bracketjoin returning\n");XRAY_emit(res);
 	return res;
 }
 VP consecutivejoin(VP x, VP y) {
 	// returns x[n] if y[0][n]==1 && y[1][n+1]==1 && .. else 0
 	int j,n=y->n, typerr=-1, on=0; VP acc,tmp;
-	// PF("consecutivejoin\n"); DUMP(x); DUMP(y);
+	// XRAY_log("consecutivejoin\n"); XRAY_emit(x); XRAY_emit(y);
 	if(!LIST(y)) return and(x,y);
 	IF_EXC(!LIST(y)||y->n<1,Tt(type),"consecutivejoin y must be list of simple types",x,y);
 	VP y0=ELl(y,0);
@@ -2927,13 +2925,13 @@ VP consecutivejoin(VP x, VP y) {
 	}),typerr);
 	IF_EXC(typerr>-1,Tt(type),"consecutivejoin couldnt work with those types",x,y);
 	acc->n=y0->n;
-	PF("consecutivejoin return\n"); DUMP(acc);
+	XRAY_log("consecutivejoin return\n"); XRAY_emit(acc);
 	return acc;
 }
 VP signaljoin(VP x,VP y) {
 	// could be implemented as +over and more selection but this should be faster
 	int typerr=-1, on=0; VP acc;
-	// PF("signaljoin\n");DUMP(x);DUMP(y);
+	// XRAY_log("signaljoin\n");XRAY_emit(x);XRAY_emit(y);
 	acc = ALLOC_LIKE_SZ(x,y->n);
 	if(SCALAR(x)) { // TODO signaljoin() should use take to duplicate scalar args.. but take be broke
 		VARY_EACHRIGHT(x,y, ({
@@ -2950,7 +2948,7 @@ VP signaljoin(VP x,VP y) {
 	}
 	acc->n=y->n;
 	IF_EXC(typerr>-1,Tt(type),"signaljoin couldnt work with those types",x,y);
-	PF("signaljoin return\n");DUMP(acc);
+	XRAY_log("signaljoin return\n");XRAY_emit(acc);
 	return acc;
 }
 
@@ -2961,7 +2959,7 @@ VP nest(VP x,VP y) {
 
 	renest:
 
-	PF("NEST\n");DUMP(x);DUMP(y);
+	XRAY_log("NEST\n");XRAY_emit(x);XRAY_emit(y);
 	//if(!LIST(x) || x->n < 2) return x;
 	if(x->n<2)return x;
 	p1=proj(2,&matcheasy,x,0);
@@ -2971,37 +2969,37 @@ VP nest(VP x,VP y) {
 	// if(LIST(open) && x->t != AS_l(open,0)->t) return x;
 	if(_equal(open,close)) {
 		opens=each(open,p1);
-		PF("+ matching opens\n");DUMP(opens);
+		XRAY_log("+ matching opens\n");XRAY_emit(opens);
 		if(_any(opens)) {
 			VP esc = 0;
 			if(y->n >= 3 && LEN(LIST_item(y,2))!=0) {
 				esc = matcheasy(x,LIST_item(y,2));
-				PF("escapes\n");DUMP(esc);
+				XRAY_log("escapes\n");XRAY_emit(esc);
 				EL(opens,VP,0)=and(AS_l(opens,0),shift_(not(esc),-1));
-				PF("new escaped opens\n");
+				XRAY_log("new escaped opens\n");
 			}	
 			if(open->tag) base=matchtag(x,xt(open->tag));
 			else base=xb(1);
 			opens=signaljoin(base,AS_l(opens,0));
 			xfree(base);
-			PF("after signaljoin\n");DUMP(opens);
+			XRAY_log("after signaljoin\n");XRAY_emit(opens);
 			out=partgroups(condense(opens));
 			if(out->n) {
 				out=AS_l(out,0);
-				PF("matching pre-append"); DUMP(out);
+				XRAY_log("matching pre-append"); XRAY_emit(out);
 				out=append(out,plus(max(out),xi(1)));
-				PF("matching post-append"); DUMP(out);
+				XRAY_log("matching post-append"); XRAY_emit(out);
 			}
-			DUMP(out);
+			XRAY_emit(out);
 			where=out;
 		} else 
 			where=xl0();
 		// exit(1);
 	} else {
 		opens=each(open,p1);
-		PF("+ opens\n");DUMP(opens);
+		XRAY_log("+ opens\n");XRAY_emit(opens);
 		closes=each(close,p2);
-		PF("- closes\n");DUMP(closes);
+		XRAY_log("- closes\n");XRAY_emit(closes);
 		if(LIST(opens)) {
 			if (!AS_b(any(AS_l(opens,0)),0)) return x;
 		} else if(!AS_b(any(opens),0)) return x;
@@ -3019,7 +3017,7 @@ VP nest(VP x,VP y) {
 		xfree(base);
 		where=condense(out);
 	}
-	PF("nest where\n");DUMP(where);
+	XRAY_log("nest where\n");XRAY_emit(where);
 	if(where->n) {
 		rep=apply(x,where);
 		if(y->n >= 5 && LEN(LIST_item(y,4))!=0)
@@ -3027,20 +3025,20 @@ VP nest(VP x,VP y) {
 		if(y->n >= 4 && LEN(LIST_item(y,3))!=0)
 			rep->tag=AS_t(LIST_item(y,3),0);
 		rep=list2vec(rep);
-		PF("nest rep\n");DUMP(rep);
+		XRAY_log("nest rep\n");XRAY_emit(rep);
 		// splice is smart enough to merge like-type replace args into one
 		// like-typed vector. but that's not what we want here, because the
 		// thing we're inserting is a "child" of this position, so we want to
 		// ensure we always splice in a list
-		PF("nest x\n");
+		XRAY_log("nest x\n");
 		out=splice(split(x,xi0()),where,rep);
 		if(x->tag) out->tag=x->tag;
-		PF("nest out\n");DUMP(out);
+		XRAY_log("nest out\n");XRAY_emit(out);
 		if(!LIST(out)) out=xl(out);
 		x=out;
 		goto renest;
 	} else { out = x; }
-	PF("nest returning\n"); DUMP(out);
+	XRAY_log("nest returning\n"); XRAY_emit(out);
 	return out;
 }
 VP matchany(VP obj,VP pat) {
@@ -3048,7 +3046,7 @@ VP matchany(VP obj,VP pat) {
 	// IF_EXC(!SIMPLE(pat),Tt(type),"matchany only works with simple types in y",obj,pat);
 	IF_EXC(SIMPLE(obj) && obj->t != pat->t, Tt(type),"matchany only works with matching simple types",obj,pat);
 	int j,n=obj->n,typerr=-1;VP item, acc;
-	PF("matchany\n"); DUMP(obj); DUMP(pat);
+	XRAY_log("matchany\n"); XRAY_emit(obj); XRAY_emit(pat);
 	if(CALLABLE(pat)) return each(obj, pat);
 	acc=xbsz(n); 
 	acc->n=n;
@@ -3057,26 +3055,26 @@ VP matchany(VP obj,VP pat) {
 		FOR(0,n,({ 
 			this=ELl(obj,_i);
 			if((pat->tag==0 || pat->tag==this->tag) && _find1(pat,this) != -1) {
-				// PF("matchany found list at %d\n", _i);
+				// XRAY_log("matchany found list at %d\n", _i);
 				EL(acc,CTYPE_b,_i)=1; }}));
 	} else {
 		VARY_EACHLEFT(obj, pat, ({
 			// TODO matchany(): buggy subscripting:
 			if((pat->tag==0 || pat->tag==obj->tag) && _findbuf(pat, (buf_t)&_x) != -1) {
-				// PF("matchany found simple at %d\n", _i);
+				// XRAY_log("matchany found simple at %d\n", _i);
 				EL(acc,CTYPE_b,_i) = 1;
 			}
 		}), typerr);
 		IF_EXC(typerr>-1, Tt(type), "matchany could not match those types",obj,pat);
 	}
-	PF("matchany result\n"); DUMP(acc);
+	XRAY_log("matchany result\n"); XRAY_emit(acc);
 	return acc;
 }
 VP matcheasy(VP obj,VP pat) {
 	IF_EXC(!SIMPLE(obj) && !LIST(obj) && !TABLE(obj),Tt(type),
 		"matcheasy only works with simple types, lists, and tables in x",obj,pat);
 	int j,n=obj->n,typerr=-1;VP item, acc;
-	PF("matcheasy\n"); DUMP(obj); DUMP(pat);
+	XRAY_log("matcheasy\n"); XRAY_emit(obj); XRAY_emit(pat);
 	if(CALLABLE(pat)) return each(obj, pat);
 	if(TABLE(obj)) {
 		if(!CALLABLE(pat)) return EXC(Tt(type),"tables can only be matched with functions",obj,pat);
@@ -3099,25 +3097,25 @@ VP matcheasy(VP obj,VP pat) {
 		}), typerr);
 		IF_EXC(typerr>-1, Tt(type), "matcheasy could not match those types",obj,pat);
 	}
-	PF("matcheasy result\n"); 
-	DUMP(info(acc));
-	DUMP(acc);
+	XRAY_log("matcheasy result\n"); 
+	XRAY_emit(info(acc));
+	XRAY_emit(acc);
 	return acc;
 }
 VP matchexec(VP obj,VP pats) {
 	int i,j,diff;VP rule,res,res2,sel;
 	ASSERT(LIST(pats)&&pats->n%2==0,"pats should be a list of [pat1,fn1,pat2,fn2..]");
-	PF("matchexec start\n");
-	DUMP(obj);
-	DUMP(pats);
+	XRAY_log("matchexec start\n");
+	XRAY_emit(obj);
+	XRAY_emit(pats);
 	for(i=0;i<pats->n;i+=2) {
-		PF("matchexec %d\n", i);
+		XRAY_log("matchexec %d\n", i);
 		rule=apply_simple_(pats,i);
 		if(IS_t(rule)) res=matchtag(obj,rule);
 		else res=matchany(obj,rule);
-		PF("matchexec match, rule and res:\n");
-		DUMP(rule);
-		DUMP(res);
+		XRAY_log("matchexec match, rule and res:\n");
+		XRAY_emit(rule);
+		XRAY_emit(res);
 		// rules start with an unimportant first item: empty tag for tagmatch
 		if(_any(res)) {
 			VP cond=condense(res);
@@ -3126,7 +3124,7 @@ VP matchexec(VP obj,VP pats) {
 			diff = 0;
 			for (j=0; j<indices->n; j++) {
 				VP idx = LIST_item(indices, j);
-				PF("matchexec idx, len=%d, diff=%d\n", idx->n, diff); DUMP(idx);
+				XRAY_log("matchexec idx, len=%d, diff=%d\n", idx->n, diff); XRAY_emit(idx);
 				VP diffi=xi(diff);
 				VP newidx=plus(idx,diffi);
 				xfree(diffi);
@@ -3135,10 +3133,10 @@ VP matchexec(VP obj,VP pats) {
 				res2=apply(handler,objelem);
 				xfree(objelem);
 				if(LIST(res2) && res2->n == 0) continue;
-				PF("matchexec after apply, len=%d\n", res2->n); DUMP(res2);
+				XRAY_log("matchexec after apply, len=%d\n", res2->n); XRAY_emit(res2);
 				obj=splice(obj,newidx,res2);
 				diff += 1 - idx->n;
-				PF("matchexec new obj, diff=%d", diff); DUMP(obj);
+				XRAY_log("matchexec new obj, diff=%d", diff); XRAY_emit(obj);
 				// xfree(res2);
 				xfree(newidx);
 				// idx isnt a reference, dont free it.
@@ -3146,14 +3144,14 @@ VP matchexec(VP obj,VP pats) {
 			xfree(indices);
 		}
 	}	
-	PF("matchexec done\n"); DUMP(obj);
+	XRAY_log("matchexec done\n"); XRAY_emit(obj);
 	return obj;
 }
 VP matchtag(const VP obj,const VP pat) {
 	IF_EXC(!SIMPLE(obj) && !LISTDICT(obj),Tt(type),"matchtag only works with simple types or lists",obj,pat);
 	IF_EXC(!IS_t(pat), Tt(type), "matchtag y must be tag",obj,pat);
 	int j,n,typerr=-1;VP searchobj, item, acc;
-	PF("matchtag\n"); DUMP(obj); DUMP(pat);
+	XRAY_log("matchtag\n"); XRAY_emit(obj); XRAY_emit(pat);
 
 	if(DICT(obj)) searchobj=VALS(obj);
 	else searchobj=obj;
@@ -3172,7 +3170,7 @@ VP matchtag(const VP obj,const VP pat) {
 		}), typerr);
 		IF_EXC(typerr>-1, Tt(type), "matchtag could not match those types",searchobj,pat);
 	}
-	PF("matchtag result\n"); DUMP(acc);
+	XRAY_log("matchtag result\n"); XRAY_emit(acc);
 	return acc;
 }
 
@@ -3206,7 +3204,7 @@ VP list2vec(VP obj) {
 	// list will be returned when rejected for massaging.
 	int i, t=0;
 	VP acc,this;
-	// PF("list2vec\n"); DUMP(obj);
+	// XRAY_log("list2vec\n"); XRAY_emit(obj);
 	if(!LIST(obj)) return obj;
 	if(!obj->n) return obj;
 	acc=ALLOC_LIKE(ELl(obj,0));
@@ -3221,15 +3219,15 @@ VP list2vec(VP obj) {
 		else append(acc,this); 
 		if(this->tag) t=this->tag;
 	}));
-	PF("list2vec result\n"); DUMP(acc); 
+	XRAY_log("list2vec result\n"); XRAY_emit(acc); 
 	return acc;
 }
 VP labelitems(VP label,VP items) {
 	VP res;char* labelbuf=sfromxA(label);
-	//PF("labelitems\n");DUMP(label);DUMP(items);
+	//XRAY_log("labelitems\n");XRAY_emit(label);XRAY_emit(items);
 	res=flatten(items);res->tag=_tagnums(labelbuf);
 	free(labelbuf);
-	//DUMP(res);
+	//XRAY_emit(res);
 	return res;
 }
 VP mklexer(const char* chars, const char* label) {
@@ -3240,7 +3238,7 @@ VP mklexer(const char* chars, const char* label) {
 }
 VP parseexpr(VP x) {
 	int i;
-	PF("parseexpr\n");DUMP(x);
+	XRAY_log("parseexpr\n");XRAY_emit(x);
 	if(!LIST(x)) return x;               // confuzzling..
 	if(IS_c(ELl(x,0)) && AS_c(ELl(x,0),0)=='[') {
 		if(LEN(x)==2) return xl0();        // empty
@@ -3263,17 +3261,17 @@ VP parseexpr(VP x) {
 		return x;
 }
 VP parsename(VP x) {
-	PF("parsename\n");DUMP(x);
+	XRAY_log("parsename\n");XRAY_emit(x);
 	VP res=flatten(x);
 	if(IS_c(res)) {
 		if(AS_c(res,0)=='\'') {
-			PF("parsename tag\n");
+			XRAY_log("parsename tag\n");
 			res=behead(res);
 			res=split(res,xc('.')); // very fast if not found
-			DUMP(res);
+			XRAY_emit(res);
 			return str2tag(res);
 		} else {
-			PF("parsename non-tag\n");
+			XRAY_log("parsename non-tag\n");
 			if(res->n==1 && AS_c(res,0)=='.')
 				return entags(Tt(.),"name");
 			else {
@@ -3285,14 +3283,14 @@ VP parsename(VP x) {
 	return res;
 }
 VP parsenum(VP x) {
-	PF("parsenum\n");DUMP(x);
+	XRAY_log("parsenum\n");XRAY_emit(x);
 	VP res=flatten(x);
 	if(IS_c(res)) return str2num(res);
 	else return res;
 }
 VP parselambda(VP x) {
 	int i,arity=0,typerr=-1,tname=Ti(name),traw=Ti(raw); VP this;
-	PF("parselambda\n");DUMP(x);
+	XRAY_log("parselambda\n");XRAY_emit(x);
 	x=list(x);
 	for(i=0;i<x->n;i++) {
 		this=ELl(x,i); // not alloced, no need to free
@@ -3320,23 +3318,23 @@ VP parsecomment(VP x) {
 }
 VP parsestrlit(VP x) {
 	int i,arity=1,typerr=-1,traw=Ti(raw);
-	// PF("PARSESTRLIT!!!\n");DUMP(x);
+	// XRAY_log("PARSESTRLIT!!!\n");XRAY_emit(x);
 	if(LIST(x) && IS_c(AS_l(x,0)) && AS_c(AS_l(x,0),0)=='"') {
 		VP res=xlsz(x->n), el, next; int ch,nextch,last;
 		last=x->n-1;
 		for(i=0;i<x->n;i++) {
-			// PF("parsestrlit #%d/%d\n",i,last);
+			// XRAY_log("parsestrlit #%d/%d\n",i,last);
 			el=AS_l(x,i);
 			if(!el) continue;
-			DUMP(el);
+			XRAY_emit(el);
 			if(IS_c(el)) {
 				ch=AS_c(el,0);
-				// PF("parselit ch=%c\n",ch);
+				// XRAY_log("parselit ch=%c\n",ch);
 				if ((i==0 || i==last) && ch=='"')
 					continue; // skip start/end quotes
 				if (i<last &&
 				    (ch=AS_c(el,0))=='\\') {
-					// PF("investigating %d\n",i+1);
+					// XRAY_log("investigating %d\n",i+1);
 					next=AS_l(x,i+1);
 					if(IS_c(next) && next->n) {
 						nextch=AS_c(next,0);
@@ -3355,25 +3353,25 @@ VP parsestrlit(VP x) {
 		}
 		// due to the looping logic, we would wind up with an empty list - we want an empty list with an empty string! :)
 		if(res->n==0) res=append(res,xc0()); 
-		// PF("flattenin\n");DUMP(res);
+		// XRAY_log("flattenin\n");XRAY_emit(res);
 		res=flatten(res);
-		// DUMP(res);
+		// XRAY_emit(res);
 		return res;
 	} else {
-		PF("parsestrlit not interested in\n");
-		DUMP(x);
+		XRAY_log("parsestrlit not interested in\n");
+		XRAY_emit(x);
 		return x;
 	}
 }
 VP parseloopoper(VP x) {
-	PF("parseloopoper\n");DUMP(x);
+	XRAY_log("parseloopoper\n");XRAY_emit(x);
 	VP st=xfroms(":|>"), en=xfroms("#|:\\/<>~',.");
 	st->tag=Ti(raw); en->tag=Ti(raw);
 	VP tmp1=matchany(x,st); 
-	// PF("parseloopoper tmp1\n");DUMP(tmp1);
+	// XRAY_log("parseloopoper tmp1\n");XRAY_emit(tmp1);
 	if (!_any(tmp1)) { xfree(st); xfree(en); xfree(tmp1); return x; }
 	VP tmp2=matchany(x,en);
-	// PF("parseloopoper tmp2\n");DUMP(tmp2);
+	// XRAY_log("parseloopoper tmp2\n");XRAY_emit(tmp2);
 	if (!_any(tmp2)) { xfree(st); xfree(en); xfree(tmp1); xfree(tmp2); return x; }
 	VP tmp3=xln(2,tmp2,tmp1);
 	VP join=consecutivejoin(XB1,tmp3);
@@ -3384,7 +3382,7 @@ VP parseloopoper(VP x) {
 			idx = append(idx, plus(idx,XI1));
 			rep = list2vec(apply(x, idx));
 			rep->tag = Ti(oper);
-			// PF("parsemulticharoper"); DUMP(rep);
+			// XRAY_log("parsemulticharoper"); XRAY_emit(rep);
 			x=splice(x, idx, rep);
 			diff += 1 - idx->n;
 			xfree(idx);
@@ -3402,7 +3400,7 @@ VP parseloopoper(VP x) {
 }
 VP parseallexprs(VP tree) {
 	if(IS_EXC(tree) || !LIST(tree)) return tree;
-	PF("parseallexprs\n");DUMP(tree);
+	XRAY_log("parseallexprs\n");XRAY_emit(tree);
 	VP brace=xfroms("{"), paren=xfroms("("), bracket=xfroms("[");
 	if(_find1(tree,brace)!=-1)
 		tree=nest(tree,xln(5, entags(brace,"raw"), entags(xfroms("}"),"raw"), xfroms(""), Tt(lambda), x1(&parselambda)));
@@ -3413,9 +3411,9 @@ VP parseallexprs(VP tree) {
 	return tree;
 }
 VP resolve(VP ctx,VP ptree) {
-	PF_LVL++;
-	PF("resolve\n");DUMP(ctx);DUMP(ptree);
-	PF_LVL--;
+	XRAY_LVL++;
+	XRAY_log("resolve\n");XRAY_emit(ctx);XRAY_emit(ptree);
+	XRAY_LVL--;
 	if(!IS_x(ctx) && !LIST(ptree)) return EXC(Tt(type),"resolve",ctx,ptree);
 	VP name; int i, tname=Ti(name), traw=Ti(raw);
 	for(i=0;i <LEN(ptree); i++) {
@@ -3427,19 +3425,19 @@ VP resolve(VP ctx,VP ptree) {
 				// printf("resolve replacing %s with %s\n",reprA(name),reprA(val));
 				if(!SIMPLE(val)) val=entag(val,tag);  //hmm
 				EL(ptree,VP,i)=xref(val);
-				// printf("resolved\n");DUMP(val); 
+				// printf("resolved\n");XRAY_emit(val); 
 			} else {
-				// printf("couldnt resolve %s\n",reprA(tag));DUMP(tag);
+				// printf("couldnt resolve %s\n",reprA(tag));XRAY_emit(tag);
 			}
 			xfree(tag);
 		}
 	}
-	PF("returning\n");DUMP(ptree);
+	XRAY_log("returning\n");XRAY_emit(ptree);
 	return ptree;
 }
 VP parseresolvestr(const char* str,VP ctx) {
 	VP lex,pats,acc,t1,t2;size_t l=strlen(str);int i;
-	PF("parsestr '%s'\n",str);
+	XRAY_log("parsestr '%s'\n",str);
 	if(l==0) return NULL;
 	acc=xlsz(l);
 	for(i=0;i<l;i++)
@@ -3465,7 +3463,7 @@ VP parseresolvestr(const char* str,VP ctx) {
 	xfree(lex);
 	t1=matchexec(acc,pats);
 	xfree(pats);
-	PF("matchexec results\n");DUMP(t1);
+	XRAY_log("matchexec results\n");XRAY_emit(t1);
 	if(ctx!=NULL) t2=resolve(ctx,t1);
 	else t2=t1;
 	t2=wide(t2,x1(&parseallexprs));
@@ -3500,7 +3498,7 @@ void* thr_run0(void* VPctxargs) {
 	VP ctx=LIST_item(val,0);
 	VP arg=LIST_item(val,1);
 	ctx=apply(ctx,arg);
-	// printf("thr_run0 done\n"); DUMP(ctx);
+	// printf("thr_run0 done\n"); XRAY_emit(ctx);
 	xfree(val);
 	pthread_exit(NULL);
 	#endif
@@ -3555,10 +3553,10 @@ void test_json() {
 	VP mask, jsrc, res; char str[256]={0};
 	strncpy(str,"[[\"abc\",5,[\"def\"],6,[7,[8,9]]]]",256);
 	jsrc=split(xfroms(str),xc0());
-	DUMP(jsrc);
+	XRAY_emit(jsrc);
 	res=nest(jsrc,xln(2,xfroms("["),xfroms("]")));
-	DUMP(res);
-	DUMP(each(res, x1(&repr)));
+	XRAY_emit(res);
+	XRAY_emit(each(res, x1(&repr)));
 	exit(1);
 }
 void test_logic() {
@@ -3645,7 +3643,7 @@ VP selftest(VP dummy) {
 		test_semantics();
 		printf("TESTS PASSED\n");
 		if(MEM_WATCH) {
-			PF("alloced = %llu, freed = %llu\n", MEM_ALLOC_SZ, MEM_FREED_SZ);
+			XRAY_log("alloced = %llu, freed = %llu\n", MEM_ALLOC_SZ, MEM_FREED_SZ);
 		}
 	}
 	return 0;

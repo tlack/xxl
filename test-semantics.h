@@ -1,7 +1,7 @@
 VP a,b,c;
 a=mkworkspace();
 b=evalstrin("['a:1]$'table as 'z,['b:2]",a);
-DUMP(b);
+XRAY_emit(b);
 ASSERT(_len(b)==2 && _len(KEYS(b))==2,"table append dict");
 xfree(b);
 b=evalstrin("[1,2]as 'z!z,3 as 'b;z len=(b len)",a);
@@ -9,13 +9,13 @@ ASSERT(NUM_val(b)==0,"list not shadowed");
 xfree(b);
 b=evalstrin("['a:1]as 'z,['b,2]as 'b;z len=(b len)",a);
 c=evalstrin("z len*(b len)",a);
-DUMP(b);
-DUMP(c);
+XRAY_emit(b);
+XRAY_emit(c);
 ASSERT(NUM_val(b)==0 && NUM_val(c)==2,"dict not shadowed");
 xfree(b);
 xfree(c);
 b=evalstrin("['a:1]$'table as 'z,['b:2]as 'b;z len=(b len)",a);
-DUMP(key(a));
+XRAY_emit(key(a));
 ASSERT(NUM_val(b)==0,"table not shadowed");
 xfree(b);
 

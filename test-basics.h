@@ -19,8 +19,8 @@
 	ASSERT(_equal(a,b)==0,"_equal4");
 	ASSERT(_equal(b,a)==0,"_equal5");
 	c=xi(0);
-	DUMP(apply(a,c));
-	DUMP(b);
+	XRAY_emit(apply(a,c));
+	XRAY_emit(b);
 	ASSERT(_equal(apply(a,c),b)==1,"apply eq 0");
 	xfree(b); 
 	xfree(c);
@@ -61,7 +61,7 @@
 	ASSERT(EL(b,int,0)==100,"append i 2");
 	append(a,xfroms("test"));
 	append(a,xfroms("test2"));
-	DUMP(a);
+	XRAY_emit(a);
 	ASSERT(a->n==3,"append str 1");
 	ASSERT(ELl(a,1)->n==4,"append str 2"); // test\0
 	ASSERT(ELl(a,2)->n==5,"append str 2"); // test2\0
@@ -88,7 +88,7 @@
 	b = xi(101);
 	upsert(a,b);
 	xfree(b);
-	DUMP(a);
+	XRAY_emit(a);
 	ASSERT(a->n==4,"upsert 2");
 	ASSERT(_find1(a,xfroms("test"))==1,"_find1 0");
 	ASSERT(_find1(a,xfroms("est"))==-1,"_find1 1");
@@ -96,8 +96,8 @@
 	xfree(a);
 	a = xd0();
 	b = apply(a,xfroms("a"));
-	DUMP(a);
-	DUMP(b);
+	XRAY_emit(a);
+	XRAY_emit(b);
 	ASSERT(b==NULL,"apply 0");
 	b = xln(2,xi(1),xi(10)); // key:value dict
 	append(a,b);
@@ -111,7 +111,7 @@
 	b = xln(2,xln(1,xfroms("name")),xfroms("tom"));
 	a=append(a,b);
 	c=apply(a,xln(1,xfroms("name")));
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(IS_c(c) && memcmp(BUF(c),"tom",c->n)==0,"apply equal str");
 	xfree(c);
 
@@ -122,7 +122,7 @@
 	b=xln(2,xln(1,xfroms("ver")),xfroms("frank"));
 	a=append(a,b);
 	c=apply(a,xln(1,xfroms("ver")));
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(IS_c(c) && memcmp(BUF(c),"frank",c->n)==0,"apply equal str 2");
 	xfree(c);
 	xfree(a);
@@ -137,7 +137,7 @@
 	b=xln(2,xln(1,xfroms("ver")),xfroms("frank"));
 	a=append(a,b);
 	c=apply(a,xln(1,xfroms("ver")));
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(IS_c(c) && memcmp(BUF(c),"frank",c->n)==0,"apply equal str 3");
 	xfree(c);
 	xfree(a);
@@ -152,7 +152,7 @@
 	b=xln(2,xln(1,xfroms("ver")),xfroms("frank"));
 	a=append(a,b);
 	c=apply(a,xln(1,xfroms("over")));
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(IS_c(c) && memcmp(BUF(c),"tom",c->n)==0,"apply equal str 3");
 	xfree(c);
 	xfree(a);
@@ -160,22 +160,22 @@
 	a=xd0();
 	b=xln(2,xln(1,xfroms("aa")),xfroms("tom"));
 	a=append(a,b);
-	PF("o0 0");
-	DUMP(a);
+	XRAY_log("o0 0");
+	XRAY_emit(a);
 	xfree(b);
 	b=xln(2,xln(1,xfroms("aa")),xfroms("frank"));
 	a=append(a,b);
-	PF("o0 1");DUMP(a);
+	XRAY_log("o0 1");XRAY_emit(a);
 	xfree(b);
 	c=apply(a,xfroms("aa"));
-	PF("o0 2");DUMP(c);
-	DUMP(c);
+	XRAY_log("o0 2");XRAY_emit(c);
+	XRAY_emit(c);
 	ASSERT(IS_c(c) && memcmp(BUF(c),"frank",c->n)==0,"apply dictionary overlap 0");
 	xfree(c);
 
 	c=apply(a,xln(1,xfroms("")));
 	ASSERT(c==NULL,"apply empty search");
-	DUMP(c);
+	XRAY_emit(c);
 	xfree(c);
 	xfree(a);
 
@@ -186,16 +186,16 @@
 	xfree(a);
 
 	a=xin(3,1,2,3); b=make(a,xt(Ti(byte)));
-	DUMP(b);
+	XRAY_emit(b);
 	ASSERT(_equal(a,b)&&b->n==3&&AS_b(b,2)==3,"cib");
 	xfree(a);xfree(b);
 	a=xin(3,1,2,3); b=make(a,xt(Ti(octa)));
-	DUMP(b);
+	XRAY_emit(b);
 	ASSERT(_equal(a,b)&&b->n==3&&AS_o(b,2)==3,"cio");
 	xfree(a);
 	xfree(b);
 	a=xbn(2,9,8); b=make(a,xt(Ti(byte)));
-	DUMP(b);
+	XRAY_emit(b);
 	ASSERT(_equal(a,b)&&b->n==2&&AS_b(b,0)==9,"cbb");
 	xfree(a);xfree(b);
 
@@ -203,30 +203,30 @@
 	ASSERT(_equal(count(xo(3)),xon(3,0,1,2)),"count o");
 
 	c=and(xi(0),xi(1));
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(c->n==1 && _equal(c, xi(0)), "and 0");
 	c=and(xi(1),xi(0));
 	ASSERT(c->n==1 && _equal(c, xi(0)), "and 1");
 	c=or(xi(0),xi(1));
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(c->n==1 && _equal(c, xi(1)), "and 0");
 	c=or(xi(1),xi(0));
 	ASSERT(c->n==1 && _equal(c, xi(1)), "and 1");
 
 	c=min(xin(3,1,2,3));
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(c->n==1 && _equal(c, xi(1)), "min 0");
 	c=min(xin(3,1,2,-3));
 	ASSERT(c->n==1 && _equal(c, xi(-3)), "min 1");
 
 	c=max(xin(3,1,2,3));
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(c->n==1 && _equal(c, xi(3)), "max 0");
 	c=max(xin(3,1,2,-3));
 	ASSERT(c->n==1 && _equal(c, xi(2)), "max 1");
 
 	c=deal(xi(10),xi(100));
-	DUMP(c);
+	XRAY_emit(c);
 	ASSERT(c->n==100 && _equal(min(c),xi(0)), "deal 0");
 
 	ASSERT(_equal(condense(xbn(5,0,1,1,0,1)),xin(3,1,2,4)), "condense 0");
@@ -271,7 +271,7 @@
 	
 	a=xin(5,1,2,3,4,5);
 	b=split(a,xi(3));
-	DUMP(b);
+	XRAY_emit(b);
 	ASSERT(_equal(xln(2,xin(2,1,2),xin(2,4,5)),b),"split int token");
 
 	a=xfroms("abXYcd");
@@ -280,11 +280,11 @@
 
 	a=xfroms(".hello.there");
 	b=split(a,xfroms("."));
-	DUMP(b);
+	XRAY_emit(b);
 	ASSERT(_equal(xln(3,xc0(),xfroms("hello"),xfroms("there")),b),"split char token 0");
 	a=xfroms(".hello..there.");
 	b=split(a,xfroms("."));
-	DUMP(b);
+	XRAY_emit(b);
 	ASSERT(_equal(xln(5,xc0(),xfroms("hello"),xc0(),xfroms("there"),xc0()),b),"split char token 1");
 	xfree(a);xfree(b);
 

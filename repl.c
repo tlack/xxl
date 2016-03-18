@@ -76,7 +76,7 @@ void repl(VP ctx) {
 
 	for(;;) {
 		// printf("xxl@%s> ", bfromx(get(ctx,t1)));
-		//PF_LVL=2;
+		//XRAY_LVL=2;
 		printf("%d. ",i);
 		fgets(line, sizeof(line), stdin);
 		if(strncmp(line,"\n",1024)==0) continue;
@@ -103,7 +103,7 @@ void repl(VP ctx) {
 		}
 		if(strncmp(line,"xray\n",1024)==0) {
 			VP cmd;
-			if(PF_LVL) cmd=xfroms("0 xray");
+			if(XRAY_LVL) cmd=xfroms("0 xray");
 			else cmd=xfroms("1 xray");
 			show(evalin(cmd,ctx));
 			xfree(cmd);

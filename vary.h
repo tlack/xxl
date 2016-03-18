@@ -66,7 +66,7 @@
 	if(x->t==13){/*cant vary ctx*/ failvar=13;}\
 })
 #define VARY_EACH(x,stmt,failvar) ({ \
-	int _i=0,_xn=x->n,_xt=x->t; /*PF("VE");DUMP(x);*/\
+	int _i=0,_xn=x->n,_xt=x->t; /*XRAY_log("VE");DUMP(x);*/\
 	if(_xt==0){/*cant vary list*/ failvar=0; }\
 	if(_xt==8){/*cant vary dict*/ failvar=8; }\
 	if(_xt==9){/*cant vary table*/ failvar=9; }\
@@ -104,7 +104,7 @@
 	}\
 })
 #define VARY_EACH_NOFLOAT(x,stmt,failvar) ({ \
-	int _i=0,_xn=x->n,_xt=x->t; /*PF("VE");DUMP(x);*/\
+	int _i=0,_xn=x->n,_xt=x->t; /*XRAY_log("VE");DUMP(x);*/\
 	if(_xt==0){/*cant vary list*/ failvar=0; }\
 	if(_xt==7){/*cant vary float*/ failvar=7; }\
 	if(_xt==8){/*cant vary dict*/ failvar=8; }\
@@ -139,7 +139,7 @@
 	}\
 })
 #define VARY_EACHLIST(x,stmt,failvar) ({ \
-	int _i=0,_xn=x->n,_xt=x->t; /*PF("VE");DUMP(x);*/\
+	int _i=0,_xn=x->n,_xt=x->t; /*XRAY_log("VE");DUMP(x);*/\
 	if(_xt==8){/*cant vary dict*/ failvar=8; }\
 	if(_xt==9){/*cant vary table*/ failvar=9; }\
 	if(_xt==10){/*cant vary f1*/ failvar=10; }\

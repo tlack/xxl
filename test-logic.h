@@ -55,12 +55,12 @@ xfree(c);xfree(b);
 #ifdef STDLIBFILE
 c=mkworkspace();
 b=evalstrin("File.get",c);
-DUMP(b);
+XRAY_emit(b);
 ASSERT(_equal(b,x1(&fileget)),"stdlib file reference");
 xfree(c);xfree(b);
 c=mkworkspace();
 b=evalstrin("'File#\"def.h\" get",c);
-DUMP(b);
+XRAY_emit(b);
 ASSERT(IS_c(b)&&b->n>5000,"stdlib modular get def.h");
 xfree(c);xfree(b);
 c=mkworkspace();
@@ -126,7 +126,7 @@ xfree(b); xfree(c);
 
 c=mkworkspace();
 b=evalstrin("'z is 20; 30 as 'b;z*b",c);
-DUMP(b);
+XRAY_emit(b);
 ASSERT(_equal(b,xi(600)),"is vs as");
 
 c=mkworkspace();
@@ -139,7 +139,7 @@ ASSERT(_equal(b,xfroms("j1z3q5m7b9m11")), "table 1");
 
 c=mkworkspace();
 b=evalstrin("['a:1,'b:'j] make 'table,[3,'z],[5,'q],[7,'m],[[9,'b],[11,'m]]@0",c);
-ASSERT(_equal(repr(b),xfroms("['a:1i, 'b:'j]")),"table scalar subscript");
+ASSERT(_equal(repr(b),xfroms("['a:1, 'b:'j]")),"table scalar subscript");
 
 c=mkworkspace();
 b=evalstrin("['a:1,'b:'j] make 'table,[3,'z],[5,'q],[7,'m],[[9,'b],[11,'m]]@(1,2)@'a vec sum",c);
@@ -164,40 +164,40 @@ ASSERT(LIST(b) && IS_c(LIST_first(b)), "listexpr with non-scalar simple content"
 
 c=mkworkspace();
 b=evalstrin("('a,'b,'c):[['a,2,4],['b,4,6]]~{x}",c);
-ASSERT(_equal(repr(b),xfroms("[['a:'a, 'b:2i, 'c:4i], ['a:'b, 'b:4i, 'c:6i]]")),"matcheasy with table - identity");
+ASSERT(_equal(repr(b),xfroms("[['a:'a, 'b:2, 'c:4], ['a:'b, 'b:4, 'c:6]]")),"matcheasy with table - identity");
 
 c=mkworkspace();
 b=evalstrin("('a,'b,'c):[ ['a,2,4], ['b,4,6] ]first",c);
-ASSERT(_equal(repr(b),xfroms("['a:'a, 'b:2i, 'c:4i]")),"table first");
+ASSERT(_equal(repr(b),xfroms("['a:'a, 'b:2, 'c:4]")),"table first");
 
 c=mkworkspace();
 b=evalstrin("1,2,3 recurse {rot1}",c);
-ASSERT(_equal(repr(b),xfroms("[(2,3,1i), (3,1,2i)]")),"recurse0");
+ASSERT(_equal(repr(b),xfroms("[(2,3,1), (3,1,2)]")),"recurse0");
 
 c=mkworkspace();
 b=evalstrin("1,2,3 exhaust {rot1}",c);
-ASSERT(_equal(repr(b),xfroms("(3,1,2i)")),"exhaust0");
+ASSERT(_equal(repr(b),xfroms("(3,1,2)")),"exhaust0");
 
 c=mkworkspace();
 b=evalstrin("1,2,3 except 4",c);
-ASSERT(_equal(repr(b),xfroms("(1,2,3i)")),"except0");
+ASSERT(_equal(repr(b),xfroms("(1,2,3)")),"except0");
 
 c=mkworkspace();
 b=evalstrin("1,2,3 except (3)",c);
-ASSERT(_equal(repr(b),xfroms("(1,2i)")),"except1");
+ASSERT(_equal(repr(b),xfroms("(1,2)")),"except1");
 
 c=mkworkspace();
 b=evalstrin("1,2,3 except (3,1)",c);
-ASSERT(_equal(repr(b),xfroms("2i")),"except2");
+ASSERT(_equal(repr(b),xfroms("2")),"except2");
 
 c=mkworkspace();
 b=evalstrin("[1,2,3]::{\"{\"}flat",c);
-DUMP(repr(b));
+XRAY_emit(repr(b));
 ASSERT(_equal(repr(b),xfroms("\"{{{\"")),"bracequote");
 
 c=mkworkspace();
 b=evalstrin("[[1,2,3],[4,5,6]]join\":\"",c);
-ASSERT(_equal(repr(b),xfroms("[[1i, 2i, 3i], \":\", [4i, 5i, 6i]]")),"join list flat");
+ASSERT(_equal(repr(b),xfroms("[[1, 2, 3], \":\", [4, 5, 6]]")),"join list flat");
 
 c=mkworkspace();
 b=evalstrin("\"a\"range\"d\"",c);
