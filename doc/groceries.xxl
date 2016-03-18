@@ -77,12 +77,21 @@ a name by assigning it like a variable.
 The first time you give something a name, you have to use what's called a tag - 
 think of it as a "quoted name".
 
+After you have created your variable, you can refer to it without the `'`, 
+because you're no longer refering to a name, you're referring to what's 
+assigned to a name.
+
+It's simpler than it seems.
+
 """,
 {
 	'groceries is ["Chicken", "Eggs", "Sauce"];
+	// Let's see if we ended up with groceries:
+	groceries
 	// You could also write this the other way, using "as" instead of "is" - they work the same, they're just backward:
 	["Chicken", "Eggs", "Sauce"] as 'groceries;
-	// I find this much more poetic.
+	// I find this much more poetic. Works the same:
+	groceries
 },
 """
 So far so good, but it's not much use if we can't add to our grocery list.
@@ -181,7 +190,8 @@ Let's go ahead and pick the port and hostname and set them with names:
 		"localhost" as 'host;
 },
 """
-Now for the hard part. Which is also the easy part.
+Now for the hard part. Which is also the easy part. In fact, this whole thing
+is the easy part.
 
 When your browser makes a web request, it expects to send that request in a certain
 way, and receive a response in a certain way. This is the standard known as HTTP.
@@ -207,7 +217,27 @@ You've just discovered your first use of a "function" in XXL. A function is a
 bit of code stuck between `{` and `}`. It acts as a saved piece of code that
 you can use later, or pass around to another verb for its own use. 
 
-Now let's connect that to our host and port using `Net.bind` and see what happens.
+Functions are just data in XXL. You can save it by giving it a name.
+
+""",
+{
+	{x*2} as 'cooldoubler;
+	10 cooldoubler
+},
+"""
+In fact, functions are *exactly* data - they're a regular list made out of 
+everything you typed inside the `{` .. `}` part. 
+
+I know this sounds insane, but it's true. Let's have a look under the hood to confirm:
+""",
+{
+	cooldoubler
+},
+"""
+
+OK, we know how we can make our own function to handle our HTTP server. Now
+let's connect that to our host and port using `Net.bind` and see what happens.
+
 """,
 {
 	{groceries join "," httpresponse} as 'myapp;
@@ -359,7 +389,6 @@ too.
 
 First, let's make sure we can get the code right by typing it in piece by
 piece at the XXL interpreter prompt, making sure we have the right logic. 
-Then we'll override our website frontend `'myapp` from before once we're happy
 that our new version sort-of works.
 
 For our output HTML, we basically want to list all the items we need to buy
