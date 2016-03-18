@@ -362,6 +362,9 @@ to remove, so we're swapping the logic here.
 	{'bought from x=0} from groceriestbl
 },
 """
+As you may have noticed, verbs like `from`, `except`, and `len` work with
+all kinds of data in XXL, such as list items, not just tables.
+
 This whole "what I need to buy" concept seems useful so let's give it a name:
 """,
 {
@@ -373,12 +376,15 @@ In our case, we don't actually use it for anything, so we just pass a default
 value. It doesn't matter what value we pass since the function doesn't
 do anything with it.
 
-By convention, in XXL, we use [] as that default value in cases like this.
+By convention, in XXL, we use [] as that throw-away default value in cases like
+this, but you can use anything you want if you are an anarchist.
+
 """,
 {
 	[] tobuy
 },
 """
+
 Looks good.
 
 Now let's update our beautiful website to use this table instead of clunky
@@ -389,7 +395,7 @@ too.
 
 First, let's make sure we can get the code right by typing it in piece by
 piece at the XXL interpreter prompt, making sure we have the right logic. 
-that our new version sort-of works.
+That way we'll know in advance that our new version sort-of works.
 
 For our output HTML, we basically want to list all the items we need to buy
 (specifically the `'item` key in each of the row dictionaries) and put them
@@ -412,6 +418,7 @@ This is OK, but that little function in the middle is kind of worthless. There's
 an easier way: let's just join all of that `'item` column together.
 We already know about `from`. Let's see if it works on whole tables, to get
 every value in a single column:
+
 """,
 {
 	{'item from ([] tobuy)}
@@ -422,9 +429,9 @@ to the left and right of them. If we didn't put the parenthesis around the
 `([]tobuy)` part, `from` would think we want to take `'item` from `[]`, and
 then call `tobuy` on that result! That doesn't make much sense.
 
-That worked, but the code looks kind of awkward. Symbols! Ugh.
+That worked, but the code looks kind of awkward. Punctuation! Ugh! 
 
-There is another way to do it. `@`, known as apply (though that is not the name
+There is another way to do it. `x @ y`, known as apply (though that is not the name
 of the verb inside XXL), allows you to pick out item y of x. For our purposes,
 this is the reverse of `from`, so we can probably use it here.
 
@@ -470,7 +477,7 @@ From here on out, for function definitions, I'll be using `is` instead of `as`.
 Well this is pretty good for 32 hours of work, but our app has a major flaw:
 there is no way to add items or to mark something as purchased. 
 
-We need a way to add an item first.
+We need a way to add an item from our web app first.
 
 Warning: the following is extremely abridged, dangerously inaccurate, and 
 maddeningly abstract. If the subject interests you, or you're serious about
@@ -526,9 +533,13 @@ two lists. We wouldn't worry about specifying the HTML over and over again.
 That way, we could just have a bunch of data that we tag up with semantic
 information, and we'd almost never have to see an HTML tag again. (If only..)
 
-XXL has the concept of `tags` that you `pin` to a variable.
+For situations like this XXL has the concept of `tags`, which are like names
+that you `pin` to a variable.
 
 You can use the verb named `pin` or simply `x # y` to pin a tag (x) on something (y).
+
+It's almost like you are assigning a meta-attribute to it to describe the purpose
+of this value.
 
 Tags and pins are important in XXL because the change the way a noun acts in
 some scenarios, so the tag name comes to the left of the `#`. Remember:
@@ -572,8 +583,8 @@ This might be a good chance to fix that problem while we also interpret the
 tags of each of the parts.
 
 What if we just made a list of the contents of the page, expressed in terms of
-nouns whose contents are functions. Then we can add and remove page parts
-however we want.
+nouns whose contents are anonymous functions (verbs) like the ones we defined
+above. Then we can add and remove page parts however we want.
 
 It will also be a convenient time to consider the tags assigned to all
 of the parts of the final page.
@@ -599,18 +610,24 @@ We've got our tags, we've got our data. Now to apply HTML based on the tag.
 It seems like we need to map a set of tags to a set of functions so that we
 can easily find a function to supply a certain tag's output.
 
-Sounds like a dictionary to me.
+Sounds like another dictionary to me! In this case, the keys are the tags that
+we've given to our bits of data, and the values assigned to those keys are
+functions.
+
 """,
 {
 	'taghandlers is ['list:{"<ul><li>",(x join "</li><li>"),"</li></ul>"},'formsingle:{"<form action=",(x@0),"><input name=",(x@1),"></form>"}]
 },
 """
+
 There. Now we have a handler assigned for the two tags we picked out: `'list`
 and `'formsingle`. It's not-so-gorgeous, but at least now I have a named
-dumping ground for HTML garbage.
+dumping ground for HTML garbage. I can just put a ribbon of police tape around
+it and people will never look at it closely again.
 
 Now we need to find a tag handler for each of our parts and run it. We can use
 `from` again!
+
 """,
 {
 	parts each {[]x tag from taghandlers @ ([]x)}
@@ -619,14 +636,19 @@ Now we need to find a tag handler for each of our parts and run it. We can use
 """
 Did you see that? It was a dreaded repeated `[]`. There's no real reason to run our handler twice.
 People for the rest of written history will wonder why you left that in there. Let's rewrite,
-using `as` to store the output of our tag handler code (`[]x`) in a variable called `'item`.
+using `as` to store the output of our tag handler code (`[]x`) in a variable named `'item`.
 """,
 {
 	parts each {[]x as 'item tag from taghandlers @ item}
 },
 """
+As you can see here, when you assign a variable with `as`, that's not the end of the 
+expression you're building up. You can still work with that value, and then refer back
+later to the variable you made - inside the same expression!
+
 Wait a minute. `'parts` is just a little list. Why even bother giving that a name? Shorter code
 is better code and names are for important things.
+
 """,
 {
 	[thelist,updform] each {[]x as 'item tag from taghandlers @ item}
@@ -693,7 +715,7 @@ restart the XXL interpreter like so:
 """,
 { 
 	[8080,""] Net.bind {x show; "404 :)"}
-	// ["GET /add?item=mongoose HTTP/1.1\r\nHost: xxl.modernmethod.com:8080\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36\r\nAccept-Encoding: gzip, deflate, sdch\r\nAccept-Language: en-US,en;q=0.8\r\n\r\n", "n/a"]
+	// !!DEBUG ["GET /add?item=mongoose HTTP/1.1\r\nHost: xxl.modernmethod.com:8080\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36\r\nAccept-Encoding: gzip, deflate, sdch\r\nAccept-Language: en-US,en;q=0.8\r\n\r\n", "n/a"]
 },
 """
 There's that spew I was talking about.
