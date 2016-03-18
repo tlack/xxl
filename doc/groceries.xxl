@@ -1,0 +1,692 @@
+[
+"""
+Note: This tutorial is aimed at someone who is not yet adept at programming.
+Experienced programmers might just skim this.
+
+I hate grocery shopping.
+
+I also hate writing documentation.
+
+So I thought I would blend my hatreds together and make a sweet wine by 
+making a shopping list manager and doing it as an example of XXL use.
+
+It's common to see "to-do list manager" used as a programming demonstration
+these days but I already have enough stress around the various to-do lists
+in my life.
+
+We'll be starting extremely simply but building on to this program as we
+progress through the tutorial.
+
+Let's dive right in and start coding our grocery list manager.
+
+You should have XXL installed and running in a window as you follow along
+with this tutorial.
+
+What's the easiest way to manage a grocery list?
+
+I guess the first "seed" of our program is just typing this at the XXL
+interactive prompt:
+""",
+{
+	"Chicken"
+},
+"""
+
+You probably recognize that as a string. If life was that simple we'd never do
+any programming at all. What about multiple items on our grocery list?
+
+""",
+{
+	"Chicken eggs sauce";
+},
+"""
+
+This works. We could separate out each of the words by looking for spaces. 
+But we would outgrow this soon.
+
+For instance: God forbid you need to buy a "baby grandpiano",
+because unlike "grandpiano" which works perfectly fine, you'd
+come home with a baby too. And unless that baby can play piano
+really well, you're gonna have to take care of that some time
+this week.
+
+XXL has the concept of a list. You can put items in list, get
+them out individually, re-order them, do things to each member
+of them. It's very flexible and much easier to use for our
+purposes. 
+
+Let's make a list out of each of our items:
+
+""",
+{
+	["Chicken", "Eggs", "Sauce"]
+},
+"""
+
+Lists are formed by using the square brackets `[`..`]`, and putting our stuff
+between them, separated with commas.
+
+(We could have also taken the original string of "Chicken eggs sauce" and split
+it into pieces wherever we found a space character `" "`, but I said no.)
+
+And we're off! Now we have a list with three individual strings inside of it.
+
+We need a convenient way to refer to our list, so let's give it
+a name by assigning it like a variable. 
+
+The first time you give something a name, you have to use what's called a tag - 
+think of it as a "quoted name".
+
+""",
+{
+	'groceries is ["Chicken", "Eggs", "Sauce"];
+	// You could also write this the other way, using "as" instead of "is" - they work the same, they're just backward:
+	["Chicken", "Eggs", "Sauce"] as 'groceries;
+	// I find this much more poetic.
+},
+"""
+So far so good, but it's not much use if we can't add to our grocery list.
+
+There are two schools of thought on this:
+
+In most programming language, people that wear tall white socks with shorts
+would tell you to write a function called addGroceryListItem that requires
+seventeen parameters to do anything and is incredibly abstract.
+
+But XXL is so easy, we're just going to do it manually. There's no use in abstracting this
+concept: it's a single verb, `catenate`.. which you've already used as `,`! 
+
+This is much more clear:
+""",
+{
+	grocies,"Meat Potato" as 'groceries;
+},
+"""
+`note:get:meatpotato`
+
+`note:set:meatpotato:As an aside, if you don't buy meat potatoes too often, feel free to
+start putting your own items in at this point.`
+
+This is a good start, but if I turn off my computer `note:get:note1`, I've lost my groceries.
+I might starve.
+
+`note:set:note1:you should always turn off your computer before cleaning it in the washing machine`
+
+Turns out XXL can easily save that in a file for you. We provide a handy verb called
+`File.set` which spits out text into files.
+
+Let's try it!
+""",
+{	
+	groceries File.set "grocerylist.txt"
+},
+"""
+Total failure. What kind of tutorial is this?
+
+That wretched thing is an exception. You'll get those when you make mistakes
+in XXL code. In this case, File.set is helpfully indicating that it only wants a string
+in its left parameter (x), but we've given it a list instead. 
+
+When we were being clever earlier we switched from the caveman method of storing the
+entire grocery list in one text string to using a list of individual text strings.
+This is still the approach we want to take, because it's much easier to do complex
+manipulation on a list, but we need to convert it to a string just for now.
+
+Luckily, there's `join`. It takes a list of strings (x) and sticks them all together
+with a string of your choosing (y) as the glue. Let's try it.
+""",
+{
+	groceries join ","
+},
+"""
+Looks like we're on the right track.
+""",
+{
+	groceries join "," File.set "grocerylist.txt"
+},
+"""
+That was easy. If you exit XXL or use your file manager you'll see a new file in
+the current folder named grocerylist.txt. It contains.. wait for it.. your grocery
+list.
+
+This is all well and good, but it's of almost no use, because unless you bring
+your laptop to the grocery store, your life is still hell. We need a way to consume
+this list we've made.
+
+We could make this easy on ourselves and email it or something, but let's have some
+fun and make a web app instead. `note:get:hosting`
+
+`note:set:hosting:If you really want to use this in the grocery store, I
+presume you have somewhere to host this and make it accessible to the outside
+world.. or at least your phone's browser. It's only $5/mo to get something
+online with Digital Ocean and it's really fun and empowering. I recommend it.`
+
+We're going to make the world's most awful web server. It doesn't work properly, is
+completely nonstandard, doesn't support all of the nice things about HTTP that have been
+developed in the past, oh, 20 years, but hey, it kinda works in modern browsers! Those
+guys are too tolerant. Nice folks.
+
+Someone once mentioned `Net.bind` to you at a party. It connects a network port
+on your server to your own little fragment of code which decides what to
+respond to the request. We can use this to make a web server.
+
+You have to pick a "port number" and "host name" to bind your server to. If you're
+on your laptop, use 8080 and "localhost". If you're on your own server and want this
+to be visible to the outside world, use port 80 and host "". Pretty scary stuff.
+
+Let's go ahead and pick the port and hostname and set them with names:
+""",
+{
+		8080 as 'port;
+		"localhost" as 'host;
+},
+"""
+Now for the hard part. Which is also the easy part.
+
+When your browser makes a web request, it expects to send that request in a certain
+way, and receive a response in a certain way. This is the standard known as HTTP.
+
+HTTP can be pretty involved, so for the sake of this tutorial, we're going to implement
+as little of it as we have to in order to make the code work.
+
+I'm going to spare you the details and just show you the code to use to make a very
+minimal HTTP response.
+
+""",
+{
+	{x str as 'content len str as 'clen; "HTTP/1.0 200 OK\r\nContent-Length: ",clen,"Content-Type: text/html\r\n\r\n",content} as 'httpresponse;
+},
+"""
+
+Kind of a nightmare. It creates a big long string that contains a valid HTTP
+"OK" response for the x variable you pass it.  We have to calculate the length
+at the beginning and set that as the `Content-Length` header or else Chrome
+goes nuts. 
+
+You've just discovered your first use of a "function" in XXL. A function is a
+bit of code stuck between `{` and `}`. It acts as a saved piece of code that
+you can use later, or pass around to another verb for its own use. 
+
+Now let's connect that to our host and port using `Net.bind` and see what happens.
+""",
+{
+	{groceries join "," httpresponse} as 'myapp;
+	[port, host] Net.bind myapp
+},
+"""
+Fire up your web browser and hit `http://localhost:8080` or whatever you chose for the host and port.
+You should see your grocery list! Life is indeed glorious.
+
+This thing isn't going to win any beauty contests but I heard unstyled webpages are more green so
+you could just use that as your excuse.
+
+It's even more killer if you add an item to your list and refresh the page. It will appear! Watch:
+""",
+{
+	groceries,"Wombat pellets (LARGE)" as 'groceries
+},
+"""
+Stop here and go get your groceries. Feel free to tell people in the checkout line about your new
+groceries startup. Show them the web page!
+
+Life is pretty good with your chicken and sauce, not to mention the wombat
+pellets, but now we need a way to remove these things, because we already have
+them.
+
+Let's stop for a second and take some hammock time to think about this.
+Wouldn't it be cool if we could see all the stuff we already bought? We could
+build charts, optimize bulk buying, totally analyze every inch of our lives to
+death. Everyone knows "big data" is just a synonym for "personal spending
+habits".  
+
+That sounds like a lot of fun. So instead of just removing items from the grocery
+list, let's create a grocery list that allows us to mark what we've bought. 
+
+We could do this a couple ways:
+
+""",
+{
+	[ "Kitten eggs", "Not bought", "Extra large marbles", "Bought" ]
+},
+"""
+This might work, but it would be clunky to use it this way.
+
+XXL lets us structure our data more carefully. We could use what is called
+a dictionary, which is a collection of different values, each with a name,
+like `['name:"Bob",'age:30]`.
+
+These are called "keys" and "values".
+
+Let's create a list of them, with one dictionary per item. To create
+dictionaries, just use `mykey:myvalue`. 
+
+It doesn't matter what you use as a key or value (they can be anything), 
+but it's faster and more convenient to use a tag. 
+
+""",
+{
+	[['item:"Kitten eggs",'bought:0],['item:"Extra large marbles",'bought:1]] as 'groceriesdict
+},
+"""
+
+To create dictionaries, you can also use the full name of `:`, which is `dict`,
+but the next person who reads your code is going to hate you for wasting their
+eyeball space so much. `note:get:conciserant`
+
+`note:set:conciserant:In general, try to make your program fit inside one
+screen of code. If it's bigger than that, compose it of pieces that each fit in
+one screen or less.`
+
+This is OK, but it feels like we're repeating ourselves a bit. Why do I have to
+keep typing 'item and 'bought? Couldn't we just say "Here are all the items, and
+here's the list of what we bought?"
+
+XXL has the notion of a `table`, in which you have many different values for a
+single key.  They can also can be thought of as a list of dictionaries, but are
+actually represented in a more efficient way in memory.
+
+Tables are ideal for data like this. They're easy to make.. almost exactly like
+the dictionary version:
+""",
+{
+	['item,'bought]:[["Kitten eggs", 0], ["Extra large marbles", 1]] as 'groceriestbl
+},
+"""
+It's just a list of the keys for the table, and then a list of the values for each row, including
+each of the two columns.
+
+Now that we have a table we can do cool stuff with it with ease. We can pick out individual columns:
+""",
+{
+	'bought from groceriestbl
+},
+"""
+See how many rows we have:
+""",
+{
+	groceriestbl len
+},
+"""
+Or find items that we need to buy:
+""",
+{
+	groceriestbl except {'bought from x=1}
+},
+"""
+`except` takes a bit of code you provide and checks it against each item (row)
+in the table. It will call your code again and again, with each individual row
+in `x`.
+
+If your code returns 1 (or anything other than 0 or an empty value), the item
+is removed. The concept of "not 0 and not empty" is generally called
+"truthiness." 
+
+There's actually an even shorter way to write this. `from` also accepts
+a function on the left side, and it will only pick out rows from the table
+that return 1 or something "truthy" like that.
+
+Remember, we want to find items we *do* need to buy, instead of items we want
+to remove, so we're swapping the logic here.
+""",
+{
+	{'bought from x=0} from groceriestbl
+},
+"""
+This whole "what I need to buy" concept seems useful so let's give it a name:
+""",
+{
+	{groceriestbl except {'bought from x=1}} as 'tobuy
+},
+""",
+Note that functions like `'tobuy`, in XXL, must have at least one argument.
+In our case, we don't actually use it for anything, so we just pass a default
+value. It doesn't matter what value we pass since the function doesn't
+do anything with it.
+
+By convention, in XXL, we use [] as that default value in cases like this.
+""",
+{
+	[] tobuy
+},
+"""
+Looks good.
+
+Now let's update our beautiful website to use this table instead of clunky
+old `'groceries`.
+
+I'm going to employ some ninja-level knowledge of HTML and make it look nicer
+too. 
+
+First, let's make sure we can get the code right by typing it in piece by
+piece at the XXL interpreter prompt, making sure we have the right logic. 
+Then we'll override our website frontend `'myapp` from before once we're happy
+that our new version sort-of works.
+
+For our output HTML, we basically want to list all the items we need to buy
+(specifically the `'item` key in each of the row dictionaries) and put them
+into an HTML list. For now we'll separate the items with the HTML `<br>` tag
+for a line break.
+
+Let's use `from` from before and try to get all the item names together:
+
+""",
+{
+	[] tobuy each {'item from x} join "<br>"
+},
+""",
+
+`each`, like `except`, calls your function `y` over and over again with each
+row as a dictionary. But unlike `except`, `each` just collects all the results
+together into a new list, rather than removing items from the table.
+
+This is OK, but that little function in the middle is kind of worthless. There's
+an easier way: let's just join all of that `'item` column together.
+We already know about `from`. Let's see if it works on whole tables, to get
+every value in a single column:
+""",
+{
+	{'item from ([] tobuy)}
+},
+"""
+Important note: Remember, verbs like `from` can only deal with words directly
+to the left and right of them. If we didn't put the parenthesis around the
+`([]tobuy)` part, `from` would think we want to take `'item` from `[]`, and
+then call `tobuy` on that result! That doesn't make much sense.
+
+That worked, but the code looks kind of awkward. Symbols! Ugh.
+
+There is another way to do it. `@`, known as apply (though that is not the name
+of the verb inside XXL), allows you to pick out item y of x. For our purposes,
+this is the reverse of `from`, so we can probably use it here.
+
+A note on style: try to write your code so that your eyeball doesn't have to
+jump back to the left after moving to the right in a line of code. `'item from
+thing` is fine in this case, but if you find that left part getting too long
+(in this example it is nice and short), consider moving it toward the right of
+the line, like `thing@'item`. It takes a while to get the hang of it.
+
+""",
+{
+	[] tobuy @ 'item join "<br>"
+},
+"""
+
+Let's get semantic `note:get:htmljoke` and make this into an unordered list via HTML's
+`<UL>` and `<LI>` tags.
+
+`note:set:htmljoke:Warning\: HTML joke`
+""",
+{
+	"<ul><li>",([]tobuy@'item join "</li><li>"),"</li></ul>"
+},
+"""
+Looks good to me. We compressed some of the spaces to save eyeballspace. Now to replace myapp:
+""",
+{
+	'myapp is {"<ul><li>",([]tobuy@'item join "</li><li>"),"</li></ul>" httpresponse}
+},
+"""
+
+Style note: `as` is glorious as a way to quickly save results as you are building
+up complex expressions, but when you have a big hunk of important code like this,
+it's often wise to make sure what it does jumps out at you, so we want the name
+(`'myapp`) on the left.
+
+When someone opens up your code to try to read it, their eye naturally scans down
+the left first. Let's keep our major function names on the left hand side of the
+screen when it's convenient for us.
+
+From here on out, for function definitions, I'll be using `is` instead of `as`. 
+
+Well this is pretty good for 32 hours of work, but our app has a major flaw:
+there is no way to add items or to mark something as purchased. 
+
+We need a way to add an item first.
+
+Warning: the following is extremely abridged, dangerously inaccurate, and 
+maddeningly abstract. If the subject interests you, or you're serious about
+making web apps, I suggest you study this subject deeply. I'm presenting a
+birds eye view of how the web works below.
+
+HTTP, what your browser speaks, has different "methods". You can think of these
+as types of requests.
+
+One is called `GET`. `GET` is used to request simple information that mostly
+doesn't change. When you first go to a site, `GET` is used to grab the homepage
+content. 
+
+Another is called "POST", which is what you use to submit data to the server
+as the result of a form of some kind, or perhaps a button you pressed.
+
+They work differently, and `POST` is more complex. Because we're making our
+patchwork web server from scratch here, we'll skip `POST` support and make
+our updates work over `GET`. This is a terrible idea in real life, for 
+serious apps.
+
+Just put a "STUDENT DRIVER" bumper sticker on your desk chair as you
+go through this next part.
+
+Let's make a way to add an item to your list using an HTML `<FORM>` tag and
+HTTP GET.
+
+At this point, I'm going to "re-factor" myapp a bit, as it's going to be
+getting a little fatter. 
+
+""",
+{
+	'thelist is {"<ul><li>",([]tobuy@'item join "</li><li>"),"</li></ul>"}; 
+	'updform is {"<form action=add><input name=item placeholder=Add..></form>"}; 
+	'myapp is {[] thelist,([] updform) httpresponse}
+},
+"""
+
+Refreshing the page and this looks OK.
+
+To be frank, all these HTML tags are making my head swim. I have zero interest
+in reading those all day. Especially since you have to type them twice, with
+the closing `</tag>` bit. As they say in Texas, they ain't that nice to be
+typin twice.
+
+What if we could tell XXL what the data "means", and XXL figures out an HTML
+tag to use with it? 
+
+For instance, if we had two lists on the page, and they meant were of the same
+general "type" of information, XXL would just spit out the HTML that renders
+two lists. We wouldn't worry about specifying the HTML over and over again.
+
+That way, we could just have a bunch of data that we tag up with semantic
+information, and we'd almost never have to see an HTML tag again. (If only..)
+
+XXL has the concept of `tags` that you `pin` to a variable.
+
+You can use the verb named `pin` or simply `x # y` to pin a tag (x) on something (y).
+
+Tags and pins are important in XXL because the change the way a noun acts in
+some scenarios, so the tag name comes to the left of the `#`. Remember:
+important stuff to the left. This will make more sense later.
+
+Let's tag up our data to see how it might work. 
+
+Tagging the list is pretty easy.
+
+Our form thing doesn't really have any data, but it seems like if we had other
+forms on the page they'd have different `action=` values, and probably
+different names for the type-in field, so we'll just guess and make those the
+"values" of this tagged data.
+
+""",
+{
+	'thelist is {'list#([]tobuy@'item)}; 
+	'updform is {'formsingle#["add","item"]};
+},
+"""
+
+Wow.. that is absolutely gorgeous. Sadly, our little web app is currently
+showing something like ```'thelist is {'list#([]tobuy@'item)}; 'updform is
+{'formsingle#'item};```, to the browser which, though lurid, is not much help
+in the frozen foods section of the grocery store.
+
+Turns out we left out the hard part, which is figuring out that a tag called
+`'list` somehow means "spit out some `<UL>` tags".
+
+Never fear. It's two lines of code.
+
+First, let's figure out how we might do this. 'myapp currently looks like
+```{[] thelist,([] updform) httpresponse}```
+
+First of all, that double `[]` has been bugging me since I woke up this morning. 
+Any time you find yourself typing something twice you've basically lost the
+Laziness Awards and you have to find some way to type it only once, even if it
+takes you hours or even days to figure out.
+
+This might be a good chance to fix that problem while we also interpret the
+tags of each of the parts.
+
+What if we just made a list of the contents of the page, expressed in terms of
+nouns whose contents are functions. Then we can add and remove page parts
+however we want.
+
+It will also be a convenient time to consider the tags assigned to all
+of the parts of the final page.
+
+As we progress through this code, we'll use `each` as before to look at each item individually.
+
+""",
+{
+	[thelist,updform] as 'parts;
+	// Use `show` to get our bearings regarding how `each` works:
+	parts each {x show}
+	// Looks it's passing us each function as a reference, rather than running it.
+	// Let's add that [] gimmick from before.
+	parts each {[] x show}
+	// !!DEBUG 'list#["Telescope carrying case"] 'formsingle#'item
+	// That's more like it - that's our tagged data.
+	// We can use the `tag` verb to pull out only the tags
+	parts each {x tag show}
+},
+"""
+We've got our tags, we've got our data. Now to apply HTML based on the tag.
+
+It seems like we need to map a set of tags to a set of functions so that we
+can easily find a function to supply a certain tag's output.
+
+Sounds like a dictionary to me.
+""",
+{
+	'taghandlers is ['list:{"<ul><li>",(x join "</li><li>"),"</li></ul>"},'formsingle:{"<form action=",(x@0),"><input name=",(x@1),"></form>"}]
+},
+"""
+There. Now we have a handler assigned for the two tags we picked out: `'list`
+and `'formsingle`. It's not-so-gorgeous, but at least now I have a named
+dumping ground for HTML garbage.
+
+Now we need to find a tag handler for each of our parts and run it. We can use
+`from` again!
+""",
+{
+	parts each {[]x tag from taghandlers @ ([]x)}
+	// !!DEBUG ["<ul><li>Telescope carrying case</li></ul>", "<form action=add><input name=item></form>"]
+},
+"""
+Did you see that? It was a dreaded repeated `[]`. There's no real reason to run our handler twice.
+People for the rest of written history will wonder why you left that in there. Let's rewrite,
+using `as` to store the output of our tag handler code (`[]x`) in a variable called `'item`.
+""",
+{
+	parts each {[]x as 'item tag from taghandlers @ item}
+},
+"""
+Wait a minute. `'parts` is just a little list. Why even bother giving that a name? Shorter code
+is better code and names are for important things.
+""",
+{
+	[thelist,updform] each {[]x as 'item tag from taghandlers @ item}
+},
+"""
+
+Many verbs in XXL have short names assigned, known as "operators". You could
+make this code even shorter by using `::` instead of `each` and `.:` instead of
+`from`. It's up to you how far you take it. I think the longer verb names are
+clearer in most cases.
+
+This is totally mondo. We have a reusable HTML widget thing, our code is
+tighter than a.. tight spot, and we are almost done adding items to our list!
+
+Let's put it all together, clean up some loose ends, and do a little more
+refactoring. Here's our code in its tiny glory:
+
+""",
+{
+  'httpresponse is {"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n",(x str)};
+  'taghandlers is ['list:{"<ul><li>",(x join "</li><li>"),"</li></ul>"},'form:{"<form action=",(x@0),"><input name=",(x@1),"></form>"}];
+  'groceriestbl is (['item,'bought]:[["Telescope carrying case", 0], ["Large elevator shim", 1]]);
+  'tobuy is {;{x@'bought=0} from groceriestbl};
+  'thelist is {'list#([]tobuy@'item)};
+  'updform is {'form#["add","item"]};
+  'myapp is {x show; [thelist,updform] :: {[]x as 'item tag from taghandlers@item show} join "" httpresponse};
+  [8080,""] Net.bind myapp
+},
+"""
+You can find this code inside the XXL repository in "examples/groceries-0.xxl".
+
+The clever reader might note that `'taghandlers` functions themselves spit out tags. These tags should
+simply be tagged data! Another refactor! At this rate, we'll never finish.
+
+Let's keep it simple and move on. Time to handle the form and adding an item.
+
+When you type in your item input the "Add.." form, your browser redirects to a
+URL something like `http://localhost:8080/add?item=Mongoose`. We need to make
+our baby web server know how to recognize these URLs and behave appropriately.
+
+If you recall from the XXL docs `note:get:nodox`, the Net.bind callback
+is passed `[request data, remote address]` in `x`. So far we've ignored it,
+but now it's handy. 
+
+In the refactored code presented above, you'll notice I added `x show;` to
+`'myapp`. When you request your app in the browser, you'll see it display the
+contents of `x` (the request information) inside your interpreter window.
+
+`note:set:nodox:At the time of this writing, there are no XXL docs.`
+
+Let's first observe its contents. You may have noticed that you can throw the
+`show` verb (which takes one argument, x) in just about anywhere and see the
+value print out on your terminal as the code runs.
+
+`show` returns the value that it displayed, so you can just add and remove it
+at random whenever you have a confusing condition in your code, and it
+mostly won't disturb the flow of your logic. I recommend
+removing them immediately afterward or you'll be dealing with a lot of visual
+spew.
+
+If you want to explore it a little more, you'll need to change the `Net.bind`
+part. Right now there is no way to `Net.UNbind` in XXL, so you'll have to 
+restart the XXL interpreter like so:
+""",
+{ 
+	[8080,""] Net.bind {x show; "404 :)"}
+	// ["GET /add?item=mongoose HTTP/1.1\r\nHost: xxl.modernmethod.com:8080\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36\r\nAccept-Encoding: gzip, deflate, sdch\r\nAccept-Language: en-US,en;q=0.8\r\n\r\n", "n/a"]
+},
+"""
+There's that spew I was talking about.
+
+We need to pull out that `..item=..` part. Ideally, we'd also pull out the `add` part, because
+we'll probably need to do more than just add. 
+
+What we need is a function that picks apart all of the lines (separated by "\r\n"), and then
+for the first line, picks apart each of the words. 
+I'll save you the hammock time:
+
+""",
+{
+	'parsereq is {x split "\r\n" first split " "}; 
+	"GET /add?item=mongoose HTTP/1.1\r\nHost: ..." parsereq
+},
+"""
+
+That will get us `["GET", "/add?item=mongoose", "HTTP/1.1"]`. It's nice to have the
+request method and HTTP version, but I don't need it right now. Let's whittle
+it down to the important part:
+
+""",
+{
+	

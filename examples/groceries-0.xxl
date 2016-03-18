@@ -1,0 +1,8 @@
+  'httpresponse is {"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n",(x str)};
+  'taghandlers is ['list:{"<ul><li>",(x join "</li><li>"),"</li></ul>"},'form:{"<form action=",(x@0),"><input name=",(x@1),"></form>"}];
+  'groceriestbl is (['item,'bought]:[["Telescope carrying case", 0], ["Large elevator shim", 1]]);
+  'tobuy is {;{x@'bought=0} from groceriestbl};
+  'thelist is {'list#([]tobuy@'item)};
+  'updform is {'form#["add","item"]};
+  'myapp is {x show; [thelist,updform] :: {[]x as 'item tag from taghandlers@item show} join "" httpresponse};
+  [8080,""] Net.bind myapp
