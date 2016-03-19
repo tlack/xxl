@@ -35,6 +35,7 @@ fi
 if [ -x /bin/x86_64-pc-cygwin-gcc.exe ]; then
 	errcho using cygwin
 	CC="/bin/x86_64-pc-cygwin-gcc.exe"
+	DEFS="$DEFS -DTHREAD_NO_TIMEDLOCK"
 fi
 
 if [ -f /etc/os-release ]; then

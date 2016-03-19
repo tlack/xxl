@@ -158,8 +158,13 @@ VP mboxsend(VP mbox,VP msg) {
 	if(!IS_mbox(mbox)) { return EXC(Tt(type),"mbox.send needs a mailbox in x",mbox,msg); }
 	pthread_mutex_t* wm=(pthread_mutex_t*)AS_j(LIST_item(mbox, 1),0);
 	MBOX_tm;
-	int ret=pthread_mutex_timedlock(wm, &tm);
-	if(ret!=0) { return Tt(timeout); }
+	#ifndef THREAD_NO_TIMEDLOCK
+		int ret=pthread_mutex_timedlock(wm, &tm);
+		if(ret!=0) { return Tt(timeout); }
+	#else
+		int ret=pthread_mutex_lock(wm);
+		if(ret!=0) { return Tt(nomutex); }
+	#endif
 	VP items=ELl(mbox,2);
 	ELl(mbox,2)=append(items,msg);
 	pthread_mutex_unlock(wm);
@@ -168,8 +173,13 @@ VP mboxsend(VP mbox,VP msg) {
 VP mboxrecv0(VP mbox,int pop) {
 	pthread_mutex_t* rm=(pthread_mutex_t*)AS_j(LIST_item(mbox, 0),0);
 	MBOX_tm;
-	int ret=pthread_mutex_timedlock(rm, &tm);
-	if(ret!=0) { return Tt(timeout); }
+	#ifndef THREAD_NO_TIMEDLOCK
+		int ret=pthread_mutex_timedlock(rm, &tm);
+		if(ret!=0) { return Tt(timeout); }
+	#else
+		int ret=pthread_mutex_lock(rm);
+		if(ret!=0) { return Tt(nomutex); }
+	#endif
 	VP res=0;
 	VP msgs=LIST_item(mbox,2);
 	if(LEN(msgs)) {
