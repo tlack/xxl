@@ -94,6 +94,26 @@ It's simpler than it seems.
 	groceries
 },
 """
+The most interesting part about XXL, and what gives it its simplicity, 
+is that every single thing you see that doesn't have an apostrophe in
+front of it (like 'groceries' vs `'groceries`) tells XXL to go figure out
+what that name means. Even `[`, `,`, and `]` are named things - they
+happen to be functions `note:get:listliteralnotation`! 
+
+`note:set:listliteralnotation:This is an oversimplification`
+
+So when you see something like "Chicken","Eggs" you know that we're
+looking up what `,` is, which happens to be a verb called catenate,
+and that it takes two "arguments", which are variables you can pass
+in to the function when you call it.
+
+Every piece of code (verb) has either one argument (x), or two (x and y). 
+If it's two, the other argument comes directly to the right of the symbol.
+
+So if you can identify what the symbol means (like `,`, or `is`, or `groceries`),
+you can quickly understand what it does. There are only about 80 built in
+symbols and they all have common sense names.
+
 So far so good, but it's not much use if we can't add to our grocery list.
 
 There are two schools of thought on this:
