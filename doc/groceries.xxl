@@ -115,6 +115,17 @@ So if you can identify what the symbol means (like `,`, or `is`, or `groceries`)
 you can quickly understand what it does. There are only about 80 built in
 symbols and they all have common sense names.
 
+To illustrate, here are two functions called `add`. This `add` function we
+wrote takes either one (`10 add`) or two arguments (`5 add 7`), 
+depending on which of the versions we're considering.. but the result is the same.
+
+""",
+{
+ 'add is {x+10}; 1 range 5 each {x add}
+ 'add is {x+y}; 1 range 5 each {10 add x}
+},
+"""
+
 So far so good, but it's not much use if we can't add to our grocery list.
 
 There are two schools of thought on this:
