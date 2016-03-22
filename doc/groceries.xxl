@@ -105,7 +105,8 @@ happen to be functions `note:get:listliteralnotation`!
 So when you see something like "Chicken","Eggs" you know that we're
 looking up what `,` is, which happens to be a verb called catenate,
 and that it takes two "arguments", which are variables you can pass
-in to the function when you call it.
+in to the function when you call it. In this case, the verb is `,`,
+`"Chicken"` is `x`, and `"Eggs"` is `y`.
 
 Every piece of code (verb) has either one argument (x), or two (x and y). 
 If it's two, the other argument comes directly to the right of the symbol.
