@@ -23,7 +23,7 @@ if [ -x /usr/bin/clang ]; then
 	errcho using clang
 	CC="/usr/bin/clang"
 	ARCH=""
-	DEFS="$DEFS -fsanitize=address -fno-omit-frame-pointer "
+	DEFS="$DEFS -fsanitize=address -fno-omit-frame-pointer -DTHREAD_NO_TIMEDLOCK "
 	# add Mac-specific definitions here
 fi
 
