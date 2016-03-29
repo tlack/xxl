@@ -3450,9 +3450,7 @@ VP parseallexprs(VP tree) {
 	return tree;
 }
 VP resolve(VP ctx,VP ptree) {
-	XRAY_LVL++;
 	XRAY_log("resolve\n");XRAY_emit(ctx);XRAY_emit(ptree);
-	XRAY_LVL--;
 	if(!IS_x(ctx) && !LIST(ptree)) return EXC(Tt(type),"resolve",ctx,ptree);
 	VP name; int i, tname=Ti(name), traw=Ti(raw);
 	for(i=0;i <LEN(ptree); i++) {
