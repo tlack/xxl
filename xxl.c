@@ -198,18 +198,43 @@ char* repr_t(VP x,char* s,size_t sz) {
 	if(n>1) FMT_into_s(sz,")",0);
 	return s;
 }
-char* repr_x(VP x,char* s,size_t sz) {
-	int i;VP a;
-	FMT_into_s(sz,"'context#%p[",x);
-	if(x->n==2) {
-		FMT_into_s(sz,"'scope#%p:",KEYS(x));
-		// repr0(KEYS(x),s,sz);
-		FMT_into_s(sz,",'lambda#%p:",VALS(x));
-		repr0(VALS(x),s,sz);
-	} else {
-		FMT_into_s(sz,"(err: %d members)",x->n);
+char* repr_xlambda(VP keys,VP vals,char* s,size_t sz) {
+	VP k, item, kk, vv;
+	int i, kn;
+	FMT_into_s(sz,"{",0);
+	if (keys) {
+		k=keys; kn=LEN(KEYS(k));
+		for(i=0; i<kn; i++) {
+			kk=apply_simple_(KEYS(k),i);
+			vv=apply_simple_(VALS(k),i);
+			if(!IS_EXC(kk) && !IS_EXC(vv)) {
+				if (kk==TTPARENT) {
+					FMT_into_s(sz,"'parent is \"%p\";",vv);
+				} else {
+					repr0(kk,s,sz);
+					FMT_into_s(sz," is ",0);
+					repr0(vv,s,sz);
+					FMT_into_s(sz,"; ",0);
+				}
+				xfree(kk); xfree(vv);
+			}
+		}
 	}
-	FMT_into_s(sz,"]",x);
+	k=ELl(vals,0); kn=LEN(k);
+	for(i=0; i<kn; i++) {
+		item=ELl(k,i);
+		if(TAGGED(item,Ti(lambda))) s=repr_xlambda(NULL,item,s,sz);
+		else repr0(item,s,sz);
+		if(kn-1!=i) FMT_into_s(sz,",",0);
+	};
+	FMT_into_s(sz,"}",0);
+	return s;
+}
+char* repr_x(VP x,char* s,size_t sz) {
+	FMT_into_s(sz,"'context#%p",x);
+	if(x->n==2) {
+		s=repr_xlambda(KEYS(x), VALS(x),s,sz);
+	}
 	return s;
 }
 #include "repr.h"
