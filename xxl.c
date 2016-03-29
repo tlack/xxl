@@ -220,13 +220,15 @@ char* repr_xlambda(VP keys,VP vals,char* s,size_t sz) {
 			}
 		}
 	}
-	k=ELl(vals,0); kn=LEN(k);
-	for(i=0; i<kn; i++) {
-		item=ELl(k,i);
-		if(TAGGED(item,Ti(lambda))) s=repr_xlambda(NULL,item,s,sz);
-		else repr0(item,s,sz);
-		if(kn-1!=i) FMT_into_s(sz,",",0);
-	};
+	if (vals && LIST(vals) && LEN(vals)==2) {
+		k=ELl(vals,0); kn=LEN(k);
+		for(i=0; i<kn; i++) {
+			item=ELl(k,i);
+			if(TAGGED(item,Ti(lambda))) s=repr_xlambda(NULL,item,s,sz);
+			else repr0(item,s,sz);
+			if(kn-1!=i) FMT_into_s(sz,",",0);
+		};
+	}
 	FMT_into_s(sz,"}",0);
 	return s;
 }
