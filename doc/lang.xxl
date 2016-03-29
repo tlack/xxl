@@ -123,6 +123,25 @@ $'table,                               // make dict into start of new table
  ],
  'cat:'values
 ],
+['t:'binary,
+ 'name:"extract",
+ 'op:"",
+ 'desc:"extract items from x according to y; creates locals and returns the rest of x.
+ 
+y should be a vector of names (tags). these symbols will be created in the local context and
+set to the value of the corresponding item of x.
+
+Use this to unpack data structures into friendly variables to manipulate.
+
+You can use the special tag ' to ignore the corresponding item of x.
+
+The rest of x, after the last extracted value, is returned as the result. This lets you
+compose extract with other verbs to build out elaborate parsers.
+",
+ 'ex:[
+		["\"http://txpo.st/test/a/b\" split \"/\" extract ('method,','host)",["test","a","b"]]
+	]
+],
 ['t:'binary, 
  'name:"del", 
  'desc:"Similar to `except`, but modifies x in-place. Works with lists and dicts in x. For vectors, consider using except. Use with due care - not changing values this way is clearer.", 
