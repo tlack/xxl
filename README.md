@@ -468,6 +468,14 @@ K4/Q by [Kx Systems&trade;](http://kx.com), the quirky
 Io (self-similarity of objects and asceticism) 
 and C (simplicity, performance, rectangularity of data).
 
+## Imminent Rename
+
+(I was trying to make this an eminent domain joke.)
+
+I'm considering renaming XXL to `tx`, so if you see some mixing of names here
+and there, please be patient with me as I consider this change. Input
+appreciated!
+
 ## Disclaimer
 
 No warranty. Trademarks right of their respective owners. 
@@ -481,11 +489,11 @@ BSD-L (3 clause)
 
 ## Credits
 
-@tlack
+Wetly birthed by @tlack <lackner@gmail.com> at [Building.co](http://building.co) in sunny Miami 
 
-Built at [Building.co](http://building.co).
+Many thanks to co-conspirators:
 
-## Contact
+Eblin Lopez @ Classics.com, Mike Martinez @ Classics.com, Khalife Nizar @ Ironhack for
+keeping me grounded and much input. :)
 
-@tlack
 
