@@ -1,0 +1,273 @@
+// This describes a feature that I am developing at this time
+"""
+# A Need to Post
+
+I'm in the weird position of really wanting a cut and paste feature for, like,
+everything in my life.
+
+I can't organize things if I can't make references to them, store them easily,
+find them again.
+
+On a simple level, the notion of the operating system's cut and paste buffer is
+an excellent one.  It just works!
+
+But sadly, you can't cut and paste everything. To cut and paste some idea I'm
+building out, a mix of data and code, I have to "flatten" it into a .js source
+file, or put it together with some data into a .zip. That sucks! Now I have to
+redo it every time I change it.
+
+## The dreaded "Export" step
+
+That last part, where you take your ideas and throw them into a text file and
+send them: that's wasted time. You should be able to share and consume freely,
+from inside the "creation environment" itself, such as a programming language,
+or from your code written in that language.
+
+Having to export, consume feedback, update the original, and export again
+really slows down collaboration.
+
+## Enter the pastebin
+
+That's why I love pastebins. You can easily throw together some code and stuff,
+put it up, get a quasi-permanently sometimes-friendly URL and share that little
+blob of stuff. The good ones now let you collaborate, execute or interrogate
+the contents of the paste as well! This is awesome!
+
+I need that for everything. My bookmarks are no different than the code I'm
+working on or this really cute drawing of a cat I was trying to do. Grocery
+list. Reminders.  Have you seen the (Palazzo
+Strozzi)[https://en.wikipedia.org/wiki/Palazzo_Strozzi]?  Those are all just
+pastes. They simply do not yet have a common API.
+
+## Products too high level and unprogrammable to communicate
+
+A common API of this sort is a challenge, of course. I needn't go into the variety of cross-
+domain issues that you get when you pass complex data from one system to another. 
+
+The ability to paste from Evernote into Photoshop makes no sense on a level
+deeper than "static copy of the pixels that I saw at that moment."
+
+## XXL posts
+
+XXL has the built-in concept of a `post`. Post transfers data from one place to
+another, and it's a general concept. You may post data from your script to a
+remote database, or perhaps post to a remote web service, or even to another
+part of your same program. Think of `post` as a thing you've been doing in
+every other language and never thought about it.
+
+The verb you use in XXL is `data post key`. A piece of that that you transfered
+using post is colloquially called \"a post\".
+
+```
+"Bob Willy Greg" split " " post "list of my best friends for the mini truck rally"
+|||
+'url#"http://txpo.st/listofmybestfriendsfortheminitruckrally"
+```
+
+Go to that URL in your web browser. You should see our list of friends. That URL
+is called a `post id`. 
+
+The `post` verb knows what to do based on the thing on the right, which we call
+the key. Normally the thing on the right is some kind of unique identifier for
+that data, such as a name, or an identification number, or just a random bunch
+of letters. Usually we can use this name to get the data back again, when it is
+returned to us as the post id.
+
+## Generic Post
+
+Let's talk about the simplest usage form first. We tend to call this "built-in
+post". 
+
+Built-in `post` looks at a variable called `'remote` to decide what to do if you specify
+a plain old general string for the key. 
+
+Normally XXL is compiled with `txpo.st:80` in `'remote`. This is the default
+setting that you can change in `def.h`. 
+
+`txpost` is a convenience service that we run for the XXL user community for
+free. It acts kind of like a web server, but it speaks a very restricted
+dialect of HTTP.
+
+Here's how `txpost` is programmed to work. It's a convenient set of rules:
+
+`'remote` is the name of a remote server supporting a very simplistic version
+of HTTP.  By default, it is set to the XXL public open pastebin server,
+`txpost`.
+
+`txpost` will accept anything you give it and return a URL to you. The path
+part of that URL will be something like the key you supplied, with some
+exceptions:
+
+* Keys less than 16 characters in length will have random characters appended
+from the base 32 set (chosen to be easy to say over the phone and hard to mistake).
+
+* Characters in your key that are not in the set A..Z, a..z, 0..9, `_` and `-`
+are stripped. Note: no punctuation or period.
+
+* Once a key has been transformed, if it is the same as an existing key, you'll
+get back an exception (HTTP 409 to be precise). Keys cannot be updated. Once a
+key is associated with some data, it should never change.
+
+Therefore, if you want the key you specify to be exactly what you get back in the
+URL, please conform your key to these rules. Otherwise, if you don't care (which
+is what I recommend), you may use any string as a key value, even "".
+
+If you're curious why we chose these rules, it is explained later in this document.
+
+### Usage of `txpo.st`
+
+Post anything! You can post data, or functions you are working on, or just 
+strings. Use `txpost` as a garbage dump for all your work in progress. Save the
+URLs and you can always get the contents back.
+
+### A word on uptime
+
+We run `txpost` as a service for the community. It's on some beefy hardware in a
+good data center, but we don't offer support guarantees that you might receive
+from a for-profit service. 
+
+We intend to keep `txpost` online as much as possible, and make it very, very 
+fast, but for uptime guarantees you should seek your own solution.
+
+## A post server to call your own
+
+These are just the conventions that our public server supports. Your own servers
+(which are just one line of code) may do anything you want, or return any data
+you want, with or without HTTP. Later on in this document we'll explain why we chose these rules.
+
+You can customize any of this behavior. The format of `'remote` is simply
+`hostname:port`. You can use IP addresses as well of course.
+
+You don't have to store the results of things that are posted to your post
+server. Here's an example of a simple post server that simply returns a reversed version
+of what you supplied:
+
+```
+("localhost",8000)Net.bind{x@0 reverse}
+```
+
+You could make a post server update an account balance, or serve as a counter,
+or provide a public view of some sensitive changing information.
+
+## Posting and Classes
+
+We fibbed a little earlier when we said the contents of `'remote` had to be a string.
+It can be anything that your program assigns meaning to.
+
+`'remote` doesn't have to refer to a post server, either. The hostname could be 
+a radio frequency, or an FTP resource to update, or a buffer on the GPU. In theory
+at least. I haven't written any of that.
+
+The key (right hand thing) that you supply to `post` can be what is known as a
+`Class`. Remember in XXL any regular value (such as a string, or a number, or a
+list) can have a tag supplied. If this tag has a capital first letter, XXL
+sometimes invokes special behavior, that lets us override how things like
+`post` (and `get`, `set`) might perform.
+
+It makes more sense in practice. Here's an example that submits a highly
+accurate movie review to some fantasy movie review service, perhaps called
+TomatoXXL.
+
+```
+'summary is "Terrible";
+{x@'year>2010} from movies @'id :: {summary post 'Tomato#x}
+```
+
+When XXL performs the `post` verb, it will consider whether or not the key
+you provided has a class specified. If so, and `Class.post` exists,
+it will be invoked instead of the standard behavior (defined `Xp.post`).
+
+In this case, we could define our own `Tomato.post` function that will
+know how to post to the TomatoXXL reviews ingest server. In our case we're
+just slamming a movie id in there, but you'd probably want the data to be
+more structured, explaining what type of content it is, general rating,
+user who wrote the review, etc.
+
+TomatoXXL is just an example. A rotten one. (pause) You can define your class's
+post behavior to do anything, such as save to disk, perform a database
+operation, or connect to a remote service and send some data.
+
+## Netsplit
+
+Please dear godess when writing networked code consider and explain the
+different failure cases of your code, both for the consumer, and the server. If
+your system retries, say so, or be clear that it does not. Not considering the
+failure case is a huge problem in software.
+
+In XXL, you may consider the `orelse` verb to deal with failure cases with
+a callback, or simply `or` (`|`) to fill in default values.
+
+## About `'remote`
+
+`'remote` is a global and that's highly annoying in practice.
+
+It's only useful for convenience when you have to do a lot of operations
+pointing to one source.
+
+As the user (programmer), the possibility that `'remote` has changed behind
+your back can be frustrating to worry about.
+
+When writing your class-driven `post` behaviors, XXL's behavior with `'remote`
+doesn't come into play unless you explicitly consider it in your callback
+function.
+
+Think about this before decidin.
+
+## `txpo.st`'s odd rules
+
+Here's why the default `txpost` service works the way it does. Other services
+or your own creations may vary.
+
+* Encouraging longer post keys means less chance of unintentional collisions.
+
+* 16 bytes (128 bits) is a lot of space for diffusion.
+
+* GUIDs/UUIDs are often 128 bits, so there's a convenience aspect there.
+
+* XXL supports vectors of 128bit integers, so you can quickly create and
+manipulate keys. (Though our public server removes characters from keys
+that do not fall into a very restrictive set)
+
+* Keys that are less than 16 bytes are known to be special, or not placed
+there by a public post. This means we can consider them to be a "secure 
+enclave" of the key space. They are trusted.
+
+* Having this secure enclave allows public clients to post requests (with
+long keys) that the server responds to with some pre-decided short key.
+For instance, the client might post something requesting an account balance
+update, and request the response be posted in a certain key it randomly
+selected. If that key is less than 16 characters, it may seek out its
+existance later, and know that only the server could have placed it there.
+This allows for a secure message queue-type arrangement.
+
+* The contents of a key (URL) never change, so you can safely deploy software
+this way. If you've screened it once (and you should!) you don't need to
+consider that post id again.
+
+* Because the contents of a key never change, it is incredibly easy to cache.
+This means lower performance overhead on an ongoing basis. CloudFront or 
+CloudFlare could do a great job caching txpost.
+
+* Not allowing periods means fewer "is this a filename?" confusions on the
+client side. In particular, I am always afraid of web browsers trying to
+extension-guess with plugins and extensions, though I'm not aware of it really
+happening in practice. Furthermore, services implementing the txpost protocol
+have less to worry about from people planting semantically meaningful URLs,
+such as robots.txt.
+
+## Inspiration
+
+I like some of the behavior that IPFS provides, but it's too complex and
+different for me. 
+
+## Encryption
+
+My opinion on this is still developing.
+
+A the risk of being very politically incorrect, I'm not sure I need to encrypt
+absolutely everything, especially if it impacts my runtime speed or ability to
+swap out hostnames and use IPs. I'd rather allow the user to decide when to
+employ encryption when using POST. 
+
+"""
+
