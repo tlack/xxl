@@ -61,7 +61,7 @@ using post is colloquially called \"a post\".
 ```
 "Bob Willy Greg" split " " post "list of my best friends for the mini truck rally"
 |||
-'url#"http://txpo.st/listofmybestfriendsfortheminitruckrally"
+'Url#"http://txpo.st/listofmybestfriendsfortheminitruckrally"
 ```
 
 Go to that URL in your web browser. You should see our list of friends. That URL
@@ -92,7 +92,7 @@ Here's how `txpost` is programmed to work. It's a convenient set of rules:
 
 `'remote` is the name of a remote server supporting a very simplistic version
 of HTTP.  By default, it is set to the XXL public open pastebin server,
-`txpost`.
+`txpost`, which runs on `txpo.st` port 80.
 
 `txpost` will accept anything you give it and return a URL to you. The path
 part of that URL will be something like the key you supplied, with some
@@ -101,18 +101,23 @@ exceptions:
 * Keys less than 16 characters in length will have random characters appended
 from the base 32 set (chosen to be easy to say over the phone and hard to mistake).
 
+* Keys longer than 255 characters in length will be trimmed to 255 characters.
+
 * Characters in your key that are not in the set A..Z, a..z, 0..9, `_` and `-`
 are stripped. Note: no punctuation or period.
 
-* Once a key has been transformed, if it is the same as an existing key, you'll
+Therefore, if you want the key you specify to be exactly what you get back in
+the URL, please conform your key to these rules. Otherwise, if you don't care
+(which is what I recommend for casual use, such as inside the interactive
+command line), you may use any string as a key value, even "".
+
+Once a key has been transformed, if it is the same as an existing key, you'll
 get back an exception (HTTP 409 to be precise). Keys cannot be updated. Once a
-key is associated with some data, it should never change.
+key is associated with some data, it should never change. This error will be
+returned to you as an exception which you can trap. 
 
-Therefore, if you want the key you specify to be exactly what you get back in the
-URL, please conform your key to these rules. Otherwise, if you don't care (which
-is what I recommend), you may use any string as a key value, even "".
-
-If you're curious why we chose these rules, it is explained later in this document.
+If you're curious why we chose these rules they are explained later in this
+document.
 
 ### Usage of `txpo.st`
 
@@ -233,6 +238,22 @@ Post IDs can be used on the left side of `get` to retrieve their contents.
 
 `get` also uses the class name of `x` to determine what it does.
 
+## Ideas for things to post
+
+* Post your boss an idea for a new report
+* Post Youtube URLs to your media center
+* Post bookmarks and personal photos to your "personal cloud" server, a $5/mo
+Digital Ocean VM. Program it to reject posts that do not start with a 16
+character key that you choose.
+* Post music you make on your iPhone on the way to work, via Workflow (an
+excellent app).
+* Post your thoughts about politics to an anonymous obscure XXL server you
+heard about known only by a changing IP. Debate ensues.
+* Post updates to a separate, logged, firewalled database.
+* Post updates from your logged database to its logging server.
+* Post an alert to the logging server when the primary goes down.
+* Post your mama an email because she hasn't heard from you in a while.
+
 ## `txpo.st`'s odd rules
 
 Here's why the default `txpost` service works the way it does. Other services
@@ -299,9 +320,10 @@ filtering or screening uploads. Let's keep it that way by you not being an ass.
 
 ## Searching public posts
 
-In the distant future, `txpost` may support the ability to search for public
-posts, but *only* by specifying the first 32 characters of the key. We will
-then find all keys whose names begin with the 32 characters you supplied.
+In the distant, highly theoretical future, `txpost` may support the ability to
+search for public posts, but *only* by specifying the first 32 characters of
+the key. We will then find all keys whose names begin with the 32 characters
+you supplied.
 
 This interesting feature implies that:
 
@@ -311,6 +333,53 @@ space (which at 256 bits can take some time).
 
 2. Public key search could be used as a way for services to discover each other
 and communicate without as much centralized control.
+
+3. Public key search can be used to provide mutability for data using a simple
+well-known protocol described below
+
+# Public key search to provide immutability
+
+I'm using abbreviated keys and values here, but I think the meaning is clear.
+
+```
+'buddies is ["Timmy", "Rayray", "Chantel"];
+'keyy is "friends4now";
+'arb {"f"take 16 base 16 deal 1}; // dont have a MAX_OCTA const yet :)
+'hash is {x % 7543 * x};
+[]arb as 'secret hash as 'hashedsecret;
+[buddies,hashedsecret] post keyy;
+// later on:
+[newbuddies,newhashval] post [keyy,secret];
+```
+
+As human talk:
+
+0. All clients decide on a hash function to use for authentication. You might use
+SHA, or whatever is popular this week, but these guys are real knuckleheads
+so they just use `'hash is {x % 7543 + x}`;
+
+1. Client prepares data to publish and creates a 32 character long key. It
+doesn't matter what it is as long as all clients know how to find it. 
+
+2. Client also chooses a random value to act as a "next update key". In this example,
+1826295696 was chosen. Cliet names this `'secret` and stores it away, along with
+the 32 character key.
+
+2. The data is complex and will need to be amended, so the client also includes
+a "next update hash" of `secret hash`, or `7165, which will be publicly visible, but the meaning
+of which is difficult to reverse if you are using a good hash function.
+
+3. Client discovers that it needs to publish an update, so it does so the same way,
+but the key it uses is a combination of the original key, and the original secret value.
+
+4. Other clients are scanning for new items whose names begin with the
+original's key, and if one is found, they check if the second part of the new
+item's key, when hashed, returns the "next update hash" that was supplied in
+the first message.
+
+With a strong hash function, I believe this is safe because the attacker would
+not be able to guess what the secret value was that was used to derive the
+public next update hash.
 
 ## Inspiration
 
@@ -325,6 +394,9 @@ A the risk of being very politically incorrect, I'm not sure I need to encrypt
 absolutely everything, especially if it impacts my runtime speed or ability to
 swap out hostnames and use IPs. I'd rather allow the user to decide when to
 employ encryption when using POST. 
+
+I'd be more inclined to provide a very nice general crypto wrapper API or an
+operator-level cipher family with really simple and composable semantics.
 
 """
 
