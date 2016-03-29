@@ -38,7 +38,6 @@ VP netcall(VP data,VP addr) {
 	VP w=netw(sock,data); if(w) return w;
 	char input[NETLOOPBLK]={0};
 	int nread=netr(sock, input, NETLOOPBLK-1);
-	printf("r%d\n",nread);
 	shutdown(sock,SHUT_RDWR); close(sock);
 	if(nread>0) { // dont i have a primitive for this
 		VP res=xcsz(nread); memmove(BUF(res),input,nread); res->n=nread; return res; 
