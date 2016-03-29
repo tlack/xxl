@@ -481,11 +481,11 @@ BSD-L (3 clause)
 
 ## Credits
 
-@tlack
+Wetly birthed by @tlack <lackner@gmail.com> at [Building.co](http://building.co) in sunny Miami 
 
-Built at [Building.co](http://building.co).
+Many thanks to co-conspirators:
 
-## Contact
+Eblin Lopez @ Classics.com, Mike Martinez @ Classics.com, Khalife Nizar @ Ironhack for
+keeping me grounded and much input. :)
 
-@tlack
 
