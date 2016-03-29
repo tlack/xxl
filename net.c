@@ -12,9 +12,10 @@ int netr(int sock,void* b,size_t maxl) {
 }
 VP netw(int sock,VP buf) {
 	XRAY_log("netw %d\n",sock);XRAY_emit(buf);
+	if(buf==NULL) return NULL;
 	if(!IS_b(buf)&&!IS_c(buf)) return EXC(Tt(type),"netw only strings",xi(sock),buf);
 	if(write(sock,BUF(buf),buf->n)<buf->n) PERR("netw");
-	return 0;
+	return NULL;
 }
 #define NETLOOPBLK IOBLOCKSZ
 VP netserve(VP sockcb) {
@@ -37,7 +38,7 @@ VP netserve(VP sockcb) {
 		resp=apply(cb,t3);
 		xfree(t3);xfree(t2);xfree(t1);
 		XRAY_log("netloop handler resp for %d\n",sock); XRAY_emit(resp);
-		if(!IS_c(resp)) {
+		if(resp!=NULL && !IS_c(resp)) {
 			XRAY_log("massaging\n");XRAY_emit(resp);
 			resp=repr(resp);
 		}
