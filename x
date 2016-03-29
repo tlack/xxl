@@ -1,4 +1,5 @@
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DIR=`dirname $(readlink -f $0)`
+echo $DIR
 XXL=$DIR/xxl
 RUN="$XXL "
 
@@ -8,6 +9,7 @@ if which rlwrap >/dev/null; then
 	errcho using rlwrap
 	RUN="rlwrap $RUN"
 fi
+errcho $RUN $*
 $RUN $*
 
 
