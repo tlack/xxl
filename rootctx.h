@@ -157,6 +157,7 @@
 	#ifdef STDLIBNET
 	d=xd0();
 	d=assign(d,Tt(bind),x2(&netbind));
+	d=assign(d,Tt(call),x2(&netcall));
 	res=assign(res,Tt(Net),d);
 	xfree(d);
 	#endif

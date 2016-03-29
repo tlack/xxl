@@ -148,6 +148,7 @@ void thr_run1(VP ctx,VP arg);
 
 #ifdef STDLIBNET
 // from net.c
+VP netcall(VP data,VP addr);
 VP netbind(VP opts,VP callback);
 VP netloop(VP xsock,VP cb);
 #endif

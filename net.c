@@ -6,9 +6,9 @@
 #include "vary.h"
 
 #ifdef STDLIBNET
-
+#define NETLOOPBLK IOBLOCKSZ
 int netr(int sock,void* b,size_t maxl) {
-	return read(sock,b,maxl);
+	return read(sock,b,maxl); // TODO chunk
 }
 VP netw(int sock,VP buf) {
 	XRAY_log("netw %d\n",sock);XRAY_emit(buf);
@@ -17,7 +17,33 @@ VP netw(int sock,VP buf) {
 	if(write(sock,BUF(buf),buf->n)<buf->n) PERR("netw");
 	return NULL;
 }
-#define NETLOOPBLK IOBLOCKSZ
+VP netcall(VP data,VP addr) {
+	int sock=socket(AF_INET, SOCK_STREAM, 0);
+	struct sockaddr_in sin={0}; sin.sin_family=AF_INET; // TODO IPv6
+	int port=AS_i(ELl(addr,0),0); sin.sin_port=htons(port);
+	if(LEN(addr) > 1 && IS_c(ELl(addr,1))) {
+		char host[64]={0};
+		strncpy(host,bfromx(ELl(addr,1)),64);
+		struct hostent* server=gethostbyname(host);
+		if(server==NULL)return EXC(Tt(host),"hostname not found",data,addr);
+		bcopy((char*)server->h_addr,(char*)&sin.sin_addr.s_addr,server->h_length);
+	}
+	if(connect(sock,(struct sockaddr *)&sin, sizeof(sin)) < 0) {
+		char* err=malloc(256); int len;
+		snprintf(err,256,"couldn't connect to host/port: ");
+		len=strlen(err);
+		strerror_r(errno, err+len, 256-len);
+		return EXC(Tt(call),err,data,addr);
+	}
+	VP w=netw(sock,data); if(w) return w;
+	char input[NETLOOPBLK]={0};
+	int nread=netr(sock, input, NETLOOPBLK-1);
+	printf("r%d\n",nread);
+	shutdown(sock,SHUT_RDWR); close(sock);
+	if(nread>0) { // dont i have a primitive for this
+		VP res=xcsz(nread); memmove(BUF(res),input,nread); res->n=nread; return res; 
+	} else return NULL;
+}
 VP netserve(VP sockcb) {
 	int sock=AS_i(LIST_item(sockcb,0),0), nread;
 	VP cb=LIST_item(sockcb,1);
