@@ -910,10 +910,32 @@ VP except(const VP x,const VP y) {
 	XRAY_log("except\n");XRAY_emit(x);XRAY_emit(y);
 	return wherepred_(x,y,1);
 }
+VP extract(const VP data,const VP parts) {
+	if(IS_EXC(data)) return data;
+	if(IS_EXC(parts)) return parts;
+	if(!LIST(data)) { return EXC(Tt(type),"extract x must be list",data,parts); }
+	if(XXL_CUR_CTX==NULL) return EXC(Tt(context),"extract could not find current context",data,parts);
+	int pl=MIN(LEN(data),LEN(parts)), i=0, cursor=0;
+	VP px, dx;
+	for(i=0; i<pl; i++) {
+		px=apply_simple_(parts,i);
+		if(IS_t(px) && AS_t(px,0)!=TINULL) {
+			dx=LIST_item(data,cursor);
+			set_is(px,dx);
+		}
+		xfree(px); // apply_simple_ always allocs
+		cursor++;
+	}
+	VP res=xlsz(5); // arb
+	for(; cursor<LEN(data); cursor++) {
+		res=append(res,LIST_item(data, cursor));
+	}
+	return res;
+}
 VP first(const VP x) {
 	VP i,r;
-	if(DICT(x)) return EXC(Tt(type),"dict first/head doesn't make sense",x,0);
-	if(LIST(x)) return xref(ELl(x,0));
+	if(DICT(x)) { return EXC(Tt(type),"dict first/head doesn't make sense",x,0); }
+	if(LIST(x)) { return xref(ELl(x,0)); }
 	else return apply_simple_(x,0);
 }
 int _flat(const VP x) { // returns 1 if vector, or a list composed of vectors (and not other lists)
