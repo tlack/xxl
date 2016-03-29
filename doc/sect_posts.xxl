@@ -61,11 +61,11 @@ using post is colloquially called \"a post\".
 ```
 "Bob Willy Greg" split " " post "list of my best friends for the mini truck rally"
 |||
-'url#"http://txpo.st/listofmybestfriendsfortheminitruckrally"
+"http://txpo.st/-istfmybestfriendsfrteminitrckray"
 ```
 
 Go to that URL in your web browser. You should see our list of friends. That URL
-is called a `post id`. 
+is called a `post id`. It's a mangled form of what you typed in.
 
 The `post` verb knows what to do based on the thing on the right, which we call
 the key. Normally the thing on the right is some kind of unique identifier for
