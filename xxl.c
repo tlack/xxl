@@ -1232,10 +1232,12 @@ VP pin(VP x, VP y) {
 	else if(x->tag != 0)
 		newt=x->tag;
 	if (newt) {
-		if (newt==Ti(Pointer) && IS_j(y)) {
-			x=(VP)AS_j(y,0);
-			xref(x);
-			return x;
+		if (newt==Ti(Pointer)) {
+			VP ret;
+			if (sizeof(void*)==4 && IS_i(y)) { ret=(VP)AS_i(y,0); }
+			if (sizeof(void*)==8 && IS_j(y)) { ret=(VP)AS_j(y,0); }
+			xref(ret);
+			return ret;
 		}
 		ARG_MUTATING(y);
 		y->tag=newt;
