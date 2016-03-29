@@ -1290,13 +1290,15 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
 	if(SIMPLE(code) || !LIST(code)) return code;
 	char ch; int i; 
-	VP left=xarg,item=0,oldleft=0;
+	VP left=xarg,item=0,oldleft=0,old_cur_ctx;
 	tag_t tag, tcom=Ti(comment), texc=Ti(exception), texpr=Ti(expr), tlam=Ti(lambda), 
 				tlistexpr=Ti(listexpr), tname=Ti(name), toper=Ti(oper),
 				traw=Ti(raw), tstr=Ti(string), tws=Ti(ws);
 
 	VP curframe,restore_left=0,stack=xl0();
 	int stack_i=-1, start_i=0, use_existing_item=0, use_existing_left=0, return_expr_type=0, return_to=0;
+
+	old_cur_ctx=XXL_CUR_CTX;
 	stack=append(stack,xln(9,parent,code,xarg,yarg,left,XI0,xi(-1),xi(0),left));
 
 	#define MAYBE_RETURN(value) \
@@ -1326,6 +1328,9 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			XRAY_log("applyexpr actually returning\n"); \
 			if(value==NULL) { XRAY_log("null\n"); } \
 			else XRAY_emit(value); \
+			if(old_cur_ctx!=NULL) { \
+				XRAY_log("restoring XXL_CUR_CTX = %p\n", old_cur_ctx); XXL_CUR_CTX=old_cur_ctx; \
+			} \
 			return value; \
 		} 
 
@@ -1362,7 +1367,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		use_existing_left=0;
 	}
 
-	XXL_CUR_CTX=parent;
+	XXL_CUR_CTX=parent; XRAY_log("setting XXL_CUR_CTX=%p\n",parent);
 
 	if(SIMPLE(code)) { MAYBE_RETURN(code); }
 
@@ -1500,9 +1505,11 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 
 		XRAY_log("before evalexpr (left,item):\n");
 		XRAY_emit(left); XRAY_emit(item);
-		if(left!=NULL) XRAY_log("left arity=%d\n", _arity(left)); 
 
-		if(left!=0 && (left->tag==Ti(proj) || (CALLABLE(left) && _arity(left)>0))) {
+		int leftarity=-1;
+		if(left!=NULL) {leftarity=_arity(left); XRAY_log("left arity=%d\n", leftarity);}
+
+		if(left!=0 && (left->tag==Ti(proj) || (CALLABLE(left) && leftarity>0))) {
 			// they seem to be trying to call a unary function, though it's on the
 			// left - NB. possibly shady
 			//
@@ -1523,16 +1530,28 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			oldleft=left;
 			if(left->tag==Ti(proj)) left=apply2(ELl(left,1),ELl(left,0),item);
 			else left=apply(left,item);
+			XRAY_log("applyexpr considering new apply(left,item)\n");
+			XRAY_emit(left);
 			xfree(oldleft);
 			if(left == 0 || left->tag==texc) { MAYBE_RETURN(left); }
 			if(IS_p(left)) {
 				p=AS_p(left,0);
-				if(yarg && p.type==2 && (!p.left || !p.right)) {
+				if(yarg && p.type==2 && (!p.left || !p.right)) { 
+					// NB this is the code that handles cases like 2 {*} 5 this should
+					// happen only for simple expressions.. i feel like we need to have a
+					// different class of expressions that work differently; slash
+					// commands, implicit x, and here implicit y all work in that space,
+					// but are confusing out of it. these are our versions of
+					// compositions in k i suppose.
 					oldleft=left;
 					XRAY_log("applyexpr consuming y:\n");XRAY_emit(yarg);
 					left=apply(oldleft,yarg);
 					xfree(oldleft);
+				} else {
+					XRAY_log("applyexpr no y to consume\n");
 				}
+			} else {
+				XRAY_log("applyexpr non-projection but callable left\n");
 			}
 		} else if(!CALLABLE(item) && (left!=0 && !CALLABLE(left))) {
 			XRAY_log("applyexpr adopting left =\n");XRAY_emit(item);
@@ -2642,7 +2661,7 @@ VP set(VP ctx,VP key,VP val) {
 	}
 	ARG_MUTATING(ctx);
 	VP dest=KEYS(ctx);
-	XRAY_log("set assigning in\n");XRAY_emit(dest);
+	XRAY_log("set assigning in %p\n", dest);XRAY_emit(dest);
 	// dest=assign(dest,key,clone(val));
 	// if(!IS_x(val)) val=clone(val);
 	// val=clone(val);
