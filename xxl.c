@@ -3411,14 +3411,12 @@ VP parsestrlit(VP x) {
 }
 VP parseloopoper(VP x) {
 	XRAY_log("parseloopoper\n");XRAY_emit(x);
-	VP st=xfroms(":|>"), en=xfroms("#|:\\/<>~',.");
-	st->tag=Ti(raw); en->tag=Ti(raw);
-	VP tmp1=matchany(x,st); 
-	// XRAY_log("parseloopoper tmp1\n");XRAY_emit(tmp1);
-	if (!_any(tmp1)) { xfree(st); xfree(en); xfree(tmp1); return x; }
-	VP tmp2=matchany(x,en);
-	// XRAY_log("parseloopoper tmp2\n");XRAY_emit(tmp2);
-	if (!_any(tmp2)) { xfree(st); xfree(en); xfree(tmp1); xfree(tmp2); return x; }
+	VP op=xfroms("~!@#$%^&*|:\\/<>~',."); op->tag=Ti(raw);
+	VP tmp2=matchany(x,op);
+	if (!_any(tmp2)) { xfree(op); xfree(tmp2); return x; }
+	VP cat=xfroms(":|>"); cat->tag=Ti(raw); 
+	VP tmp1=matchany(x,cat); 
+	if (!_any(tmp1)) { xfree(cat); xfree(op); xfree(tmp2); xfree(tmp1); return x; }
 	VP tmp3=xln(2,tmp2,tmp1);
 	VP join=consecutivejoin(XB1,tmp3);
 	if(_any(join)) {
@@ -3428,20 +3426,13 @@ VP parseloopoper(VP x) {
 			idx = append(idx, plus(idx,XI1));
 			rep = list2vec(apply(x, idx));
 			rep->tag = Ti(oper);
-			// XRAY_log("parsemulticharoper"); XRAY_emit(rep);
 			x=splice(x, idx, rep);
 			diff += 1 - idx->n;
-			xfree(idx);
-			xfree(rep);
+			xfree(idx); xfree(rep);
 		}
 		xfree(indices); 
 	}
-	xfree(st); 
-	xfree(en); 
-	xfree(tmp1); 
-	xfree(tmp2); 
-	xfree(tmp3); 
-	xfree(join);
+	xfree(cat); xfree(op); xfree(tmp1); xfree(tmp2); xfree(tmp3); xfree(join);
 	return x;
 }
 VP parseallexprs(VP tree) {
