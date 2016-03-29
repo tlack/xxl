@@ -468,6 +468,14 @@ K4/Q by [Kx Systems&trade;](http://kx.com), the quirky
 Io (self-similarity of objects and asceticism) 
 and C (simplicity, performance, rectangularity of data).
 
+## Imminent Rename
+
+(I was trying to make this an eminent domain joke.)
+
+I'm considering renaming XXL to `tx`, so if you see some mixing of names here
+and there, please be patient with me as I consider this change. Input
+appreciated!
+
 ## Disclaimer
 
 No warranty. Trademarks right of their respective owners. 
