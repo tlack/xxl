@@ -1,0 +1,25 @@
+_dir,"/CONFIG.xxl" load as 'c;
+'emit is {[y,x]show;x};
+'keyfn is {[c.ROOT,("x",(x@0 orelse "")),("y",(x@1 orelse "")),x] show join "/"};
+'filterkey is {in(c.KEYCH as 'kc)condense from x show};
+'makekey is {filterkey as 'ks; (c.KEYCH list deal (c.MINLEN-(ks len)|0),"-" join ""),ks};
+'POST is {y File.set (x makekey show as 'k keyfn show); 'ok#(c.PRETTY,k)};
+'GET is {filterkey keyfn as 'k File.get ifelse [{'ok#x},('unk#k," not found")]};
+'status is ['ok:"200 OK",'unk:"404 Not Found"];
+'wrapresp is {x show tag from status as 'hdr; x str as 'resp len str as 'szs;
+	"HTTP/1.0 ",hdr,"\r\nContent-Length: ",szs,"\r\n",
+	"Connection: close\r\n","Server: xxl v0.0\r\n\r\n",
+	resp show};
+'route is {
+	x first split "\r\n" as 'bparts;
+	x first split "\r\n\r\n"@1 as 'body;
+	bparts first split" "as 'req;             // request line
+	req first as 'method;
+	req@1 behead orelse "index" as 'path emit 'path;
+	method first="P" ifelse [{path show POST body},{path show GET}] wrapresp
+};
+'webh is {x route};
+(c.PORT,c.HOST) Net.bind webh;
+// utility stuff:
+'mkroot is {[c.KEYCH],c.KEYCH/:{[x,y]\:{[c.ROOT,("x",x),("y",y)]File.path as 'p;"mkdir -p '",p,"'" Shell.get}}}
+

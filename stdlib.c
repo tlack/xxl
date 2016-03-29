@@ -76,7 +76,7 @@ VP fileset(VP str,VP fn) {
 	if(!IS_c(fname)) return EXC(Tt(type),"writefile filename must be string or pathlist",fn,0);
 	if(!IS_c(str)) return EXC(Tt(type),"writefile only deals writes strings right now",str,fn);
 	char* fns=sfromxA(fname);
-	int fd=open(fns,O_CREAT|O_WRONLY);
+	int fd=open(fns,O_CREAT|O_WRONLY,0600);
 	free(fns);
 	if(fd<0) return EXC(Tt(open),"could not open file for writing",str,fname);
 	if(write(fd,ELb(str,0),str->n)<str->n) return EXC(Tt(write),"could not write file contents",str,fname);
@@ -298,7 +298,7 @@ VP xdset(const VP data,const VP fn) {
 	if(!IS_c(fname)) fname=filepath(fn);
 	if(!IS_c(fname)) return EXC(Tt(type),"xdset filename must be string or pathlist",fn,0);
 	char* fns=sfromxA(fname);
-	int fd=open(fns,O_CREAT|O_WRONLY);
+	int fd=open(fns,O_CREAT|O_WRONLY,0600);
 	if(!fd) perror("open");
 	free(fns);
 	if(fd<0) return EXC(Tt(open),"could not open file for writing",fname,data);

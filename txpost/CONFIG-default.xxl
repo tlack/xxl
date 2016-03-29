@@ -1,0 +1,10 @@
+[
+	'HOST:"localhost",
+	'PORT:8000,
+	'PRETTY:"http://localhost:8000/",
+	'ROOT:"/tmp/txpost",
+	'KEYCH:"0123456789abcdefijkmnpqrstvxyz-_",
+	'MINLEN:16
+]
+
+

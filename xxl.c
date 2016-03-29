@@ -198,18 +198,45 @@ char* repr_t(VP x,char* s,size_t sz) {
 	if(n>1) FMT_into_s(sz,")",0);
 	return s;
 }
-char* repr_x(VP x,char* s,size_t sz) {
-	int i;VP a;
-	FMT_into_s(sz,"'context#%p[",x);
-	if(x->n==2) {
-		FMT_into_s(sz,"'scope#%p:",KEYS(x));
-		// repr0(KEYS(x),s,sz);
-		FMT_into_s(sz,",'lambda#%p:",VALS(x));
-		repr0(VALS(x),s,sz);
-	} else {
-		FMT_into_s(sz,"(err: %d members)",x->n);
+char* repr_xlambda(VP keys,VP vals,char* s,size_t sz) {
+	VP k, item, kk, vv;
+	int i, kn;
+	FMT_into_s(sz,"{",0);
+	if (keys) {
+		k=keys; kn=LEN(KEYS(k));
+		for(i=0; i<kn; i++) {
+			kk=apply_simple_(KEYS(k),i);
+			vv=apply_simple_(VALS(k),i);
+			if(!IS_EXC(kk) && !IS_EXC(vv)) {
+				if (kk==TTPARENT) {
+					FMT_into_s(sz,"'parent is \"%p\";",vv);
+				} else {
+					repr0(kk,s,sz);
+					FMT_into_s(sz," is ",0);
+					repr0(vv,s,sz);
+					FMT_into_s(sz,"; ",0);
+				}
+				xfree(kk); xfree(vv);
+			}
+		}
 	}
-	FMT_into_s(sz,"]",x);
+	if (vals && LIST(vals) && LEN(vals)==2) {
+		k=ELl(vals,0); kn=LEN(k);
+		for(i=0; i<kn; i++) {
+			item=ELl(k,i);
+			if(TAGGED(item,Ti(lambda))) s=repr_xlambda(NULL,item,s,sz);
+			else repr0(item,s,sz);
+			if(kn-1!=i) FMT_into_s(sz,",",0);
+		};
+	}
+	FMT_into_s(sz,"}",0);
+	return s;
+}
+char* repr_x(VP x,char* s,size_t sz) {
+	FMT_into_s(sz,"'context#%p",x);
+	if(x->n==2) {
+		s=repr_xlambda(KEYS(x), VALS(x),s,sz);
+	}
 	return s;
 }
 #include "repr.h"
@@ -1207,10 +1234,12 @@ VP pin(VP x, VP y) {
 	else if(x->tag != 0)
 		newt=x->tag;
 	if (newt) {
-		if (newt==Ti(Pointer) && IS_j(y)) {
-			x=(VP)AS_j(y,0);
-			xref(x);
-			return x;
+		if (newt==Ti(Pointer)) {
+			VP ret;
+			if (sizeof(void*)==4 && IS_i(y)) { ret=(VP)AS_i(y,0); }
+			if (sizeof(void*)==8 && IS_j(y)) { ret=(VP)AS_j(y,0); }
+			xref(ret);
+			return ret;
 		}
 		ARG_MUTATING(y);
 		y->tag=newt;
@@ -1290,13 +1319,15 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 	// if(!LIST(code))return EXC(Tt(code),"expr code not list",code,xarg);
 	if(SIMPLE(code) || !LIST(code)) return code;
 	char ch; int i; 
-	VP left=xarg,item=0,oldleft=0;
+	VP left=xarg,item=0,oldleft=0,old_cur_ctx;
 	tag_t tag, tcom=Ti(comment), texc=Ti(exception), texpr=Ti(expr), tlam=Ti(lambda), 
 				tlistexpr=Ti(listexpr), tname=Ti(name), toper=Ti(oper),
 				traw=Ti(raw), tstr=Ti(string), tws=Ti(ws);
 
 	VP curframe,restore_left=0,stack=xl0();
 	int stack_i=-1, start_i=0, use_existing_item=0, use_existing_left=0, return_expr_type=0, return_to=0;
+
+	old_cur_ctx=XXL_CUR_CTX;
 	stack=append(stack,xln(9,parent,code,xarg,yarg,left,XI0,xi(-1),xi(0),left));
 
 	#define MAYBE_RETURN(value) \
@@ -1326,6 +1357,9 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			XRAY_log("applyexpr actually returning\n"); \
 			if(value==NULL) { XRAY_log("null\n"); } \
 			else XRAY_emit(value); \
+			if(old_cur_ctx!=NULL) { \
+				XRAY_log("restoring XXL_CUR_CTX = %p\n", old_cur_ctx); XXL_CUR_CTX=old_cur_ctx; \
+			} \
 			return value; \
 		} 
 
@@ -1362,7 +1396,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 		use_existing_left=0;
 	}
 
-	XXL_CUR_CTX=parent;
+	XXL_CUR_CTX=parent; XRAY_log("setting XXL_CUR_CTX=%p\n",parent);
 
 	if(SIMPLE(code)) { MAYBE_RETURN(code); }
 
@@ -1500,9 +1534,11 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 
 		XRAY_log("before evalexpr (left,item):\n");
 		XRAY_emit(left); XRAY_emit(item);
-		if(left!=NULL) XRAY_log("left arity=%d\n", _arity(left)); 
 
-		if(left!=0 && (left->tag==Ti(proj) || (CALLABLE(left) && _arity(left)>0))) {
+		int leftarity=-1;
+		if(left!=NULL) {leftarity=_arity(left); XRAY_log("left arity=%d\n", leftarity);}
+
+		if(left!=0 && (left->tag==Ti(proj) || (CALLABLE(left) && leftarity>0))) {
 			// they seem to be trying to call a unary function, though it's on the
 			// left - NB. possibly shady
 			//
@@ -1523,16 +1559,28 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			oldleft=left;
 			if(left->tag==Ti(proj)) left=apply2(ELl(left,1),ELl(left,0),item);
 			else left=apply(left,item);
+			XRAY_log("applyexpr considering new apply(left,item)\n");
+			XRAY_emit(left);
 			xfree(oldleft);
 			if(left == 0 || left->tag==texc) { MAYBE_RETURN(left); }
 			if(IS_p(left)) {
 				p=AS_p(left,0);
-				if(yarg && p.type==2 && (!p.left || !p.right)) {
+				if(yarg && p.type==2 && (!p.left || !p.right)) { 
+					// NB this is the code that handles cases like 2 {*} 5 this should
+					// happen only for simple expressions.. i feel like we need to have a
+					// different class of expressions that work differently; slash
+					// commands, implicit x, and here implicit y all work in that space,
+					// but are confusing out of it. these are our versions of
+					// compositions in k i suppose.
 					oldleft=left;
 					XRAY_log("applyexpr consuming y:\n");XRAY_emit(yarg);
 					left=apply(oldleft,yarg);
 					xfree(oldleft);
+				} else {
+					XRAY_log("applyexpr no y to consume\n");
 				}
+			} else {
+				XRAY_log("applyexpr non-projection but callable left\n");
 			}
 		} else if(!CALLABLE(item) && (left!=0 && !CALLABLE(left))) {
 			XRAY_log("applyexpr adopting left =\n");XRAY_emit(item);
@@ -2642,7 +2690,7 @@ VP set(VP ctx,VP key,VP val) {
 	}
 	ARG_MUTATING(ctx);
 	VP dest=KEYS(ctx);
-	XRAY_log("set assigning in\n");XRAY_emit(dest);
+	XRAY_log("set assigning in %p\n", dest);XRAY_emit(dest);
 	// dest=assign(dest,key,clone(val));
 	// if(!IS_x(val)) val=clone(val);
 	// val=clone(val);
@@ -3365,14 +3413,12 @@ VP parsestrlit(VP x) {
 }
 VP parseloopoper(VP x) {
 	XRAY_log("parseloopoper\n");XRAY_emit(x);
-	VP st=xfroms(":|>"), en=xfroms("#|:\\/<>~',.");
-	st->tag=Ti(raw); en->tag=Ti(raw);
-	VP tmp1=matchany(x,st); 
-	// XRAY_log("parseloopoper tmp1\n");XRAY_emit(tmp1);
-	if (!_any(tmp1)) { xfree(st); xfree(en); xfree(tmp1); return x; }
-	VP tmp2=matchany(x,en);
-	// XRAY_log("parseloopoper tmp2\n");XRAY_emit(tmp2);
-	if (!_any(tmp2)) { xfree(st); xfree(en); xfree(tmp1); xfree(tmp2); return x; }
+	VP op=xfroms("~!@#$%^&*|:\\/<>~',."); op->tag=Ti(raw);
+	VP tmp2=matchany(x,op);
+	if (!_any(tmp2)) { xfree(op); xfree(tmp2); return x; }
+	VP cat=xfroms(":|>"); cat->tag=Ti(raw); 
+	VP tmp1=matchany(x,cat); 
+	if (!_any(tmp1)) { xfree(cat); xfree(op); xfree(tmp2); xfree(tmp1); return x; }
 	VP tmp3=xln(2,tmp2,tmp1);
 	VP join=consecutivejoin(XB1,tmp3);
 	if(_any(join)) {
@@ -3382,20 +3428,13 @@ VP parseloopoper(VP x) {
 			idx = append(idx, plus(idx,XI1));
 			rep = list2vec(apply(x, idx));
 			rep->tag = Ti(oper);
-			// XRAY_log("parsemulticharoper"); XRAY_emit(rep);
 			x=splice(x, idx, rep);
 			diff += 1 - idx->n;
-			xfree(idx);
-			xfree(rep);
+			xfree(idx); xfree(rep);
 		}
 		xfree(indices); 
 	}
-	xfree(st); 
-	xfree(en); 
-	xfree(tmp1); 
-	xfree(tmp2); 
-	xfree(tmp3); 
-	xfree(join);
+	xfree(cat); xfree(op); xfree(tmp1); xfree(tmp2); xfree(tmp3); xfree(join);
 	return x;
 }
 VP parseallexprs(VP tree) {
@@ -3411,9 +3450,7 @@ VP parseallexprs(VP tree) {
 	return tree;
 }
 VP resolve(VP ctx,VP ptree) {
-	XRAY_LVL++;
 	XRAY_log("resolve\n");XRAY_emit(ctx);XRAY_emit(ptree);
-	XRAY_LVL--;
 	if(!IS_x(ctx) && !LIST(ptree)) return EXC(Tt(type),"resolve",ctx,ptree);
 	VP name; int i, tname=Ti(name), traw=Ti(raw);
 	for(i=0;i <LEN(ptree); i++) {

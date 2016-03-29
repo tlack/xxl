@@ -45,6 +45,11 @@ b=evalstrin("'fun is {'addermaker is {10+x as 'a; {x+a as '.a}}; x addermaker as
 ASSERT(_equal(b,xin(5,111,113,116,120,125)),"test adder nested");
 xfree(a);
 
+a=mkworkspace();
+b=evalstrin("'emit is {y}; 'route is {1 emit 'z as 'a;a}; []route=('z)",a);
+ASSERT(_equal(b,XI1),"test bug regarding dyadic functions and applyexpr not resetting xxl_cur_ctx which screws up apply()");
+xfree(a);
+
 // TODO scope tests
 // TODO self tests
 
