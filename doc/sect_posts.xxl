@@ -187,6 +187,15 @@ TomatoXXL is just an example. A rotten one. (pause) You can define your class's
 post behavior to do anything, such as save to disk, perform a database
 operation, or connect to a remote service and send some data.
 
+Likewise, what your class decides to use as a key is entirely up to you.
+
+## Authentication and permissions
+
+At this time, XXL does not give you any ability to control access to your
+services, whether or not they work within the `post` framework. You'll have to
+do it yourself. That said, consulting a user list represented as an in-memory
+table would be very easy.
+
 ## Netsplit
 
 Please dear godess when writing networked code consider and explain the
@@ -211,7 +220,18 @@ When writing your class-driven `post` behaviors, XXL's behavior with `'remote`
 doesn't come into play unless you explicitly consider it in your callback
 function.
 
-Think about this before decidin.
+Think about this before deciding whether or not your class-based behavior
+considers `'remote`.
+
+## Using a post id after you have one
+
+Post IDs can be used on the left side of `get` to retrieve their contents.
+
+```
+'url#"http://txpo.st/somereallylongurl" get
+```
+
+`get` also uses the class name of `x` to determine what it does.
 
 ## `txpo.st`'s odd rules
 
@@ -219,34 +239,51 @@ Here's why the default `txpost` service works the way it does. Other services
 or your own creations may vary.
 
 * Encouraging longer post keys means less chance of unintentional collisions.
+It also allows the service consumer a convenient, logical time to think about
+issues of uniqueness and immutability.
 
-* 16 bytes (128 bits) is a lot of space for diffusion.
+* 16 bytes (128 bits) is a lot of space for diffusion, though truthfully our
+current key filtering scheme greatly limits the actual size of this space.
+Similarly we'd have better input for a hash function if we were to hash the
+keys to their results. 
 
 * GUIDs/UUIDs are often 128 bits, so there's a convenience aspect there.
+IPv6 too.
 
 * XXL supports vectors of 128bit integers, so you can quickly create and
 manipulate keys. (Though our public server removes characters from keys
 that do not fall into a very restrictive set)
 
 * Keys that are less than 16 bytes are known to be special, or not placed
-there by a public post. This means we can consider them to be a "secure 
-enclave" of the key space. They are trusted.
+there by a public post. This means we can consider them to be a "restricted
+enclave" of the key space. They are trusted because the system rules 
+allowed them to be created.
 
 * Having this secure enclave allows public clients to post requests (with
-long keys) that the server responds to with some pre-decided short key.
-For instance, the client might post something requesting an account balance
-update, and request the response be posted in a certain key it randomly
-selected. If that key is less than 16 characters, it may seek out its
-existance later, and know that only the server could have placed it there.
+long keys) that the server responds to with some pre-decided short key.  For
+instance, the client might post something requesting an account balance update
+#142, and request the response be posted in a certain key it randomly selected,
+such as #82519. If that key is less than 16 characters it may seek out its
+contents later, and know that only the server could have placed them there.
 This allows for a secure message queue-type arrangement.
 
 * The contents of a key (URL) never change, so you can safely deploy software
 this way. If you've screened it once (and you should!) you don't need to
-consider that post id again.
+consider that post id again. Consider the usefulness!
+
+```
+'leftpad is {" "take(x len-y),x}; "hello" leftpad 7
+// whoa dude, we GOTTA ABSTRACT THAT! 
+'url#"http://txpost/leftpad-v0" get as 'leftpad; "hello" leftpad 7
+```
+
+I am doing everything I can to make this tutorial feel dated as soon as
+possible.
 
 * Because the contents of a key never change, it is incredibly easy to cache.
-This means lower performance overhead on an ongoing basis. CloudFront or 
-CloudFlare could do a great job caching txpost.
+This means lower performance overhead on an ongoing basis to support serving
+the contents of existing keys. CloudFront or CloudFlare could do a great job
+caching txpost.
 
 * Not allowing periods means fewer "is this a filename?" confusions on the
 client side. In particular, I am always afraid of web browsers trying to
@@ -254,6 +291,26 @@ extension-guess with plugins and extensions, though I'm not aware of it really
 happening in practice. Furthermore, services implementing the txpost protocol
 have less to worry about from people planting semantically meaningful URLs,
 such as robots.txt.
+
+## Abuse me not
+
+Right now we are operating `txpo.st` in a very permissive open way and not
+filtering or screening uploads. Let's keep it that way by you not being an ass.
+
+## Searching public posts
+
+In the distant future, `txpost` may support the ability to search for public
+posts, but *only* by specifying the first 32 characters of the key. We will
+then find all keys whose names begin with the 32 characters you supplied.
+
+This interesting feature implies that:
+
+1. Anything posted by the server or public clients is private by default. Thus,
+responses to requests cannot be iterated, unless you iterate the entire key
+space (which at 256 bits can take some time).
+
+2. Public key search could be used as a way for services to discover each other
+and communicate without as much centralized control.
 
 ## Inspiration
 
