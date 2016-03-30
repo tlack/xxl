@@ -125,8 +125,8 @@
 #define NUM_val(x) NUM_item(x,0)
 
 #define DICT_find(x,y) ({ int i = _find1(KEYS(x),y); VP result=(i==-1?((VP)NULL):ELl(VALS(x),i)); result; })
-#define DICT_key_n(x,y) (ELl(KEYS(x),y))
-#define DICT_val_n(x,y) (ELl(VALS(x),y))
+#define DICT_key_n(x,y) (ELl(KEYS(x),y))                // get key #y from x; doesnt allocate so dont xfree
+#define DICT_val_n(x,y) (ELl(VALS(x),y))                // get value #y from x; see above
 
 #define TABLE_col(x,n) (ELl(VALS(x),n))
 #define TABLE_col_num_for_name(x,n) (_find1(KEYS(x),n))
