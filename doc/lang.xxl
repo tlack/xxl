@@ -126,6 +126,28 @@ $'table,                               // make dict into start of new table
 ['t:'binary,
  'name:"extract",
  'op:"",
+ 'desc:"extract items from x according to y; returns a list: [extracted_items_dict, rest_of_x]
+ 
+Use this to unpack data structures into identified parts and \"everything else\".
+
+y should be a vector of names (tags). These symbols will be used to create a dictionary of the
+matching values of x.
+
+You can use the special tag ' to ignore the corresponding item of x.
+
+Extract returns a list. The dictionary formed by the items you extracted is the
+first element.  The rest of x, after the last extracted value, is returned as
+the second item in the result. 
+",
+ 'ex:[
+		["\"http://txpo.st/test/a/b\" split \"/\" extract ('method,','host)",
+		 [['method:"http:", 'host:"txpo.st"], ["test","a","b"]]
+		]
+	]
+],
+['t:'binary,
+ 'name:"extractas",
+ 'op:"",
  'desc:"extract items from x according to y; creates locals and returns the rest of x.
  
 y should be a vector of names (tags). these symbols will be created in the local context and
