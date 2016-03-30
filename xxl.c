@@ -916,12 +916,12 @@ VP extract(const VP data,const VP parts) {
 	if(!LIST(data)) { return EXC(Tt(type),"extract x must be list",data,parts); }
 	if(XXL_CUR_CTX==NULL) return EXC(Tt(context),"extract could not find current context",data,parts);
 	int pl=MIN(LEN(data),LEN(parts)), i=0, cursor=0;
-	VP px, dx;
+	VP acc=xd0(), px, dx;
 	for(i=0; i<pl; i++) {
 		px=apply_simple_(parts,i);
 		if(IS_t(px) && AS_t(px,0)!=TINULL) {
 			dx=LIST_item(data,cursor);
-			set_is(px,dx);
+			acc=assign(acc,px,dx);
 		}
 		xfree(px); // apply_simple_ always allocs
 		cursor++;
@@ -930,7 +930,19 @@ VP extract(const VP data,const VP parts) {
 	for(; cursor<LEN(data); cursor++) {
 		res=append(res,LIST_item(data, cursor));
 	}
-	return res;
+	return xln(2,acc,res);
+}
+VP extractas(const VP data,const VP parts) {
+	VP res=extract(data,parts);
+	VP vals=ELl(res,0), rest=ELl(res,1);
+	int kl=LEN(KEYS(vals)), i;
+	for(i=0; i<kl; i++) {
+		set_is(DICT_key_n(vals,i),DICT_val_n(vals,i));
+	}
+	xref(rest);
+	xfree(vals);
+	xfree(res);
+	return rest;
 }
 VP first(const VP x) {
 	VP i,r;

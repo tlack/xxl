@@ -47,7 +47,8 @@ VP evalinwith(VP tree,VP ctx,VP xarg);
 VP evalstrin(const char* str,VP ctx);
 VP evalstrinwith(const char* str, VP ctx, VP xarg);
 VP except(VP x,VP y);
-VP extract(VP x,VP y);
+VP extract(VP data,VP parts);
+VP extractas(VP data,VP parts);
 int _find1(VP x,VP y);
 int _findbuf(const VP x,const buf_t y); // returns index or -1 on not found
 VP first(VP x);
