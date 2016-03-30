@@ -92,57 +92,6 @@ VP httpget(VP url) {
 #endif
 #endif
 
-#ifdef STDLIBSHAREDLIB
-VP sharedlibget(VP fn) {
-	if(!IS_c(fn)) return EXC(Tt(type),".sharedlib.get requires a filename string as argument",fn,0);
-	char* fns=sfromxA(fn);
-	void* fp;
-	fp=dlopen(fns,RTLD_LAZY);
-	free(fns);
-	if(fp==NULL) { 
-		printf("dlerr:%s\n",dlerror());
-		return EXC(Tt(open),".sharedlib.get could not open shared library",fn,0);
-	}
-	void* indexp;
-	indexp=dlsym(fp,"XXL_INDEX");
-	if(indexp==NULL) return EXC(Tt(read),".sharedlib.get could not read index",fn,0);
-	// XRAY_LVL=10;
-	struct xxl_index_t* idx;
-	idx=indexp;
-	int i=0;
-	VP contents=xd0();
-	while(idx[i].arity != 0) {
-		void* itemp;
-		itemp=dlsym(fp,idx[i].implfunc);
-		if(itemp==NULL) { xfree(contents); return EXC(Tt(read),".sharedlib.get could not read item",fn,0); }
-		if(idx[i].arity == 1)
-			contents=assign(contents,xt(_tagnums(idx[0].name)),x1(itemp));
-		else
-			contents=assign(contents,xt(_tagnums(idx[0].name)),x2(itemp));
-		idx++;
-	}
-	XRAY_emit(contents);
-	return contents;
-}
-VP sharedlibset(VP fn,VP funcs) {
-	return EXC(Tt(nyi),".sharedlib.set nyi",fn,funcs);
-}
-#endif 
-
-#ifdef STDLIBSHELL 
-VP shellget(VP cmd) {
-	if(!IS_c(cmd)) return EXC(Tt(type),".shell.get requires command arg as a string",cmd,0);
-	char buf[IOBLOCKSZ]={0}; size_t r; char* cmds=sfromxA(cmd); 
-	FILE* fp=popen(cmds,"r");
-	if(fp==NULL) return free(cmds),EXC(Tt(popen),"popen failed",cmd,0);
-	VP acc=xcsz(IOBLOCKSZ);
-	while(fgets(buf,IOBLOCKSZ-1,fp)!=NULL)
-		appendbuf(acc,(buf_t)buf,strlen(buf));
-	fclose(fp);
-	return free(cmds),acc;
-}
-#endif
-
 #ifdef STDLIBMBOX
 #ifdef THREAD
 #define IS_mbox(mb) (LIST(mb) && mb->tag==Ti(mbox))
@@ -252,6 +201,58 @@ VP mboxwatch(VP mbox,VP callback) {
 }
 #endif
 #endif 
+
+
+#ifdef STDLIBSHAREDLIB
+VP sharedlibget(VP fn) {
+	if(!IS_c(fn)) return EXC(Tt(type),".sharedlib.get requires a filename string as argument",fn,0);
+	char* fns=sfromxA(fn);
+	void* fp;
+	fp=dlopen(fns,RTLD_LAZY);
+	free(fns);
+	if(fp==NULL) { 
+		printf("dlerr:%s\n",dlerror());
+		return EXC(Tt(open),".sharedlib.get could not open shared library",fn,0);
+	}
+	void* indexp;
+	indexp=dlsym(fp,"XXL_INDEX");
+	if(indexp==NULL) return EXC(Tt(read),".sharedlib.get could not read index",fn,0);
+	// XRAY_LVL=10;
+	struct xxl_index_t* idx;
+	idx=indexp;
+	int i=0;
+	VP contents=xd0();
+	while(idx[i].arity != 0) {
+		void* itemp;
+		itemp=dlsym(fp,idx[i].implfunc);
+		if(itemp==NULL) { xfree(contents); return EXC(Tt(read),".sharedlib.get could not read item",fn,0); }
+		if(idx[i].arity == 1)
+			contents=assign(contents,xt(_tagnums(idx[0].name)),x1(itemp));
+		else
+			contents=assign(contents,xt(_tagnums(idx[0].name)),x2(itemp));
+		idx++;
+	}
+	XRAY_emit(contents);
+	return contents;
+}
+VP sharedlibset(VP fn,VP funcs) {
+	return EXC(Tt(nyi),".sharedlib.set nyi",fn,funcs);
+}
+#endif 
+
+#ifdef STDLIBSHELL 
+VP shellget(VP cmd) {
+	if(!IS_c(cmd)) return EXC(Tt(type),".shell.get requires command arg as a string",cmd,0);
+	char buf[IOBLOCKSZ]={0}; size_t r; char* cmds=sfromxA(cmd); 
+	FILE* fp=popen(cmds,"r");
+	if(fp==NULL) return free(cmds),EXC(Tt(popen),"popen failed",cmd,0);
+	VP acc=xcsz(IOBLOCKSZ);
+	while(fgets(buf,IOBLOCKSZ-1,fp)!=NULL)
+		appendbuf(acc,(buf_t)buf,strlen(buf));
+	fclose(fp);
+	return free(cmds),acc;
+}
+#endif
 
 #ifdef STDLIBXD
 VP xdget0_(VP fname,int fd) {
