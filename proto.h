@@ -38,6 +38,7 @@ VP each(VP obj,VP fun);
 VP eachboth(VP obj,VP fun);
 VP eachleft(VP obj,VP fun);
 VP eachright(VP obj,VP fun);
+VP enlist(VP x);
 VP entag(VP x,VP t);
 VP entags(VP x,const char* name);
 static inline int _equalm(const VP x,const int xi,const VP y,const int yi);

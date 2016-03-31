@@ -906,6 +906,11 @@ VP drop(const VP x,const VP y) {
 	VARY_EL(y, 0, ({ return drop_(x,_x); }), typerr);
 	return res;
 }
+VP enlist(const VP x) { // if x isnt a list, return [x]. else x.
+	if(x==0) return xl0();
+	if(LIST(x))return x;
+	return xln(1,x);
+}
 VP except(const VP x,const VP y) {
 	XRAY_log("except\n");XRAY_emit(x);XRAY_emit(y);
 	return wherepred_(x,y,1);

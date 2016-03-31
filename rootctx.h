@@ -15,6 +15,7 @@
 	res=assign(res,Tt(count),x1(&count));
 	res=assign(res,Tt(clone),x1(&clone));
 	res=assign(res,Tt(curtail),x1(&curtail));
+	res=assign(res,Tt(enlist),x1(&enlist));
 	res=assign(res,Tt(info),x1(&info));
 	res=assign(res,Tt(first),x1(first));
 	res=assign(res,Tt(flat),x1(&flatten));
@@ -30,6 +31,7 @@
 	res=assign(res,Tt(parse),x1(&parse));
 	res=assign(res,Tt(repr),x1(&repr));
 	res=assign(res,Tt(rev),x1(&reverse));
+	res=assign(res,Tt(same),x1(&identity));
 	#ifdef DEBUG
 	res=assign(res,Tt(selftest),x1(&selftest));
 	#endif

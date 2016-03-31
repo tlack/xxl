@@ -3,6 +3,18 @@
 // GENERAL LISTS & LIST MANIPULATION -----------------------------------
 
 ['t:'unary,
+ 'name:"enlist",
+ 'op:"",
+ 'desc:"if x is not a list, returns [x]. otherwise x.
+
+This differs from the `list` verb, because `list` will split
+up a scalar into a list, which is a very different use case,
+though the name we use is similar.
+",
+ 'cat:'lists,
+]
+$'table,                               // make dict into start of new table
+['t:'unary,
  'name:"flat",
  'op:"",
  'cat:'lists,
@@ -140,10 +152,11 @@ first element.  The rest of x, after the last extracted value, is returned as
 the second item in the result. 
 ",
  'ex:[
-		["\"http://txpo.st/test/a/b\" split \"/\" extract ('method,','host)",
-		 [['method:"http:", 'host:"txpo.st"], ["test","a","b"]]
-		]
-	]
+  ["\"http://txpo.st/test/a/b\" split \"/\" extract ('method,','host)",
+   [['method:"http:", 'host:"txpo.st"], ["test","a","b"]]
+  ]
+ ],
+ 'cat:'values
 ],
 ['t:'binary,
  'name:"extractas",
@@ -161,8 +174,9 @@ The rest of x, after the last extracted value, is returned as the result. This l
 compose extract with other verbs to build out elaborate parsers.
 ",
  'ex:[
-		["\"http://txpo.st/test/a/b\" split \"/\" extract ('method,','host)",["test","a","b"]]
-	]
+  ["\"http://txpo.st/test/a/b\" split \"/\" extract ('method,','host)",["test","a","b"]]
+ ],
+ 'cat:'values
 ],
 ['t:'binary, 
  'name:"del", 
