@@ -686,6 +686,7 @@ VP behead(const VP x) {
 VP from(const VP x,const VP y) {
 	if(IS_EXC(x) || IS_EXC(y)) return EXC(Tt(value),"from can't use those values",x,y);
 	if(CALLABLE(x)) return wherepred_(y,x,0);
+	if(CALLABLE(y) && _arity(y)==2 && LIST(x) && LEN(x)==2) return apply2(y,ELl(x,0),ELl(x,1));
 	return apply(y,x);
 }
 VP catenate_table(VP table, VP row) {
