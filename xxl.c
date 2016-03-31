@@ -2127,12 +2127,11 @@ VP scan(const VP x,const VP y) {       // returns a list if result vals dont mat
 	for(i=0; i<xn; i++) {
 		next=apply_simple_(x,i);
 		VP tmp=apply(y,last);              // TODO scan should use apply2
+		if(tmp!=last) xfree(last);
 		last=apply(tmp,next);
+		if(last!=next) xfree(next);
 		XRAY_log("scan step\n");XRAY_emit(last);
 		acc=append(acc,last);
-		xfree(last);
-		xfree(tmp);
-		xfree(next);
 	}
 	XRAY_log("scan result\n");XRAY_emit(acc);
 	return acc;
