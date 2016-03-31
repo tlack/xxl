@@ -1232,7 +1232,12 @@ VP make_table(VP keys,VP vals) {
 VP make_many(VP x,VP y) {
 	int i, j;
 	int xn=LEN(x), yn=LEN(y);
-	VP chars=xfroms("it"), funs=xln(2,proj(2,&base,0,xi(10)),proj(2,&make,0,Tt(tag)));
+	VP chars=xfroms("ist"); 
+	VP funs=xln(3,
+		proj(2,&base,0,xi(10)),
+		proj(1,&str,0,0),
+		proj(2,&make,0,Tt(tag))
+	);
 	VP d=dict(chars,funs), row=xlsz(yn);
 	for(j=0; j<yn; j++) {
 		char ch=AS_c(y,j);
