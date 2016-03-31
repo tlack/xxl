@@ -1010,7 +1010,7 @@ VP join(const VP list,const VP sep) {
 }
 VP last(const VP x) {
 	VP i,r;
-	if(DICT(x)) { return EXC(Tt(type),"dict first/head doesn't make sense",x,0); }
+	if(DICT(x)) { return EXC(Tt(type),"dict last/tail doesn't make sense",x,0); }
 	if(LIST(x)) { return xref(ELl(x,LEN(x)-1)); }
 	else return apply_simple_(x,_len(x)-1);
 }
