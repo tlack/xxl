@@ -1009,7 +1009,10 @@ VP join(const VP list,const VP sep) {
 	return acc;
 }
 VP last(const VP x) {
-	return take_(x,-1);
+	VP i,r;
+	if(DICT(x)) { return EXC(Tt(type),"dict first/head doesn't make sense",x,0); }
+	if(LIST(x)) { return xref(ELl(x,LEN(x)-1)); }
+	else return apply_simple_(x,_len(x)-1);
 }
 static inline VP list(const VP x) { // convert x to general list
 	if(x==0) return xl0();
