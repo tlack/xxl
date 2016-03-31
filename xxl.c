@@ -921,17 +921,21 @@ VP extract(const VP data,const VP parts) {
 	if(!LIST(data)) { return EXC(Tt(type),"extract x must be list",data,parts); }
 	if(XXL_CUR_CTX==NULL) return EXC(Tt(context),"extract could not find current context",data,parts);
 	int pl=MIN(LEN(data),LEN(parts)), i=0, cursor=0;
+	VP res=xlsz(5); // arb
 	VP acc=xd0(), px, dx;
 	for(i=0; i<pl; i++) {
 		px=apply_simple_(parts,i);
-		if(IS_t(px) && AS_t(px,0)!=TINULL) {
-			dx=LIST_item(data,cursor);
+		dx=LIST_item(data,cursor);
+		if(CALLABLE(px)) {
+			VP tmp=apply(px,dx);
+			res=append(res,tmp);
+			xfree(tmp);
+		} else if(IS_t(px) && AS_t(px,0)!=TINULL) {
 			acc=assign(acc,px,dx);
 		}
 		xfree(px); // apply_simple_ always allocs
 		cursor++;
 	}
-	VP res=xlsz(5); // arb
 	for(; cursor<LEN(data); cursor++) {
 		res=append(res,LIST_item(data, cursor));
 	}
