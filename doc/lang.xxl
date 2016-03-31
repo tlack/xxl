@@ -25,7 +25,6 @@ $'table,                               // make dict into start of new table
  ],
  'seealso:[],
  'cat:'lists]
-$'table,                               // make dict into start of new table
 ['t:'unary, 'name:"list", 
  'desc:"Converts vector x into a general list", 
  'ex:[ ["(1,2,3)vec",[1,2,3]] ], 
