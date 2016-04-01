@@ -493,7 +493,7 @@ Wetly birthed by @tlack <lackner@gmail.com> at [Building.co](http://building.co)
 
 Many thanks to co-conspirators:
 
-Eblin Lopez @ Classics.com, Mike Martinez @ Classics.com, Khalife Nizar @ Ironhack for
+Eblin Lopez @ classic.com, Mike Martinez @ classic.com, Khalife Nizar @ Ironhack for
 keeping me grounded and much input. :)
 
 
