@@ -3622,49 +3622,29 @@ void thr_wait() {
 
 void test_basics() {
 	printf("TEST_BASICS\n");
-	#include "test-basics.h"
+	#include "tests/test-basics.h"
 }
 void test_ctx() {
-	VP ctx,tmp1,tmp2;
-
-	printf("TEST_CTX\n");
-	#include "test-ctx.h"	
-}
-void test_deal_speed() {
-	int i;
-	VP a,b,c;
-	// xprofile_start();
-	
-	a=xi(1024 * 1024);b=xi(100);
-	TIME(100, ({ c=deal(a,b); xfree(c); }));
+	VP ctx,tmp1,tmp2; printf("TEST_CTX\n");
+	#include "tests/test-ctx.h"	
 }
 void test_eval() {
-	#include"test-eval.h"
-}
-void test_json() {
-	VP mask, jsrc, res; char str[256]={0};
-	strncpy(str,"[[\"abc\",5,[\"def\"],6,[7,[8,9]]]]",256);
-	jsrc=split(xfroms(str),xc0());
-	XRAY_emit(jsrc);
-	res=nest(jsrc,xln(2,xfroms("["),xfroms("]")));
-	XRAY_emit(res);
-	XRAY_emit(each(res, x1(&repr)));
-	exit(1);
+	#include"tests/test-eval.h"
 }
 void test_logic() {
 	VP a,b,c;
 	printf("TEST_LOGIC\n");
-	#include"test-logic.h"
+	#include"tests/test-logic.h"
 }
 void test_nest() {
 	VP a,b,c;
 	printf("TEST_NEST\n");
-	#include"test-nest.h"
+	#include"tests/test-nest.h"
 	xfree(a);xfree(b);xfree(c);
 }
 void test_semantics() {
 	printf("TEST_SEMANTICS\n");
-	#include"test-semantics.h"
+	#include"tests/test-semantics.h"
 }
 VP evalinwith(VP tree,VP ctx,VP xarg) {
 	if(!tree || !ctx) return NULL;
