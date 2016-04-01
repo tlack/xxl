@@ -910,6 +910,13 @@ VP drop(const VP x,const VP y) {
 	VARY_EL(y, 0, ({ return drop_(x,_x); }), typerr);
 	return res;
 }
+VP emit(const VP x,const VP tag) {
+	VP pair=xln(2,tag,x);
+	XRAY_emit(pair);
+	show(pair);
+	xfree(pair);
+	return x;
+}
 VP enlist(const VP x) { // if x isnt a list, return [x]. else x.
 	if(x==0) return xl0();
 	if(LIST(x))return x;

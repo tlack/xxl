@@ -103,6 +103,7 @@
 	res=assign(res,Tt(eachb),x2(&eachboth));
 	res=assign(res,Tt(eachl),x2(&eachleft));
 	res=assign(res,Tt(eachr),x2(&eachright));
+	res=assign(res,Tt(emit),x2(&emit));
 	res=assign(res,Tt(evalin),x2(&evalin));
 	res=assign(res,Tt(except),x2(&except));
 	res=assign(res,Tt(extract),x2(&extract));

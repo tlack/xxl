@@ -438,7 +438,19 @@ Make many returns a list of values.",
  program is being run) and return that value so it can be used in the rest of
  the expression. The formatting used is the same as the repr verb.",
  'ex:[ ["1,2,3 show","1,2,3"] ],
- 'seealso:["repr","str"],
+ 'seealso:["emit", "repr","str"],
+ 'cat:'misc],
+['t:'binary,
+ 'name:"emit",
+ 'op:"",
+ 'desc:"Debug x tagged with identifier y. This performs `[y,x] show`, but also injects your 
+ value into the Xray debugging system, which allows you to trace the flow of your program.
+ 
+ Use this to understand what your program is doing.
+ 
+ emit returns x, so you can safely use it in the middle of expressions, much like `show`.",
+ 'ex:[ ["16,18,22 emit 'ages", (16,18,22) ] ],
+ 'seealso:["show"],
  'cat:'misc],
 ['t:'unary, 
  'name:"type", 

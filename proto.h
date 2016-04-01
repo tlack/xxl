@@ -38,6 +38,7 @@ VP each(VP obj,VP fun);
 VP eachboth(VP obj,VP fun);
 VP eachleft(VP obj,VP fun);
 VP eachright(VP obj,VP fun);
+VP emit(VP obj,VP tag);
 VP enlist(VP x);
 VP entag(VP x,VP t);
 VP entags(VP x,const char* name);

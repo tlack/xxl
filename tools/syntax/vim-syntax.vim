@@ -78,6 +78,7 @@ syn keyword xxlPrim deal
 syn keyword xxlPrim deep
 syn keyword xxlPrim eachl
 syn keyword xxlPrim eachr
+syn keyword xxlPrim emit
 syn keyword xxlPrim evalin
 syn keyword xxlPrim exhaust
 syn keyword xxlPrim get
