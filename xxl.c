@@ -220,11 +220,13 @@ char* repr_xlambda(VP keys,VP vals,char* s,size_t sz) {
 			}
 		}
 	}
-	if (vals && LIST(vals) && LEN(vals)==2) {
-		k=ELl(vals,0); kn=LEN(k);
+	if (vals && LIST(vals)) {
+		k=vals; kn=LEN(k);
 		for(i=0; i<kn; i++) {
 			item=ELl(k,i);
-			if(TAGGED(item,Ti(lambda))) s=repr_xlambda(NULL,item,s,sz);
+			if(item==NULL) continue;
+			if(LIST(item) && TAGGED(item,Ti(lambda))) 
+				s=repr_xlambda(NULL,item,s,sz);
 			else repr0(item,s,sz);
 			if(kn-1!=i) FMT_into_s(sz,",",0);
 		};
@@ -3325,8 +3327,7 @@ VP mkworkspace() {
 	VP root,res,locals;
 	snprintf(name,sizeof(name),"wk%-6d", rand());
 	res=xxsz(2); res->n=2;
-	ELl(res,0)=rootctx(); 
-	ELl(res,1)=xl0();
+	ELl(res,0)=rootctx(); ELl(res,1)=xl0();
 	return res;
 }
 VP eval(VP code) {
@@ -3697,8 +3698,8 @@ VP load0(VP fn,VP ctx) {
 	if(IS_EXC(parsetree)) return parsetree;
 	free(str);
 	append(ctx,parsetree);
-	xfree(parsetree);
 	VP res=applyctx(ctx,NULL,NULL);
+	xfree(parsetree);
 	return res;
 }
 VP import(VP fn,VP ctx) {              // get, parse, eval in isolated ctx; return last result
