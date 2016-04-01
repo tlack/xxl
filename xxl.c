@@ -1247,7 +1247,7 @@ VP make_many(VP x,VP y) {
 		if(ch=='_') continue;
 		VP tmpc=xc(ch); VP fun=DICT_find(d,tmpc); xfree(tmpc);
 		VP item=apply_simple_(x,j);
-		if(fun!=NULL) { VP newitem=apply(fun, item); xfree(item); item=newitem; }
+		if(fun!=NULL) { VP newitem=apply(fun, item); if (newitem!=item) { xfree(item); item=newitem; } }
 		row=append(row,item); xfree(item);
 	}
 	return row;
