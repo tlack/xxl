@@ -1659,7 +1659,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 						XRAY_in();
 						oldleft=left;
 						left=xref(apply(item,left));
-						xfree(oldleft); 
+						if (left != oldleft) xfree(oldleft); 
 						XRAY_out();
 					}
 					// if(IS_EXC(left)) { MAYBE_RETURN(left); }
