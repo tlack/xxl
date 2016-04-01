@@ -883,7 +883,7 @@ VP dict(VP x,VP y) {
 		return d;
 	}
 }
-VP drop_(VP x,int i) {
+VP drop_(const VP x,int i) {
 	VP res;
 	int st, end;
 	if(!x || x->n==0) return x;
@@ -894,6 +894,9 @@ VP drop_(VP x,int i) {
 	// XRAY_emit(info(res));
 	if(end-st > 0) {
 		appendbuf(res, ELi(x,st), end-st);
+		if(LIST(x)) for(i=st;i<end;i++) {
+			xref(ELl(res,i));
+		}
 	}
 	XRAY_log("drop_ result\n"); XRAY_emit(res);
 	return res;
