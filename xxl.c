@@ -2393,6 +2393,31 @@ VP lesser(VP x,VP y) {
 	xfree(v0);xfree(v1);
 	return acc;
 }
+VP list2vec(VP obj) {
+	// Collapses lists that contain all the same kind of vector items into a
+	// single vector [1,2,3i] = (1,2,3i) Will NOT collapse [1,(2,3),4] - use
+	// flatten for this. (See note below for non-flat first items) The original
+	// list will be returned when rejected for massaging.
+	int i, t=0;
+	VP acc,this;
+	// XRAY_log("list2vec\n"); XRAY_emit(obj);
+	if(!LIST(obj)) return obj;
+	if(!obj->n) return obj;
+	acc=ALLOC_LIKE(ELl(obj,0));
+	if(obj->tag!=0) { t=obj->tag; acc->tag=obj->tag; }
+	FOR(0,obj->n,({ this=ELl(obj,_i);
+		// bomb out on non-scalar items or items of a different type than the first
+		// note: we allow the first item to be nonscalar to handle the list2vec
+		// [(0,1)] case - this is technically not a scalar first item, but clearly
+		// it should return (0,1)
+		if((t != 0 && this->tag != t)
+			 || (_i > 0 && !SCALAR(this)) || this->t != acc->t){xfree(acc); return obj; } 
+		else append(acc,this); 
+		if(this->tag) t=this->tag;
+	}));
+	XRAY_log("list2vec result\n"); XRAY_emit(acc); 
+	return acc;
+}
 VP min(VP x) { 
 	if (!SIMPLE(x)) return over(x, x2(&and));
 	if(x->n==1)return x;
@@ -3300,37 +3325,13 @@ VP mkworkspace() {
 	VP root,res,locals;
 	snprintf(name,sizeof(name),"wk%-6d", rand());
 	res=xxsz(2); res->n=2;
-	ELl(res,0)=rootctx(); ELl(res,1)=xl0();
+	ELl(res,0)=rootctx(); 
+	ELl(res,1)=xl0();
 	return res;
 }
 VP eval(VP code) {
 	ASSERT(1, "eval nyi");
 	return NULL;
-}
-VP list2vec(VP obj) {
-	// Collapses lists that contain all the same kind of vector items into a
-	// single vector [1,2,3i] = (1,2,3i) Will NOT collapse [1,(2,3),4] - use
-	// flatten for this. (See note below for non-flat first items) The original
-	// list will be returned when rejected for massaging.
-	int i, t=0;
-	VP acc,this;
-	// XRAY_log("list2vec\n"); XRAY_emit(obj);
-	if(!LIST(obj)) return obj;
-	if(!obj->n) return obj;
-	acc=ALLOC_LIKE(ELl(obj,0));
-	if(obj->tag!=0) { t=obj->tag; acc->tag=obj->tag; }
-	FOR(0,obj->n,({ this=ELl(obj,_i);
-		// bomb out on non-scalar items or items of a different type than the first
-		// note: we allow the first item to be nonscalar to handle the list2vec
-		// [(0,1)] case - this is technically not a scalar first item, but clearly
-		// it should return (0,1)
-		if((t != 0 && this->tag != t)
-			 || (_i > 0 && !SCALAR(this)) || this->t != acc->t){xfree(acc); return obj; } 
-		else append(acc,this); 
-		if(this->tag) t=this->tag;
-	}));
-	XRAY_log("list2vec result\n"); XRAY_emit(acc); 
-	return acc;
 }
 VP labelitems(VP label,VP items) {
 	VP res;char* labelbuf=sfromxA(label);
