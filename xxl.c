@@ -2027,8 +2027,8 @@ VP each(const VP obj,const VP fun) {
 		if (!acc) acc=xalloc(SCALAR(res) ? res->t : 0,obj->n); 
 		else if (!LIST(acc) && res->t != acc->t) acc = xl(acc);
 		// XRAY_log("each tmp (rc=%d)\n",tmp->rc);XRAY_emit(tmp);
-		append(acc,res);
-		xfree(tmp);
+		append(acc,res); xfree(tmp);
+		if(res!=tmp) xfree(res);
 	}
 	// XRAY_log("each returning\n");XRAY_emit(acc);
 	return acc;
