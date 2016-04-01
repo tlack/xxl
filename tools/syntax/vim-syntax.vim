@@ -31,6 +31,7 @@ syn keyword xxlPrim split
 syn keyword xxlPrim join
 syn keyword xxlPrim take
 syn keyword xxlPrim drop
+syn keyword xxlPrim enlist
 syn keyword xxlPrim except
 syn keyword xxlPrim flat
 syn keyword xxlPrim case
@@ -93,6 +94,7 @@ syn keyword xxlPrim or
 syn keyword xxlPrim orelse
 syn keyword xxlPrim over
 syn keyword xxlPrim range
+syn keyword xxlPrim ravel
 syn keyword xxlPrim recurse
 syn keyword xxlPrim rot
 syn keyword xxlPrim scan
