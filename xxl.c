@@ -3731,7 +3731,7 @@ VP selftest(VP dummy) {
 void init_thread_locals() {
 	XXL_SYS=xd0();
 	XXL_SYS=assign(XXL_SYS,Tt(ver),xfroms(XXL_VER));
-	XXL_SYS=assign(XXL_SYS,Tt(srcpath),xfroms(XXL_SRCPATH));
+	XXL_SYS=assign(XXL_SYS,Tt(src),xfroms(XXL_SRC));
 	XXL_SYS=assign(XXL_SYS,Tt(compobj),xfroms(XXL_COMPILEOBJ));
 	XXL_SYS=assign(XXL_SYS,Tt(compshared),xfroms(XXL_COMPILESHARED));
 	XXL_SYS=assign(XXL_SYS,Tt(buildobj),xfroms(XXL_BUILDOBJ));

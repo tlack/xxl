@@ -50,7 +50,7 @@ if which rlwrap >/dev/null; then
 	RUN="rlwrap $RUN"
 fi
 
-SRCPATH=`pwd`
+SRC=`pwd`
 COMPILE="$CC $DEFS $WARN $LIBS $ARCH $STDLIB "
 COMPILEOBJ="$COMPILE -c "
 COMPILESHARED="$COMPILE -fPIC -shared "
@@ -70,7 +70,7 @@ if [ "x$BUILDH" = "xyes" ]; then
 fi
 
 echo "" > compile.h
-echo "#define XXL_SRCPATH \"$SRCPATH/\"" >> compile.h
+echo "#define XXL_SRC \"$SRC/\"" >> compile.h
 echo "#define XXL_COMPILEOBJ \"$COMPILEOBJ\"" >> compile.h
 echo "#define XXL_COMPILESHARED \"$COMPILESHARED\"" >> compile.h
 echo "#define XXL_BUILDOBJ \"$BUILDOBJ\"" >> compile.h
