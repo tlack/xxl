@@ -476,16 +476,9 @@ I'm considering renaming XXL to `tx`, so if you see some mixing of names here
 and there, please be patient with me as I consider this change. Input
 appreciated!
 
-## Disclaimer
+## Contact, Community, Chat
 
-No warranty. Trademarks right of their respective owners. 
-
-This project is not related in any way to the interesting [XL project by
-Dinechin et al](http://xlr.sourceforge.net/).
-
-## License
-
-BSD-L (3 clause)
+Visit with the XXL crew and many other smart folks on #kq and #xxl on Freenode IRC.
 
 ## Credits
 
@@ -496,4 +489,13 @@ Many thanks to co-conspirators:
 Eblin Lopez @ classic.com, Mike Martinez @ classic.com, Khalife Nizar @ Ironhack for
 keeping me grounded and much input. :)
 
+## Disclaimer
 
+No warranty. Trademarks right of their respective owners. 
+
+This project is not related in any way to the interesting [XL project by
+Dinechin et al](http://xlr.sourceforge.net/).
+
+## License
+
+BSD-L (3 clause)
