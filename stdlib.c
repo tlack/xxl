@@ -5,6 +5,12 @@
 #include "accessors.h"
 #include "vary.h"
 
+#ifdef STDLIBFILE
+#ifndef GLOB_NO_H
+#include <glob.h>
+#endif
+#endif
+
 #ifdef STDLIBSHAREDLIB
 #include <dlfcn.h>
 #endif
@@ -54,6 +60,29 @@ VP fileget(VP fn) {
 	} while (r==IOBLOCKSZ);
 	close(fd);
 	return acc;
+}
+int filelserr(const char* path, int eerrno) {
+	return 0;
+}
+VP filels(VP path) {
+	VP p=path;
+	if(!IS_c(p)) p=filepath(p);
+	if(!IS_c(p)) return EXC(Tt(type),"File.ls path must be string or pathlist",path,0);
+	#ifdef GLOB_NO_H
+	return EXC(Tt(nyi),"File.ls requires glob.h",path,0);
+	#endif
+	char* str=sfromxA(p);
+	glob_t results;
+	glob(str, 0, filelserr, &results);
+	VP res=xlsz(5); //arb
+	int i;
+	for(i=0; i<results.gl_pathc; i++)  {
+		VP tmp=xfroms(results.gl_pathv[i]);
+		show(tmp);
+		res=append(res,tmp);
+	}
+	globfree(&results);
+	return res;
 }
 VP filepath(VP pathlist) {
 	if(IS_c(pathlist)) return pathlist;
@@ -293,6 +322,7 @@ VP xdset0_(VP fname,int fd, const VP data) {
 		int i=0, dn=LEN(data);
 		for(i=0; i<dn; i++) xdset0_(fname,fd,LIST_item(data,i));
 	} else write(fd,BUF(data),data->sz);
+	return NULL;
 }
 VP xdset(const VP data,const VP fn) {
 	VP fname=fn;

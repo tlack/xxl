@@ -174,6 +174,7 @@ VP filebasename(VP fn);
 VP filedirname(VP fn);
 VP filecwd(VP dummy);
 VP fileget(VP fn);
+VP filels(VP path);
 VP filepath(VP pathlist);
 VP fileset(VP str,VP fn);
 #endif

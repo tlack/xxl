@@ -142,6 +142,7 @@
 	d=assign(d,Tt(cwd),x1(&filecwd));
 	d=assign(d,Tt(dirname),x1(&filedirname));
 	d=assign(d,Tt(get),x1(&fileget));
+	d=assign(d,Tt(ls),x1(&filels));
 	d=assign(d,Tt(path),x1(&filepath));
 	d=assign(d,Tt(set),x2(&fileset));
 	res=assign(res,Tt(File),d);
