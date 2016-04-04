@@ -105,18 +105,18 @@ Voila!
 Here's some useful info, but no real docs yet.
 
 * [Groceries tutorial](
-https://github.com/tlack/xxl/blob/master/doc/groceries.xxl)
-- a short tutorial written for non-programmers.
+https://github.com/tlack/xxl/blob/master/doc/groceries.xxl) - a short tutorial 
+written for non-programmers.
 
-* [Mailboxes soliloquy](https://github.com/tlack/xxl/blob/master/doc/sect_mbox.xxl).
-Mailboxes are like a message queue and allow your program to use multiple threads.
+* [Mailboxes
+	soliloquy](https://github.com/tlack/xxl/blob/master/doc/sect_mbox.xxl). Mailboxes are 
+	like a message queue and allow your program to use multiple threads.
 
-* [Posts](https://github.com/tlack/xxl/blob/master/doc/sect_posts.xxl) are a general
-concept for sharing data between XXL and the outside world. Work in progress!
+* [Posts](https://github.com/tlack/xxl/blob/master/doc/sect_posts.xxl) are a general concept 
+for sharing data between XXL and the outside world. Work in progress!
 
 * [List of verbs](
-https://github.com/tlack/xxl/blob/master/doc/lang.xxl)
-- List of verbs, represented as an XXL table
+https://github.com/tlack/xxl/blob/master/doc/lang.xxl) in XXL, represented as an XXL table
 
 * [Working with files](https://github.com/tlack/xxl/blob/master/doc/sect_files.xxl)
 
