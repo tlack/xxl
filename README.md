@@ -100,9 +100,29 @@ we call XXL's `flat` verb, which removes a level of nesting on a general list (a
 
 Voila!
 
-## More examples
+## Docs
 
-This inchoate document is no excuse for real documentation, which is coming soon.
+Here's some useful info, but no real docs yet.
+
+* [Groceries tutorial](
+https://github.com/tlack/xxl/blob/master/doc/groceries.xxl)
+- a short tutorial written for non-programmers.
+
+* [Mailboxes soliloquy](https://github.com/tlack/xxl/blob/master/doc/sect_mbox.xxl).
+Mailboxes are like a message queue and allow your program to use multiple threads.
+
+* [Posts](https://github.com/tlack/xxl/blob/master/doc/sect_posts.xxl) are a general
+concept for sharing data between XXL and the outside world. Work in progress!
+
+* [List of verbs](
+https://github.com/tlack/xxl/blob/master/doc/lang.xxl)
+- List of verbs, represented as an XXL table
+
+* [Working with files](https://github.com/tlack/xxl/blob/master/doc/sect_files.xxl)
+
+* [Notes about logic](https://github.com/tlack/xxl/blob/master/doc/sect_logic.xxl)
+
+* [Implementation notes](https://github.com/tlack/xxl/blob/master/doc/implementation.md)
 
 See the various tests for more examples. In particular, you may appreciate
 `test-logic.h`, and `test-semantics.h`.
@@ -231,7 +251,8 @@ the `show` statement in the lambda. A `y` variable is available inside the
 callback to maintain state; it starts as [] and it set to whatever your
 function returns.
 
-See `doc/sect_mbox.xxl` for more.
+See [`doc/sect_mbox.xxl`](https://github.com/tlack/xxl/blob/master/doc/sect_mbox.xxl)
+for more.
 
 ### Tables
 
@@ -317,7 +338,7 @@ Still no joins, many rough edges, untested performance.
 - Vector-oriented and convenient manipulation on primitive values. For instance,
   `1,2,3 * (4,5,6)` is perfectly legal and returns 4,10,18. This is a huge time saver
 	and eliminates many loops. It's also pretty fast, which somewhat makes up for the
-	dangerously slow interpreter.
+	dangerously slow interpreter. 
 
 - Diverse integer type options, including 128bit octaword (`1 make 'octa`). At
 	this time we don't display the int type when displaying the representation of
@@ -332,7 +353,8 @@ Still no joins, many rough edges, untested performance.
 	This is because modifications to contexts' data items are not locked or synchronized,
 	So chaos will surely ensue if you modify global data from threads. Thus, the mailbox
 	acts as both a safe communication mechanism for threads, and a way to discourage global
-	state mutation.
+	state mutation. See [`doc/sect_mbox.xxl`](https://github.com/tlack/xxl/blob/master/doc/sect_mbox.xxl)
+	for more.
 
 - Built in simple networking. Client-speaks-first protocols are a snap to implement.
   World's easiest echo server: `[8888,""]Net.bind{"Echo: ",x}`. Net.bind creates one

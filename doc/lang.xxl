@@ -1,3 +1,6 @@
+// This is an XXL table that contains information about most of the predefined
+// verbs. 
+
 'lists,'values,'logic,'math,'misc,'stdlib as 'categories;
 
 // GENERAL LISTS & LIST MANIPULATION -----------------------------------

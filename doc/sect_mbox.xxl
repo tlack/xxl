@@ -1,9 +1,12 @@
 "
+Mailbox Soliloquy
+=================
+
 XXL uses a system called mailboxes to allow multiple threads to communicate.
 
 Mailboxes are similar to the concept of processes in Erlang but don't have to
 involve a running thread. XXL mailboxes are just a data structure which are
-convenient to use with threads.
+convenient to use with threads, and some verbs to manipulate them.
 
 You might think of them as the underpinnings of a simple message queue.
 

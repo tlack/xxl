@@ -1,3 +1,7 @@
+// This tutorial is meant to be presented as a slide show, so you're looking at
+// blocks of text (in """.."""), and then blocks of code (in { .. }). You
+// should follow along with the code samples in your own copy of the
+// interpreter.
 [
 """
 Note: This tutorial is aimed at someone who is not yet adept at programming.
