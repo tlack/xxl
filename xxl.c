@@ -868,8 +868,11 @@ VP dict(VP x,VP y) {
 	} else {
 		if(x->n > 1 && LIST_of_lists(y)) return make_table(x,y);
 		if(x->n > 1 && x->n != y->n) return EXC(Tt(value),"can't create dict from unlike vectors",x,y);
+		if(LIST(x) && LIST(y) && LEN(x)==0 && LEN(y)==0) { 
+			XRAY_log("dict empty dict\n"); 
+			return xdn(2,x,y);
+		}
 		VP d=xd0();
-		if(LEN(x)==0 && LEN(y)==0) { KEYS(d)=xl0(); VALS(d)=xl0(); return d; }
 		if(LIKELY(SCALAR(x))) {
 			d=assign(d,DISCLOSE(x),DISCLOSE(y));
 		} else {
@@ -1315,7 +1318,9 @@ VP pin(VP x, VP y) {
 int _len(VP x) {
 	int n = LEN(x);
 	if(TABLE(x)) n=TABLE_nrows(x);
-	if(DICT(x)) n=LEN(KEYS(x));
+	if(DICT(x)) { 
+		n=KEYS(x) ? LEN(KEYS(x)) : 0;
+	}
 	return n;
 }
 VP len(VP x) {
@@ -1341,8 +1346,8 @@ VP info(VP x) {
 	res=assign(res,Tt(baseptr),xj((long long)BUF(x)));
 	res=assign(res,Tt(dataptr),xj((long long)BUF(x)));
 	if(DICT(x)) {
-		res=assign(res,Tt(keyinfo),info(KEYS(x)));
-		res=assign(res,Tt(valinfo),info(VALS(x)));
+		if(KEYS(x)) res=assign(res,Tt(keyinfo),info(KEYS(x)));
+		if(VALS(x)) res=assign(res,Tt(valinfo),info(VALS(x)));
 	}
 	if(TABLE(x)) {
 		res=assign(res,Tt(keyinfo),info(KEYS(x)));
@@ -3157,9 +3162,9 @@ VP nest(VP x,VP y) {
 	XRAY_log("nest where\n");XRAY_emit(where);
 	if(where->n) {
 		rep=apply(x,where);
-		if(y->n >= 5 && LEN(LIST_item(y,4))!=0)
+		if(y->n >= 5 && LIST_item(y,4)!=0 && LEN(LIST_item(y,4))!=0)
 			rep=apply(LIST_item(y,4),rep);
-		if(y->n >= 4 && LEN(LIST_item(y,3))!=0)
+		if(y->n >= 4 && LIST_item(y,3)!=0 && LEN(LIST_item(y,3))!=0)
 			rep->tag=AS_t(LIST_item(y,3),0);
 		rep=list2vec(rep);
 		XRAY_log("nest rep\n");XRAY_emit(rep);
@@ -3354,8 +3359,10 @@ VP parseexpr(VP x) {
 	if(!LIST(x)) return x;               // confuzzling..
 	if(IS_c(ELl(x,0)) && AS_c(ELl(x,0),0)=='[') {
 		if(LEN(x)==2) return xl0();        // empty
-		if(LEN(x)==3 && IS_c(ELl(x,1)) && AS_c(ELl(x,1),0)==':')
+		if(LEN(x)==3 && IS_c(ELl(x,1)) && AS_c(ELl(x,1),0)==':') {
+			XRAY_log("creating new empty dict\n");
 			return dict(xl0(),xl0()); // empty
+		}
 		VP res=xlsz(LEN(x)+1);
 		res=append(res,xl0());
 		if(LEN(x)>2) {
@@ -3363,7 +3370,7 @@ VP parseexpr(VP x) {
 			for(i=1;i<LEN(x)-1;i++) 
 				res=append(res,ELl(x,i));
 		}
-		return res;
+		return entags(res,"listexpr");
 	}
 	if(LIST(x) && IS_c(ELl(x,0)) && 
 			((AS_c(ELl(x,0),0)=='(') ||
@@ -3510,7 +3517,7 @@ VP parseallexprs(VP tree) {
 	if(_find1(tree,paren)!=-1)
 		tree=nest(tree,xln(5, entags(paren,"raw"), entags(xfroms(")"),"raw"), xfroms(""), Tt(expr), x1(&parseexpr)));
 	if(_find1(tree,bracket)!=-1)
-		tree=nest(tree,xln(5, entags(bracket,"raw"), entags(xfroms("]"),"raw"), xfroms(""), Tt(listexpr), x1(&parseexpr)));
+		tree=nest(tree,xln(5, entags(bracket,"raw"), entags(xfroms("]"),"raw"), xfroms(""), NULL, x1(&parseexpr)));
 	return tree;
 }
 VP resolve(VP ctx,VP ptree) {
