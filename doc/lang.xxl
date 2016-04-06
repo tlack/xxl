@@ -9,12 +9,13 @@
  'name:"enlist",
  'op:"",
  'desc:"if x is not a list, returns [x]. otherwise x.
-
 This differs from the `list` verb, because `list` will split
 up a scalar into a list, which is a very different use case,
 though the name we use is similar.
 ",
- 'cat:'lists,
+ 'ex:[ ["1 enlist", (enlist 1)] ],
+ 'seealso:[],
+ 'cat:'lists
 ]
 $'table,                               // make dict into start of new table
 ['t:'unary,
@@ -27,7 +28,7 @@ $'table,                               // make dict into start of new table
   ["[1,2,[3,4,'z]] flat",[[1, 2], [3, 4, 'z]]]
  ],
  'seealso:[],
- 'cat:'lists]
+ 'cat:'lists],
 ['t:'unary, 'name:"list", 
  'desc:"Converts vector x into a general list", 
  'ex:[ ["(1,2,3)vec",[1,2,3]] ], 
@@ -460,7 +461,8 @@ Make many returns a list of values.",
  'desc:"Returns the type of x as a symbol", 
  'ex:[["[1,2.1,\"x\"]::type",['int, 'float, 'char]]], 
  'seealso:[],
- 'cat:'misc],
+ 'cat:'misc]
+,
 
 // STRINGS -------------------------------------------------------------
 
@@ -492,7 +494,6 @@ Make many returns a list of values.",
  ],
  'cat:'system
 ],
-// TODO
 ['t:'unary, 
  'name:"any", 
  'desc:"returns 1 if any of the elements of x are nonzero", 
@@ -508,6 +509,12 @@ Make many returns a list of values.",
  'desc:"Creates a copy of x", 
  'ex:[], 
  'cat:'misc],
+['t:'binary, 
+ 'name:"wide", 
+ 'desc:"invoke y for each item in list x, and then again for each member of the result that's a list, and so on. This is similar to a breadth first search of a tree. ", 
+ 'ex:[], 
+ 'cat:'misc],
+// TODO
 ['t:'unary, 'name:"selftest", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"tag", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"xray", 'desc:"", 'ex:[], 'cat:'misc],
@@ -523,6 +530,5 @@ Make many returns a list of values.",
 ['t:'binary, 'name:"loadin", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"nest", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"over", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"scan", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"wide", 'desc:"invoke y for each item in list x, and then again for each member of the result that's a list, and so on. This is similar to a breadth first search of a tree. ", 'ex:[], 'cat:'misc]
+['t:'binary, 'name:"scan", 'desc:"", 'ex:[], 'cat:'misc]
 as 'verbs
