@@ -511,6 +511,8 @@ Many thanks to co-conspirators:
 Eblin Lopez @ classic.com, Mike Martinez @ classic.com, Khalife Nizar @ Ironhack for
 keeping me grounded and much input. :)
 
+@joebo for help with Android.
+
 ## Disclaimer
 
 No warranty. Trademarks right of their respective owners. 
