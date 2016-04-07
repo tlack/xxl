@@ -82,6 +82,10 @@ char* repr_c(VP x,char* s,size_t sz) {
 	int i=0,n=x->n,ch;
 	FMT_into_s(sz,"\"",0);
 	for(;i<n;i++){
+        if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
+			FMT_into_s(sz,".. (%d omitted) ..", n-REPR_MAX_ITEMS);
+			break;
+		}
 		ch = AS_c(x,i);
 		if(ch=='"') FMT_into_s(sz,"\\\"", 0);
 		else if(ch=='\n') FMT_into_s(sz,"\\n", 0);
@@ -140,8 +144,7 @@ char* repr_l(VP x,char* s,size_t sz) {
 	for(i=0;i<n;i++){
 		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
 			FMT_into_s(sz,".. (%d omitted) ..", n-REPR_MAX_ITEMS);
-			i+=REPR_MAX_ITEMS;
-			continue;
+			break;
 		}
 		a = ELl(x,i);
 		if (a==NULL) FMT_into_s(sz,"null",0); 
@@ -2909,7 +2912,7 @@ VP pickapart(VP x,VP y) { // select items of x[0..n] where y[n]=1, and divide no
 	acc=xlsz(4);
 	VARY_EACHBOTHLIST(x,y,({
 		if(_y) {
-			if (!sub) sub=ALLOC_LIKE_SZ(x,x->n/2);
+			if (!sub) sub=ALLOC_LIKE_SZ(x,1);
 			sub=appendbuf(sub,(buf_t)&_x,1);
 		} else {
 			if (sub) { acc=append(acc,sub); xfree(sub); sub=NULL; }
