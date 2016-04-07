@@ -406,7 +406,7 @@ Make many returns a list of values.",
  Returns a vector of the integers between 0 and x-1. 
  
  These can be used as indices into another value or perhaps as a loop counter of sorts.", 
- 'ex:[["count 5",(0,1,2,3,4)]], 
+ 'ex:[["5 count",(0,1,2,3,4)]], 
  'cat:'misc],
 ['t:'binary, 'name:"from", 'op:".:",
  'desc:"
