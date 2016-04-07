@@ -1063,10 +1063,10 @@ VP show(const VP x) {
 	printf("%s\n",p); free(p);
 	return x;
 }
-VP splice(const VP x,const VP idx,const VP replace) {
+VP xsplice(const VP x,const VP idx,const VP replace) {
 	int i, first=AS_i(idx,0), last=first+idx->n;
 	VP acc;
-	XRAY_log("splice (%d len) %d..%d",x->n, first,last);XRAY_emit(x);XRAY_emit(idx);XRAY_emit(replace);
+	XRAY_log("xsplice (%d len) %d..%d",x->n, first,last);XRAY_emit(x);XRAY_emit(idx);XRAY_emit(replace);
 	if(first==0 && last==x->n) return replace;
 	acc=xl0();
 	if(LIST(x)) {
@@ -1079,10 +1079,10 @@ VP splice(const VP x,const VP idx,const VP replace) {
 		if(first > 0) acc=append(acc, take_(x, first));
 		acc=append(acc, replace);
 		if (last < x->n) acc=append(acc, drop_(x, last));
-		XRAY_log("splice calling over\n");XRAY_emit(acc);
+		XRAY_log("xsplice calling over\n");XRAY_emit(acc);
 		return over(acc, x2(&catenate));
 	}
-	XRAY_log("splice returning\n"); XRAY_emit(acc);
+	XRAY_log("xsplice returning\n"); XRAY_emit(acc);
 	return acc;
 }
 VP split(const VP x,const VP tok) {
@@ -3168,12 +3168,12 @@ VP nest(VP x,VP y) {
 			rep->tag=AS_t(LIST_item(y,3),0);
 		rep=list2vec(rep);
 		XRAY_log("nest rep\n");XRAY_emit(rep);
-		// splice is smart enough to merge like-type replace args into one
+		// xsplice is smart enough to merge like-type replace args into one
 		// like-typed vector. but that's not what we want here, because the
 		// thing we're inserting is a "child" of this position, so we want to
-		// ensure we always splice in a list
+		// ensure we always xsplice in a list
 		XRAY_log("nest x\n");
-		out=splice(split(x,xi0()),where,rep);
+		out=xsplice(split(x,xi0()),where,rep);
 		if(x->tag) out->tag=x->tag;
 		XRAY_log("nest out\n");XRAY_emit(out);
 		if(!LIST(out)) out=xl(out);
@@ -3276,7 +3276,7 @@ VP matchexec(VP obj,VP pats) {
 				xfree(objelem);
 				if(LIST(res2) && res2->n == 0) continue;
 				XRAY_log("matchexec after apply, len=%d\n", res2->n); XRAY_emit(res2);
-				obj=splice(obj,newidx,res2);
+				obj=xsplice(obj,newidx,res2);
 				diff += 1 - idx->n;
 				XRAY_log("matchexec new obj, diff=%d", diff); XRAY_emit(obj);
 				// xfree(res2);
@@ -3499,7 +3499,7 @@ VP parseloopoper(VP x) {
 			idx = append(idx, plus(idx,XI1));
 			rep = list2vec(apply(x, idx));
 			rep->tag = Ti(oper);
-			x=splice(x, idx, rep);
+			x=xsplice(x, idx, rep);
 			diff += 1 - idx->n;
 			xfree(idx); xfree(rep);
 		}
