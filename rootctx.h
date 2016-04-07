@@ -117,7 +117,9 @@
 	res=assign(res,Tt(join),x2(&join));
 	res=assign(res,Tt(loadin),x2(&loadin));
 	res=assign(res,Tt(make),x2(&make));
+	res=assign(res,Tt(match),x2(&matcheasy));
 	res=assign(res,Tt(nest),x2(&nest));
+	res=assign(res,Tt(part),x2(&pickapart));
 	res=assign(res,Tt(pick),x2(&pick));
 	res=assign(res,Tt(pin),x2(&pin));
 	res=assign(res,Tt(or),x2(&or));
