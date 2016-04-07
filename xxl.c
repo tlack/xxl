@@ -82,6 +82,10 @@ char* repr_c(VP x,char* s,size_t sz) {
 	int i=0,n=x->n,ch;
 	FMT_into_s(sz,"\"",0);
 	for(;i<n;i++){
+        if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
+			FMT_into_s(sz,".. (%d omitted) ..", n-REPR_MAX_ITEMS);
+			break;
+		}
 		ch = AS_c(x,i);
 		if(ch=='"') FMT_into_s(sz,"\\\"", 0);
 		else if(ch=='\n') FMT_into_s(sz,"\\n", 0);
@@ -140,7 +144,6 @@ char* repr_l(VP x,char* s,size_t sz) {
 	for(i=0;i<n;i++){
 		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
 			FMT_into_s(sz,".. (%d omitted) ..", n-REPR_MAX_ITEMS);
-			i+=REPR_MAX_ITEMS;
 			break;
 		}
 		a = ELl(x,i);
