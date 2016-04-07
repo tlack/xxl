@@ -2909,7 +2909,7 @@ VP pickapart(VP x,VP y) { // select items of x[0..n] where y[n]=1, and divide no
 	acc=xlsz(4);
 	VARY_EACHBOTHLIST(x,y,({
 		if(_y) {
-			if (!sub) sub=ALLOC_LIKE_SZ(x,x->n/2);
+			if (!sub) sub=ALLOC_LIKE_SZ(x,1);
 			sub=appendbuf(sub,(buf_t)&_x,1);
 		} else {
 			if (sub) { acc=append(acc,sub); xfree(sub); sub=NULL; }
