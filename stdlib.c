@@ -5,10 +5,8 @@
 #include "accessors.h"
 #include "vary.h"
 
-#ifdef STDLIBFILE
-#ifndef GLOB_NO_H
+#ifdef STDLIBGLOB
 #include <glob.h>
-#endif
 #endif
 
 #ifdef STDLIBSHAREDLIB
@@ -68,7 +66,7 @@ VP filels(VP path) {
 	VP p=path;
 	if(!IS_c(p)) p=filepath(p);
 	if(!IS_c(p)) return EXC(Tt(type),"File.ls path must be string or pathlist",path,0);
-	#ifdef GLOB_NO_H
+	#ifndef STDLIBGLOB
 	return EXC(Tt(nyi),"File.ls requires glob.h",path,0);
 	#endif
 	char* str=sfromxA(p);
@@ -78,7 +76,6 @@ VP filels(VP path) {
 	int i;
 	for(i=0; i<results.gl_pathc; i++)  {
 		VP tmp=xfroms(results.gl_pathv[i]);
-		show(tmp);
 		res=append(res,tmp);
 	}
 	globfree(&results);
