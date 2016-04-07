@@ -141,7 +141,7 @@ char* repr_l(VP x,char* s,size_t sz) {
 		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
 			FMT_into_s(sz,".. (%d omitted) ..", n-REPR_MAX_ITEMS);
 			i+=REPR_MAX_ITEMS;
-			continue;
+			break;
 		}
 		a = ELl(x,i);
 		if (a==NULL) FMT_into_s(sz,"null",0); 
