@@ -2908,7 +2908,6 @@ VP pickapart(VP x,VP y) { // select items of x[0..n] where y[n]=1, and divide no
 	XRAY_log("pickapart\n");XRAY_emit(x);XRAY_emit(y);
 	acc=xlsz(4);
 	VARY_EACHBOTHLIST(x,y,({
-		XRAY_log("%d ",_y);
 		if(_y) {
 			if (!sub) sub=ALLOC_LIKE_SZ(x,x->n/2);
 			sub=appendbuf(sub,(buf_t)&_x,1);
