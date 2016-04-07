@@ -388,6 +388,14 @@ VP xreplace(VP x,VP newval) {
 
 	return x;
 }
+VP xfillrange(VP x,int from,int to,int byteval) {
+	XRAY_log("xfillrange %d .. %d = %d\n", from, to, byteval);
+	ARG_MUTATING(x);
+	x=XREALLOC(x,to);
+	memset(BUF(x)+from, byteval, to-from+1);
+	x->n=MAX(x->n,to);
+	return x;
+}
 VP xfroms(const char* str) {  
 	// character vector from C string. allocates new VP. free it when done.
 	// NB. returned VP does not contain the final \0 
@@ -3182,6 +3190,20 @@ VP nest(VP x,VP y) {
 	} else { out = x; }
 	XRAY_log("nest returning\n"); XRAY_emit(out);
 	return out;
+}
+VP matchall(VP obj,VP pat) {
+  if(!SIMPLE(obj) || !SIMPLE(pat)) return matcheasy(obj,pat);
+  int objn=LEN(obj),patn=LEN(pat);
+  int i,j,k;
+  VP res=xbsz(objn);
+	xfillrange(res,0,objn,0);
+  for(i=0; i<objn; i++) {
+    for(j=0; j<patn; j++) {
+      if(i+j==objn || !_equalm(obj,i+j,pat,j)) break;
+      if(j==patn-1) xfillrange(res,i,i+j,1);
+    }
+  }
+	return res;
 }
 VP matchany(VP obj,VP pat) {
 	IF_EXC(!SIMPLE(obj) && !LIST(obj) && !TABLE(obj),Tt(type),"matchany only works with simple or list types in x",obj,pat);

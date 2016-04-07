@@ -84,7 +84,7 @@
 	res=assign(res,Tt(?),x2(&find1));
 	res=assign(res,Tt($),x2(&make));
 	res=assign(res,Tt(#),x2(&pin));
-	res=assign(res,Tt(~),x2(&matcheasy));
+	res=assign(res,Tt(~),x2(&matchall));
 	res=assign(res,xt(_tagnums(",")),x2(&catenate)); 
 	// named infix verbs:
 	res=assign(res,Tt(amend),x2(&amend));
@@ -117,7 +117,8 @@
 	res=assign(res,Tt(join),x2(&join));
 	res=assign(res,Tt(loadin),x2(&loadin));
 	res=assign(res,Tt(make),x2(&make));
-	res=assign(res,Tt(match),x2(&matcheasy));
+	res=assign(res,Tt(match),x2(&matchall));
+	res=assign(res,Tt(matchstart),x2(&matcheasy));
 	res=assign(res,Tt(nest),x2(&nest));
 	res=assign(res,Tt(part),x2(&pickapart));
 	res=assign(res,Tt(pick),x2(&pick));
