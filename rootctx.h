@@ -29,6 +29,7 @@
 	res=assign(res,Tt(neg),x1(&neg));
 	res=assign(res,Tt(not),x1(&not));
 	res=assign(res,Tt(parse),x1(&parse));
+	res=assign(res,Tt(ranges),x1(&partgroups));
 	res=assign(res,Tt(repr),x1(&repr));
 	res=assign(res,Tt(rev),x1(&reverse));
 	res=assign(res,Tt(same),x1(&identity));
