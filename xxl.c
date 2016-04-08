@@ -135,19 +135,23 @@ char* repr_a(VP x,char* s,size_t sz) { // table
 	return s;
 }
 char* repr_l(VP x,char* s,size_t sz) {
-	int i=0, n=x->n;VP a;
+	int i=0, xn=LEN(x); VP a;
+	int skipstart=-1, skipend=-1, skipn=0;
+	if(REPR_MAX_ITEMS && xn > REPR_MAX_ITEMS) {
+		skipn=xn-REPR_MAX_ITEMS; skipstart=(xn-skipn)/2; skipend=(xn+skipn)/2;
+		printf("%d %d %d\n", skipn, skipstart, skipend);
+	}
 	FMT_into_s(sz,"[",0);
-	for(i=0;i<n;i++){
-		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
-			FMT_into_s(sz,".. (%d omitted) ..", n-REPR_MAX_ITEMS);
-			i+=REPR_MAX_ITEMS;
+	for(i=0;i<xn;i++){
+		if(skipn && i==skipstart) {
+			FMT_into_s(sz,".. (%d omitted) ..", skipn);
+			i=skipend;
 			continue;
 		}
 		a = ELl(x,i);
-		if (a==NULL) FMT_into_s(sz,"null",0); 
+		if (a==NULL) FMT_into_s(sz,"null",0);  
 		else repr0(a,s,sz);
-		if(i!=n-1)
-			FMT_into_s(sz,", ",0);
+		if(i!=xn-1) FMT_into_s(sz,", ",0);
 	}
 	FMT_into_s(sz,"]",0);
 	return s;
