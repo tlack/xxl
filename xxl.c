@@ -79,9 +79,16 @@ VP repr(VP x) {
 	return xfroms(s);
 }
 char* repr_c(VP x,char* s,size_t sz) {
-	int i=0,n=x->n,ch;
+	int i=0,xn=x->n,ch,skipn=0,skipstart=-1,skipend=-1;
+	if(REPR_MAX_ITEMS && xn > REPR_MAX_ITEMS) {
+		skipn=xn-REPR_MAX_ITEMS; skipstart=(xn-skipn)/2; skipend=(xn+skipn)/2;
+	}
 	FMT_into_s(sz,"\"",0);
-	for(;i<n;i++){
+	for(;i<xn;i++){
+		if(skipn && i==skipstart) {
+			FMT_into_s(sz,".. (%d omitted) ..",skipn);
+			i=skipend; continue;
+		}
 		ch = AS_c(x,i);
 		if(ch=='"') FMT_into_s(sz,"\\\"", 0);
 		else if(ch=='\n') FMT_into_s(sz,"\\n", 0);
@@ -139,14 +146,12 @@ char* repr_l(VP x,char* s,size_t sz) {
 	int skipstart=-1, skipend=-1, skipn=0;
 	if(REPR_MAX_ITEMS && xn > REPR_MAX_ITEMS) {
 		skipn=xn-REPR_MAX_ITEMS; skipstart=(xn-skipn)/2; skipend=(xn+skipn)/2;
-		printf("%d %d %d\n", skipn, skipstart, skipend);
 	}
 	FMT_into_s(sz,"[",0);
 	for(i=0;i<xn;i++){
 		if(skipn && i==skipstart) {
 			FMT_into_s(sz,".. (%d omitted) ..", skipn);
-			i=skipend;
-			continue;
+			i=skipend; continue;
 		}
 		a = ELl(x,i);
 		if (a==NULL) FMT_into_s(sz,"null",0);  
