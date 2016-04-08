@@ -2350,8 +2350,8 @@ static inline VP divv(VP x,VP y) {
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"div argument should be simple types",x,0);
 	VARY_EACHBOTH(x,y,({
 		if(_y==0) return EXC(Tt(divzero),"divide by zero in mod",x,y);
-		if(LIKELY(x->t > y->t)) { _x=_y/_x; appendbuf(acc,(buf_t)&_x,1); }
-		else { _y=_y/_x; appendbuf(acc,(buf_t)&_y,1); }
+		if(LIKELY(x->t > y->t)) { _x=_x/_y; appendbuf(acc,(buf_t)&_x,1); }
+		else { _y=_x/_y; appendbuf(acc,(buf_t)&_y,1); }
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}),typerr);
 	IF_EXC(typerr > -1, Tt(type), "div arg wrong type", x, y);
