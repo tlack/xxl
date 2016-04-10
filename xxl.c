@@ -1632,7 +1632,7 @@ static inline VP applyexpr(VP parent, VP code, VP xarg, VP yarg) {
 			XRAY_log("applyexpr considering new apply(left,item)\n");
 			XRAY_emit(left);
 			xfree(oldleft);
-			if(left == 0 || left->tag==texc) { MAYBE_RETURN(left); }
+			if(left==NULL || left->tag==texc) { MAYBE_RETURN(left); }
 			if(IS_p(left)) {
 				p=AS_p(left,0);
 				if(yarg && p.type==2 && (!p.left || !p.right)) { 
@@ -1989,10 +1989,10 @@ VP deep(const VP obj,const VP f) {
 	return acc;
 }
 static inline VP eachdict(const VP obj,const VP fun) {
-	if(KEYS(obj)->n==0) return 0;
-	if(VALS(obj)->n==0) return 0;
+	if(KEYS(obj)->n==0) return NULL;
+	if(VALS(obj)->n==0) return NULL;
 	VP vals=each(VALS(obj),fun);
-	if(!vals) return 0;
+	if(!vals) return NULL;
 	return dict(KEYS(obj),vals);
 }
 static inline VP eachtable(const VP obj, const VP fun) {
@@ -2691,13 +2691,13 @@ VP callclass(const VP ctx,const VP verbname,const VP value) {
 	VP rootscope;
 	if(IS_x(ctx)) rootscope=KEYS(ctx);
 	else rootscope=ctx;
-	if(!DICT(rootscope)) return 0;
+	if(!DICT(rootscope)) return NULL;
 	VP tag=xt(value->tag);
 	VP res=apply(rootscope,tag); // need a fast-path dict lookup
 	xfree(tag);
-	if(res==NULL) return 0;
+	if(res==NULL) return NULL;
 	res=apply(res,verbname);
-	if(res==NULL) return 0;
+	if(res==NULL) return NULL;
 	return apply(res,value);
 }
 VP resolvekey(const VP x,const VP y,int checkparents) {
@@ -3227,7 +3227,7 @@ VP matcheasy(VP obj,VP pat) {
 	if(LIST(obj)) {
 		FOR(0,n,({ 
 			VP item = ELl(obj,_i);
-			if((pat->tag == 0 || pat->tag==item->tag) && _equal(item,pat)) 
+			if((pat->tag == 0 || pat->tag==item->tag) && _equal(item,pat))
 				EL(acc,CTYPE_b,_i)=1; }));
 	} else {
 		VARY_EACHLEFT(obj, pat, ({
@@ -3734,7 +3734,7 @@ VP selftest(VP dummy) {
 			XRAY_log("alloced = %llu, freed = %llu\n", MEM_ALLOC_SZ, MEM_FREED_SZ);
 		}
 	}
-	return 0;
+	return NULL;
 }
 void init_thread_locals() {
 	XXL_SYS=xd0();

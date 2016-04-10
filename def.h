@@ -154,7 +154,7 @@
 		VP verbtag=Tt(verb); \
 		VP tmp=callclass(ctx,verbtag,val); \
 		xfree(verbtag); \
-		if(tmp) return tmp; \
+		if(tmp!=NULL) return tmp; \
 	}
 
 #define BEST_NUM_FIT(val) ({ int t; \
