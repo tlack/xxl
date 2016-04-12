@@ -1,13 +1,15 @@
-[
-'lower    : "abcdefghijklmnopqrstuvwxyz",
-'upper    : "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-'alpha    : (upper,lower),
-'digit    : "0123456789",
-'alnum    : (alpha,digit),
-'fnsafe   : (alnum,"._-"),
-'urlsafe  : (alnum,".,-+!$*'()"),
-'xdigit   : (digit,"ABCDEFabcdef"),
-'space    : " \r\n\t",
-'blank    : " \t",
-]
+'lower   is "abcdefghijklmnopqrstuvwxyz";
+'upper   is "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+'alpha   is (upper,lower);
+'digit   is "0123456789";
+'alnum   is (alpha,digit);
+'fnsafe  is (alnum,"._-");
+'urlsafe is (alnum,".,-+!$*'()");
+'xdigit  is (digit,"ABCDEFabcdef");
+'space   is " \r\n\t";
+'blank   is " \t";
+
+['lower:lower, 'upper:upper, 'alpha:alpha, 'digit:digit,
+ 'xdigit: xdigit, 'alnum:alnum, 'fnsafe:fnsafe, 'urlsafe:urlsafe, 
+ 'space: space, 'blank:blank]
 
