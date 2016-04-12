@@ -75,6 +75,7 @@ char* reprA(VP x) {
 	return s;
 }
 VP repr(VP x) {
+	CLASS_dispatch(NULL, repr, x, NULL);
 	char* s = reprA(x);
 	return xfroms(s);
 }
@@ -636,17 +637,15 @@ inline VP assign(VP x,VP k,VP val) {
 			// and update it with xreplace
 			XRAY_log("assign uplevel\n",i);
 			VP newk=LIST_item(k,1), tmp=resolvekey(x,newk,1);
-			XRAY_emit(tmp);
-			if(!IS_EXC(tmp)) return xreplace(tmp,val);
-			else { return EXC(Tt(assign),"assign could not set uplevel",x,k); }
+			if(!IS_EXC(tmp)) { XRAY_log("assign uplevel found ctx\n"); XRAY_emit(tmp); return xreplace(tmp,val); }
+			else { XRAY_log("assign uplevel could not set\n"); return EXC(Tt(assign),"assign could not set uplevel",x,k); }
 		}
 		for(;i<k->n-1;i++) {
 			// XRAY_log("assign at depth %d\n",i);
 			ARG_MUTATING(x);
 			res=apply(res,ELl(k,i));
 			XRAY_emit(res);
-			if(UNLIKELY(IS_EXC(res)) || res->n==0)
-				return res;
+			if(UNLIKELY(IS_EXC(res)) || res->n==0) return res;
 		}
 		// XRAY_log("assign at depth setting\n");
 		assign(res,ELl(k,k->n-1),val);
@@ -683,10 +682,12 @@ static inline VP assigns(VP x,const char* key,VP val) {
 }
 VP behead(const VP x) {
 	// XRAY_log("behead\n");XRAY_emit(x);
+	CLASS_dispatch(NULL, behead, x, NULL);
 	return drop_(x,1);
 }
 VP from(const VP x,const VP y) {
 	if(IS_EXC(x) || IS_EXC(y)) return EXC(Tt(value),"from can't use those values",x,y);
+	CLASS_dispatch(NULL, from, y, x);
 	if(CALLABLE(x)) return wherepred_(y,x,0);
 	if(CALLABLE(y) && _arity(y)==2 && LIST(x) && LEN(x)==2) return apply2(y,ELl(x,0),ELl(x,1));
 	return apply(y,x);
@@ -795,6 +796,7 @@ VP catenate(VP x,VP y) {
 		res=ALLOC_LIKE_SZ(x, n);
 		appendbuf(res, BUF(x), x->n); appendbuf(res, BUF(y), y->n);
 	} else {
+		CLASS_dispatch(NULL, catenate, x, y);
 		XRAY_log("catenate3 - container as x, or unlike objects\n");
 		if(TABLE(x)) { return catenate_table(MUTATE_CLONE(x),y); }
 		if(DICT(x)) { return dict(MUTATE_CLONE(x),y); }
@@ -839,6 +841,7 @@ VP del_ctx(VP x,VP y) {
 VP del(VP x,VP y) {
 	XRAY_log("del\n");XRAY_emit(x);XRAY_emit(y);
 	if(IS_EXC(x) || IS_EXC(y)) return x;
+	CLASS_dispatch(NULL, del, x, y);
 	if(IS_d(x) && IS_t(y)) return del_dict(x,y);
 	if(IS_x(x) && IS_t(y)) return del_ctx(x,y);
 	if(IS_l(x) && NUM(y) && !IS_c(y)) return del_list_(x,NUM_val(y));
@@ -907,6 +910,7 @@ VP drop_(const VP x,int i) {
 	return res;
 }
 VP drop(const VP x,const VP y) {
+	CLASS_dispatch(NULL, drop, x, y);
 	VP res=0;
 	int typerr=-1;
 	// XRAY_log("drop args\n"); XRAY_emit(x); XRAY_emit(y);
@@ -929,6 +933,7 @@ VP enlist(const VP x) { // if x isnt a list, return [x]. else x.
 }
 VP except(const VP x,const VP y) {
 	XRAY_log("except\n");XRAY_emit(x);XRAY_emit(y);
+	CLASS_dispatch(NULL, except, x, y);
 	return wherepred_(x,y,1);
 }
 VP extract(const VP data,const VP parts) {
@@ -970,6 +975,7 @@ VP extractas(const VP data,const VP parts) {
 	return rest;
 }
 VP first(const VP x) {
+	CLASS_dispatch(NULL, first, x, NULL);
 	VP i,r;
 	if(DICT(x)) { return EXC(Tt(type),"dict first/head doesn't make sense",x,0); }
 	if(LIST(x)) { return xref(ELl(x,0)); }
@@ -1002,6 +1008,7 @@ VP flatten0(VP x, int cont) {
 	} else return xl0();
 }
 VP flatten(VP x) {
+	CLASS_dispatch(NULL, flat, x, NULL);
 	return flatten0(x, 1);
 }
 VP identity(VP x) {
@@ -1011,6 +1018,7 @@ VP join(const VP list,const VP sep) {
 	VP acc=NULL,x; int ln=LEN(list), i;
 	if(IS_EXC(list) || ln==0) return list;
 	if(SCALAR(list)) return apply_simple_(list,0);
+	CLASS_dispatch(NULL, join, list, sep);
 	for(i=0;i<ln-1;i++) {
 		x=apply_simple_(list,i);
 		if(!acc) acc=ALLOC_LIKE(x);
@@ -1024,6 +1032,7 @@ VP join(const VP list,const VP sep) {
 	return acc;
 }
 VP last(const VP x) {
+	CLASS_dispatch(NULL, last, x, NULL);
 	VP i,r;
 	if(DICT(x)) { return EXC(Tt(type),"dict last/tail doesn't make sense",x,0); }
 	if(LIST(x)) { return xref(ELl(x,LEN(x)-1)); }
@@ -1035,6 +1044,7 @@ static inline VP list(const VP x) { // convert x to general list
 	return split(x,xi0());
 }
 VP reverse(const VP x) {
+	CLASS_dispatch(NULL, reverse, x, NULL);
 	if(!(SIMPLE(x)||CONTAINER(x))) return EXC(Tt(type),"reverse arg must be simple or container",x,NULL);
 	int i,typerr=-1; VP acc=ALLOC_LIKE(x);
 	for(i=x->n-1;i>=0;i--) appendbuf(acc,ELi(x,i),1);
@@ -1088,6 +1098,8 @@ VP xsplice(const VP x,const VP idx,const VP replace) {
 VP split(const VP x,const VP tok) {
 	XRAY_log("split\n");XRAY_emit(x);XRAY_emit(tok);
 	int typerr=-1;
+	if(IS_EXC(x)) return x;
+	CLASS_dispatch(NULL, split, x, tok);
 	// special case for empty or null tok.. split vector into list
 	if(tok->n==0) {
 		VP tmp, tmp2;
@@ -1156,6 +1168,7 @@ VP take_(const VP x, const int i) {
 }
 VP take(const VP x, const VP y) {
 	int typerr=-1;
+	CLASS_dispatch(NULL, take, x, y);
 	size_t st, end; //TODO slice() support more than 32bit indices
 	XRAY_log("take args\n"); XRAY_emit(x); XRAY_emit(y);
 	IF_RET(!NUM(y) || !SCALAR(y), EXC(Tt(type),"take y arg must be single numeric",x,y));	
@@ -1273,7 +1286,6 @@ VP make(VP x, VP y) {
 	if(IS_t(y)) {
 		if(LEN(y)==0) typetag=TINULL;
 		else typetag=AS_t(y,0); 
-		if(LEN(x)==0) return make(xi(0),y);
 	} else typenum=y->t;
 	// convenience mode: ["123","abc","xyz"] $ "ist" -> [123,"abc",'xyz]
 	if(LIST(x) && IS_c(y)) return make_many(x,y);
@@ -1289,6 +1301,7 @@ VP make(VP x, VP y) {
 	if(res) return res;
 	if(typetag!=-1) {
 		ARG_MUTATING(x); x->tag=typetag;
+		CLASS_dispatch(NULL, make, x, NULL);
 	}
 	return x;
 }
@@ -1311,6 +1324,7 @@ VP pin(VP x, VP y) {
 		*/
 		ARG_MUTATING(y);
 		y->tag=newt;
+		CLASS_dispatch(NULL, make, y, NULL);
 		return y;
 	} else 
 		return EXC(Tt(type),"pin x arg should be tag name or tagged value",x,y);
@@ -1324,6 +1338,7 @@ int _len(VP x) {
 	return n;
 }
 VP len(VP x) {
+	CLASS_dispatch(NULL, len, x, NULL);
 	return xi(_len(x));
 }
 VP capacity(VP x) {
@@ -1333,6 +1348,7 @@ VP itemsz(VP x) {
 	return xi(x->itemsz);
 }
 VP info(VP x) {
+	CLASS_dispatch(NULL, info, x, NULL);
 	VP res; type_info_t t;
 	t=typeinfo(x->t);
 	res=xd0();
@@ -1807,6 +1823,7 @@ VP apply(VP x,VP y) {
 	VP res=NULL;int i=0,typerr=-1;
 	// XRAY_log("apply\n");XRAY_emit(x);XRAY_emit(y);
 	if(x==0 || x->tag==Ti(exception))return x;
+	CLASS_dispatch(NULL, apply, x, NULL);
 	if(IS_p(x)) { 
 		// if its dyadic
 		   // if we have one arg, add y, and call - return result
@@ -1930,6 +1947,7 @@ VP apply(VP x,VP y) {
 	return EXC(Tt(apply),"apply failure",x,y);
 }
 VP apply2(const VP f,const VP x,const VP y) {
+	CLASS_dispatch(NULL, apply2, x, y);
 	if(IS_2(f) && x && y)
 		return AS_2(f,0)(x,y);
 	else if(IS_x(f))
@@ -2210,6 +2228,7 @@ VP and(const VP x,const VP y) {
 	int typerr=-1;
 	VP acc;
 	XRAY_log("and\n"); XRAY_emit(x); XRAY_emit(y); // TODO and() and friends should handle type conversion better
+	CLASS_dispatch(NULL, and, x, y);
 	if(IS_EXC(x) || LEN(x)==0) return x; // NB. IS_EXC checks if x==NULL
 	if(IS_EXC(y) || LEN(y)==0) return y;
 	if(LIST(x) || LIST(y)) return EXC(Tt(nyi),"and on lists not yet implemented",x,y);
@@ -2489,6 +2508,7 @@ VP neg(VP x) {
 	int typerr=-1;
 	VP acc;
 	// XRAY_log("and\n"); XRAY_emit(x); XRAY_emit(y); // TODO and() and friends should handle type conversion better
+	CLASS_dispatch(NULL, neg, x, NULL);
 	acc=ALLOC_LIKE(x);
 	VARY_EACH(x,({ 
 		_x=-_x; appendbuf(acc,(buf_t)&_x,1);
@@ -2501,6 +2521,7 @@ VP not(VP x) {
 	int typerr=-1;
 	VP acc;
 	// XRAY_log("and\n"); XRAY_emit(x); XRAY_emit(y); // TODO and() and friends should handle type conversion better
+	CLASS_dispatch(NULL, not, x, NULL);
 	acc=ALLOC_LIKE(x);
 	VARY_EACH(x,({ 
 		_x=!_x; appendbuf(acc,(buf_t)&_x,1);
@@ -2513,6 +2534,7 @@ VP or(VP x,VP y) { // TODO most of these primitive functions have the same patte
 	int typerr=-1;
 	VP acc;
 	// XRAY_log("or\n"); XRAY_emit(x); XRAY_emit(y); // TODO or() and friends should handle type conversion better
+	CLASS_dispatch(NULL, or, x, y);
 	if(IS_EXC(x) || LEN(x)==0) return y;
 	if(IS_EXC(y) || LEN(y)==0) return x;
 	if(DICT(x) && DICT(y)) return unionn(x,y);
@@ -2537,6 +2559,7 @@ VP orelse(VP x,VP y) {
 VP plus(VP x,VP y) {
 	int typerr=-1;
 	// XRAY_log("plus\n");XRAY_emit(x);XRAY_emit(y);
+	CLASS_dispatch(NULL, plus, x, y);
 	IF_EXC(!SIMPLE(x) || !SIMPLE(y), Tt(type), "plus args should be simple types", x, y); 
 	VP acc=ALLOC_BEST(x,y);
 	VARY_EACHBOTH(x,y,({
@@ -2594,6 +2617,7 @@ static inline VP str2num(VP x) {
 }
 VP sum(VP x) {
 	XRAY_log("sum");XRAY_emit(x);
+	CLASS_dispatch(NULL, sum, x, NULL);
 	I128 val=0;int out,typerr=-1;
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"sum argument should be simple types",x,0);
 	VARY_EACH(x,({ val += _x; }),typerr);
@@ -2608,6 +2632,7 @@ VP sum(VP x) {
 }
 VP sums(VP x) {
 	XRAY_log("sums\n");XRAY_emit(x);
+	CLASS_dispatch(NULL, sums, x, NULL);
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"sums argument should be simple types",x,0);
 	VP acc=ALLOC_LIKE(x); int typerr=-1;
 	VARY_EACH(x,({ _xtmp += _x; appendbuf(acc,(buf_t)&_xtmp,1); }),typerr);
@@ -2683,27 +2708,32 @@ VP val(const VP x) {
 	if(IS_x(x)) return clone(VALS(x)); // func body for context
 	return EXC(Tt(type),"val can't operate on that type",x,0);
 }
-VP callclass(const VP ctx,const VP verbname,const VP value) {
-	ASSERT(DICT(ctx)||IS_x(ctx),"callclass");
-	if(!IS_t(verbname)) { return EXC(Tt(type),"callclass verb not name",verbname,value); }
-	if(value->tag==0) { return EXC(Tt(type),"callclass value has no class",verbname,value); }
-	XRAY_log("callclass\n");XRAY_emit(ctx);XRAY_emit(verbname);XRAY_emit(value);
+VP classdispatch(const VP ctx,const VP verbname,const VP x,const VP y) {
+	VP ctx_=ctx;
+	if(ctx_==NULL) ctx_=XXL_CUR_CTX;
+	if(!IS_t(verbname)) { return EXC(Tt(type),"classdispatch verb not name",verbname,x); }
+	if(!DICT(ctx_)&& !IS_x(ctx_)) return NULL;
+	if(!CLASSED(x) && !CLASSED(y)) return NULL;
+	XRAY_log("classdispatch\n");XRAY_emit(verbname);XRAY_emit(x);XRAY_emit(y);
 	VP rootscope;
-	if(IS_x(ctx)) rootscope=KEYS(ctx);
-	else rootscope=ctx;
+	if(IS_x(ctx_)) rootscope=KEYS(ctx_);
+	else rootscope=ctx_;
 	if(!DICT(rootscope)) return NULL;
-	VP tag=xt(value->tag);
+	VP tag;
+	if(CLASSED(x)) tag=xt(x->tag);
+	else tag=xt(y->tag);
 	VP res=apply(rootscope,tag); // need a fast-path dict lookup
 	xfree(tag);
 	if(res==NULL) return NULL;
 	res=apply(res,verbname);
 	if(res==NULL) return NULL;
-	return apply(res,value);
+	if(y!=NULL) return apply2(res,x,y);
+	else return apply(res,x);
 }
 VP resolvekey(const VP x,const VP y,int checkparents) {
 	// printf("get %s from %p\n", reprA(y), x);
 	if(!IS_d(x)) return apply(x,y);
-	XRAY_log("resolvekey %d\n",checkparents);
+	XRAY_log("resolvekey %d\n",checkparents); XRAY_emit(x); XRAY_emit(y);
 	VP key=y, kremainder=0, res;
 	int xn=LEN(x),kn=LEN(key); 
 	if(LIKELY(key->tag==0 || !TAG_is_class(key->tag)) 
@@ -2729,10 +2759,7 @@ VP resolvekey(const VP x,const VP y,int checkparents) {
 	} else {
 		res=DICT_find(x,key);
 		XRAY_emit(res);
-		if(!IS_EXC(res)) {
-			// printf("get finally found it\n"); if(SIMPLE(res)) { printf("%s\n",reprA(res)); }
-			return res;
-		}
+		if(!IS_EXC(res)) return res;
 	}
 	if(checkparents) {
 		res=DICT_find(x,TTPARENT);
@@ -2740,9 +2767,7 @@ VP resolvekey(const VP x,const VP y,int checkparents) {
 			XRAY_log("trying parent\n");
 			res=resolvekey(KEYS(res),key,1);
 			XRAY_emit(res);
-			if(!IS_EXC(res)) {
-				return res;
-			}
+			if(!IS_EXC(res)) return res;
 			// if this is an exception, free it because we return our own to maintain context ref:
 			else if(res) xfree(res); 
 		}
@@ -2763,7 +2788,7 @@ VP lookup(VP x,VP y) {
 	XRAY_log("lookup\n");XRAY_emit(x);XRAY_emit(y);
 	if(IS_x(x)) {
 		if(x->n != 2) { return EXC(Tt(value),"context not fully formed",x,y); }
-		CLASS_call(x,get,y);
+		CLASS_dispatch(x,get,y,0);
 		if(IS_t(y) && AS_t(y,0)==Ti(.)) return x;
 		else return resolvekey(KEYS(x),y,1);
 	}
@@ -2829,6 +2854,7 @@ VP numelem2base(VP num,int i,int base) {
 }
 VP str(VP x) {
 	XRAY_log("str\n");XRAY_emit(x);
+	CLASS_dispatch(NULL, str, x, NULL);
 	if(IS_c(x)) {
 		VP res=clone(x);
 		res->tag=0;

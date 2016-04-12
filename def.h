@@ -149,10 +149,11 @@
 
 #define TAGGED(x,t) (x->tag!=0 && x->tag==t)
 #define TAG_is_class(tag) (((char)tag>='A') && ((char)tag<='Z'))
-#define CLASS_call(ctx,verb,val) \
-	if(val->tag!=0 && TAG_is_class(val->tag)) { \
+#define CLASSED(x) (x->tag!=0 && TAG_is_class(x->tag))
+#define CLASS_dispatch(ctx,verb,x,y) \
+	if(x->tag!=0 && TAG_is_class(x->tag)) { \
 		VP verbtag=Tt(verb); \
-		VP tmp=callclass(ctx,verbtag,val); \
+		VP tmp=classdispatch(ctx,verbtag,x,y); \
 		xfree(verbtag); \
 		if(tmp!=NULL) return tmp; \
 	}
