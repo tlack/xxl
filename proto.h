@@ -24,6 +24,7 @@ VP cast(VP x,VP y);
 VP capacity(VP x);
 VP catenate(VP x,VP y);
 VP catenate_table(VP table, VP row);
+VP classdispatch(const VP ctx,const VP verb,const VP x,const VP y);
 VP clone(VP obj);
 VP condense(VP x);
 VP curtail(VP x); // everything except the last element
