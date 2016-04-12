@@ -80,9 +80,16 @@ VP repr(VP x) {
 	return xfroms(s);
 }
 char* repr_c(VP x,char* s,size_t sz) {
-	int i=0,n=x->n,ch;
+	int i=0,xn=x->n,ch,skipn=0,skipstart=-1,skipend=-1;
+	if(REPR_MAX_ITEMS && xn > REPR_MAX_ITEMS) {
+		skipn=xn-REPR_MAX_ITEMS; skipstart=(xn-skipn)/2; skipend=(xn+skipn)/2;
+	}
 	FMT_into_s(sz,"\"",0);
-	for(;i<n;i++){
+	for(;i<xn;i++){
+		if(skipn && i==skipstart) {
+			FMT_into_s(sz,".. (%d omitted) ..",skipn);
+			i=skipend; continue;
+		}
 		ch = AS_c(x,i);
 		if(ch=='"') FMT_into_s(sz,"\\\"", 0);
 		else if(ch=='\n') FMT_into_s(sz,"\\n", 0);
@@ -136,19 +143,21 @@ char* repr_a(VP x,char* s,size_t sz) { // table
 	return s;
 }
 char* repr_l(VP x,char* s,size_t sz) {
-	int i=0, n=x->n;VP a;
+	int i=0, xn=LEN(x); VP a;
+	int skipstart=-1, skipend=-1, skipn=0;
+	if(REPR_MAX_ITEMS && xn > REPR_MAX_ITEMS) {
+		skipn=xn-REPR_MAX_ITEMS; skipstart=(xn-skipn)/2; skipend=(xn+skipn)/2;
+	}
 	FMT_into_s(sz,"[",0);
-	for(i=0;i<n;i++){
-		if(REPR_MAX_ITEMS && i==(REPR_MAX_ITEMS/2)) {
-			FMT_into_s(sz,".. (%d omitted) ..", n-REPR_MAX_ITEMS);
-			i+=REPR_MAX_ITEMS;
-			continue;
+	for(i=0;i<xn;i++){
+		if(skipn && i==skipstart) {
+			FMT_into_s(sz,".. (%d omitted) ..", skipn);
+			i=skipend; continue;
 		}
 		a = ELl(x,i);
-		if (a==NULL) FMT_into_s(sz,"null",0); 
+		if (a==NULL) FMT_into_s(sz,"null",0);  
 		else repr0(a,s,sz);
-		if(i!=n-1)
-			FMT_into_s(sz,", ",0);
+		if(i!=xn-1) FMT_into_s(sz,", ",0);
 	}
 	FMT_into_s(sz,"]",0);
 	return s;
@@ -387,6 +396,14 @@ VP xreplace(VP x,VP newval) {
 	x->alloc=1;
 	x->rc=newval->rc+x->rc; // arb
 
+	return x;
+}
+VP xfillrange(VP x,int from,int to,int byteval) {
+	XRAY_log("xfillrange %d .. %d = %d\n", from, to, byteval);
+	ARG_MUTATING(x);
+	x=XREALLOC(x,to);
+	memset(BUF(x)+from, byteval, to-from+1);
+	x->n=MAX(x->n,to);
 	return x;
 }
 VP xfroms(const char* str) {  
@@ -2357,8 +2374,8 @@ static inline VP divv(VP x,VP y) {
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"div argument should be simple types",x,0);
 	VARY_EACHBOTH(x,y,({
 		if(_y==0) return EXC(Tt(divzero),"divide by zero in mod",x,y);
-		if(LIKELY(x->t > y->t)) { _x=_y/_x; appendbuf(acc,(buf_t)&_x,1); }
-		else { _y=_y/_x; appendbuf(acc,(buf_t)&_y,1); }
+		if(LIKELY(x->t > y->t)) { _x=_x/_y; appendbuf(acc,(buf_t)&_x,1); }
+		else { _y=_x/_y; appendbuf(acc,(buf_t)&_y,1); }
 		if(!SCALAR(x) && SCALAR(y)) _j=-1; // NB. AWFUL!
 	}),typerr);
 	IF_EXC(typerr > -1, Tt(type), "div arg wrong type", x, y);
@@ -2926,9 +2943,8 @@ VP pickapart(VP x,VP y) { // select items of x[0..n] where y[n]=1, and divide no
 	XRAY_log("pickapart\n");XRAY_emit(x);XRAY_emit(y);
 	acc=xlsz(4);
 	VARY_EACHBOTHLIST(x,y,({
-		XRAY_log("%d ",_y);
 		if(_y) {
-			if (!sub) sub=ALLOC_LIKE_SZ(x,x->n/2);
+			if (!sub) sub=ALLOC_LIKE_SZ(x,1);
 			sub=appendbuf(sub,(buf_t)&_x,1);
 		} else {
 			if (sub) { acc=append(acc,sub); xfree(sub); sub=NULL; }
@@ -3208,6 +3224,20 @@ VP nest(VP x,VP y) {
 	} else { out = x; }
 	XRAY_log("nest returning\n"); XRAY_emit(out);
 	return out;
+}
+VP matchall(VP obj,VP pat) {
+  if(!SIMPLE(obj) || !SIMPLE(pat)) return matcheasy(obj,pat);
+  int objn=LEN(obj),patn=LEN(pat);
+  int i,j,k;
+  VP res=xbsz(objn);
+	xfillrange(res,0,objn,0);
+  for(i=0; i<objn; i++) {
+    for(j=0; j<patn; j++) {
+      if(i+j==objn || !_equalm(obj,i+j,pat,j)) break;
+      if(j==patn-1) xfillrange(res,i,i+j,1);
+    }
+  }
+	return res;
 }
 VP matchany(VP obj,VP pat) {
 	IF_EXC(!SIMPLE(obj) && !LIST(obj) && !TABLE(obj),Tt(type),"matchany only works with simple or list types in x",obj,pat);
