@@ -15,7 +15,8 @@ though the name we use is similar.
 ",
  'ex:[ ["1 enlist", (enlist 1)] ],
  'seealso:[],
- 'cat:'lists
+ 'cat:'lists,
+ 'classes:'
 ]
 $'table,                               // make dict into start of new table
 ['t:'unary,
@@ -42,13 +43,15 @@ $'table,                               // make dict into start of new table
   ["1,2,3 join 0",(1,0,2,0,3)],
   ["[\"m\",\"ss\",\"ss\",\"pp\",\"\"] join \"i\"",["mississippi"]]
  ],
- 'cat:'lists],
+ 'cat:'lists,
+ 'classes:'x],
 ['t:'binary,
  'name:"split",
  'op:"||",
  'desc:"splits x into a list of pieces delimited by y.",
  'ex:[ ["1,7,2,7,3 split 7",[1,2,3]] ],
- 'cat:'lists],
+ 'cat:'lists,
+ 'classes:'x],
 ['t:'unary, 
  'name:"vec", 
  'desc:"transforms general list x into a same-type vector. returns x unmolested if not possible.", 
@@ -57,6 +60,13 @@ $'table,                               // make dict into start of new table
 
 // VECTORS & THEIR VALUES ----------------------------------------------
 
+['t:'binary,
+ 'name:"catenate",
+ 'op:",",
+ 'desc:"normally known simply as `,`, catenate joins x to y",
+ 'ex:[ ["(1,2),3",(1,2,3)] ],
+ 'cat:'values,
+ 'classes:'x],
 ['t:'binary, 
  'name:"amend", 
  'op:"!",
@@ -82,32 +92,37 @@ $'table,                               // make dict into start of new table
 	["(4,5,6)![(0,2),10]",(10,5,10)],
 	["(4,5,6)![(0,2),(10,20)]",(10,5,20)],
 	["(4,5,6)![{%2=0},{*3}]",(12,5,18)]
- ], 'cat:'misc],
+ ], 
+ 'cat:'values],
 ['t:'unary, 
  'name:"first", 
  'desc:"returns first item of x", 
  'ex:[ ["1,2,3 first",1] ], 
  'seealso:["behead","curtail","last"],
- 'cat:'misc],
+ 'cat:'values,
+ 'classes:'x],
 ['t:'unary, 
  'name:"last", 'desc:"returns last item of x", 
  'ex:[ ["1,2,3 last",3] ], 
  'seealso:["behead","curtail","first"],
- 'cat:'misc],
+ 'cat:'values,
+ 'classes:'x],
 ['t:'unary, 
  'name:"behead", 
  'op:"|_",
  'desc:"return x without its first element", 
  'ex:[["2,3,4 behead",(3,4)]], 
  'seealso:["curtail","first","last"],
- 'cat:'values],
+ 'cat:'values,
+ 'classes:'x],
 ['t:'unary, 
  'name:"curtail", 
  'op:"_|",
  'desc:"return x without its last element. cute name amirite?", 
  'ex:[["2,3,4 curtail",(2,3)]],
  'seealso:["behead","first","last"],
- 'cat:'values],
+ 'cat:'values,
+ 'classes:'x],
 ['t:'binary,
  'name:"take",
  'op:"#|",
@@ -116,8 +131,8 @@ $'table,                               // make dict into start of new table
   ["1,7,2,7,3 take 2",(1,7)],
   ["1,7,2,7,3 take (2neg)",(7,3)]
  ],
- 'cat:'values
-],
+ 'cat:'values,
+ 'classes:'x],
 ['t:'binary,
  'name:"drop",
  'op:"|#",
@@ -126,8 +141,8 @@ $'table,                               // make dict into start of new table
   ["1,7,2,7,3 drop 2",(2,7,3)],
   ["1,7,2,7,3 drop (2neg)",(1,7,2)]
  ],
- 'cat:'values
-],
+ 'cat:'values,
+ 'classes:'x],
 ['t:'binary,
  'name:"except",
  'op:"|?",
@@ -136,8 +151,14 @@ $'table,                               // make dict into start of new table
   ["1,7,2,7,3 except 7",(1,2,3)],
   ["1,7,2,7,3 except (7,1,8)",(2,3)]
  ],
- 'cat:'values
-],
+ 'cat:'values,
+ 'classes:'x],
+['t:'binary, 'name:"from", 'op:".:",
+ 'desc:"
+ x from y is equivalent to y@x, or simply x y if y were a function. It's easier to read than
+ x y for some people, and helps the XXL parser from getting confused if y is a list, dict, or
+ table. :)
+ ", 'ex:[], 'cat:'misc,'classes:'y],
 ['t:'binary,
  'name:"extract",
  'op:"",
@@ -159,8 +180,8 @@ the second item in the result.
    [['method:"http:", 'host:"txpo.st"], ["test","a","b"]]
   ]
  ],
- 'cat:'values
-],
+ 'cat:'values,
+ 'classes:'],
 ['t:'binary,
  'name:"extractas",
  'op:"",
@@ -179,19 +200,22 @@ compose extract with other verbs to build out elaborate parsers.
  'ex:[
   ["\"http://txpo.st/test/a/b\" split \"/\" extract ('method,','host)",["test","a","b"]]
  ],
- 'cat:'values
+ 'cat:'values,
+ 'classes:'
 ],
 ['t:'binary, 
  'name:"del", 
  'desc:"Similar to `except`, but modifies x in-place. Works with lists and dicts in x. For vectors, consider using except. Use with due care - not changing values this way is clearer.", 
  'op:".:",
  'ex:[ ["[1,2,3]as 't; t del 0; t",[2,3]] ], 
- 'cat:'values],
+ 'cat:'values,
+ 'classes:'x],
 ['t:'unary,
  'name:"len",
  'desc:"Returns length of list or vector x",
  'ex:[],
- 'cat:'values],
+ 'cat:'values,
+ 'classes:'x],
 ['t:'binary, 
  'name:"make", 
  'desc:"transforms x into typed denoted by tag in y (such as float).
@@ -227,12 +251,15 @@ Make many returns a list of values.",
 	["4.5$'int",4],
 	["[\"123\",\"abc\",\"def\",\"xyz\"]$\"is_t\"",[123,"abc",'xyz]]
  ], 
- 'cat:'values],
+ 'cat:'values,
+ 'classes:'y
+],
 ['t:'unary, 
  'name:"rev", 
  'desc:"returns vector x in reverse order", 
  'ex:[["3,7,9rev",(9,7,3)]], 
- 'cat:'values],
+ 'cat:'values,
+ 'classes:'x],
 ['t:'unary, 
  'name:"key", 
  'desc:"Returns the keys/columns of dictionary/table x", 
@@ -293,8 +320,26 @@ Make many returns a list of values.",
  'ex:[ ["0,0,1,0,0,1,1,0,0 condense", (2,5,6)] ], 
  'cat:'logic],
 ['t:'binary, 
+ 'name:"and", 
+ 'op:"&",
+ 'desc:"Returns x&y.
+
+ if x or y is empty, null, or an exception, returns the other (y or x). 
+ 
+ for same-sized vectors: returns a vector composed of the higher element of each (x,y) pair. this can
+ be used as \"max\" of two vectors.
+ ", 
+ 'ex:[
+	["() or 0",0],
+	["1,2,1,4,4 or (4,3,0,2,2)",(4,3,1,4,4)]
+ ],
+ 'cat:'logic,
+ 'classes:'x],
+['t:'binary, 
  'name:"or", 
- 'desc:"
+ 'op:"|",
+ 'desc:"Returns x|y.
+
  if x or y is empty, null, or an exception, returns the other (y or x). 
  
  if x and y are dictionaries: returns the union of those dictionaries.
@@ -302,12 +347,15 @@ Make many returns a list of values.",
  for same-sized vectors: returns a vector composed of the higher element of each (x,y) pair. this can
  be used as \"max\" of two vectors.
  ", 
- 'ex:[["() or 0",0]], 
- 'cat:'logic],
+ 'ex:[
+	["() or 0",0],
+	["1,2,1,4,4 or (4,3,0,2,2)",(4,3,1,4,4)]
+ ],
+ 'cat:'logic,'classes:'x],
 ['t:'unary, 'name:"not", 
  'desc:"transforms non-zeroes to zeroes and vice versa", 
  'ex:[["1,0,2not",(0,1,0)]], 
- 'cat:'misc],
+ 'cat:'misc,'classes:'x],
 ['t:'binary, 
  'name:"pick", 
  'desc:"returns items of x which correspond to indices of y containing 1.
@@ -360,6 +408,18 @@ Make many returns a list of values.",
  'desc:"create y random integers from 0 to x. Can also be used with a list
  as x, which will return y random items from that list.", 
  'ex:[], 'cat:'math],
+['t:'binary, 'name:"plus", 
+ 'op:"+",
+ 'desc:"x+y", 
+ 'ex:[["5 count+(5 count * 3)",(0,4,8,12,16)]],
+ 'cat:'math,
+ 'classes:'x],
+['t:'binary, 'name:"minus", 
+ 'op:"-",
+ 'desc:"x-y", 
+ 'ex:[["5 count *3-(5 count)",(0,2,4,6,8)]],
+ 'cat:'math,
+ 'classes:'x],
 ['t:'unary, 'name:"min", 
  'desc:"Returns the minimum value in vector x", 
  'ex:[["(100neg),0,100 min",(100 neg)]], 
@@ -371,7 +431,7 @@ Make many returns a list of values.",
 ['t:'unary, 'name:"neg", 
  'desc:"Reverse the sign of all elements in x", 
  'ex:[["(10neg),0,13neg",(10,0,-13)]], 
- 'cat:'math],
+ 'cat:'math,'classes:'x],
 ['t:'binary, 
  'name:"range", 
  'desc:"returns a vector comprised of x .. y inclusive", 
@@ -381,12 +441,12 @@ Make many returns a list of values.",
  'name:"sum", 
  'desc:"return the sum of each item in vector x", 
  'ex:[ ["5,2,9,6 sum",22] ], 
- 'cat:'math],
+ 'cat:'math,'classes:'x],
 ['t:'unary, 
  'name:"sums", 
  'desc:"returns the running total for each item in vector x", 
  'ex:[ ["5,2,9,6 sums",(5,7,16,22)] ], 
- 'cat:'math],
+ 'cat:'math,'classes:'x],
 
 // MISC ----------------------------------------------------------------
 
@@ -408,12 +468,6 @@ Make many returns a list of values.",
  These can be used as indices into another value or perhaps as a loop counter of sorts.", 
  'ex:[["5 count",(0,1,2,3,4)]], 
  'cat:'misc],
-['t:'binary, 'name:"from", 'op:".:",
- 'desc:"
- x from y is equivalent to y@x, or simply x y if y were a function. It's easier to read than
- x y for some people, and helps the XXL parser from getting confused if y is a list, dict, or
- table. :)
- ", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"info", 
  'desc:"Returns a dictionary of information about x", 
  'ex:[
@@ -421,7 +475,7 @@ Make many returns a list of values.",
 	 ['typenum:4,'type:"int",'len:3, 'capacity:4, 'itemsz:4, 'alloced:0, 'baseptr:13519424, 'memptr:13519488]
 	]
  ], 
- 'cat:'misc],
+ 'cat:'misc,'classes:'x],
 ['t:'unary, 
  'name:"parse", 
  'desc:"return the XXL parse string for string x", 
@@ -430,7 +484,8 @@ Make many returns a list of values.",
 	 "['listexpr([[], 'raw(\",\"), 1i, 'raw(\",\"), 'expr([2i, 'raw(\",\"), 3i])]), 'raw(\"*\"), 'name(\"z\"), 'ws(\"\n\")]"
   ]
  ], 
- 'cat:'misc],
+ 'cat:'misc,
+ 'classes:'],
 ['t:'binary, 
  'name:"rot", 
  'desc:"rotate the contents of the vector x right by y positions. y may be negative", 
@@ -470,12 +525,12 @@ Make many returns a list of values.",
  'name:"repr", 
  'desc:
  "return a text representation of x. This is usually close to what you'd type in to XXL to create that value", 
- 'ex:[], 'cat:'strings],
+ 'ex:[], 'cat:'strings,'classes:'x],
 ['t:'unary, 
  'name:"str", 
  'desc:
  "return string representation of x. Compared to the repr verb this is usually a simpler version of the value", 
- 'ex:[], 'cat:'strings],
+ 'ex:[], 'cat:'strings,'classes:'x],
 ['t:'binary, 
  'name:"base", 
  'desc:"
@@ -518,7 +573,6 @@ Make many returns a list of values.",
 ['t:'unary, 'name:"selftest", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"tag", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"xray", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'binary, 'name:"and", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"bracketj", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"consecj", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"deep", 'desc:"invokes y for each nested list in x", 'ex:[], 'cat:'misc],
