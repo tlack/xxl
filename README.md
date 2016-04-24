@@ -12,7 +12,8 @@ Pretty buggy but passes tests. Useful for writing small utilities, for me. Not
 yet suitable for real work.
 
 Tested so far on Linux (64bit x86 & GCC or Clang), OS X (Clang), Windows
-(Cygwin64), Android under termux. Should work on iOS as well but untested.
+(Cygwin64), Android under termux, and Raspberry Pi. Should work on iOS as well
+but untested.
 
 ## Examples
 
@@ -451,7 +452,12 @@ environment but that's about it.
 XXL is meant to be tailored to the device you're using it on. You can remove
 You can customize the features that XXL includes out of the box.
 
-We use a build script called `./c` instead of a Makefile, just to be difficult. 
+We use a build script called `./c` instead of a Makefile. It tries to make some
+guesses about how your system is configured and what options are best to use.
+We use a shell script to keep it simple (without having to resort to Autoconf).
+When in doubt, you can make your own decisions by editing the `c` source. It's
+very simple.
+
 Around line 15 of this file you'll see a line like:
 
 ```
