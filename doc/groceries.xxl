@@ -26,38 +26,38 @@ Let's dive right in and start coding our grocery list manager.
 You should have XXL installed and running in a window as you follow along
 with this tutorial.
 
-What's the easiest way to manage a grocery list?
+What's the easiest way to manage a grocery list? 
 
-I guess the first "seed" of our program is just typing this at the XXL
-interactive prompt:
+I guess the first "seed" of our program is just typing our list, as a string inside
+`"` ... `"`, at the XXL interactive prompt:
 """,
 {
 	"Chicken"
 },
 """
 
-You probably recognize that as a string. If life was that simple we'd never do
-any programming at all. What about multiple items on our grocery list?
+This is very similar to a string you might find in other programming languages. 
+
+Sadly for us, one string does not a grocery list manager make. If life was that 
+simple we'd never do any programming at all. Wouldn't that be great?
+
+What about multiple items in our grocery list?
 
 """,
 {
-	"Chicken eggs sauce";
+	"Chicken eggs sauce"
 },
 """
 
 This works. We could separate out each of the words by looking for spaces. 
-But we would outgrow this soon.
+But we would outgrow this soon. What about if you wanted to buy a "baby turtle"?
+You'd wind up with a baby AND a turtle! 
 
-For instance: God forbid you need to buy a "baby grandpiano",
-because unlike "grandpiano" which works perfectly fine, you'd
-come home with a baby too. And unless that baby can play piano
-really well, you're gonna have to take care of that some time
-this week.
+XXL has a few different types of data. One of these is a list.
 
-XXL has the concept of a list. You can put items in list, get
-them out individually, re-order them, do things to each member
-of them. It's very flexible and much easier to use for our
-purposes. 
+A list is a collection if individual items, of any type. You can put items in list, get
+them out individually, re-order them, do things to each member of them. It's very 
+flexible and much easier to use for our purposes. 
 
 Let's make a list out of each of our items:
 
@@ -68,12 +68,10 @@ Let's make a list out of each of our items:
 """
 
 Lists are formed by using the square brackets `[`..`]`, and putting our stuff
-between them, separated with commas.
+between them, separated with commas. Here we have three strings, one for each of the items that we need from the store.
 
 (We could have also taken the original string of "Chicken eggs sauce" and split
 it into pieces wherever we found a space character `" "`, but I said no.)
-
-And we're off! Now we have a list with three individual strings inside of it.
 
 We need a convenient way to refer to our list, so let's give it
 a name by assigning it like a variable. 
