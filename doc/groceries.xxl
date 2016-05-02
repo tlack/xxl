@@ -1,7 +1,8 @@
 // This tutorial is meant to be presented as a slide show, so you're looking at
-// blocks of text (in """.."""), and then blocks of code (in { .. }). You
-// should follow along with the code samples in your own copy of the
-// interpreter.
+// blocks of text (in """.."""), and then blocks of code (in { .. }). In the
+// actual demo application, if it existed, you'd see the code sample and then
+// result of running that code. You should follow along with the code samples 
+// in your own copy of the interpreter.
 [
 """
 Note: This tutorial is aimed at someone who is not yet adept at programming.
@@ -74,16 +75,8 @@ between them, separated with commas. Here we have three strings, one for each of
 it into pieces wherever we found a space character `" "`, but I said no.)
 
 We need a convenient way to refer to our list, so let's give it
-a name by assigning it like a variable. 
-
-The first time you give something a name, you have to use what's called a tag - 
-think of it as a "quoted name".
-
-After you have created your variable, you can refer to it without the `'`, 
-because you're no longer refering to a name, you're referring to what's 
-assigned to a name.
-
-It's simpler than it seems.
+a name. Like other programming languages, XXL lets you create variables out of
+values, by assigning them a name.
 
 """,
 {
@@ -96,19 +89,36 @@ It's simpler than it seems.
 	groceries
 },
 """
-The most interesting part about XXL, and what gives it its simplicity, 
-is that every single thing you see that doesn't have an apostrophe in
-front of it (like 'groceries' vs `'groceries`) tells XXL to go figure out
-what that name means. Even `[`, `,`, and `]` are named things - they
-happen to be functions `note:get:listliteralnotation`! 
+The first time you give something a name, you have to use what's called a tag - 
+think of it as a "quoted name". Tags look like `'myvar`. 
 
-`note:set:listliteralnotation:This is an oversimplification`
+After you have created your variable, you can refer to it without the `'`, 
+because you're no longer refering to a name, you're referring to what's 
+assigned to a name. 
 
-So when you see something like "Chicken","Eggs" you know that we're
-looking up what `,` is, which happens to be a verb called catenate,
-and that it takes two "arguments", which are variables you can pass
-in to the function when you call it. In this case, the verb is `,`,
-`"Chicken"` is `x`, and `"Eggs"` is `y`.
+It's simpler than it seems.
+
+The most interesting part about XXL, and what gives it its simplicity, is that
+every single thing you see in your source code that isn't a tag (doesn't have
+an apostrophe in front of it - like 'groceries' vs `'groceries`) tells XXL to
+go figure out what that name means. Even `[`, `,`, and `]` are named things -
+they happen to be functions `note:get:listliteralnotation`! 
+
+`note:set:listliteralnotation:This is an oversimplification but fairly accurate`
+
+In other languages, you have to figure out what's an important keyword, what's
+a user-defined label, what's a verb and what's just pointless decoration required
+by the interpreter (such as keywords like "var", "function", "const", etc).
+In XXL, there are no words with special meaning.
+
+So when you see some XXL code like `"Chicken","Eggs"` you know that we've got 
+two strings as we described earlier, and they're stuck together with ",", 
+so we just have to look up what `,` is, which happens to be a verb called catenate.
+
+`x , y` means "join x with y." In your code, x and y will be values that are relevant
+to the task you are solving. These two parameters are called the functions "arguments".
+In this case, the verb is `,`, `"Chicken"` is `x`, and `"Eggs"` is
+`y`.
 
 Every piece of code (verb) has either one argument (x), or two (x and y). 
 If it's two, the other argument comes directly to the right of the symbol.
