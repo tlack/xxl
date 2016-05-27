@@ -38,6 +38,12 @@ if [ -x /bin/x86_64-pc-cygwin-gcc.exe ]; then
 	DEFS="$DEFS -DTHREAD_NO_TIMEDLOCK"
 fi
 
+if (uname -a | grep "edison" >/dev/null) then
+	errcho using intel edison 32bit mode
+	ARCH=""
+	STDLIB="-DSTDLIBFILE -DSTDLIBGLOB -DSTDLIBMBOX -DSTDLIBNET -DSTDLIBSHAREDLIB -DSTDLIBSHELL -DSTDLIBXD "
+fi
+
 if [ -f /etc/os-release ]; then
 	if grep "Ubuntu" /etc/os-release >/dev/null; then
 		errcho using ubuntu -Wl,--no-as-needed 
@@ -59,6 +65,7 @@ BUILDSHARED="$COMPILE -fPIC -shared -o "
 
 if [ "x$BUILDH" = "xyes" ]; then
 	if hash $NODE 2>/dev/null; then
+		errcho "rebuilding .h files"
 		$NODE accessors.js $STDLIB > accessors.h && \
 		$NODE vary.js $STDLIB > vary.h && \
 		$NODE cast.js $STDLIB > cast.h && \
@@ -92,6 +99,5 @@ $BUILDOBJ xxl \
 	xxl.o repl.o net.o stdlib.o 2>&1 \
 	&& \
 $RUN
-
 
 
