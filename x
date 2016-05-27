@@ -16,7 +16,6 @@ if which llvm-symbolizer-3.6 >/dev/null; then
 	export ASAN_SYMBOLIZER_PATH
 fi
 
-errcho $RUN $*
 $RUN $*
 
 
