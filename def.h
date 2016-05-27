@@ -214,8 +214,14 @@
 // XXL'S FUNDAMENTAL TYPES ---------------------------------------------
 
 #define TYD(name,type) typedef type name
-TYD(I8,unsigned char); TYD(I32,int); TYD(I64,__int64_t); TYD(I128,__int128_t);
-TYD(type_t,I8); TYD(buf_t,I8*); TYD(tag_t,I128);
+TYD(I8,unsigned char); TYD(I32,int); TYD(I64,__int64_t); 
+#ifdef OCTA
+TYD(I128,__int128_t);
+#define XBIGINT I128
+#else
+#define XBIGINT I64
+#endif
+TYD(type_t,I8); TYD(buf_t,I8*); TYD(tag_t,XBIGINT);
 
 /* Structure for most values. 'st' and 'dyn' static and dynamic storage for data */
 struct V { 
