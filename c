@@ -41,6 +41,8 @@ fi
 if (uname -a | grep "edison" >/dev/null) then
 	errcho using intel edison 32bit mode
 	ARCH=""
+	DEBUG=""
+	DEFS="-DTHREAD"    # NB. DEFS is already defined by now, so we have to reset it
 	STDLIB="-DSTDLIBFILE -DSTDLIBGLOB -DSTDLIBMBOX -DSTDLIBNET -DSTDLIBSHAREDLIB -DSTDLIBSHELL -DSTDLIBXD "
 fi
 
