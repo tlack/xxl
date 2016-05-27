@@ -2331,7 +2331,7 @@ VP base(VP x,VP y) {
 		} else {
 			int i, n;
 			VP tmp;
-			I128 acc=0;
+			XBIGINT acc=0;
 			for(i=0; i<LEN(x); i++) {
 				tmp=apply_simple_(x,i);
 				n=_find1(y, tmp);
@@ -2599,7 +2599,7 @@ VP ravel(VP x,VP y) {
 static inline VP str2num(VP x) {
 	// TODO optimize str2int
 	// NB. str2num creates int at the minimum
-	double d; I128 buf=0; char* s=sfromxA(flatten(x));
+	double d; XBIGINT buf=0; char* s=sfromxA(flatten(x));
 	XRAY_log("str2num %p\n",s);XRAY_emit(x);
 	IF_EXC(!IS_c(x),Tt(type),"str2int arg should be char vector",x,0);
 	if(strchr(s,'.')!=0 && (d=strtod(s,NULL))!=0) {
@@ -2635,7 +2635,7 @@ static inline VP str2num(VP x) {
 VP sum(VP x) {
 	XRAY_log("sum");XRAY_emit(x);
 	CLASS_dispatch(NULL, sum, x, NULL);
-	I128 val=0;int out,typerr=-1;
+	XBIGINT val=0;int out,typerr=-1;
 	if(UNLIKELY(!SIMPLE(x))) return EXC(Tt(type),"sum argument should be simple types",x,0);
 	VARY_EACH(x,({ val += _x; }),typerr);
 	IF_EXC(typerr > -1, Tt(type), "sum arg wrong type", x, 0);
@@ -2858,7 +2858,7 @@ VP numelem2base(VP num,int i,int base) {
 		snprintf(buf,20,"%0.04f",num);
 		return xfroms(buf);
 	}
-	int typerr=-1; I8 buf; I128 rem; 	
+	int typerr=-1; I8 buf; XBIGINT rem; 	
 	VARY_EL_NOFLOAT(num,i,({ rem = _x; }),typerr);
 	VP res=xcsz(5);
 	do {
