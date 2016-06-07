@@ -10,7 +10,7 @@
 	tag_t __x=EL(v,tag_t,n); __x; })
 static inline VP xt(tag_t x) { VP a; a=xalloc(1,1); EL(a,tag_t,0)=x; a->n=1; return a; }
 static inline VP xt0() { VP a=xalloc(1,1); return a; }
-static inline VP xtsz(sz) { VP a=xalloc(1,sz); return a; }
+static inline VP xtsz(int sz) { VP a=xalloc(1,sz); return a; }
 static inline VP xta(VP a, tag_t x) { a=xrealloc(a,a->n++);EL(a,tag_t,a->n-1)=x; return a; }
 static inline VP xtn(int nargs,...) { VP a; va_list args; int i; long long x; a=xalloc(1,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,long long); EL(a,tag_t,i)=x; }\
@@ -29,7 +29,7 @@ static inline VP xtan(VP a, int nargs,...) { va_list args; int i; tag_t x; a=xre
 	char __x=EL(v,char,n); __x; })
 static inline VP xc(char x) { VP a; a=xalloc(2,1); EL(a,char,0)=x; a->n=1; return a; }
 static inline VP xc0() { VP a=xalloc(2,1); return a; }
-static inline VP xcsz(sz) { VP a=xalloc(2,sz); return a; }
+static inline VP xcsz(int sz) { VP a=xalloc(2,sz); return a; }
 static inline VP xca(VP a, char x) { a=xrealloc(a,a->n++);EL(a,char,a->n-1)=x; return a; }
 static inline VP xcn(int nargs,...) { VP a; va_list args; int i; int x; a=xalloc(2,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,int); EL(a,char,i)=x; }\
@@ -48,7 +48,7 @@ static inline VP xcan(VP a, int nargs,...) { va_list args; int i; char x; a=xrea
 	int8_t __x=EL(v,int8_t,n); __x; })
 static inline VP xb(int8_t x) { VP a; a=xalloc(3,1); EL(a,int8_t,0)=x; a->n=1; return a; }
 static inline VP xb0() { VP a=xalloc(3,1); return a; }
-static inline VP xbsz(sz) { VP a=xalloc(3,sz); return a; }
+static inline VP xbsz(int sz) { VP a=xalloc(3,sz); return a; }
 static inline VP xba(VP a, int8_t x) { a=xrealloc(a,a->n++);EL(a,int8_t,a->n-1)=x; return a; }
 static inline VP xbn(int nargs,...) { VP a; va_list args; int i; int x; a=xalloc(3,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,int); EL(a,int8_t,i)=x; }\
@@ -67,7 +67,7 @@ static inline VP xban(VP a, int nargs,...) { va_list args; int i; int8_t x; a=xr
 	int __x=EL(v,int,n); __x; })
 static inline VP xi(int x) { VP a; a=xalloc(4,1); EL(a,int,0)=x; a->n=1; return a; }
 static inline VP xi0() { VP a=xalloc(4,1); return a; }
-static inline VP xisz(sz) { VP a=xalloc(4,sz); return a; }
+static inline VP xisz(int sz) { VP a=xalloc(4,sz); return a; }
 static inline VP xia(VP a, int x) { a=xrealloc(a,a->n++);EL(a,int,a->n-1)=x; return a; }
 static inline VP xin(int nargs,...) { VP a; va_list args; int i; int x; a=xalloc(4,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,int); EL(a,int,i)=x; }\
@@ -86,7 +86,7 @@ static inline VP xian(VP a, int nargs,...) { va_list args; int i; int x; a=xreal
 	__int64_t __x=EL(v,__int64_t,n); __x; })
 static inline VP xj(__int64_t x) { VP a; a=xalloc(5,1); EL(a,__int64_t,0)=x; a->n=1; return a; }
 static inline VP xj0() { VP a=xalloc(5,1); return a; }
-static inline VP xjsz(sz) { VP a=xalloc(5,sz); return a; }
+static inline VP xjsz(int sz) { VP a=xalloc(5,sz); return a; }
 static inline VP xja(VP a, __int64_t x) { a=xrealloc(a,a->n++);EL(a,__int64_t,a->n-1)=x; return a; }
 static inline VP xjn(int nargs,...) { VP a; va_list args; int i; int x; a=xalloc(5,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,int); EL(a,__int64_t,i)=x; }\
@@ -105,7 +105,7 @@ static inline VP xjan(VP a, int nargs,...) { va_list args; int i; __int64_t x; a
 	__int128_t __x=EL(v,__int128_t,n); __x; })
 static inline VP xo(__int128_t x) { VP a; a=xalloc(6,1); EL(a,__int128_t,0)=x; a->n=1; return a; }
 static inline VP xo0() { VP a=xalloc(6,1); return a; }
-static inline VP xosz(sz) { VP a=xalloc(6,sz); return a; }
+static inline VP xosz(int sz) { VP a=xalloc(6,sz); return a; }
 static inline VP xoa(VP a, __int128_t x) { a=xrealloc(a,a->n++);EL(a,__int128_t,a->n-1)=x; return a; }
 static inline VP xon(int nargs,...) { VP a; va_list args; int i; int x; a=xalloc(6,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,int); EL(a,__int128_t,i)=x; }\
@@ -124,7 +124,7 @@ static inline VP xoan(VP a, int nargs,...) { va_list args; int i; __int128_t x; 
 	double __x=EL(v,double,n); __x; })
 static inline VP xf(double x) { VP a; a=xalloc(7,1); EL(a,double,0)=x; a->n=1; return a; }
 static inline VP xf0() { VP a=xalloc(7,1); return a; }
-static inline VP xfsz(sz) { VP a=xalloc(7,sz); return a; }
+static inline VP xfsz(int sz) { VP a=xalloc(7,sz); return a; }
 static inline VP xfa(VP a, double x) { a=xrealloc(a,a->n++);EL(a,double,a->n-1)=x; return a; }
 static inline VP xfn(int nargs,...) { VP a; va_list args; int i; double x; a=xalloc(7,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,double); EL(a,double,i)=x; }\
@@ -143,7 +143,7 @@ static inline VP xfan(VP a, int nargs,...) { va_list args; int i; double x; a=xr
 	unaryFunc* __x=EL(v,unaryFunc*,n); __x; })
 static inline VP x1(unaryFunc* x) { VP a; a=xalloc(10,1); EL(a,unaryFunc*,0)=x; a->n=1; return a; }
 static inline VP x10() { VP a=xalloc(10,1); return a; }
-static inline VP x1sz(sz) { VP a=xalloc(10,sz); return a; }
+static inline VP x1sz(int sz) { VP a=xalloc(10,sz); return a; }
 static inline VP x1a(VP a, unaryFunc* x) { a=xrealloc(a,a->n++);EL(a,unaryFunc*,a->n-1)=x; return a; }
 static inline VP x1n(int nargs,...) { VP a; va_list args; int i; unaryFunc* x; a=xalloc(10,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,unaryFunc*); EL(a,unaryFunc*,i)=x; }\
@@ -162,7 +162,7 @@ static inline VP x1an(VP a, int nargs,...) { va_list args; int i; unaryFunc* x; 
 	binaryFunc* __x=EL(v,binaryFunc*,n); __x; })
 static inline VP x2(binaryFunc* x) { VP a; a=xalloc(11,1); EL(a,binaryFunc*,0)=x; a->n=1; return a; }
 static inline VP x20() { VP a=xalloc(11,1); return a; }
-static inline VP x2sz(sz) { VP a=xalloc(11,sz); return a; }
+static inline VP x2sz(int sz) { VP a=xalloc(11,sz); return a; }
 static inline VP x2a(VP a, binaryFunc* x) { a=xrealloc(a,a->n++);EL(a,binaryFunc*,a->n-1)=x; return a; }
 static inline VP x2n(int nargs,...) { VP a; va_list args; int i; binaryFunc* x; a=xalloc(11,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,binaryFunc*); EL(a,binaryFunc*,i)=x; }\
@@ -181,7 +181,7 @@ static inline VP x2an(VP a, int nargs,...) { va_list args; int i; binaryFunc* x;
 	Proj __x=EL(v,Proj,n); __x; })
 static inline VP xp(Proj x) { VP a; a=xalloc(12,1); EL(a,Proj,0)=x; a->n=1; return a; }
 static inline VP xp0() { VP a=xalloc(12,1); return a; }
-static inline VP xpsz(sz) { VP a=xalloc(12,sz); return a; }
+static inline VP xpsz(int sz) { VP a=xalloc(12,sz); return a; }
 static inline VP xpa(VP a, Proj x) { a=xrealloc(a,a->n++);EL(a,Proj,a->n-1)=x; return a; }
 static inline VP xpn(int nargs,...) { VP a; va_list args; int i; Proj x; a=xalloc(12,nargs); a->n=nargs; va_start(args,nargs);\
 	for(i=0;i<nargs;i++){ x=va_arg(args,Proj); EL(a,Proj,i)=x; }\
