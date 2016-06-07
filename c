@@ -11,8 +11,19 @@ DEFS="-DTHREAD $DEBUG $OPT"
 WARN="-Wall -Wno-format-extra-args -Wno-unused-function -Wno-unused-value -Wno-char-subscripts"
 WARN="$WARN -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format"
 
-# decide what goes into stdlib
-STDLIB="-DOCTA -DSTDLIBFILE -DSTDLIBGLOB -DSTDLIBMBOX -DSTDLIBNET -DSTDLIBSHAREDLIB -DSTDLIBSHELL -DSTDLIBXD "
+# decide what libraries go into your XXL build. 
+# uncomment lines for things you want, or comment out things you don't.
+LIBRARIES=""
+LIBRARIES="OCTA          ${LIBRARIES}" # 128bit type support (octaword)
+LIBRARIES="STDLIBFILE    ${LIBRARIES}" # simple posixish file operations
+LIBRARIES="STDLIBGLOB    ${LIBRARIES}" # files matching a pattern
+LIBRARIES="STDLIBMBOX    ${LIBRARIES}" # mailboxes
+LIBRARIES="STDLIBNET     ${LIBRARIES}" # networking
+LIBRARIES="STDLIBSHAREDLIB ${LIBRARIES}" # shared libraries
+LIBRARIES="STDLIBSHELL   ${LIBRARIES}" # shell command execution
+LIBRARIES="STDLIBXD      ${LIBRARIES}" # binary file representation
+
+echo including libraries: $LIBRARIES
 
 # command to use to run it - put testing args to binary for execution here
 RUN="./xxl $*"
@@ -43,7 +54,7 @@ if (uname -a | grep "edison" >/dev/null) then
 	ARCH=""
 	DEBUG=""
 	DEFS="-DTHREAD"    # NB. DEFS is already defined by now, so we have to reset it
-	STDLIB="-DSTDLIBFILE -DSTDLIBGLOB -DSTDLIBMBOX -DSTDLIBNET -DSTDLIBSHAREDLIB -DSTDLIBSHELL -DSTDLIBXD "
+	LIBRARIES="STDLIBFILE STDLIBGLOB STDLIBMBOX STDLIBNET STDLIBSHAREDLIB STDLIBSHELL STDLIBXD"
 fi
 
 if [ -f /etc/os-release ]; then
@@ -58,8 +69,10 @@ if which rlwrap >/dev/null; then
 	RUN="rlwrap $RUN"
 fi
 
+LIBDEFS=$(echo $LIBRARIES | sed -e 's/ / -D/g')
+LIBDEFS="-D${LIBDEFS}"
 SRC=`pwd`
-COMPILE="$CC $DEFS $WARN $LIBS $ARCH $STDLIB "
+COMPILE="$CC $DEFS $WARN $LIBS $ARCH $LIBDEFS "
 COMPILEOBJ="$COMPILE -c "
 COMPILESHARED="$COMPILE -fPIC -shared "
 BUILDOBJ="$COMPILE -o  "
@@ -68,11 +81,11 @@ BUILDSHARED="$COMPILE -fPIC -shared -o "
 if [ "x$BUILDH" = "xyes" ]; then
 	if hash $NODE 2>/dev/null; then
 		errcho "rebuilding .h files"
-		$NODE accessors.js $STDLIB > accessors.h && \
-		$NODE vary.js $STDLIB > vary.h && \
-		$NODE cast.js $STDLIB > cast.h && \
-		$NODE types.js $STDLIB > types.h && \
-		$NODE repr.js $STDLIB > repr.h 
+		$NODE accessors.js $LIBDEFS > accessors.h && \
+		$NODE vary.js $LIBDEFS > vary.h && \
+		$NODE cast.js $LIBDEFS > cast.h && \
+		$NODE types.js $LIBDEFS > types.h && \
+		$NODE repr.js $LIBDEFS > repr.h 
 	else
 		errcho "can't find node; skipping build"
 	fi
