@@ -53,7 +53,7 @@ if (uname -a | grep "edison" >/dev/null) then
 	errcho using intel edison 32bit mode
 	ARCH=""
 	DEBUG=""
-	DEFS="-DTHREAD"    # NB. DEFS is already defined by now, so we have to reset it
+	DEFS="-DTHREAD -O2 "    # NB. DEFS is already defined by now, so we have to reset it
 	LIBRARIES="STDLIBFILE STDLIBGLOB STDLIBMBOX STDLIBNET STDLIBSHAREDLIB STDLIBSHELL STDLIBXD"
 fi
 
