@@ -36,7 +36,11 @@ but untested.
 
 ### MySQL Slow Query Watcher
 
-Use command-line MySQL to get process list, turn into table, find interesting slow queries:
+Here we use command-line MySQL to get process list, turn into table, find interesting slow queries.
+
+Note that the `0.`, `1.` etc is XXL's prompt in interactive mode. The number you see next to the 
+prompt allows you to refer later to that line of input or the result XXL produced for it. Don't type
+this part in.
 
 ```
 0. 'slowtime is 2;
@@ -50,9 +54,9 @@ Use command-line MySQL to get process list, turn into table, find interesting sl
   'Time:3i, 'State:"Sending data", 'Info:"SELECT * from ... "]
 ```
 
-Originally used as a one-liner.
+Originally used as a one-liner to fix a performance issue on a site.
 
-### Micro Web Counter
+### Simple Web Server (Counter)
 
 Here's an example web server application that acts as a counter. You can run
 this as`./c examples/web-ctr.xxl`. Source code in full:
@@ -65,6 +69,8 @@ this as`./c examples/web-ctr.xxl`. Source code in full:
 	"Connection: close\r\nServer: xxl v0.0\r\n\r\nHello ",
 	(.ctr repr),"\r\n" flat}
 ```
+
+(We didn't show the XXL prompt here, just the code itself.)
 
 The first line declares a variable or noun named `ctr`. Variables are defined
 using a tag. After they are defined, you can refer to them without the tag.
