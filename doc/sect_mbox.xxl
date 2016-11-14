@@ -1,31 +1,51 @@
+// note for human readers: this doc is meant to be consumed by XXL itself to
+// produce the documentation website. the markdown tags below with triple
+// quotes are code samples. the part before the ||| is the XXL code
+// and the part after it is the result.
+
 "
-Mailbox Soliloquy
-=================
+# Mailbox Soliloquy
 
-XXL uses a system called mailboxes to allow multiple threads to communicate.
+## Overview
 
-Mailboxes are similar to the concept of processes in Erlang but don't have to
+XXL uses a system called mailboxes to allow multiple separate parts of running code
+to communicate. It also provides a way to use these mailboxes in a safe way between 
+threads.
+
+It has been my observation that having a system-level message queue concept makes
+a whole lot of problems much simpler. I believe this has been observed in Go, 
+Javascript (React's event bus approach), and in many other languages, where they
+tend to be implemented ad hoc as the need arises.
+
+Mailboxes are most similar to the concept of processes in Erlang but don't have to
 involve a running thread. XXL mailboxes are just a data structure which are
 convenient to use with threads, and some verbs to manipulate them.
 
 You might think of them as the underpinnings of a simple message queue.
+
+## Creating a mailbox
 
 Create mailboxes with `Mbox.new`. It disregards its single argument, so by convention
 we use [].
 
 ```[]Mbox.new as 'me ||| 'mbox#[105827994227856j, 105827994227792j, []]```
 
-Anyone can read from a mailbox if they have a reference to it, which acts as a name of sorts. 
-There is no concept of an owner.
+Don't worry too much what `Mbox.new` returns. Consider it an opaque value or a handle.
+
+## Reading 
+
+Anyone can read from a mailbox if they have a reference to it so it acts as a name of sorts. 
+There is no concept of an owner and anyone can read or write to a mailbox. Your code decides
+how the the mailbox is managed.
 
 You can use `mbox Mbox.recv` to get the first item out of a mailbox. If there is nothing in the
-mailbox, `Mbox.recv` returns null. Once the message has been recv'd, it is removed from the
-message queue.
+mailbox, `Mbox.recv` returns null. Once the value has been returned from `recv`, it is gone, and
+has permanently removed from the mailbox.
 
 `Mbox.peek` is similar, but does not remove the message from the queue. It will also return
 null if nothing is in the queue.
 
-`Mbox.wait` saves you from calling Mbox.recv over and over again. It gracefully
+`Mbox.wait` saves you from calling `Mbox.recv` over and over again. It gracefully
 gives up processor cycles until a message is available using `sched_yield` and
 `usleep`.  There is no ability to set a timeout yet.
 
@@ -34,11 +54,20 @@ is undefined who will receive the message.
 
 Mailboxes have a read lock internally, so you can use read from them in multiple threads.
 
+## Writing
+
 Anyone can write to a mailbox, if they have a reference to that mailbox. A mailbox has a 
 write lock, so you need not worry about writing to a mailbox from different threads.
 
 `mbox Mbox.send msg` writes a message to a mailbox.
-```me Mbox.send "hi"; me Mbox.wait ||| "hi"```
+
+```
+me Mbox.send "hi"; me Mbox.wait
+|||
+"hi"
+```
+
+## Watching (threads and callbacks)
 
 If you want to have a bit of code executed every time someone sends a message to a given
 mailbox, XXL provides a convenience function to do that. 
@@ -48,62 +77,90 @@ that watches a mailbox and runs your code when a message is received. When a
 message is not available, it gracefully yields processor time slices to other
 programs.
 
-```me Mbox.watch {['newmsg,x]show}; me Mbox.send "hi" ||| ['newmsg,"hi"]```
+```
+me Mbox.watch {['incoming,x]show}; 
+me Mbox.send "hi" 
+||| 
+['incoming,"hi"]```
 
-Note: The output shown here comes from the `show` statement in the inner expression.
+Note: The output shown here comes from the `show` statement in the inner expression. We're
+joining it with the symbol `'incoming` for illustration purposes. In Erlang, this is an
+effective way to output debugging info.
 
-The code you supply is expected to be a binary function (one that takes two arguments). The x argument will be the message that
-was sent to the mailbox. The y argument will be a state variable that the function can update.
+The code you supply to `Mbox.watch` is expected to be a binary function (one that takes two arguments). 
 
-The first time the function is called, the state value will be []. After your code is called, the last expression inside the
-code body will be returned, and that will become the new state, which is passed to the next invocation of your code. 
+The `x` argument will be the message that was sent to the mailbox. The `y` argument will be a value (initially
+empty) that the function can use to maintain its own state.
 
-You are advised to test y with `orelse` or a similar logical verb to inflict your own default value on y.
+The first time the function is called, the state value will be the empty list `[]`. After your code is called, 
+the last expression inside the code body will be returned as usual, and `Mbox.watch` will hold on to it for 
+the next invocation of your code. It will then replace `[]`.
+
+You are advised to test `y` with `orelse` or a similar logical verb to inflict your own default value on `y`.
 
 An example:
 
-```[]Mbox.new as 'ctr Mbox.watch {y orelse 0+1 show}; 5 count :: {ctr Mbox.send 'inc} ||| 1\n2\n3\n4\n5```
+```
+[] Mbox.new as 'ctr 
+Mbox.watch {y orelse 0+1 show}; 
+5 count each {ctr Mbox.send 'inc} 
+||| 
+1\n2\n3\n4\n5```
 
 Note: The output shown here comes from the `show` statement in the inner expression.
 
-The watch verb also provides a ping function for convenience. This is trapped by the watch thread itself before your
-code is invoked. To use it, send a message like ['ping, mailboxid]. mailboxid will be sent a message that looks like 
-['pong,mbox,msgsreceived,emptypolls].
+The `watch` verb also provides a ping function for convenience. This is done by the watch thread itself 
+before your code is invoked. 
 
-A watch function may return just `'exit` and the thread will exit cleanly. Otherwise there is no way to kill or interact
-with the thread.
+To use it, send a message like `['ping, mailboxid]`. mailboxid will be sent a message that looks like 
+`['pong,mbox,nummsgsreceived,numemptypolls]`.
 
-Let's say you had a service like the one we built above that provides monotonically increasing counter values. To use
-it from your code, you would have to send it a message, have it reply back to your mailbox, and then process it.
+A callback function used with `watch` function may return just `'exit` and the thread will exit cleanly. 
+
+Otherwise there is no way to kill or interact with the thread. In other words, you can't shut down a watcher
+thread, except through the watcher callback code itself (by returning `'exit`).
+
+## Querying a mailbox
+
+Let's say you had a service like the one we built above that provides monotonically increasing counter values. You
+could use these values across multiple threads, like to create a unique identifier.
+
+To use it from your code, you would have to send it a message, have it reply back to your mailbox, and then process it.
 
 This is somewhat inconvenient and can disturb the program flow for the code consuming the mailbox-based service. 
 
-`svc Mbox.query args` creates a temporary mailbox, sends `[args, tmpmbox]` to `svc`, and waits for a response, which
-it then returns. The receiving mailbox (the code that provides the service) should expect to unpack its argument.
-Here's an example of a very exciting multiplication service that communicates with a mailbox:
+`Mbox.query` is a mashup of `Mbox.send` and `Mbox.recv` for convenience.
+
+`svc Mbox.query args` creates a temporary mailbox, sends `[args, tmpmbox]` to the mailbox `svc` (which you would
+have created elsewhere), and waits for a response, which it then returns. 
+
+The receiving mailbox (the code that provides the service) should expect to unpack its argument.
+
+Here's an exciting multiplication example that communicates with a mailbox:
 
 ```
-[]Mbox.new as 'mulsvc Mbox.watch {x@0 as 'req; x@1 as 'client; client Mbox.send (y|1*req)};
+[] Mbox.new as 'mulsvc 
+Mbox.watch {x@0 as 'req; x@1 as 'client; client Mbox.send (y|1*req)};
 1 range 5 :: {mulsvc Mbox.query x}
 |||
 (1,2,6,24,120i)
 ```
 
-It utilizes the state feature of `Mbox.watch` to preserve the last value you requested, and then multiplies it
-with the new value.
+The `watch` callback in this example utilizes the state (`y`) feature of `Mbox.watch` to preserve the last value 
+you requested, and then multiplies it with the new value, which is sent back to the mailbox provided in the 
 
 There is no timeout available right now with `Mbox.query`.
+
+## About that mailbox handle..
 
 A mailbox internally consists of a message queue, a read lock, and a write lock. Do not
 rely on the internals of a mailbox from XXL code, as the internals may change.
 
-March 2016 notes:
+## March 2016 notes:
 
 - Classes: Having to type `Mbox` in front of these verbs is only a temporary annoyance. Eventually XXL will know from
 the x value's tag that you mean Mbox.send when you say send. See `Classes`.
 
 - Performance: On a $5/mo Digital Ocean server I get around 2500 `Mbox.send`s per second, or about 800 
 `Mbox.query`/sec, when hitting a single mailbox and thread. This isn't ideal but seems usable to me. Of 
-course, it used 800mb of RAM while doing so, so be cautious.
-
-
+course, it used 800mb of RAM while doing so (grrr..), so be cautious.
