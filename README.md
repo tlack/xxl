@@ -12,15 +12,16 @@ Pretty buggy but passes tests. Useful for writing small utilities, for me. Not
 yet suitable for real work.
 
 Tested so far on Linux (64bit x86 & GCC or Clang), OS X (Clang), Windows
-(Cygwin64), Android under termux, and Raspberry Pi. Should work on iOS as well
+(Cygwin64), Android under termux, Intel Edison and Raspberry Pi. Should work on iOS as well
 but untested.
 
 ## Examples
 
 ### JSON encoder
 
-![json encoder screenshot with syntax highlighting](http://www.modernmethod.com/send/files/jsonencode.png)
+About 6 lines of code, without the tests:
 
+![json encoder screenshot with syntax highlighting](http://www.modernmethod.com/send/files/jsonencode.png)
 
 ```
 // enclose (c)urly(b)races, (s)quare(b)brackets, (q)uotes:
@@ -33,6 +34,48 @@ but untested.
 'many is {as 'el type case ('char, {el str eq}, 'dict, {el dict}, {el jac encode esb})};
 'encode is {ravel[many,str]};            // ravel calls x y[0] for arrays (len > 1), x y[1] for scalars
 ```
+
+Here's what's going on in this monster. I'll explain the parts, and then the sequence of how it comes together. As per the
+fashion that we like, the code starts from the simple, base functions, and progresses to the more complex functions that
+use them.
+
+`ecb`/`esb`/`eq` enclose their argument in curly braces, square braces, or quotes, respectively. They use the name `x` 
+to refer to their argument. 
+
+`jc` (join comma) joins the contents of its argument together with a comma in between each item. `jac` does the same
+thing, but after first calling its right argument (`y`) on each item - `jac` here is a mnemonic for "join and call". 
+
+The astute might notice that `jc` and `jac` don't refer to`x`, because the first verb inside a function will be invoked 
+automatically with `x` as the left argument. In small functions, `x` is almost always the first term in the function's 
+code, so being able to omit it results in some expressivity. More on this later.
+
+`pair` calls another function, `encode` (which we define later), without referring to `x`. It then appends a `:` to the
+string that is returned from `encode`, and then appends that to the result of calling `encode` with the `y` argument.
+This is a form of recursion.
+
+`dict` takes a dictionary as an argument, gets its keys as a list using the built-in `key` verb, and saves them in a 
+new variable called `k`. The values of the dictionary (also a list) are extracted using the built-in `val` verb and
+become `v`. 
+
+These two lists then become the left and right arguments for successive calls to `jc` using the "each pair" or `>:` verb.
+Each of the key/value pairs will get commas between them. Then, we enclose the whole of the dictionary in curly braces,
+like `{"name":"Tyler","age":"2"}`.
+
+All the looping verbs have short names that end in `:`.
+
+`many` looks complex, but isn't. Its purpose is to handle multiple-item collections (called vectors in XXL). In our case, we have to worry about two main ones: character vectors (strings) and dictionaries.
+
+First, we store the value of `x` as `el` (element). Then we extract the value's type
+using the `type` verb, and then use the `case` verb to decide how to treat all the different types.
+
+If it's a character vector (a string), we pass it through the `str` verb to remove its tag (a feature we'll explain later).
+
+If it's a dictionary, we call our `dict` function. If it's anything else, we recurse by calling `encode` again, 
+and then enclose the result in square braces (think arrays of numbers).
+
+And finally the star of the show, `encode`. `ravel` is a verb that allows you to take one branch of logic for single-item
+values (like the number `3`), or a different branch for values that have many items, like an array or string (vectors).
+Depending on the type of `x`, `encode` will dispatch either `many` (for multiple values) or `str` (for simple, single values).
 
 ### MySQL Slow Query Watcher
 
@@ -393,10 +436,10 @@ major features I anticipate finishing soon-ish.
 in code..)
 - ~~In-memory tables~~ Few operations yet, and bugs remain, but the notion of tables has
   slowly seeped in. See tests.
-- ~~Non-pointer tags implementation to avoid logic to enc/decode to binary for disk and IPC
-  ~~ Temporarily replaced tag representation with 128bit pointer string. Fast to compare,
-	almost as fast as possible to create (memcpy), zero overhead on IPC ingest/excrete, 
-	not terribly large on today's memory sizes.
+- ~~Non-pointer tags implementation to avoid logic to enc/decode to binary for disk and IPC~ 
+Temporarily replaced tag representation with 128bit pointer string. Fast to compare,
+almost as fast as possible to create (memcpy), zero overhead on IPC ingest/excrete, 
+not terribly large on today's memory sizes.
 - I/O (~~files~~, ~~sockets~~, mmap)
 - Logged updates (I like [Kdb's approach to this](http://code.kx.com/wiki/Cookbook/Logging))
 - ~~Mailboxes/processes (implemented as a writer-blocks general list)~~ Available in "Mbox"
