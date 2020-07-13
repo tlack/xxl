@@ -1,4 +1,4 @@
-![XXL logo](http://www.modernmethod.com/send/files/xxl-logo-2.png)
+![XXL logo](https://raw.githubusercontent.com/tlack/xxl/master/doc/logo.png)
 
 # What is XXL?
 
@@ -21,7 +21,7 @@ but untested.
 
 About 6 lines of code, without the tests:
 
-![json encoder screenshot with syntax highlighting](http://www.modernmethod.com/send/files/jsonencode.png)
+![json encoder screenshot with syntax highlighting](https://raw.githubusercontent.com/tlack/xxl/master/doc/jsonencode.png)
 
 ```
 // enclose (c)urly(b)races, (s)quare(b)brackets, (q)uotes:
