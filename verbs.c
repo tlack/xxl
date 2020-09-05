@@ -2543,14 +2543,33 @@ VP unionn(VP x,VP y) {
 	if(DICT(x) && DICT(y)) return catenate(x, y);
 	return EXC(Tt(nyi), "union not yet implemented for that type", x, y);
 }
+VP xray_time(VP x) {
+	clock_t st, en;
+	if (LEN(x) == 2) {
+		st=clock();
+		VP r=apply(LIST_item(x, 0), LIST_item(x,1));
+		if (IS_EXC(r)) return r;
+		en=clock();
+		VP r2=xln(2, xf((en-st) / CLOCKS_PER_SEC), r);
+		return r2;
+	}
+	return EXC(Tt(nyi), "try '(func,arg) xray'", x, 0);
+}
 VP xray(VP x) {
 	XRAY_log("xray\n");XRAY_emit(x);
-	if(!_any(x)) {
-		XRAY_LVL=0;
-		return Tt(xrayoff);
+	if(LIST(x)) {
+		// XRAY_LVL=2;
+		VP res = xray_time(x);
+		// XRAY_LVL=0;
+		return res;
 	} else {
-		XRAY_LVL=2;
-		return Tt(xrayon);
+		if(!_any(x)) {
+			XRAY_LVL=0;
+			return Tt(xrayoff);
+		} else {
+			XRAY_LVL=2;
+			return Tt(xrayon);
+		}
 	}
 }
 
