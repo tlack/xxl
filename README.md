@@ -8,8 +8,9 @@ attain these goals.
 
 ## Status
 
-Pretty buggy but passes tests. Useful for writing small utilities, for me. Not
-yet suitable for real work.
+Passes tests. Useful for writing small utilities, for me. Needs a rethink of
+internal virtual machine to fix bugs that limit usability. Not yet suitable for
+real work.
 
 Tested so far on Linux (64bit x86 & GCC or Clang), OS X (Clang), Windows
 (Cygwin64), Android under termux, Intel Edison and Raspberry Pi. Should work on iOS as well
@@ -17,11 +18,49 @@ but untested.
 
 ## Examples
 
+### Manipulate variables
+
+In XXL, we call functions `verbs`, and you call one like `x func y`. 
+
+Code reads left to right.
+
+There is no order of operations. Semicolons are important. There isn't much to learn.
+
+When you name variables, you specify their names as a special name starting
+with `'`, and use the `as` or `is` function. Then you refer to them without the
+`'`.
+
+(Note: the `0.` and `1.` are part of the XXL interactive prompt.)
+
+```
+0. 41,6,2 as 'ages;      // create a variable named ages with "as"
+(41,6,2)
+1. 'ages is (41,6,2);    // equivalent to the above, reverse order with "is"
+(41,6,2)
+2. ages
+(41,6,2)
+```
+
+XXL is functional, so you don't use any loops to manipulate values:
+```
+3. ages each {x * 2}
+(82,12,4)
+4. ages each {str x," years old"} join "\n"      // joint into separate lines
+"41 years old\n6 years old\n2 years old\n"
+```
+
+(Note: `\n` is nerd speak for newline or enter, so messages break to the next line)
+
+`each` is a regular function, believe it or not. XXL doesn't really have any syntax that defines
+looping abilities. It's all just regular XXL functions.
+
 ### JSON encoder
 
 About 6 lines of code, without the tests:
 
 ![json encoder screenshot with syntax highlighting](https://raw.githubusercontent.com/tlack/xxl/master/doc/jsonencode.png)
+
+Cut and paste-able:
 
 ```
 // enclose (c)urly(b)races, (s)quare(b)brackets, (q)uotes:
@@ -35,9 +74,7 @@ About 6 lines of code, without the tests:
 'encode is {ravel[many,str]};            // ravel calls x y[0] for arrays (len > 1), x y[1] for scalars
 ```
 
-Here's what's going on in this monster. I'll explain the parts, and then the sequence of how it comes together. As per the
-fashion that we like, the code starts from the simple, base functions, and progresses to the more complex functions that
-use them.
+Here's what's going on in this monster. I'll explain the parts, and then the sequence of how it comes together. 
 
 `ecb`/`esb`/`eq` enclose their argument in curly braces, square braces, or quotes, respectively. They use the name `x` 
 to refer to their argument. 
