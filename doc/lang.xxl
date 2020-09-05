@@ -18,7 +18,9 @@ though the name we use is similar.
  'cat:'lists,
  'classes:'
 ]
+
 $'table,                               // make dict into start of new table
+
 ['t:'unary,
  'name:"flat",
  'op:"",
@@ -30,11 +32,14 @@ $'table,                               // make dict into start of new table
  ],
  'seealso:[],
  'cat:'lists],
-['t:'unary, 'name:"list", 
+
+['t:'unary, 
+ 'name:"list", 
  'desc:"Converts vector x into a general list", 
  'ex:[ ["(1,2,3)vec",[1,2,3]] ], 
  'seealso:["vec"],
  'cat:'lists],
+
 ['t:'binary,
  'name:"join",
  'op:"|,",
@@ -45,6 +50,7 @@ $'table,                               // make dict into start of new table
  ],
  'cat:'lists,
  'classes:'x],
+
 ['t:'binary,
  'name:"split",
  'op:"||",
@@ -293,21 +299,25 @@ Make many returns a list of values.",
  ],
  'cat:'logic
 ],
+
 ['t:'binary, 
  'name:"iftrue", 
  'desc:"returns y if x is truthy. if y is callable, y will be invoked with x as an argument.", 
  'ex:[["0 iftrue 2",0],["1 iftrue 2",2]],
  'cat:'logic],
+
 ['t:'binary,
  'name:"orelse", 
  'desc:"returns y if x is falsy. if y is callable, y will be invoked with x as an argument.", 
  'ex:[["0 orelse 2",2],["1 orelse 2",1]],
  'cat:'logic],
+
 ['t:'binary, 
  'name:"ifelse", 
  'desc:"returns y[0] if x is truthy or y[1] otherwise. if y is callable it will be invoked with x as an argument.",
  'ex:[["0 ifelse (3,4)",4],["1 ifelse (3,4)",3]],
  'cat:'logic],
+
 ['t:'unary, 
  'name:"condense", 
  'oper:"~>",
@@ -319,6 +329,7 @@ Make many returns a list of values.",
  ", 
  'ex:[ ["0,0,1,0,0,1,1,0,0 condense", (2,5,6)] ], 
  'cat:'logic],
+
 ['t:'binary, 
  'name:"and", 
  'op:"&",
@@ -576,10 +587,24 @@ Make many returns a list of values.",
  'desc:"invoke y for each item in list x, and then again for each member of the result that's a list, and so on. This is similar to a breadth first search of a tree. ", 
  'ex:[], 
  'cat:'misc],
+
+['t:'unary, 
+ 'name:"xray", 
+ 'desc:"
+	Xray controls XXL debugging output. 
+	
+	Use `1 xray` to turn on
+	
+	`0 xray` to turn off
+	
+	`(function;argument) xray` returns timing information when invoking `function @ argument`
+ ", 
+ 'ex:[], 
+ 'cat:'misc],
+
 // TODO
 ['t:'unary, 'name:"selftest", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'unary, 'name:"tag", 'desc:"", 'ex:[], 'cat:'misc],
-['t:'unary, 'name:"xray", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"bracketj", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"consecj", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"deep", 'desc:"invokes y for each nested list in x", 'ex:[], 'cat:'misc],
