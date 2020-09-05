@@ -262,6 +262,7 @@ struct xxl_index_t {                   // index of exported values for shared li
 
 extern VP XB0; extern VP XB1; extern VP XI0; extern VP XI1; extern I8 PF_ON; extern I8 XRAY_LVL; 
 extern tag_t TIEXCEPTION,TINULL; extern VP TTPARENT;
+extern THREADLOCAL VP XXL_SYS, XXL_CUR_CTX;
 extern THREADLOCAL I8 IN_OUTPUT_HANDLER; 
 extern I8 MEM_WATCH;
 

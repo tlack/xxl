@@ -110,8 +110,11 @@ $COMPILEOBJ \
 $COMPILEOBJ \
 	stdlib.c 2>&1 \
 	&& \
+$COMPILEOBJ \
+	verbs.c 2>&1 \
+	&& \
 $BUILDOBJ xxl \
-	xxl.o repl.o net.o stdlib.o 2>&1 \
+	xxl.o repl.o net.o stdlib.o verbs.o 2>&1 \
 	&& \
 $RUN
 
