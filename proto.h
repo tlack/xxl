@@ -172,9 +172,10 @@ VP xfillrange(VP x,int from,int to,int byteval);
 VP xfree(VP x);
 VP xfroms(const char* str);
 VP xor(VP x,VP y);
-VP xrealloc(VP x,I32 newn);
 VP xray(VP x);
+VP xrealloc(VP x,I32 newn);
 VP xref(VP x);
+VP xreplace(VP x,VP newval);
 VP xsplice(const VP x,const VP idx,const VP replace);
 
 #ifdef THREAD
