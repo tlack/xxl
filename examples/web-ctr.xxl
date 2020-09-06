@@ -1,6 +1,22 @@
-0 as 'ctr; 
-(8080,"") Net.bind {
-	ctr+1 as '.ctr repr as 'cr; 
-	"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n",
-	"Server: xxl v0.0\r\n\r\n",
-	"Hello ",ctr,"\r\n" flat}
+
+'make_http_response is {
+	[
+		"HTTP/1.0 200 OK",
+		"Content-Type: text/plain",
+		"Connection: close",
+		"Server: xxl v0.0"
+	] show as 'template;
+	template join "\r\n",
+	"\r\n",
+	"\r\n",
+	x,
+	"\r\n",
+	"\r\n"
+	flat
+};
+
+0 as 'ctr;
+
+(8080,"localhost") Net.bind {
+	ctr + 1 as '.ctr repr make_http_response
+}

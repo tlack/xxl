@@ -141,54 +141,47 @@ Originally used as a one-liner to fix a performance issue on a site.
 
 ### Simple Web Server (Counter)
 
-Here's an example web server application that acts as a counter. You can run
-this as`./c examples/web-ctr.xxl`. Source code in full:
+Here's an example web server application that acts as a counter. 
+
+You can run this as`./c examples/web-ctr.xxl`. 
+
+XXL doesn't include HTTP support explicitly (yet), so this server speaks a
+little HTTP. Source code in full:
 
 ```
 0 as 'ctr;
+
+'make_http_response is {
+	[
+		"HTTP/1.0 200 OK",
+		"Content-Type: text/plain",
+		"Connection: close",
+		"Server: xxl v0.0"
+	] show as 'template;
+	template join "\r\n",
+	"\r\n", "\r\n",
+	x,
+	"\r\n", "\r\n"
+	flat
+};
+
 (8080,"localhost") Net.bind {
-	ctr+1 as '.ctr;  // dot in front of name means "parent"
-	"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n",
-	"Connection: close\r\nServer: xxl v0.0\r\n\r\nHello ",
-	(.ctr repr),"\r\n" flat}
+	ctr + 1 as '.ctr repr make_http_response
+}
 ```
 
 (We didn't show the XXL prompt here, just the code itself.)
 
-The first line declares a variable or noun named `ctr`. Variables are defined
-using a tag. After they are defined, you can refer to them without the tag.
-Tags start with apostrophe `'` and can contain anything in the range `[A-Za-z_?]`.
-Names may not contain numbers.
+This simple server uses `(socket_options) Net.bind (handler)` to start a
+listening network connection and setup a callback.
 
-Names starting with `.` are referenced from the root of the XXL context tree,
-rather than being resolved in the locals context to start, which makes them
-behave something like globals in other languages.
+When invoked, the callback fetches the value of `ctr` (a global), adds 1 to it,
+resets the global (`as` allows you to assign in other contexts - like globally here with `'.ctr`),
+convert that number to a string (`repr`), and then create a somewhat-valid HTTP
+response with that string.
 
-The second line invokes the built in `Net.bind` verb, which creates a network socket
-and calls the code you supply to handle the request after it comes in. 
-
-On the left of the verb come the listening socket configuration options. In this case, 
-port 8080 on localhost.
-
-On the right side of the `Net.bind` verb we supply an anonymous function body
-to act as the callback to be invoked when a connection is made and a request is
-received. This callback is invoked with one argument, which is a list
-containing the request body in the first member and the remote IP address in
-the second.
-
-At the moment, `Net.bind` only supports client-speaks-first-style network
-protocols, such as HTTP.
-
-Inside the callback, we display the request on the server's screen (`x show`), increase
-and store the counter value, and then generate an HTTP response with a couple of headers.
-
-Since we want to include the counter's current value, we append it to the string after
-calling `repr` on the counter value only (since it's in parenthesis). The resulting list
-needs to be flattened so we can spit it out as one long string to the client's socket, so
-we call XXL's `flat` verb, which removes a level of nesting on a general list (akin to
-`raze` in Q).
-
-Voila!
+`make_http_response` basically construct a simple string from your output, flattens the list,
+and returns it to `Net.bind` to send. 
 
 ## Docs
 
