@@ -89,7 +89,7 @@ VP wherepred_(const VP x,const VP y,int removematches) {
 		return res;
 }
 
-// RUNTIME 
+// VALUE MANIPULATION
 
 inline VP appendbuf(VP x,const buf_t buf,const size_t nelem) {
 	int newn;buf_t dest;
@@ -270,15 +270,12 @@ VP behead(const VP x) {
 	CLASS_dispatch(NULL, behead, x, NULL);
 	return drop_(x,1);
 }
-VP from(const VP x,const VP y) {
-	if(IS_EXC(x) || IS_EXC(y)) return EXC(Tt(value),"from can't use those values",x,y);
-	CLASS_dispatch(NULL, from, y, x);
-	if(CALLABLE(x)) return wherepred_(y,x,0);
-	if(CALLABLE(y) && _arity(y)==2 && LIST(x) && LEN(x)==2) return apply2(y,ELl(x,0),ELl(x,1));
-	return apply(y,x);
+VP capacity(VP x) {
+	return xin(1,x->cap);
 }
 VP catenate_table(VP table, VP row) {
 	XRAY_log("catenate_table\n"); XRAY_emit(table); XRAY_emit(row);
+	// XXX i must be something something wrong here
 	int trows, tcols;
 	if(table==NULL || LEN(table)==0 || LEN(KEYS(table))==0) {
 		XRAY_log("table seems to be blank; creating table from this row");
@@ -398,9 +395,44 @@ VP catenate(VP x,VP y) {
 	XRAY_log("catenate result");XRAY_emit(res);
 	return res;
 }
+int _contains(VP x, VP y) {
+	return _find1(x,y)==-1 ? 0 : 1;
+}
+VP contains(VP x, VP y) {
+	return xi(_contains(x,y));
+}
+VP condense(VP x) {
+	// equivalent to k's & / where - condenses non-zeroes into their positions (ugh english)
+	// always returns an int vector for now; we generally rely on ints too much for this
+	int typerr=-1; int j; VP acc=xi0();
+	// XRAY_log("condense\n");XRAY_emit(x);
+	VARY_EACH(x,({ if(_x) { j=_i; FOR(0,_x,appendbuf(acc,(buf_t)&j,1)); } }),typerr);
+	// XRAY_log("condense returning\n");XRAY_emit(acc);
+	return acc;
+}
 VP curtail(VP x) {
 	// XRAY_log("curtail\n");XRAY_emit(x);
 	return drop_(x,-1);
+}
+VP deal(VP range, VP amt) {
+	XRAY_log("deal\n");XRAY_emit(range);XRAY_emit(amt);
+	IF_EXC(!LIST(range) && !NUM(range),Tt(type),"deal: left arg must be numeric", range, amt);
+	IF_EXC(!IS_i(amt) || !SCALAR(amt),Tt(type),"deal: single right arg must be int", range, amt);
+	int typerr=-1;
+	if(LIST(range)) {
+		int i, rn=range->n, amtt=NUM_val(amt); 
+		VP acc=xlsz(amtt);
+		for(i=0; i<amtt; i++) acc=append(acc,ELl(range,rand()%rn));
+		return acc;
+	} else {
+		VP acc=NULL;
+		VARY_EL(amt, 0, ({ typeof(_x)amt=_x; acc=ALLOC_LIKE_SZ(range,_x); // TODO rethink deal in terms of more types
+			VARY_EL_NOFLOAT(range, 0, ({
+				FOR(0, amt, ({ if(_x==0)_x=1; EL(acc, typeof(_x), _i)=rand()%_x; }));
+				acc->n=amt;
+			}), typerr);}), typerr);
+		return acc;
+	}
 }
 VP del_list_(VP x,int i) {
 	if(!LIST(x) || i >= LEN(x)) return x;
@@ -559,6 +591,47 @@ VP extractas(const VP data,const VP parts) {
 	xfree(res);
 	return rest;
 }
+int _findbuf(const VP x, const buf_t y) {   // returns index or -1 on not found
+	// XRAY_log("findbuf\n");XRAY_emit(x);
+	if(LISTDICT(x)) { ITERV(x,{ 
+		IF_RET(_findbuf(ELl(x,_i),y)!=-1,_i);
+	}); } else {
+		ITERV(x,{ IF_RET(memcmp(ELi(x,_i),y,x->itemsz)==0,_i); });
+	}
+	return -1;
+}
+inline int _find1(const VP x, const VP y) {        // returns index or -1 on not found
+	// probably the most common, core call in the code. worth trying to optimize.
+	// XRAY_log("_find1\n",x,y); XRAY_emit(x); XRAY_emit(y);
+	ASSERT(x && (LISTDICT(x) || x->t==y->t), "_find1(): x must be list, or types must match");
+	VP scan;
+	if(UNLIKELY(DICT(x))) scan=KEYS(x);
+	else scan=x;
+	int sn=LEN(scan), yn=LEN(y), i;
+	if(LIST(scan)) {
+		int yt=y->t; VP item;
+		for(i=0; i<sn; i++) {
+			item=ELl(scan,i);
+
+			if(item && ( (item->t == yt && item->n == yn) ||
+									 (LIST(item) && LIST_item(item,0) && LIST_item(item,0)->t == yt) ))
+				if (_equal(item,y)==1) return i;
+		}
+		return -1;
+	} else {
+		if(sn<yn) return -1;
+		for(i=0; i<sn-(yn-1); i++) {
+			if(memcmp(ELi(x,i), ELi(y,0), yn * x->itemsz)==0)
+				return i;
+		}
+	}
+	return -1;    // The code of this function reminds me of Armenia, or some war torn place
+}
+VP find1(const VP x, const VP y) {
+	if(!x || !(LISTDICT(x) || x->t==y->t))
+		return EXC(Tt(type),"find x must be list, or types must match",x,y);
+	return xi(_find1(x,y));
+}
 VP first(const VP x) {
 	CLASS_dispatch(NULL, first, x, NULL);
 	VP i,r;
@@ -596,8 +669,42 @@ VP flatten(VP x) {
 	CLASS_dispatch(NULL, flat, x, NULL);
 	return flatten0(x, 1);
 }
+VP from(const VP x,const VP y) {
+	if(IS_EXC(x) || IS_EXC(y)) return EXC(Tt(value),"from can't use those values",x,y);
+	CLASS_dispatch(NULL, from, y, x);
+	if(CALLABLE(x)) return wherepred_(y,x,0);
+	if(CALLABLE(y) && _arity(y)==2 && LIST(x) && LEN(x)==2) return apply2(y,ELl(x,0),ELl(x,1));
+	return apply(y,x);
+}
 VP identity(VP x) {
 	return x;
+}
+VP itemsz(VP x) {
+	return xi(x->itemsz);
+}
+VP info(VP x) {
+	CLASS_dispatch(NULL, info, x, NULL);
+	VP res; type_info_t t;
+	t=typeinfo(x->t);
+	res=xd0();
+	res=assign(res,Tt(typenum),xi(x->t));
+	res=assign(res,Tt(type),xfroms(t.name));
+	res=assign(res,Tt(rc),xi(x->rc));
+	res=assign(res,Tt(len),len(x));
+	res=assign(res,Tt(capacity),capacity(x));
+	res=assign(res,Tt(itemsz),itemsz(x));
+	res=assign(res,Tt(alloced),xi(x->alloc));
+	res=assign(res,Tt(baseptr),xj((long long)BUF(x)));
+	res=assign(res,Tt(dataptr),xj((long long)BUF(x)));
+	if(DICT(x)) {
+		if(KEYS(x)) res=assign(res,Tt(keyinfo),info(KEYS(x)));
+		if(VALS(x)) res=assign(res,Tt(valinfo),info(VALS(x)));
+	}
+	if(TABLE(x)) {
+		res=assign(res,Tt(keyinfo),info(KEYS(x)));
+		res=assign(res,Tt(valinfo),each(VALS(x),x1(&info)));
+	}
+	return res;
 }
 VP join(const VP list,const VP sep) {
 	VP acc=NULL,x; int ln=LEN(list), i;
@@ -623,10 +730,106 @@ VP last(const VP x) {
 	if(LIST(x)) { return xref(ELl(x,LEN(x)-1)); }
 	else return apply_simple_(x,_len(x)-1);
 }
+int _len(VP x) {
+	int n = LEN(x);
+	if(TABLE(x)) n=TABLE_nrows(x);
+	if(DICT(x)) { 
+		n=KEYS(x) ? LEN(KEYS(x)) : 0;
+	}
+	return n;
+}
+VP len(VP x) {
+	CLASS_dispatch(NULL, len, x, NULL);
+	return xi(_len(x));
+}
 VP list(const VP x) { // convert x to general list
 	if(x==0) return xl0();
 	if(LIST(x))return x;
 	return split(x,xi0());
+}
+VP make_table(VP keys,VP vals) {
+  VP res, newvals; int i;
+	XRAY_log("make_table\n");XRAY_emit(keys);XRAY_emit(vals);
+	// approach: create empty table, then apply all these row values to it.
+	// catenate_table already handles lists-of-lists correctly.
+  res=xasz(2);
+	EL(res,VP,0)=MUTATE_CLONE(keys);
+	int sz=vals && LEN(vals) ? LEN(ELl(vals,0)) : 0;
+	EL(res,VP,1)=xlsz(sz);
+	res->n=2;
+	return catenate_table(res, MUTATE_CLONE(vals));
+}
+VP make_many(VP x,VP y) {
+	int i, j;
+	int xn=LEN(x), yn=LEN(y);
+	VP chars=xfroms("ist"); 
+	VP funs=xln(3,
+		proj(2,&base,0,xi(10)),
+		proj(1,&str,0,0),
+		proj(2,&make,0,Tt(tag))
+	);
+	VP d=dict(chars,funs), row=xlsz(yn);
+	for(j=0; j<yn; j++) {
+		char ch=AS_c(y,j);
+		if(ch=='_') continue;
+		VP tmpc=xc(ch); VP fun=DICT_find(d,tmpc); xfree(tmpc);
+		VP item=apply_simple_(x,j);
+		if(fun!=NULL) { VP newitem=apply(fun, item); if (newitem!=item) { xfree(item); item=newitem; } }
+		row=append(row,item); xfree(item);
+	}
+	return row;
+}
+VP make(VP x, VP y) { 
+	// TODO make() should short cut matching kind casts 
+	// TODO make() should be smarter about lists in x
+	XRAY_log("make\n");XRAY_emit(x);XRAY_emit(y);
+	VP res=0; type_t typenum=-1; tag_t typetag=-1;
+	// right arg is tag naming a type, use that.. otherwise use y's type
+	if(IS_t(y)) {
+		if(LEN(y)==0) typetag=TINULL;
+		else typetag=AS_t(y,0); 
+	} else typenum=y->t;
+	// convenience mode: ["123","abc","xyz"] $ "ist" -> [123,"abc",'xyz]
+	if(LIST(x) && IS_c(y)) return make_many(x,y);
+	if(IS_c(x) && (typetag==TINULL || typetag==Ti(tag))) {
+		return xt(_tagnum(x));
+	}
+	if(typetag==Ti(table)) {
+		if(!DICT(x)) return EXC(Tt(type), "can only create table from dict", x, y);
+		return make_table(KEYS(x),VALS(x));
+	}
+	#include"cast.h"
+	// XRAY_emitRAW(buf,BUFSZ);
+	if(res) return res;
+	if(typetag!=-1) {
+		ARG_MUTATING(x); x->tag=typetag;
+		CLASS_dispatch(NULL, make, x, NULL);
+	}
+	return x;
+}
+VP pin(VP x, VP y) { 
+	// TODO cast() should short cut matching kind casts 
+	XRAY_log("pin\n");XRAY_emit(x);XRAY_emit(y);
+	tag_t newt = 0;
+	if(IS_t(x)) 
+		newt=AS_t(x,0);
+	else if(x->tag != 0)
+		newt=x->tag;
+	if (newt) {
+		/*
+		if (newt==Ti(Pointer)) {
+			VP ret=NULL;
+			if (sizeof(void*)==4 && IS_i(y)) { ret=(VP)AS_i(y,0); }
+			if (sizeof(void*)==8 && IS_j(y)) { ret=(VP)AS_j(y,0); }
+			xref(ret); return ret;
+		}
+		*/
+		ARG_MUTATING(y);
+		y->tag=newt;
+		CLASS_dispatch(NULL, make, y, NULL);
+		return y;
+	} else 
+		return EXC(Tt(type),"pin x arg should be tag name or tagged value",x,y);
 }
 VP reverse(const VP x) {
 	CLASS_dispatch(NULL, reverse, x, NULL);
@@ -760,62 +963,6 @@ VP take(const VP x, const VP y) {
 	VARY_EL(y, 0, ({ return take_(x,_x); }), typerr);
 	return NULL;
 }
-int _findbuf(const VP x, const buf_t y) {   // returns index or -1 on not found
-	// XRAY_log("findbuf\n");XRAY_emit(x);
-	if(LISTDICT(x)) { ITERV(x,{ 
-		IF_RET(_findbuf(ELl(x,_i),y)!=-1,_i);
-	}); } else {
-		ITERV(x,{ IF_RET(memcmp(ELi(x,_i),y,x->itemsz)==0,_i); });
-	}
-	return -1;
-}
-inline int _find1(const VP x, const VP y) {        // returns index or -1 on not found
-	// probably the most common, core call in the code. worth trying to optimize.
-	// XRAY_log("_find1\n",x,y); XRAY_emit(x); XRAY_emit(y);
-	ASSERT(x && (LISTDICT(x) || x->t==y->t), "_find1(): x must be list, or types must match");
-	VP scan;
-	if(UNLIKELY(DICT(x))) scan=KEYS(x);
-	else scan=x;
-	int sn=LEN(scan), yn=LEN(y), i;
-	if(LIST(scan)) {
-		int yt=y->t; VP item;
-		for(i=0; i<sn; i++) {
-			item=ELl(scan,i);
-
-			if(item && ( (item->t == yt && item->n == yn) ||
-									 (LIST(item) && LIST_item(item,0) && LIST_item(item,0)->t == yt) ))
-				if (_equal(item,y)==1) return i;
-		}
-		return -1;
-	} else {
-		if(sn<yn) return -1;
-		for(i=0; i<sn-(yn-1); i++) {
-			if(memcmp(ELi(x,i), ELi(y,0), yn * x->itemsz)==0)
-				return i;
-		}
-	}
-	return -1;    // The code of this function reminds me of Armenia, or some war torn place
-}
-VP find1(const VP x, const VP y) {
-	if(!x || !(LISTDICT(x) || x->t==y->t))
-		return EXC(Tt(type),"find x must be list, or types must match",x,y);
-	return xi(_find1(x,y));
-}
-int _contains(VP x, VP y) {
-	return _find1(x,y)==-1 ? 0 : 1;
-}
-VP contains(VP x, VP y) {
-	return xi(_contains(x,y));
-}
-VP condense(VP x) {
-	// equivalent to k's & / where - condenses non-zeroes into their positions (ugh english)
-	// always returns an int vector for now; we generally rely on ints too much for this
-	int typerr=-1; int j; VP acc=xi0();
-	// XRAY_log("condense\n");XRAY_emit(x);
-	VARY_EACH(x,({ if(_x) { j=_i; FOR(0,_x,appendbuf(acc,(buf_t)&j,1)); } }),typerr);
-	// XRAY_log("condense returning\n");XRAY_emit(acc);
-	return acc;
-}
 VP table_row_list_(VP tbl, int row) { 
 	int tc=TABLE_ncols(tbl), i;
 	VP lst=xlsz(tc), res; 
@@ -830,157 +977,11 @@ VP table_row_list_(VP tbl, int row) {
 VP table_row_dict_(VP tbl, int row) {
 	return dict(KEYS(tbl), table_row_list_(tbl, row));
 }
-VP make_table(VP keys,VP vals) {
-  VP res, newvals; int i;
-	XRAY_log("make_table\n");XRAY_emit(keys);XRAY_emit(vals);
-	// approach: create empty table, then apply all these row values to it.
-	// catenate_table already handles lists-of-lists correctly.
-  res=xasz(2);
-	EL(res,VP,0)=MUTATE_CLONE(keys);
-	int sz=vals && LEN(vals) ? LEN(ELl(vals,0)) : 0;
-	EL(res,VP,1)=xlsz(sz);
-	res->n=2;
-	return catenate_table(res, MUTATE_CLONE(vals));
-}
-VP make_many(VP x,VP y) {
-	int i, j;
-	int xn=LEN(x), yn=LEN(y);
-	VP chars=xfroms("ist"); 
-	VP funs=xln(3,
-		proj(2,&base,0,xi(10)),
-		proj(1,&str,0,0),
-		proj(2,&make,0,Tt(tag))
-	);
-	VP d=dict(chars,funs), row=xlsz(yn);
-	for(j=0; j<yn; j++) {
-		char ch=AS_c(y,j);
-		if(ch=='_') continue;
-		VP tmpc=xc(ch); VP fun=DICT_find(d,tmpc); xfree(tmpc);
-		VP item=apply_simple_(x,j);
-		if(fun!=NULL) { VP newitem=apply(fun, item); if (newitem!=item) { xfree(item); item=newitem; } }
-		row=append(row,item); xfree(item);
-	}
-	return row;
-}
-VP make(VP x, VP y) { 
-	// TODO make() should short cut matching kind casts 
-	// TODO make() should be smarter about lists in x
-	XRAY_log("make\n");XRAY_emit(x);XRAY_emit(y);
-	VP res=0; type_t typenum=-1; tag_t typetag=-1;
-	// right arg is tag naming a type, use that.. otherwise use y's type
-	if(IS_t(y)) {
-		if(LEN(y)==0) typetag=TINULL;
-		else typetag=AS_t(y,0); 
-	} else typenum=y->t;
-	// convenience mode: ["123","abc","xyz"] $ "ist" -> [123,"abc",'xyz]
-	if(LIST(x) && IS_c(y)) return make_many(x,y);
-	if(IS_c(x) && (typetag==TINULL || typetag==Ti(tag))) {
-		return xt(_tagnum(x));
-	}
-	if(typetag==Ti(table)) {
-		if(!DICT(x)) return EXC(Tt(type), "can only create table from dict", x, y);
-		return make_table(KEYS(x),VALS(x));
-	}
-	#include"cast.h"
-	// XRAY_emitRAW(buf,BUFSZ);
-	if(res) return res;
-	if(typetag!=-1) {
-		ARG_MUTATING(x); x->tag=typetag;
-		CLASS_dispatch(NULL, make, x, NULL);
-	}
-	return x;
-}
-VP pin(VP x, VP y) { 
-	// TODO cast() should short cut matching kind casts 
-	XRAY_log("pin\n");XRAY_emit(x);XRAY_emit(y);
-	tag_t newt = 0;
-	if(IS_t(x)) 
-		newt=AS_t(x,0);
-	else if(x->tag != 0)
-		newt=x->tag;
-	if (newt) {
-		/*
-		if (newt==Ti(Pointer)) {
-			VP ret=NULL;
-			if (sizeof(void*)==4 && IS_i(y)) { ret=(VP)AS_i(y,0); }
-			if (sizeof(void*)==8 && IS_j(y)) { ret=(VP)AS_j(y,0); }
-			xref(ret); return ret;
-		}
-		*/
-		ARG_MUTATING(y);
-		y->tag=newt;
-		CLASS_dispatch(NULL, make, y, NULL);
-		return y;
-	} else 
-		return EXC(Tt(type),"pin x arg should be tag name or tagged value",x,y);
-}
-int _len(VP x) {
-	int n = LEN(x);
-	if(TABLE(x)) n=TABLE_nrows(x);
-	if(DICT(x)) { 
-		n=KEYS(x) ? LEN(KEYS(x)) : 0;
-	}
-	return n;
-}
-VP len(VP x) {
-	CLASS_dispatch(NULL, len, x, NULL);
-	return xi(_len(x));
-}
-VP capacity(VP x) {
-	return xin(1,x->cap);
-}
-VP itemsz(VP x) {
-	return xi(x->itemsz);
-}
-VP info(VP x) {
-	CLASS_dispatch(NULL, info, x, NULL);
-	VP res; type_info_t t;
-	t=typeinfo(x->t);
-	res=xd0();
-	res=assign(res,Tt(typenum),xi(x->t));
-	res=assign(res,Tt(type),xfroms(t.name));
-	res=assign(res,Tt(rc),xi(x->rc));
-	res=assign(res,Tt(len),len(x));
-	res=assign(res,Tt(capacity),capacity(x));
-	res=assign(res,Tt(itemsz),itemsz(x));
-	res=assign(res,Tt(alloced),xi(x->alloc));
-	res=assign(res,Tt(baseptr),xj((long long)BUF(x)));
-	res=assign(res,Tt(dataptr),xj((long long)BUF(x)));
-	if(DICT(x)) {
-		if(KEYS(x)) res=assign(res,Tt(keyinfo),info(KEYS(x)));
-		if(VALS(x)) res=assign(res,Tt(valinfo),info(VALS(x)));
-	}
-	if(TABLE(x)) {
-		res=assign(res,Tt(keyinfo),info(KEYS(x)));
-		res=assign(res,Tt(valinfo),each(VALS(x),x1(&info)));
-	}
-	return res;
-}
 VP type(VP x) {
 	if(x==0 || x->t<0 || x->t>MAX_TYPE) return Tt(null);
 	if(IS_EXC(x)) return xt(_tagnums("exception"));
 	type_info_t t=typeinfo(x->t);
 	return xt(_tagnums(t.name));
-}
-VP deal(VP range, VP amt) {
-	XRAY_log("deal\n");XRAY_emit(range);XRAY_emit(amt);
-	IF_EXC(!LIST(range) && !NUM(range),Tt(type),"deal: left arg must be numeric", range, amt);
-	IF_EXC(!IS_i(amt) || !SCALAR(amt),Tt(type),"deal: single right arg must be int", range, amt);
-	int typerr=-1;
-	if(LIST(range)) {
-		int i, rn=range->n, amtt=NUM_val(amt); 
-		VP acc=xlsz(amtt);
-		for(i=0; i<amtt; i++) acc=append(acc,ELl(range,rand()%rn));
-		return acc;
-	} else {
-		VP acc=NULL;
-		VARY_EL(amt, 0, ({ typeof(_x)amt=_x; acc=ALLOC_LIKE_SZ(range,_x); // TODO rethink deal in terms of more types
-			VARY_EL_NOFLOAT(range, 0, ({
-				FOR(0, amt, ({ if(_x==0)_x=1; EL(acc, typeof(_x), _i)=rand()%_x; }));
-				acc->n=amt;
-			}), typerr);}), typerr);
-		return acc;
-	}
 }
 
 // APPLICATION, ITERATION AND ADVERBS
@@ -2543,35 +2544,6 @@ VP unionn(VP x,VP y) {
 	if(DICT(x) && DICT(y)) return catenate(x, y);
 	return EXC(Tt(nyi), "union not yet implemented for that type", x, y);
 }
-VP xray_time(VP x) {
-	clock_t st, en;
-	if (LEN(x) == 2) {
-		st=clock();
-		VP r=apply(LIST_item(x, 0), LIST_item(x,1));
-		if (IS_EXC(r)) return r;
-		en=clock();
-		VP r2=xln(2, xf((en-st) / CLOCKS_PER_SEC), r);
-		return r2;
-	}
-	return EXC(Tt(nyi), "try '(func,arg) xray'", x, 0);
-}
-VP xray(VP x) {
-	XRAY_log("xray\n");XRAY_emit(x);
-	if(LIST(x)) {
-		// XRAY_LVL=2;
-		VP res = xray_time(x);
-		// XRAY_LVL=0;
-		return res;
-	} else {
-		if(!_any(x)) {
-			XRAY_LVL=0;
-			return Tt(xrayoff);
-		} else {
-			XRAY_LVL=2;
-			return Tt(xrayon);
-		}
-	}
-}
 
 // TAG STUFF:
 
@@ -2957,4 +2929,36 @@ VP matchtag(const VP obj,const VP pat) {
 	}
 	XRAY_log("matchtag result\n"); XRAY_emit(acc);
 	return acc;
+}
+
+// SYSTEM B.S.
+
+VP xray_time(VP x) {
+	clock_t st, en;
+	if (LEN(x) == 2) {
+		st=clock();
+		VP r=apply(LIST_item(x, 0), LIST_item(x,1));
+		if (IS_EXC(r)) return r;
+		en=clock();
+		VP r2=xln(2, xf((en-st) / CLOCKS_PER_SEC), r);
+		return r2;
+	}
+	return EXC(Tt(nyi), "try '(func,arg) xray'", x, 0);
+}
+VP xray(VP x) {
+	XRAY_log("xray\n");XRAY_emit(x);
+	if(LIST(x)) {
+		// XRAY_LVL=2;
+		VP res = xray_time(x);
+		// XRAY_LVL=0;
+		return res;
+	} else {
+		if(!_any(x)) {
+			XRAY_LVL=0;
+			return Tt(xrayoff);
+		} else {
+			XRAY_LVL=2;
+			return Tt(xrayon);
+		}
+	}
 }
