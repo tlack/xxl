@@ -20,17 +20,17 @@ but untested.
 
 ### Manipulate variables
 
-In XXL, we call functions `verbs`, and you call one like `x func y`. 
+In XXL, we call functions verbs, and they can have only one or two arguments (named x and y, duh). 
 
-Code reads left to right.
+You call a verb like `x func` or `x func y`. 
 
-There is no order of operations. Semicolons are important. There isn't much to learn.
+Code reads left to right. There is no order of operations. Semicolons are important. There isn't much to learn.
 
 When you name variables, you specify their names as a special name starting
-with `'`, and use the `as` or `is` function. Then you refer to them without the
+with `'`, and use the `as` or `is` verb. Afterward you refer to them without the
 `'`.
 
-(Note: the `0.` and `1.` are part of the XXL interactive prompt.)
+(Note: the `0.` and `1.` below are part of the XXL interactive prompt.)
 
 ```
 0. 41,6,2 as 'ages;      // create a variable named ages with "as"
@@ -45,13 +45,16 @@ XXL is functional, so you don't use any loops to manipulate values:
 ```
 3. ages each {x * 2}
 (82,12,4)
-4. ages each {str x," years old"} join "\n"      // joint into separate lines
+4. ages each {x str," years old"} join "\n"      // joint into separate lines
 "41 years old\n6 years old\n2 years old\n"
 ```
 
 (Note: `\n` is nerd speak for newline or enter, so messages break to the next line)
 
-`each` is a regular function, believe it or not. XXL doesn't really have any syntax that defines
+`each` is a regular function (verb), believe it or not. It happens to understand what to do
+given a list (vector) on the left side and a function on the right.
+
+In contrast to many popullar languages, XXL doesn't really have any syntax that defines
 looping abilities. It's all just regular XXL functions.
 
 ### JSON encoder
@@ -461,7 +464,7 @@ Still no joins, many rough edges, untested performance.
 XXL is still very much a work in progress and is mostly broken. That said, here are the 
 major features I anticipate finishing soon-ish.
 
-- Currently has severe memory leaks and performance problems
+- **Currently has severe memory leaks and performance problems**
 - ~~Floats!~~ We've got floats now - no comparison tolerance yet tho.
 - ~~Dictionary literals (dictionaries do work and exist as a primitive type, just
 	can't decide on a literal syntax for them)~~
