@@ -5,22 +5,20 @@
 
 // GENERAL LISTS & LIST MANIPULATION -----------------------------------
 
+
 ['t:'unary,
  'name:"enlist",
  'op:"",
  'desc:"if x is not a list, returns [x]. otherwise x.
-This differs from the `list` verb, because `list` will split
+
+(This differs from the `list` verb, because `list` will split
 up a scalar into a list, which is a very different use case,
-though the name we use is similar.
+though the name we use is similar.)
 ",
  'ex:[ ["1 enlist", (enlist 1)] ],
- 'seealso:[],
+ 'seealso:["list"],
  'cat:'lists,
- 'classes:'
-]
-
-$'table,                               // make dict into start of new table
-
+ 'classes:'] make 'table,
 ['t:'unary,
  'name:"flat",
  'op:"",
@@ -32,14 +30,12 @@ $'table,                               // make dict into start of new table
  ],
  'seealso:[],
  'cat:'lists],
-
 ['t:'unary, 
  'name:"list", 
  'desc:"Converts vector x into a general list", 
  'ex:[ ["(1,2,3)vec",[1,2,3]] ], 
  'seealso:["vec"],
  'cat:'lists],
-
 ['t:'binary,
  'name:"join",
  'op:"|,",
@@ -55,13 +51,19 @@ $'table,                               // make dict into start of new table
  'name:"split",
  'op:"||",
  'desc:"splits x into a list of pieces delimited by y.",
- 'ex:[ ["1,7,2,7,3 split 7",[1,2,3]] ],
+ 'ex:[ 
+	["1,7,2,7,3 split 7",[1,2,3]],
+	["\"/sd/imgs/1.jpg\" split \"/\"", ["", "sd", "imgs", "1.jpg"]]
+ ],
  'cat:'lists,
  'classes:'x],
+
 ['t:'unary, 
  'name:"vec", 
  'desc:"transforms general list x into a same-type vector. returns x unmolested if not possible.", 
- 'ex:[ ["1,2,3vec",(1,2,3)] ], 
+ 'ex:[ 
+	["1,2,3vec",(1,2,3)] 
+ ], 
  'cat:'lists],
 
 // VECTORS & THEIR VALUES ----------------------------------------------
@@ -70,9 +72,12 @@ $'table,                               // make dict into start of new table
  'name:"catenate",
  'op:",",
  'desc:"normally known simply as `,`, catenate joins x to y",
- 'ex:[ ["(1,2),3",(1,2,3)] ],
+ 'ex:[ 
+	["(1,2),3",(1,2,3)] 
+ ],
  'cat:'values,
  'classes:'x],
+
 ['t:'binary, 
  'name:"amend", 
  'op:"!",
@@ -100,19 +105,26 @@ $'table,                               // make dict into start of new table
 	["(4,5,6)![{%2=0},{*3}]",(12,5,18)]
  ], 
  'cat:'values],
+
 ['t:'unary, 
  'name:"first", 
  'desc:"returns first item of x", 
- 'ex:[ ["1,2,3 first",1] ], 
+ 'ex:[ 
+  ["1,2,3 first",1] 
+ ], 
  'seealso:["behead","curtail","last"],
  'cat:'values,
  'classes:'x],
+
 ['t:'unary, 
  'name:"last", 'desc:"returns last item of x", 
- 'ex:[ ["1,2,3 last",3] ], 
+ 'ex:[ 
+	["1,2,3 last",3] 
+ ], 
  'seealso:["behead","curtail","first"],
  'cat:'values,
  'classes:'x],
+
 ['t:'unary, 
  'name:"behead", 
  'op:"|_",
@@ -121,6 +133,7 @@ $'table,                               // make dict into start of new table
  'seealso:["curtail","first","last"],
  'cat:'values,
  'classes:'x],
+
 ['t:'unary, 
  'name:"curtail", 
  'op:"_|",
@@ -129,6 +142,7 @@ $'table,                               // make dict into start of new table
  'seealso:["behead","first","last"],
  'cat:'values,
  'classes:'x],
+
 ['t:'binary,
  'name:"take",
  'op:"#|",
@@ -139,6 +153,7 @@ $'table,                               // make dict into start of new table
  ],
  'cat:'values,
  'classes:'x],
+
 ['t:'binary,
  'name:"drop",
  'op:"|#",
@@ -149,6 +164,7 @@ $'table,                               // make dict into start of new table
  ],
  'cat:'values,
  'classes:'x],
+
 ['t:'binary,
  'name:"except",
  'op:"|?",
@@ -159,12 +175,19 @@ $'table,                               // make dict into start of new table
  ],
  'cat:'values,
  'classes:'x],
+
 ['t:'binary, 'name:"from", 'op:".:",
  'desc:"
- x from y is equivalent to y@x, or simply x y if y were a function. It's easier to read than
- x y for some people, and helps the XXL parser from getting confused if y is a list, dict, or
+ `x from y` is equivalent to `y@x`, or simply `x y` if y were a function. 
+ 
+ It's easier to read in this \"reverse order\" for some expression constructs, 
+ and helps the XXL parser from getting confused if y is a list, dict, or
  table. :)
- ", 'ex:[], 'cat:'misc,'classes:'y],
+ ", 
+ 'ex:[], 
+ 'cat:'misc,
+ 'classes:'y],
+
 ['t:'binary,
  'name:"extract",
  'op:"",
@@ -182,12 +205,13 @@ first element.  The rest of x, after the last extracted value, is returned as
 the second item in the result. 
 ",
  'ex:[
-  ["\"http://txpo.st/test/a/b\" split \"/\" extract ('method,','host)",
-   [['method:"http:", 'host:"txpo.st"], ["test","a","b"]]
+  [
+		"\"http://txpo.st/test/a/b\" split \"/\" extract ('method,','host)",
+		[['method:"http:", 'host:"txpo.st"], ["test","a","b"]]
   ]
  ],
- 'cat:'values,
- 'classes:'],
+ 'cat:'values],
+
 ['t:'binary,
  'name:"extractas",
  'op:"",
@@ -206,9 +230,9 @@ compose extract with other verbs to build out elaborate parsers.
  'ex:[
   ["\"http://txpo.st/test/a/b\" split \"/\" extract ('method,','host)",["test","a","b"]]
  ],
- 'cat:'values,
- 'classes:'
+ 'cat:'values
 ],
+
 ['t:'binary, 
  'name:"del", 
  'desc:"Similar to `except`, but modifies x in-place. Works with lists and dicts in x. For vectors, consider using except. Use with due care - not changing values this way is clearer.", 
@@ -216,12 +240,14 @@ compose extract with other verbs to build out elaborate parsers.
  'ex:[ ["[1,2,3]as 't; t del 0; t",[2,3]] ], 
  'cat:'values,
  'classes:'x],
+
 ['t:'unary,
  'name:"len",
  'desc:"Returns length of list or vector x",
  'ex:[],
  'cat:'values,
  'classes:'x],
+
 ['t:'binary, 
  'name:"make", 
  'desc:"transforms x into typed denoted by tag in y (such as float).
@@ -235,11 +261,15 @@ for:
 
 If you have a string containing a number and you want to convert it
 to a numeric value, you probably want to use `base`, like:
-```\"1234\"base10|||1234```
+```
+\"1234\"base10
+1234```
 
 If you have a numeric value and want to convert it to a string, you
 probably want `str`:
-```1234 str|||\"1234\"```
+```
+1234 str
+\"1234\"```
  
 `make` can also be used with a list of values on the left and a string indicating
 the types to cast them to on the right. This is useful for decoding rows
@@ -260,24 +290,29 @@ Make many returns a list of values.",
  'cat:'values,
  'classes:'y
 ],
+
 ['t:'unary, 
  'name:"rev", 
  'desc:"returns vector x in reverse order", 
  'ex:[["3,7,9rev",(9,7,3)]], 
  'cat:'values,
  'classes:'x],
+
 ['t:'unary, 
  'name:"key", 
  'desc:"Returns the keys/columns of dictionary/table x", 
  'ex:[ ["['name:'Tom,'city:'Miami]key",['name,'city']] ], 
  'seealso:["val"],
  'cat:'values],
+
 ['t:'unary, 
  'name:"val", 
  'desc:"when x is a dict or table, return the values of x. Exception otherwise", 
  'ex:[ ["['name:'Tom,'city:'Miami]val",['Tom,'Miami]] ], 
  'seealso:["key"],
- 'cat:'values],
+ 'cat:'values]
+
+ show,
 
 // LOGIC ---------------------------------------------------------------
 
@@ -346,6 +381,7 @@ Make many returns a list of values.",
  ],
  'cat:'logic,
  'classes:'x],
+
 ['t:'binary, 
  'name:"or", 
  'op:"|",
@@ -363,10 +399,12 @@ Make many returns a list of values.",
 	["1,2,1,4,4 or (4,3,0,2,2)",(4,3,1,4,4)]
  ],
  'cat:'logic,'classes:'x],
+
 ['t:'unary, 'name:"not", 
  'desc:"transforms non-zeroes to zeroes and vice versa", 
  'ex:[["1,0,2not",(0,1,0)]], 
  'cat:'misc,'classes:'x],
+
 ['t:'binary,
  'name:"match",
  'op:"~",
@@ -374,6 +412,7 @@ Make many returns a list of values.",
  'ex:[["1,2,3,2~2",(0,1,0,1)]],
  'seealso:["condense"],
  'cat:'logic],
+
 ['t:'binary, 
  'name:"pick", 
  'desc:"returns items of x which correspond to indices of y containing 1.
@@ -398,6 +437,7 @@ Make many returns a list of values.",
  'ex:[["1,7,2,7,3 each {*2}",(2,14,4,14,6)]],
  'cat:'looping
 ],
+
 ['t:'binary, 
  'name:"exhaust", 
  'desc:"
@@ -407,7 +447,9 @@ Make many returns a list of values.",
  'ex:[
 	["\"abc\"exhaust{rot1}","cab"]
  ], 
- 'cat:'misc],
+ 'cat:'misc
+],
+
 ['t:'binary, 
  'name:"recurse", 
  'desc:"
@@ -417,7 +459,9 @@ Make many returns a list of values.",
  ", 
  'ex:[
   ["\"abc\"recurse{rot1}",["bca","cab"]]
- ], 'cat:'misc],
+ ], 
+ 'cat:'misc
+],
 
 // MATH ----------------------------------------------------------------
 
@@ -494,6 +538,7 @@ Make many returns a list of values.",
 	]
  ], 
  'cat:'misc,'classes:'x],
+
 ['t:'unary, 
  'name:"parse", 
  'desc:"return the XXL parse string for string x", 
@@ -502,12 +547,13 @@ Make many returns a list of values.",
 	 "['listexpr([[], 'raw(\",\"), 1i, 'raw(\",\"), 'expr([2i, 'raw(\",\"), 3i])]), 'raw(\"*\"), 'name(\"z\"), 'ws(\"\n\")]"
   ]
  ], 
- 'cat:'misc,
- 'classes:'],
+ 'cat:'misc],
+
 ['t:'binary, 
  'name:"rot", 
  'desc:"rotate the contents of the vector x right by y positions. y may be negative", 
  'ex:[], 'cat:'misc],
+
 ['t:'unary,
  'name:"show",
  'op:"",
@@ -517,6 +563,7 @@ Make many returns a list of values.",
  'ex:[ ["1,2,3 show","1,2,3"] ],
  'seealso:["emit", "repr","str"],
  'cat:'misc],
+
 ['t:'binary,
  'name:"emit",
  'op:"",
@@ -529,13 +576,14 @@ Make many returns a list of values.",
  'ex:[ ["16,18,22 emit 'ages", (16,18,22) ] ],
  'seealso:["show"],
  'cat:'misc],
+
 ['t:'unary, 
  'name:"type", 
  'desc:"Returns the type of x as a symbol", 
  'ex:[["[1,2.1,\"x\"]::type",['int, 'float, 'char]]], 
  'seealso:[],
- 'cat:'misc]
-,
+ 'cat:'misc
+],
 
 // STRINGS -------------------------------------------------------------
 
@@ -618,3 +666,6 @@ Make many returns a list of values.",
 ['t:'binary, 'name:"over", 'desc:"", 'ex:[], 'cat:'misc],
 ['t:'binary, 'name:"scan", 'desc:"", 'ex:[], 'cat:'misc]
 as 'verbs
+
+// export:
+[categories, verbs]
