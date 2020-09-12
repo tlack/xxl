@@ -783,6 +783,8 @@ VP make(VP x, VP y) {
 	// TODO make() should short cut matching kind casts 
 	// TODO make() should be smarter about lists in x
 	XRAY_log("make\n");XRAY_emit(x);XRAY_emit(y);
+	if(IS_EXC(x)) return x;
+	if(IS_EXC(y)) return y;
 	VP res=0; type_t typenum=-1; tag_t typetag=-1;
 	// right arg is tag naming a type, use that.. otherwise use y's type
 	if(IS_t(y)) {
