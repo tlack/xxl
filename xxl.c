@@ -220,12 +220,13 @@ char* repr_xlambda(VP keys,VP vals,char* s,size_t sz) {
 			if(!IS_EXC(kk) && !IS_EXC(vv)) {
 				if (kk==TTPARENT) {
 					FMT_into_s(sz,"'parent is \"%p\";",vv);
-				} else {
+				} 
+				/*else {
 					repr0(kk,s,sz);
 					FMT_into_s(sz," is ",0);
 					repr0(vv,s,sz);
 					FMT_into_s(sz,"; ",0);
-				}
+				}*/
 				xfree(kk); xfree(vv);
 			}
 		}
@@ -237,7 +238,7 @@ char* repr_xlambda(VP keys,VP vals,char* s,size_t sz) {
 			if(item==NULL) continue;
 			if(LIST(item) && TAGGED(item,Ti(lambda))) 
 				s=repr_xlambda(NULL,item,s,sz);
-			else repr0(item,s,sz);
+			//else repr0(item,s,sz);
 			if(kn-1!=i) FMT_into_s(sz,",",0);
 		};
 	}
