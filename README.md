@@ -80,31 +80,24 @@ below. Examples:
 given a list (vector) on the left side and a function on the right. In contrast to most languages, 
 XXL doesn't really have any syntax that defines looping abilities. It's all just regular XXL functions.
 
-### JSON encoder
+### Quasi-JSON encoder
 
-About 6 lines of code, without the tests:
+Not really to spec, but what is? About 6 lines of code, without the tests:
 
 ![json encoder screenshot with syntax highlighting](https://raw.githubusercontent.com/tlack/xxl/master/doc/jsonencode.png)
 
-Cut and paste-able:
+Here's what's going on in this monster. I'll explain the parts, and then the sequence of how it comes together. 
 
 ```
 // (e)nclose (c)urly(b)races, (s)quare(b)brackets, (q)uotes:
 'ecb is {"{",x,"}"}; 'esb is {"[",x,"]"}; 'eq is {"\"",x,"\""}; 
-'jc is {join ","}; 'jac is {each y jc};  // join x with commas; apply y to each of x then join with commas
-'pair is {encode,":",(y encode)};        // key:val pair for dict
-'dict is {key as 'k; x val as 'v; [k],v >: pair jc ecb}; // get keys/vals, pair merge, commas, braces
-
-// wrap non-scalar values in appropriate way:
-'many is {as 'el type case ('char, {el str eq}, 'dict, {el dict}, {el jac encode esb})};
-'encode is {ravel[many,str]};            // ravel calls x y[0] for arrays (len > 1), x y[1] for scalars
 ```
+Line 1: Define three functions to enclose values in the typical JSON delimeters. `ecb`/`esb`/`eq` enclose their 
+argument in curly braces, square braces, or quotes, respectively. They use the name `x` to refer to their argument. 
 
-Here's what's going on in this monster. I'll explain the parts, and then the sequence of how it comes together. 
-
-Line 1: `ecb`/`esb`/`eq` enclose their argument in curly braces, square braces, or quotes, respectively. They use the name `x` 
-to refer to their argument. 
-
+```
+'jc is {join ","}; 'jac is {each y jc};  // join x with commas; apply y to each of x then join with commas
+```
 Line 2: `jc` (join comma) joins the contents of its argument together with a comma in between each item. `jac` does the same
 thing, but after first calling its right argument (`y`) on each item - `jac` here is a mnemonic for "join and call". 
 
@@ -112,10 +105,16 @@ The astute might notice that `jc` and `jac` don't refer to`x`, because the first
 automatically with `x` as the left argument. In small functions, `x` is almost always the first term in the function's 
 code, so being able to omit it results in some expressivity. More on this later.
 
+```
+'pair is {encode,":",(y encode)};        // key:val pair for dict
+```
 Line 3: `pair` calls another function, `encode` (which we define later), without referring to `x`. It then appends a `:` to the
 string that is returned from `encode`, and then appends that to the result of calling `encode` with the `y` argument.
 This is a form of recursion.
 
+```
+'dict is {key as 'k; x val as 'v; [k],v >: pair jc ecb}; // get keys/vals, pair merge, commas, braces
+```
 Line 4: `dict` takes a dictionary as an argument, gets its keys as a list using the built-in `key` verb, and saves them in a 
 new variable called `k`. The values of the dictionary (also a list) are extracted using the built-in `val` verb and
 become `v`. 
@@ -126,18 +125,29 @@ like `{"name":"Tyler","age":"2"}`.
 
 All the looping verbs have short names that end in `:`.
 
-Line 5: `many` looks complex, but isn't. Its purpose is to handle multiple-item collections (called vectors in XXL). In our case, we have to worry about two main ones: character vectors (strings) and dictionaries.
+```
+'many is {as 'el type case ('char, {el str eq}, 'dict, {el dict}, {el jac encode esb})};
+```
+Line 5: `many` isn't as grody as it looks. Its purpose is to handle multiple-item collections (called vectors in XXL). 
+In our case, we have to worry about two main ones: character vectors (strings) and dictionaries.
 
 First, we store the value of `x` as `el` (element). Then we extract the value's type
 using the `type` verb, and then use the `case` verb to decide how to treat all the different types.
 
-If it's a character vector (a string), we pass it through the `str` verb to remove its tag (a feature we'll explain later).
+`x case (y0, f0, y0, f0, ..., else0)` will check x against each of the `y` values; if it matches, the corresponding
+function `f` will be invoked with `x` as its argument. If none match, `x else0` will be invoked.
 
-If it's a dictionary, we call our `dict` function. If it's anything else, we recurse by calling `encode` again, 
-and then enclose the result in square braces (think arrays of numbers).
+If it's a character vector (a string), we pass `el` through the `str` verb to remove its tag (a feature we'll explain later).
 
+If it's a dictionary, we call our `dict` function. 
+
+If it's anything else, we recurse by calling `encode` again, and then enclose the result in square braces (think arrays of numbers).
+
+```
+'encode is {ravel[many,str]};            // ravel calls x y[0] for arrays (len > 1), x y[1] for scalars
+```
 Line 6: And finally the star of the show, `encode`. `ravel` is a verb that allows you to take one branch of logic for single-item
-values (like the number `3`), or a different branch for values that have many items, like an array or string (vectors).
+values (like the number `3`), or a different branch for values that have many items, like an array or string (vector of char).
 Depending on the type of `x`, `encode` will dispatch either `many` (for multiple values) or `str` (for simple, single values).
 
 ### MySQL Slow Query Watcher
