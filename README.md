@@ -8,9 +8,11 @@ attain these goals.
 
 ## Status
 
-Passes tests. Useful for writing small utilities, for me. Needs a rethink of
-internal virtual machine to fix bugs that limit usability. Not yet suitable for
-real work.
+Passes tests. Useful for writing small utilities, for me. 
+
+Ideas valid, but development stalled pending rethink of virtual machine. The current
+VM leaks memory during complex operations and is generally too slow. A more modular
+type system would be nice as well.
 
 Tested so far on Linux (64bit x86 & GCC or Clang), OS X (Clang), Windows
 (Cygwin64), Android under termux, Intel Edison and Raspberry Pi. Should work on iOS as well
@@ -20,42 +22,63 @@ but untested.
 
 ### Manipulate variables
 
-In XXL, we call functions verbs, and they can have only one or two arguments (named x and y, duh). 
+In XXL, we call functions verbs, and they can have only one or two arguments (named `x` and `y`).
 
 You call a verb like `x func` or `x func y`. 
 
-Code reads left to right. There is no order of operations. Semicolons are important. There isn't much to learn.
+Code reads left to right. There is no order of operations. Semicolons are important. 
+Comments are `//` to end of line.
+
+Aside from the poorly documented built-in verbs, there isn't much to learn in terms of syntax.
 
 When you name variables, you specify their names as a special name starting
 with `'`, and use the `as` or `is` verb. Afterward you refer to them without the
-`'`.
+`'`. 
 
 (Note: the `0.` and `1.` below are part of the XXL interactive prompt.)
 
 ```
-0. 41,6,2 as 'ages;      // create a variable named ages with "as"
+0. 41,6,2 as 'ages     // create a variable named ages with "as"
 (41,6,2)
-1. 'ages is (41,6,2);    // equivalent to the above, reverse order with "is"
+1. 'ages is (41,6,2)   // equivalent to the above, reverse order with "is"
 (41,6,2)
 2. ages
 (41,6,2)
+3. 'ages is 41,6,2     // WRONG! there is no order of operations - group with ()
+(41,6,2)
+4. ages                
+41                     // oops..
+5. ages; 666           // semicolons separate expressions
+666                    // repl shows you result of last expr
 ```
 
 XXL is functional, so you don't use any loops to manipulate values:
 ```
 3. ages each {x * 2}
 (82,12,4)
-4. ages each {x str," years old"} join "\n"      // joint into separate lines
+4. ages each {x str," years old"} join "\n"      // join into separate lines
 "41 years old\n6 years old\n2 years old\n"
 ```
+(Note: `\n` is nerd speak for newline or linebreak in the terminal)
 
-(Note: `\n` is nerd speak for newline or enter, so messages break to the next line)
+To save time, XXL has the questionable feature of allowing you to omit the `x` part of the
+very beginning of a function. You'll often see this pattern employed for brevity in the examples 
+below. Examples:
+
+```
+3. ages each {x * 2}
+(82,12,4)
+4. ages each {* 2}
+(82,12,4)
+5. ages each {x str," years old"} join "\n"
+"41 years old\n6 years old\n2 years old"
+6. ages each {str," years old"} join "\n"
+"41 years old\n6 years old\n2 years old"
+```
 
 `each` is a regular function (verb), believe it or not. It happens to understand what to do
-given a list (vector) on the left side and a function on the right.
-
-In contrast to many popullar languages, XXL doesn't really have any syntax that defines
-looping abilities. It's all just regular XXL functions.
+given a list (vector) on the left side and a function on the right. In contrast to most languages, 
+XXL doesn't really have any syntax that defines looping abilities. It's all just regular XXL functions.
 
 ### JSON encoder
 
@@ -66,7 +89,7 @@ About 6 lines of code, without the tests:
 Cut and paste-able:
 
 ```
-// enclose (c)urly(b)races, (s)quare(b)brackets, (q)uotes:
+// (e)nclose (c)urly(b)races, (s)quare(b)brackets, (q)uotes:
 'ecb is {"{",x,"}"}; 'esb is {"[",x,"]"}; 'eq is {"\"",x,"\""}; 
 'jc is {join ","}; 'jac is {each y jc};  // join x with commas; apply y to each of x then join with commas
 'pair is {encode,":",(y encode)};        // key:val pair for dict
@@ -79,21 +102,21 @@ Cut and paste-able:
 
 Here's what's going on in this monster. I'll explain the parts, and then the sequence of how it comes together. 
 
-`ecb`/`esb`/`eq` enclose their argument in curly braces, square braces, or quotes, respectively. They use the name `x` 
+Line 1: `ecb`/`esb`/`eq` enclose their argument in curly braces, square braces, or quotes, respectively. They use the name `x` 
 to refer to their argument. 
 
-`jc` (join comma) joins the contents of its argument together with a comma in between each item. `jac` does the same
+Line 2: `jc` (join comma) joins the contents of its argument together with a comma in between each item. `jac` does the same
 thing, but after first calling its right argument (`y`) on each item - `jac` here is a mnemonic for "join and call". 
 
 The astute might notice that `jc` and `jac` don't refer to`x`, because the first verb inside a function will be invoked 
 automatically with `x` as the left argument. In small functions, `x` is almost always the first term in the function's 
 code, so being able to omit it results in some expressivity. More on this later.
 
-`pair` calls another function, `encode` (which we define later), without referring to `x`. It then appends a `:` to the
+Line 3: `pair` calls another function, `encode` (which we define later), without referring to `x`. It then appends a `:` to the
 string that is returned from `encode`, and then appends that to the result of calling `encode` with the `y` argument.
 This is a form of recursion.
 
-`dict` takes a dictionary as an argument, gets its keys as a list using the built-in `key` verb, and saves them in a 
+Line 4: `dict` takes a dictionary as an argument, gets its keys as a list using the built-in `key` verb, and saves them in a 
 new variable called `k`. The values of the dictionary (also a list) are extracted using the built-in `val` verb and
 become `v`. 
 
@@ -103,7 +126,7 @@ like `{"name":"Tyler","age":"2"}`.
 
 All the looping verbs have short names that end in `:`.
 
-`many` looks complex, but isn't. Its purpose is to handle multiple-item collections (called vectors in XXL). In our case, we have to worry about two main ones: character vectors (strings) and dictionaries.
+Line 5: `many` looks complex, but isn't. Its purpose is to handle multiple-item collections (called vectors in XXL). In our case, we have to worry about two main ones: character vectors (strings) and dictionaries.
 
 First, we store the value of `x` as `el` (element). Then we extract the value's type
 using the `type` verb, and then use the `case` verb to decide how to treat all the different types.
@@ -113,7 +136,7 @@ If it's a character vector (a string), we pass it through the `str` verb to remo
 If it's a dictionary, we call our `dict` function. If it's anything else, we recurse by calling `encode` again, 
 and then enclose the result in square braces (think arrays of numbers).
 
-And finally the star of the show, `encode`. `ravel` is a verb that allows you to take one branch of logic for single-item
+Line 6: And finally the star of the show, `encode`. `ravel` is a verb that allows you to take one branch of logic for single-item
 values (like the number `3`), or a different branch for values that have many items, like an array or string (vectors).
 Depending on the type of `x`, `encode` will dispatch either `many` (for multiple values) or `str` (for simple, single values).
 
@@ -123,7 +146,7 @@ Here we use command-line MySQL to get process list, turn into table, find intere
 
 Note that the `0.`, `1.` etc is XXL's prompt in interactive mode. The number you see next to the 
 prompt allows you to refer later to that line of input or the result XXL produced for it. Don't type
-this part in.
+this part, or the comments, at the interactive REPL.
 
 ```
 0. 'slowtime is 2;
@@ -191,9 +214,8 @@ Here's some useful info, but no real docs yet.
 https://github.com/tlack/xxl/blob/master/doc/groceries.xxl) - a short tutorial 
 written for non-programmers.
 
-* [Mailboxes
-	soliloquy](https://github.com/tlack/xxl/blob/master/doc/sect_mbox.xxl). Mailboxes are 
-	like a message queue and allow your program to use multiple threads.
+* [Mailboxes soliloquy](https://github.com/tlack/xxl/blob/master/doc/sect_mbox.xxl). Mailboxes are 
+like a message queue and allow your program to use multiple threads.
 
 * [Posts](https://github.com/tlack/xxl/blob/master/doc/sect_posts.xxl) are a general concept 
 for sharing data between XXL and the outside world. Work in progress!
@@ -214,21 +236,21 @@ See the various tests for more examples. In particular, you may appreciate
 
 - *Terse*. It is much better to express yourself clearly in a few words rather
   than many. We provide powerful operators that allow you to do more while
-	describing less.
+  describing less.
 
 - *Accessible*. XXL avoids niche-y programmer terms like "map" and "reduce" in
-	favor of common English 
+  favor of common English 
 
 - *Minimalistic*, but not spare. Provide tools people commonly need, even if
-	they're a bit duplicative of other, more primitive approaches.
+  they're a bit duplicative of other, more primitive approaches.
 
 - *Fast*. XXL cares deeply about performance, for the same reason a person should care
-	about the quality of any tool they use for professional work. 
+  about the quality of any tool they use for professional work. 
 
 - *Tangible*. Abstractions provided by many systems and platforms make it much harder
   to reason about what your program is doing. XXL just helps you program the computer
-	in the way the computer wants to be programmed. Those with a background in assembly
-	might see some familiar tones in XXL.
+  in the way the computer wants to be programmed. Those with a background in assembly
+  might see some familiar tones in XXL.
 
 These goals have not yet been attained.
 
@@ -336,6 +358,59 @@ function returns.
 
 See [`doc/sect_mbox.xxl`](https://github.com/tlack/xxl/blob/master/doc/sect_mbox.xxl)
 for more.
+
+### Files
+
+The `File` namespace contains file-related stuff. Let's explore:
+
+```
+0. File
+['basename:'1(...), 'cwd:'1(...), 'dirname:'1(...), 'get:'1(...), 'ls:'1(...), 'path:'1(...), 'set:'2(...)]
+```
+
+`[] File.cwd` tells you the current working directory:
+
+```
+1. [] File.cwd
+"/mnt/tlack/work/xxl"
+```
+Note: Here we use `[]` as a placeholder because `cwd` doesn't take any arguments.
+
+`fname File.dirname` strips the last component off a name.
+
+```
+2. [] File.cwd File.dirname
+"/mnt/tlack/work/"
+```
+
+`pattern File.ls` shows you what's in a folder:
+```
+3. [] File.cwd,"/*.c" File.ls
+["/mnt/tlack/work/net.c", "/mnt/tlack/work/repl.c", ....]
+```
+
+`data File.set fname` sets the contents of file `fname` to `data`, which must be a string (vector of char).
+It returns the data so you can continue using it in your expression.
+
+```
+4. "Hello world!" File.set "test.txt"
+"Hello world!"
+```
+
+`fname File.get` reads and returns the contents of `fname` as a char vector.
+```
+5. "test.txt" File.get
+"Hello world!"
+```
+
+`pathpartslist File.path` converts from lists of filename parts to actual platform-specific paths.
+
+```
+6. ["mnt","tlack","work","xxl"] File.path
+inputs@0: ["mnt","tlack","work","xxl"] File.path
+outputs@0:
+"mnt/tlack/work/xxl"
+```
 
 ### Tables
 
